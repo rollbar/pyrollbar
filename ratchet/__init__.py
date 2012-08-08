@@ -14,7 +14,7 @@ import requests
 
 log = logging.getLogger(__name__)
 
-VERSION = '0.1.1'
+VERSION = '0.1.2'
 DEFAULT_ENDPOINT = 'https://submit.ratchet.io/api/1/item/'
 
 # configuration settings
