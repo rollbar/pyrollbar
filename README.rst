@@ -17,7 +17,7 @@ Installation
 ------------
 Install using pip::
     
-    pip install pyratchet
+    pip install ratchet
 
 
 Configuration
