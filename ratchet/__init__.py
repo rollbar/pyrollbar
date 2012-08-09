@@ -14,7 +14,7 @@ import requests
 
 log = logging.getLogger(__name__)
 
-VERSION = '0.1.2'
+VERSION = '0.1.3'
 DEFAULT_ENDPOINT = 'https://submit.ratchet.io/api/1/item/'
 
 # configuration settings
@@ -56,7 +56,7 @@ def init(access_token, environment='production', **kw):
 def report_exc_info(exc_info, request=None, **kw):
     """
     Reports an exception to Ratchet, using exc_info (from calling sys.exc_info()) and an optional 
-    WebOb-like request object.
+    WebOb or Werkzeug-based request object.
     Any keyword args will be applied last and override what's built here.
 
     Example usage:
@@ -87,13 +87,12 @@ def report_exc_info(exc_info, request=None, **kw):
         }
     }
 
-    if request:
-        data['request'] = _build_request_data(request)
+    _add_request_data(data, request)
     data['server'] = _build_server_data()
 
     payload = _build_payload(data)
     send_payload(payload)
-    
+
 
 def report_message(message, level='error', request=None, **kw):
     """
@@ -112,8 +111,7 @@ def report_message(message, level='error', request=None, **kw):
         }
     }
     
-    if request:
-        data['request'] = _build_request_data(request)
+    _add_request_data(data, request)
     data['server'] = _build_server_data()
 
     payload = _build_payload(data)
@@ -149,8 +147,6 @@ def _check_config():
         
 
 def _build_base_data(level='error'):
-    if not SETTINGS['access_token']:
-        pass
     return {
         'timestamp': int(time.time()),
         'environment': SETTINGS['environment'],
@@ -160,10 +156,44 @@ def _build_base_data(level='error'):
     }
 
 
+def _add_request_data(data, request):
+    """
+    Attempts to build request data; if successful, sets the 'request' key on `data`.
+    """
+    request_data = _build_request_data(request)
+    if request_data:
+        data['request'] = request_data
+
+
 def _build_request_data(request):
     """
-    Returns a dictionary containing data from the request. Assumes a WebOb-like request object.
+    Returns a dictionary containing data from the request. 
+    Can handle webob or werkzeug-based request objects.
     """
+    try:
+        import webob
+    except ImportError:
+        pass
+    else:
+        if isinstance(request, webob.Request):
+            return _build_webob_request_data(request)
+
+    try:
+        import werkzeug.wrappers
+        import werkzeug.local
+    except ImportError:
+        pass
+    else:
+        if isinstance(request, werkzeug.wrappers.Request):
+            return _build_werkzeug_request_data(request)
+        if isinstance(request, werkzeug.local.LocalProxy):
+            actual_request = request._get_current_object()
+            return _build_werkzeug_request_data(request)
+
+    return None
+
+
+def _build_webob_request_data(request):
     request_data = {
         'url': request.url,
         'GET': dict(request.GET),
@@ -185,16 +215,33 @@ def _build_request_data(request):
     return request_data
 
 
+def _build_werkzeug_request_data(request):
+    request_data = {
+        'url': request.url,
+        'GET': dict(request.args),
+        'POST': dict(request.form),
+        'user_ip': _extract_user_ip(request),
+        'headers': dict(request.headers),
+        'method': request.method,
+    }
+
+    return request_data
+
+
 def _build_server_data():
     """
     Returns a dictionary containing information about the server environment.
     """
     # server environment
-    return {
+    server_data = {
         'host': socket.gethostname(),
-        'branch': SETTINGS.get('branch'),
-        'root': SETTINGS.get('root'),
     }
+
+    for key in ['branch', 'root']:
+        if SETTINGS.get(key):
+            server_data[key] = SETTINGS[key]
+
+    return server_data
 
 
 def _build_payload(data):
