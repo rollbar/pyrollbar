@@ -63,7 +63,7 @@ endpoint
 Contributing
 ------------
 
-Contributions are welcome. The project is hosted on github at http://github.com/brianr/pyratchet
+Contributions are welcome. The project is hosted on github at http://github.com/ratchetio/pyratchet
 
 
 Additional Help
