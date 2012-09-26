@@ -1,9 +1,8 @@
 pyratchet
 =========
 
-pyratchet is a generic library for reporting exceptions and other messages to Ratchet.io_.
+pyratchet is a generic library for reporting exceptions and other messages to Ratchet.io_::
 
-::
     import ratchet, sys
     ratchet.init('YOUR_ACCESS_TOKEN', 'production')  # access_token, environment
 
