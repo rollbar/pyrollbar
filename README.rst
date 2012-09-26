@@ -3,6 +3,18 @@ pyratchet
 
 pyratchet is a generic library for reporting exceptions and other messages to Ratchet.io_.
 
+::
+    import ratchet, sys
+    ratchet.init('YOUR_ACCESS_TOKEN', 'production')  # access_token, environment
+
+    try:
+        main_app_loop()
+    except IOError:
+        ratchet.report_message('Got an IOError in the main loop', 'warning')
+    except:
+        # catch-all
+        ratchet.report_exc_info(sys.exc_info())
+
 
 Requirements
 ------------
