@@ -14,7 +14,7 @@ import requests
 
 log = logging.getLogger(__name__)
 
-VERSION = '0.1.4'
+VERSION = '0.1.5'
 DEFAULT_ENDPOINT = 'https://submit.ratchet.io/api/1/item/'
 
 # configuration settings
@@ -223,6 +223,7 @@ def _build_werkzeug_request_data(request):
         'user_ip': _extract_user_ip(request),
         'headers': dict(request.headers),
         'method': request.method,
+        'files_keys': request.files.keys(),
     }
 
     return request_data
