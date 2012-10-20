@@ -2,6 +2,7 @@
 Plugin for Pyramid apps to submit errors to Ratchet.io
 """
 
+import copy
 import json
 import logging
 import socket
@@ -9,13 +10,14 @@ import sys
 import threading
 import time
 import traceback
+import urlparse
 
 import requests
 
 log = logging.getLogger(__name__)
 
-VERSION = '0.1.5'
-DEFAULT_ENDPOINT = 'https://submit.ratchet.io/api/1/item/'
+VERSION = '0.1.6'
+DEFAULT_ENDPOINT = 'https://submit.ratchet.io/api/1/'
 
 # configuration settings
 # configure by calling init() or overriding directly
@@ -136,6 +138,19 @@ def send_payload(payload):
         thread.start()
 
 
+def search_items(title=None, fields=None, access_token=None):
+    """
+    Searches a project for items that match the input criteria.
+    """
+    if not title:
+        return []
+
+    if fields is not None:
+        fields = ','.join(fields)
+
+    return _get_api('search/', title=title, fields=fields, access_token=access_token)
+
+
 ## internal functions
 
 def _check_config():
@@ -144,7 +159,7 @@ def _check_config():
         log.warning("pyratchet: No access_token provided. Please configure by calling ratchet.init() with your access token.")
         return False
     return True
-        
+
 
 def _build_base_data(level='error'):
     return {
@@ -257,10 +272,33 @@ def _build_payload(data):
 
 
 def _send_payload(payload):
-    resp = requests.post(SETTINGS['endpoint'], data=payload, timeout=SETTINGS.get('timeout', 1))
+    url = urlparse.urljoin(SETTINGS['endpoint'], 'item/')
+    resp = requests.post(url, data=payload, timeout=SETTINGS.get('timeout', 1))
     if resp.status_code != 200:
         log.warning("Got unexpected status code from Ratchet.io api: %s\nResponse:\n%s",
             resp.status_code, resp.text)
+
+
+def _get_api(path, access_token=None, **params):
+    access_token = access_token or SETTINGS['access_token']
+    url = urlparse.urljoin(SETTINGS['endpoint'], path)
+    params['access_token'] = access_token
+    resp = requests.get(url, params=params)
+    data = resp.text
+    try:
+        json_data = json.loads(data)
+    except TypeError, ValueError:
+        log.warning('Could not decode Ratchet.io api response:\n%s', data)
+        raise ApiException('Request to %s returned invalid JSON response', url)
+    else:
+        if json_data.get('err'):
+            raise ApiError(json_data.get('message') or 'Unknown error')
+        result = json_data.get('result')
+
+        if 'page' in result:
+            return PagedResult(access_token, path, result['page'], params, result)
+        else:
+            return Result(access_token, path, params, result)
 
 
 def _extract_user_ip(request):
@@ -273,4 +311,40 @@ def _extract_user_ip(request):
         return forwarded_for
     return request.remote_addr
 
+
+class ApiException(Exception):
+    pass
+
+
+class ApiError(ApiException):
+    pass
+
+
+class Result(object):
+    def __init__(self, access_token, path, params, data):
+        self.access_token = access_token
+        self.path = path
+        self.params = params
+        self.data = data
+
+    def __str__(self):
+        return str(self.data)
+
+
+class PagedResult(Result):
+    def __init__(self, access_token, path, page_num, params, data):
+        super(PagedResult, self).__init__(access_token, path, params, data)
+        self.page = page_num
+
+    def next_page(self):
+        params = copy.copy(self.params)
+        params['page'] = self.page + 1
+        return _get_api(self.path, **params)
+
+    def prev_page(self):
+        if self.page <= 1:
+            return self
+        params = copy.copy(self.params)
+        params['page'] = self.page - 1
+        return _get_api(self.path, **params)
 
