@@ -141,6 +141,13 @@ def send_payload(payload):
 def search_items(title=None, fields=None, access_token=None):
     """
     Searches a project for items that match the input criteria.
+
+    title: the search query to search item titles for.
+    fields: the fields that should be returned for each item.
+            e.g. ['id', 'project_id', 'status'] will return a dict containing
+                 only those fields for each item.
+    access_token: a project access token. If this is not provided,
+                  the one provided to init() will be used instead.
     """
     if not title:
         return []
@@ -272,11 +279,13 @@ def _build_payload(data):
 
 
 def _send_payload(payload):
-    url = urlparse.urljoin(SETTINGS['endpoint'], 'item/')
+    return _post_api('item/', payload)
+
+
+def _post_api(path, payload):
+    url = urlparse.urljoin(SETTINGS['endpoint'], path)
     resp = requests.post(url, data=payload, timeout=SETTINGS.get('timeout', 1))
-    if resp.status_code != 200:
-        log.warning("Got unexpected status code from Ratchet.io api: %s\nResponse:\n%s",
-            resp.status_code, resp.text)
+    return _parse_response(path, SETTINGS['access_token'], payload, resp)
 
 
 def _get_api(path, access_token=None, **params):
@@ -284,15 +293,24 @@ def _get_api(path, access_token=None, **params):
     url = urlparse.urljoin(SETTINGS['endpoint'], path)
     params['access_token'] = access_token
     resp = requests.get(url, params=params)
+    return _parse_response(path, access_token, params, resp)
+
+
+def _parse_response(path, access_token, params, resp):
+    if resp.status_code != 200:
+        log.warning("Got unexpected status code from Ratchet.io api: %s\nResponse:\n%s",
+            resp.status_code, resp.text)
+
     data = resp.text
     try:
         json_data = json.loads(data)
-    except TypeError, ValueError:
+    except (TypeError, ValueError):
         log.warning('Could not decode Ratchet.io api response:\n%s', data)
-        raise ApiException('Request to %s returned invalid JSON response', url)
+        raise ApiException('Request to %s returned invalid JSON response', path)
     else:
         if json_data.get('err'):
             raise ApiError(json_data.get('message') or 'Unknown error')
+
         result = json_data.get('result')
 
         if 'page' in result:
@@ -313,14 +331,30 @@ def _extract_user_ip(request):
 
 
 class ApiException(Exception):
+    """
+    This exception will be raised if there was a problem decoding the
+    response from an API call.
+    """
     pass
 
 
 class ApiError(ApiException):
+    """
+    This exception will be raised if the API response contains an 'err'
+    field, denoting there was a problem fulfilling the api request.
+    """
     pass
 
 
 class Result(object):
+    """
+    This class encapsulates the response from an API call.
+    Usage:
+
+        result = search_items(title='foo', fields=['id'])
+        print result.data
+    """
+
     def __init__(self, access_token, path, params, data):
         self.access_token = access_token
         self.path = path
@@ -332,6 +366,16 @@ class Result(object):
 
 
 class PagedResult(Result):
+    """
+    This class wraps the response from an API call that responded with
+    a page of results.
+    Usage:
+
+        result = search_items(title='foo', fields=['id'])
+        print 'First page: %d, data: %s' % (result.page, result.data)
+        result = result.next_page()
+        print 'Second page: %d, data: %s' % (result.page, result.data)
+    """
     def __init__(self, access_token, path, page_num, params, data):
         super(PagedResult, self).__init__(access_token, path, params, data)
         self.page = page_num
