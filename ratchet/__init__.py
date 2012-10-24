@@ -16,7 +16,7 @@ import requests
 
 log = logging.getLogger(__name__)
 
-VERSION = '0.1.6'
+VERSION = '0.1.7'
 DEFAULT_ENDPOINT = 'https://submit.ratchet.io/api/1/'
 
 # configuration settings
@@ -138,24 +138,30 @@ def send_payload(payload):
         thread.start()
 
 
-def search_items(title=None, fields=None, access_token=None):
+def search_items(title, return_fields=None, access_token=None, **search_fields):
     """
     Searches a project for items that match the input criteria.
 
-    title: the search query to search item titles for.
-    fields: the fields that should be returned for each item.
+    title: all or part of the item's title to search for.
+    return_fields: the fields that should be returned for each item.
             e.g. ['id', 'project_id', 'status'] will return a dict containing
                  only those fields for each item.
     access_token: a project access token. If this is not provided,
                   the one provided to init() will be used instead.
+    search_fields: additional fields to include in the search.
+            currently supported: status, level, environment
     """
     if not title:
         return []
 
-    if fields is not None:
-        fields = ','.join(fields)
+    if return_fields is not None:
+        return_fields = ','.join(return_fields)
 
-    return _get_api('search/', title=title, fields=fields, access_token=access_token)
+    return _get_api('search/',
+                    title=title,
+                    fields=return_fields,
+                    access_token=access_token,
+                    **search_fields)
 
 
 ## internal functions
