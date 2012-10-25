@@ -14,9 +14,32 @@ import urlparse
 
 import requests
 
-log = logging.getLogger(__name__)
+# import request objects from various frameworks, if available
+try:
+    from webob import Request as WebobRequest
+except ImportError:
+    WebobRequest = None
+    
+try:
+    from django.http import HttpRequest as DjangoHttpRequest
+except ImportError:
+    DjangoHttpRequest = None
 
-VERSION = '0.1.7'
+try:
+    from werkzeug.wrappers import Request as WerkzeugRequest
+except ImportError:
+    WerkzeugRequest = None
+
+try:
+    from werkzeug.local import LocalProxy as WerkzeugLocalProxy
+except ImportError:
+    WerkzeugLocalProxy = None
+
+
+log = logging.getLogger(__name__)
+logging.basicConfig()
+
+VERSION = '0.1.8'
 DEFAULT_ENDPOINT = 'https://submit.ratchet.io/api/1/'
 
 # configuration settings
@@ -69,55 +92,20 @@ def report_exc_info(exc_info, request=None, **kw):
     except:
         ratchet.report_exc_info(sys.exc_info())
     """
-    if not _check_config():
-        return
-    
-    data = _build_base_data()
-
-    # exception info
-    cls, exc, trace = exc_info
-    # most recent call last
-    raw_frames = traceback.extract_tb(trace)
-    frames = [{'filename': f[0], 'lineno': f[1], 'method': f[2], 'code': f[3]} for f in raw_frames]
-    data['body'] = {
-        'trace': {
-            'frames': frames,
-            'exception': {
-                'class': cls.__name__,
-                'message': str(exc),
-            }
-        }
-    }
-
-    _add_request_data(data, request)
-    data['server'] = _build_server_data()
-
-    payload = _build_payload(data)
-    send_payload(payload)
+    try:
+        _report_exc_info(exc_info, request, **kw)
+    except Exception, e:
+        log.exception("Exception while reporting exc_info to Ratchet. %r", e)
 
 
 def report_message(message, level='error', request=None, **kw):
     """
     Reports an arbitrary string message to Ratchet.
     """
-    if not _check_config():
-        return
-    
-    data = _build_base_data()
-    data['level'] = level
-
-    # message
-    data['body'] = {
-        'message': {
-            'body': message
-        }
-    }
-    
-    _add_request_data(data, request)
-    data['server'] = _build_server_data()
-
-    payload = _build_payload(data)
-    send_payload(payload)
+    try:
+        _report_message(message, level, request, **kw)
+    except Exception, e:
+        log.exception("Exception while reporting message to Ratchet. %r", e)
 
 
 def send_payload(payload):
@@ -164,7 +152,125 @@ def search_items(title, return_fields=None, access_token=None, **search_fields):
                     **search_fields)
 
 
+class ApiException(Exception):
+    """
+    This exception will be raised if there was a problem decoding the
+    response from an API call.
+    """
+    pass
+
+
+class ApiError(ApiException):
+    """
+    This exception will be raised if the API response contains an 'err'
+    field, denoting there was a problem fulfilling the api request.
+    """
+    pass
+
+
+class Result(object):
+    """
+    This class encapsulates the response from an API call.
+    Usage:
+
+        result = search_items(title='foo', fields=['id'])
+        print result.data
+    """
+
+    def __init__(self, access_token, path, params, data):
+        self.access_token = access_token
+        self.path = path
+        self.params = params
+        self.data = data
+
+    def __str__(self):
+        return str(self.data)
+
+
+class PagedResult(Result):
+    """
+    This class wraps the response from an API call that responded with
+    a page of results.
+    Usage:
+
+        result = search_items(title='foo', fields=['id'])
+        print 'First page: %d, data: %s' % (result.page, result.data)
+        result = result.next_page()
+        print 'Second page: %d, data: %s' % (result.page, result.data)
+    """
+    def __init__(self, access_token, path, page_num, params, data):
+        super(PagedResult, self).__init__(access_token, path, params, data)
+        self.page = page_num
+
+    def next_page(self):
+        params = copy.copy(self.params)
+        params['page'] = self.page + 1
+        return _get_api(self.path, **params)
+
+    def prev_page(self):
+        if self.page <= 1:
+            return self
+        params = copy.copy(self.params)
+        params['page'] = self.page - 1
+        return _get_api(self.path, **params)
+
+
 ## internal functions
+
+def _report_exc_info(exc_info, request=None, **kw):
+    """
+    Called by report_exc_info() wrapper
+    """
+    if not _check_config():
+        return
+    
+    data = _build_base_data()
+
+    # exception info
+    cls, exc, trace = exc_info
+    # most recent call last
+    raw_frames = traceback.extract_tb(trace)
+    frames = [{'filename': f[0], 'lineno': f[1], 'method': f[2], 'code': f[3]} for f in raw_frames]
+    data['body'] = {
+        'trace': {
+            'frames': frames,
+            'exception': {
+                'class': cls.__name__,
+                'message': str(exc),
+            }
+        }
+    }
+
+    _add_request_data(data, request)
+    data['server'] = _build_server_data()
+
+    payload = _build_payload(data)
+    send_payload(payload)
+
+
+def _report_message(message, level, request, **kw):
+    """
+    Called by report_message() wrapper
+    """
+    if not _check_config():
+        return
+    
+    data = _build_base_data()
+    data['level'] = level
+
+    # message
+    data['body'] = {
+        'message': {
+            'body': message
+        }
+    }
+    
+    _add_request_data(data, request)
+    data['server'] = _build_server_data()
+
+    payload = _build_payload(data)
+    send_payload(payload)
+
 
 def _check_config():
     # make sure we have an access_token
@@ -188,9 +294,13 @@ def _add_request_data(data, request):
     """
     Attempts to build request data; if successful, sets the 'request' key on `data`.
     """
-    request_data = _build_request_data(request)
-    if request_data:
-        data['request'] = request_data
+    try:
+        request_data = _build_request_data(request)
+    except Exception, e:
+        log.exception("Exception while building request_data for Ratchet payload: %r", e)
+    else:
+        if request_data:
+            data['request'] = request_data
 
 
 def _build_request_data(request):
@@ -198,25 +308,21 @@ def _build_request_data(request):
     Returns a dictionary containing data from the request. 
     Can handle webob or werkzeug-based request objects.
     """
-    try:
-        import webob
-    except ImportError:
-        pass
-    else:
-        if isinstance(request, webob.Request):
-            return _build_webob_request_data(request)
+    # webob (pyramid)
+    if WebobRequest and isinstance(request, WebobRequest):
+        return _build_webob_request_data(request)
 
-    try:
-        import werkzeug.wrappers
-        import werkzeug.local
-    except ImportError:
-        pass
-    else:
-        if isinstance(request, werkzeug.wrappers.Request):
-            return _build_werkzeug_request_data(request)
-        if isinstance(request, werkzeug.local.LocalProxy):
-            actual_request = request._get_current_object()
-            return _build_werkzeug_request_data(request)
+    # django
+    if DjangoHttpRequest and isinstance(request, DjangoHttpRequest):
+        return _build_django_request_data(request)
+
+    # werkzeug (flask)
+    if WerkzeugRequest and isinstance(request, WerkzeugRequest):
+        return _build_werkzeug_request_data(request)
+    
+    if WerkzeugLocalProxy and isinstance(request, WerkzeugLocalProxy):
+        actual_request = request._get_current_object()
+        return _build_werkzeug_request_data(request)
 
     return None
 
@@ -239,6 +345,26 @@ def _build_webob_request_data(request):
         request_data['POST'] = dict(request.POST)
     except UnicodeDecodeError:
         request_data['body'] = request.body
+
+    return request_data
+
+
+def _build_django_request_data(request):
+    request_data = {
+        'url': request.build_absolute_uri(),
+        'method': request.method,
+        'GET': dict(request.GET),
+        'POST': dict(request.POST),
+        'user_ip': _django_extract_user_ip(request),
+    }
+        
+    # headers
+    headers = {}
+    for k, v in request.environ.iteritems():
+        if k.startswith('HTTP_'):
+            header_name = '-'.join(k[len('HTTP_'):].replace('_', ' ').title().split(' '))
+            headers[header_name] = v
+    request_data['headers'] = headers
 
     return request_data
 
@@ -336,65 +462,14 @@ def _extract_user_ip(request):
     return request.remote_addr
 
 
-class ApiException(Exception):
-    """
-    This exception will be raised if there was a problem decoding the
-    response from an API call.
-    """
-    pass
+def _django_extract_user_ip(request):
+    forwarded_for = request.environ.get('HTTP_X_FORWARDED_FOR')
+    if forwarded_for:
+        return forwarded_for
+    real_ip = request.environ.get('HTTP_X_REAL_IP')
+    if real_ip:
+        return real_ip
+    return request.environ['REMOTE_ADDR']
 
 
-class ApiError(ApiException):
-    """
-    This exception will be raised if the API response contains an 'err'
-    field, denoting there was a problem fulfilling the api request.
-    """
-    pass
-
-
-class Result(object):
-    """
-    This class encapsulates the response from an API call.
-    Usage:
-
-        result = search_items(title='foo', fields=['id'])
-        print result.data
-    """
-
-    def __init__(self, access_token, path, params, data):
-        self.access_token = access_token
-        self.path = path
-        self.params = params
-        self.data = data
-
-    def __str__(self):
-        return str(self.data)
-
-
-class PagedResult(Result):
-    """
-    This class wraps the response from an API call that responded with
-    a page of results.
-    Usage:
-
-        result = search_items(title='foo', fields=['id'])
-        print 'First page: %d, data: %s' % (result.page, result.data)
-        result = result.next_page()
-        print 'Second page: %d, data: %s' % (result.page, result.data)
-    """
-    def __init__(self, access_token, path, page_num, params, data):
-        super(PagedResult, self).__init__(access_token, path, params, data)
-        self.page = page_num
-
-    def next_page(self):
-        params = copy.copy(self.params)
-        params['page'] = self.page + 1
-        return _get_api(self.path, **params)
-
-    def prev_page(self):
-        if self.page <= 1:
-            return self
-        params = copy.copy(self.params)
-        params['page'] = self.page - 1
-        return _get_api(self.path, **params)
 
