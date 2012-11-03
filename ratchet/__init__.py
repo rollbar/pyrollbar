@@ -16,9 +16,9 @@ import requests
 
 # import request objects from various frameworks, if available
 try:
-    from webob import Request as WebobRequest
+    from webob import BaseRequest as WebobBaseRequest
 except ImportError:
-    WebobRequest = None
+    WebobBaseRequest = None
     
 try:
     from django.http import HttpRequest as DjangoHttpRequest
@@ -39,7 +39,7 @@ except ImportError:
 log = logging.getLogger(__name__)
 logging.basicConfig()
 
-VERSION = '0.1.8'
+VERSION = '0.1.9'
 DEFAULT_ENDPOINT = 'https://submit.ratchet.io/api/1/'
 
 # configuration settings
@@ -309,7 +309,7 @@ def _build_request_data(request):
     Can handle webob or werkzeug-based request objects.
     """
     # webob (pyramid)
-    if WebobRequest and isinstance(request, WebobRequest):
+    if WebobBaseRequest and isinstance(request, WebobBaseRequest):
         return _build_webob_request_data(request)
 
     # django
