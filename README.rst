@@ -79,7 +79,7 @@ Contributions are welcome. The project is hosted on github at http://github.com/
 
 Additional Help
 ---------------
-If you have any questions, feedback, etc., drop me a line at brian@ratchet.io
+If you have any questions, feedback, etc., drop us a line at support@ratchet.io
 
 
 .. _Ratchet.io: http://ratchet.io/
