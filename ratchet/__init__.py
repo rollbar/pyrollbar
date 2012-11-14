@@ -6,7 +6,6 @@ import copy
 import json
 import logging
 import socket
-import sys
 import threading
 import time
 import traceback
@@ -19,7 +18,7 @@ try:
     from webob import BaseRequest as WebobBaseRequest
 except ImportError:
     WebobBaseRequest = None
-    
+
 try:
     from django.http import HttpRequest as DjangoHttpRequest
 except ImportError:
@@ -34,6 +33,11 @@ try:
     from werkzeug.local import LocalProxy as WerkzeugLocalProxy
 except ImportError:
     WerkzeugLocalProxy = None
+
+try:
+    from tornado.httpserver import HTTPRequest as TornadoRequest
+except ImportError:
+    TornadoRequest = None
 
 
 log = logging.getLogger(__name__)
@@ -69,7 +73,7 @@ def init(access_token, environment='production', **kw):
                   - click "Settings" in the top nav
                   - click "Projects" in the left nav
                   - copy-paste the appropriate token.
-    environment: environment name. Can be any string; suggestions: 'production', 'development', 
+    environment: environment name. Can be any string; suggestions: 'production', 'development',
                  'staging', 'yourname'
     **kw: provided keyword arguments will override keys in SETTINGS.
     """
@@ -80,7 +84,7 @@ def init(access_token, environment='production', **kw):
 
 def report_exc_info(exc_info, request=None, **kw):
     """
-    Reports an exception to Ratchet, using exc_info (from calling sys.exc_info()) and an optional 
+    Reports an exception to Ratchet, using exc_info (from calling sys.exc_info()) and an optional
     WebOb or Werkzeug-based request object.
     Any keyword args will be applied last and override what's built here.
 
@@ -112,7 +116,7 @@ def send_payload(payload):
     """
     Sends a fully-formed payload (i.e. a string from json.dumps()).
     Uses the configured handler from SETTINGS['handler']
-    
+
     Available handlers:
     - 'blocking': calls _send_payload() (which makes an HTTP request) immediately, blocks on it
     - 'thread': starts a single-use thread that will call _send_payload(). returns immediately.
@@ -223,7 +227,7 @@ def _report_exc_info(exc_info, request=None, **kw):
     """
     if not _check_config():
         return
-    
+
     data = _build_base_data()
 
     # exception info
@@ -254,7 +258,7 @@ def _report_message(message, level, request, **kw):
     """
     if not _check_config():
         return
-    
+
     data = _build_base_data()
     data['level'] = level
 
@@ -264,7 +268,7 @@ def _report_message(message, level, request, **kw):
             'body': message
         }
     }
-    
+
     _add_request_data(data, request)
     data['server'] = _build_server_data()
 
@@ -305,9 +309,10 @@ def _add_request_data(data, request):
 
 def _build_request_data(request):
     """
-    Returns a dictionary containing data from the request. 
+    Returns a dictionary containing data from the request.
     Can handle webob or werkzeug-based request objects.
     """
+
     # webob (pyramid)
     if WebobBaseRequest and isinstance(request, WebobBaseRequest):
         return _build_webob_request_data(request)
@@ -319,10 +324,14 @@ def _build_request_data(request):
     # werkzeug (flask)
     if WerkzeugRequest and isinstance(request, WerkzeugRequest):
         return _build_werkzeug_request_data(request)
-    
+
     if WerkzeugLocalProxy and isinstance(request, WerkzeugLocalProxy):
         actual_request = request._get_current_object()
         return _build_werkzeug_request_data(request)
+
+    # tornado
+    if TornadoRequest and isinstance(request, TornadoRequest):
+        return _build_tornado_request_data(request)
 
     return None
 
@@ -338,7 +347,7 @@ def _build_webob_request_data(request):
     # pyramid matchdict
     if getattr(request, 'matchdict', None):
         request_data['params'] = request.matchdict
-    
+
     # workaround for webob bug when the request body contains binary data but has a text
     # content-type
     try:
@@ -357,7 +366,7 @@ def _build_django_request_data(request):
         'POST': dict(request.POST),
         'user_ip': _django_extract_user_ip(request),
     }
-        
+
     # headers
     headers = {}
     for k, v in request.environ.iteritems():
@@ -379,6 +388,19 @@ def _build_werkzeug_request_data(request):
         'method': request.method,
         'files_keys': request.files.keys(),
     }
+
+    return request_data
+
+
+def _build_tornado_request_data(request):
+    request_data = {
+        'url': request.uri,
+        'user_ip': request.remote_ip,
+        'headers': dict(request.headers),
+        'method': request.method,
+        'files_keys': request.files.keys(),
+    }
+    request_data[request.method] = request.arguments
 
     return request_data
 
