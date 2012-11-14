@@ -1,5 +1,5 @@
 import os.path
-from setuptools import Command, find_packages, setup
+from setuptools import setup
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
@@ -12,12 +12,12 @@ except IOError:
 setup(
     name='ratchet',
     packages=['ratchet'],
-    version='0.1.9',
+    version='0.1.9.dm',
     description='Ratchet.io generic python library',
     long_description=README,
     author='Brian Rue',
     author_email='brian@ratchet.io',
-    url='http://github.com/ratchetio/pyratchet',
+    url='http://github.com/dmitry-mukhin/pyratchet',
     classifiers=[
         "Programming Language :: Python",
         "License :: OSI Approved :: MIT License",
