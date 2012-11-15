@@ -43,7 +43,7 @@ except ImportError:
 log = logging.getLogger(__name__)
 logging.basicConfig()
 
-VERSION = '0.1.9'
+VERSION = '0.1.10'
 DEFAULT_ENDPOINT = 'https://submit.ratchet.io/api/1/'
 
 # configuration settings
@@ -394,7 +394,7 @@ def _build_werkzeug_request_data(request):
 
 def _build_tornado_request_data(request):
     request_data = {
-        'url': request.uri,
+        'url': request.full_url(),
         'user_ip': request.remote_ip,
         'headers': dict(request.headers),
         'method': request.method,
