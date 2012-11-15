@@ -71,15 +71,13 @@ endpoint
     **default:** ``https://submit.ratchet.io/api/1/item/``
 
 
-Contributing
-------------
+Developer Resources
+-------------------
+Get in touch! We'd love to hear what you think and we're happy to help. You can get involved in several ways:
 
-Contributions are welcome. The project is hosted on github at http://github.com/ratchetio/pyratchet
-
-
-Additional Help
----------------
-If you have any questions, feedback, etc., drop us a line at support@ratchet.io
+- Email us: ``support@ratchet.io``
+- IRC: ``#ratchet.io`` on ``irc.freenode.net``
+- Want to contribute? Send a pull request at https://github.com/ratchetio/pyratchet
 
 
 .. _Ratchet.io: http://ratchet.io/
