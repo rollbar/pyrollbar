@@ -43,7 +43,7 @@ except ImportError:
 log = logging.getLogger(__name__)
 logging.basicConfig()
 
-VERSION = '0.1.10'
+VERSION = '0.1.11'
 DEFAULT_ENDPOINT = 'https://submit.ratchet.io/api/1/'
 
 # configuration settings
@@ -56,6 +56,7 @@ SETTINGS = {
     'handler': 'thread',  # 'blocking' or 'thread'
     'endpoint': DEFAULT_ENDPOINT,
     'timeout': 1,
+    'scrub_fields': ['passwd', 'password', 'secret'],
     'notifier': {
         'name': 'pyratchet',
         'version': VERSION
@@ -300,6 +301,7 @@ def _add_request_data(data, request):
     """
     try:
         request_data = _build_request_data(request)
+        request_data = _scrub_request_data(request_data)
     except Exception, e:
         log.exception("Exception while building request_data for Ratchet payload: %r", e)
     else:
@@ -334,6 +336,34 @@ def _build_request_data(request):
         return _build_tornado_request_data(request)
 
     return None
+
+
+def _scrub_request_data(request_data):
+    """
+    Scrubs out sensitive information out of request data
+    """
+    if request_data and request_data.get('POST'):
+        request_data['POST'] = _scrub_request_params(request_data['POST'])
+    
+    return request_data
+
+    
+def _scrub_request_params(params):
+    """
+    Given request.POST/request.GET, returns a dict with passwords scrubbed out
+    (replaced with astrickses)
+    """
+    scrub_fields = set(SETTINGS['scrub_fields'])
+    params = dict(params)
+    
+    for k, v in params.items():
+        if k.lower() in scrub_fields:
+            if isinstance(v, list):
+                params[k] = ['*' * len(x) for x in v]
+            else:
+                params[k] = '*' * len(v)
+    
+    return params
 
 
 def _build_webob_request_data(request):
