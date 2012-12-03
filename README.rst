@@ -77,7 +77,7 @@ scrub_fields
 
 Developer Resources
 -------------------
-Get in touch! We'd love to hear what you think and we're happy to help. You can get involved in several ways:
+Get in touch! We'd love to hear what you think and we're happy to help.
 
 - Email us: ``support@ratchet.io``
 - IRC: ``#ratchet.io`` on ``irc.freenode.net``
