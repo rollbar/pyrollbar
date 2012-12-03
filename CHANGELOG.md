@@ -1,5 +1,9 @@
 # Change Log
 
+**0.1.12**
+- Use custom JSON encoder to skip objects that can't be encoded.
+- Bump default timeout from 1 to 3 seconds.
+
 **0.1.11**
 - Sensitive params now scrubbed out of POST. Param name list is customizable via the `scrube_fields` config option.
 

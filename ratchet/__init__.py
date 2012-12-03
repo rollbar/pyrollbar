@@ -43,8 +43,9 @@ except ImportError:
 log = logging.getLogger(__name__)
 logging.basicConfig()
 
-VERSION = '0.1.11'
+VERSION = '0.1.12'
 DEFAULT_ENDPOINT = 'https://submit.ratchet.io/api/1/'
+DEFAULT_TIMEOUT = 3
 
 # configuration settings
 # configure by calling init() or overriding directly
@@ -55,7 +56,7 @@ SETTINGS = {
     'branch': None,  # git branch name
     'handler': 'thread',  # 'blocking' or 'thread'
     'endpoint': DEFAULT_ENDPOINT,
-    'timeout': 1,
+    'timeout': DEFAULT_TIMEOUT,
     'scrub_fields': ['passwd', 'password', 'secret'],
     'notifier': {
         'name': 'pyratchet',
@@ -459,7 +460,7 @@ def _build_payload(data):
         'access_token': SETTINGS['access_token'],
         'data': data
     }
-    return json.dumps(payload)
+    return ErrorIgnoringJSONEncoder().encode(payload)
 
 
 def _send_payload(payload):
@@ -468,7 +469,7 @@ def _send_payload(payload):
 
 def _post_api(path, payload):
     url = urlparse.urljoin(SETTINGS['endpoint'], path)
-    resp = requests.post(url, data=payload, timeout=SETTINGS.get('timeout', 1))
+    resp = requests.post(url, data=payload, timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT))
     return _parse_response(path, SETTINGS['access_token'], payload, resp)
 
 
@@ -524,4 +525,16 @@ def _django_extract_user_ip(request):
     return request.environ['REMOTE_ADDR']
 
 
+class ErrorIgnoringJSONEncoder(json.JSONEncoder):
+    def __init__(self, **kw):
+        kw.setdefault('skipkeys', True)
+        super(ErrorIgnoringJSONEncoder, self).__init__(**kw)
 
+    def default(self, o):
+        try:
+            return repr(o)
+        except:
+            try:
+                return str(o)
+            except:
+                return "<Unencodable object>"
