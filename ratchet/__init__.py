@@ -43,7 +43,7 @@ except ImportError:
 log = logging.getLogger(__name__)
 logging.basicConfig()
 
-VERSION = '0.2.0'
+VERSION = '0.2.1'
 DEFAULT_ENDPOINT = 'https://submit.ratchet.io/api/1/'
 DEFAULT_TIMEOUT = 3
 
@@ -316,7 +316,6 @@ def _add_person_data(data, request):
     except Exception, e:
         log.exception("Exception while building person data for Ratchet paylooad: %r", e)
     else:
-        print "person data:", person_data
         if person_data:
             data['person'] = person_data
 

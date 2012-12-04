@@ -12,7 +12,7 @@ except IOError:
 setup(
     name='ratchet',
     packages=['ratchet'],
-    version='0.2.0',
+    version='0.2.1',
     description='Ratchet.io generic python library',
     long_description=README,
     author='Brian Rue',
