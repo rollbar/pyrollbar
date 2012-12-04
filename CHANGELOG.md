@@ -1,5 +1,8 @@
 # Change Log
 
+**0.1.13**
+- Added extra_data arg to report_message()
+
 **0.1.12**
 - Use custom JSON encoder to skip objects that can't be encoded.
 - Bump default timeout from 1 to 3 seconds.
