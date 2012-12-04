@@ -14,7 +14,7 @@
 - Bump default timeout from 1 to 3 seconds.
 
 **0.1.11**
-- Sensitive params now scrubbed out of POST. Param name list is customizable via the `scrube_fields` config option.
+- Sensitive params now scrubbed out of POST. Param name list is customizable via the `scrub_fields` config option.
 
 **0.1.10**
 - Add support for Tornado request objects (`tornado.httpserver.HTTPRequest`)
