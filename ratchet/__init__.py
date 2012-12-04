@@ -43,7 +43,7 @@ except ImportError:
 log = logging.getLogger(__name__)
 logging.basicConfig()
 
-VERSION = '0.1.13'
+VERSION = '0.1.14'
 DEFAULT_ENDPOINT = 'https://submit.ratchet.io/api/1/'
 DEFAULT_TIMEOUT = 3
 
@@ -104,12 +104,19 @@ def report_exc_info(exc_info, request=None, **kw):
         log.exception("Exception while reporting exc_info to Ratchet. %r", e)
 
 
-def report_message(message, level='error', request=None, extra_data=None, **kw):
+def report_message(message, level='error', request=None, extra_data=None, payload_data=None, **kw):
     """
     Reports an arbitrary string message to Ratchet.
+
+    message: the string body of the message
+    level: level to report at. One of: 'critical', 'error', 'warning', 'info', 'debug'
+    request: the request object for the context of the message
+    extra_data: dictionary of params to include with the message. 'body' is reserved.
+    payload_data: param names to pass in the 'data' level of the payload; overrides defaults.
+    **kw: unused; kept for backwards compatibility.
     """
     try:
-        _report_message(message, level, request, extra_data, **kw)
+        _report_message(message, level, request, extra_data, payload_data)
     except Exception, e:
         log.exception("Exception while reporting message to Ratchet. %r", e)
 
@@ -254,7 +261,7 @@ def _report_exc_info(exc_info, request=None, **kw):
     send_payload(payload)
 
 
-def _report_message(message, level, request, extra_data=None, **kw):
+def _report_message(message, level, request, extra_data=None, payload_data=None):
     """
     Called by report_message() wrapper
     """
@@ -276,6 +283,9 @@ def _report_message(message, level, request, extra_data=None, **kw):
 
     _add_request_data(data, request)
     data['server'] = _build_server_data()
+    
+    if payload_data:
+        data.update(payload_data)
 
     payload = _build_payload(data)
     send_payload(payload)

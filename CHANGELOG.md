@@ -1,5 +1,8 @@
 # Change Log
 
+**0.1.14**
+- Added payload_data arg to report_message()
+
 **0.1.13**
 - Added extra_data arg to report_message()
 
