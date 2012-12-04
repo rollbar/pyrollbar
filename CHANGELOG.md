@@ -1,5 +1,8 @@
 # Change Log
 
+**0.2.0**
+- Add "person" support
+
 **0.1.14**
 - Added payload_data arg to report_message()
 

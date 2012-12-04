@@ -43,7 +43,7 @@ except ImportError:
 log = logging.getLogger(__name__)
 logging.basicConfig()
 
-VERSION = '0.1.14'
+VERSION = '0.2.0'
 DEFAULT_ENDPOINT = 'https://submit.ratchet.io/api/1/'
 DEFAULT_TIMEOUT = 3
 
@@ -104,7 +104,7 @@ def report_exc_info(exc_info, request=None, **kw):
         log.exception("Exception while reporting exc_info to Ratchet. %r", e)
 
 
-def report_message(message, level='error', request=None, extra_data=None, payload_data=None, **kw):
+def report_message(message, level='error', request=None, extra_data=None, payload_data=None):
     """
     Reports an arbitrary string message to Ratchet.
 
@@ -113,7 +113,6 @@ def report_message(message, level='error', request=None, extra_data=None, payloa
     request: the request object for the context of the message
     extra_data: dictionary of params to include with the message. 'body' is reserved.
     payload_data: param names to pass in the 'data' level of the payload; overrides defaults.
-    **kw: unused; kept for backwards compatibility.
     """
     try:
         _report_message(message, level, request, extra_data, payload_data)
@@ -255,13 +254,14 @@ def _report_exc_info(exc_info, request=None, **kw):
     }
 
     _add_request_data(data, request)
+    _add_person_data(data, request)
     data['server'] = _build_server_data()
 
     payload = _build_payload(data)
     send_payload(payload)
 
 
-def _report_message(message, level, request, extra_data=None, payload_data=None):
+def _report_message(message, level, request, extra_data, payload_data):
     """
     Called by report_message() wrapper
     """
@@ -282,6 +282,7 @@ def _report_message(message, level, request, extra_data=None, payload_data=None)
         data['body']['message'].update(extra_data)
 
     _add_request_data(data, request)
+    _add_person_data(data, request)
     data['server'] = _build_server_data()
     
     if payload_data:
@@ -308,6 +309,73 @@ def _build_base_data(level='error'):
         'notifier': SETTINGS['notifier'],
     }
 
+
+def _add_person_data(data, request):
+    try:
+        person_data = _build_person_data(request)
+    except Exception, e:
+        log.exception("Exception while building person data for Ratchet paylooad: %r", e)
+    else:
+        print "person data:", person_data
+        if person_data:
+            data['person'] = person_data
+
+
+def _build_person_data(request):
+    """
+    Returns a dictionary describing the logged-in user using data from `request.
+
+    Try request.ratchet_person first, then 'user', then 'user_id'
+    """
+    if hasattr(request, 'ratchet_person'):
+        ratchet_person_prop = request.ratchet_person
+        try:
+            person = ratchet_person_prop()
+        except TypeError:
+            person = ratchet_person_prop
+
+        if person and isinstance(person, dict):
+            return person
+        else:
+            return None
+
+    if hasattr(request, 'user'):
+        user_prop = request.user
+        try:
+            user = user_prop()
+        except TypeError:
+            user = user_prop
+
+        if not user:
+            return None
+        elif isinstance(user, dict):
+            return user
+        else:
+            retval = {}
+            if getattr(user, 'id', None):
+                retval['id'] = str(user.id)
+            elif getattr(user, 'user_id', None):
+                retval['id'] = str(user.user_id)
+
+            # id is required, so only include username/email if we have an id
+            if retval.get('id'):
+                retval.update({
+                    'username': getattr(user, 'username', None),
+                    'email': getattr(user, 'email', None)
+                })
+            return retval
+
+    if hasattr(request, 'user_id'):
+        user_id_prop = request.user_id
+        try:
+            user_id = user_id_prop()
+        except TypeError:
+            user_id = user_id_prop
+        
+        if not user_id:
+            return None
+        return {'id': str(user_id)}
+            
 
 def _add_request_data(data, request):
     """
