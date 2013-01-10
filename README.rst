@@ -33,16 +33,54 @@ Install using pip::
 
 Configuration
 -------------
+**For generic Python or a non-Django/non-Pyramid framework, follow these instructions:**
+
 Somewhere in your initialization code, call ratchet.init() with your access_token::
 
     ratchet.init('YOUR_ACCESS_TOKEN_HERE', environment='production')
 
 Other options can be passed as keyword arguments. See the reference below for all options.
 
+**If you are integrating with Django, follow these instructions:**
+
+1. In your ``settings.py``, add ``'ratchet.contrib.django.middleware.RatchetNotifierMiddleware'`` as the last item in ``MIDDLEWARE_CLASSES``::
+
+    MIDDLEWARE_CLASSES = (
+        # ... other middleware classes ...
+        'ratchet.contrib.django.middleware.RatchetNotifierMiddleware',
+    )
+
+2. Add these configuration variables in ``settings.py``::
+
+    RATCHET = {
+        'access_token': 'YOUR_ACCESS_TOKEN_HERE',
+        'environment': 'development' if DEBUG else 'production',
+        'branch': 'master',
+        'root': '/absolute/path/to/code/root',
+    }
+
+**If you are integrating with Pyramid, follow these instructions:**
+
+1. In your ``ini`` file (e.g. ``production.ini``), add ``ratchet.contrib.pyramid`` to the end of your ``pyramid.includes``::
+    
+    [app:main]
+    pyramid.includes =
+        pyramid_debugtoolbar
+        ratchet.contrib.pyramid
+  
+2. Add these ratchet configuration variables::
+    
+    [app:main]
+    ratchet.access_token = YOUR_ACCESS_TOKEN_HERE
+    ratchet.environment = production
+    ratchet.branch = master
+    ratchet.root = %(here)s
 
 Usage
 -----
-Call ``pyratchet.report_exc_info()`` to report an exception, or ``pyratchet.report_message()`` to report an arbitrary string message. See the docstrings for more info.
+The Django and Pyramid integration will automatically report uncaught exceptions to Ratchet.
+
+Call ``ratchet.report_exc_info()`` to report an exception, or ``ratchet.report_message()`` to report an arbitrary string message. See the docstrings for more info.
 
 
 Configuration reference
@@ -55,6 +93,7 @@ handler
 
     - blocking -- runs in main thread
     - thread -- spawns a new thread
+    - agent -- writes messages to a log file for consumption by ratchet-agent
 
     **default:** ``thread``
 environment
@@ -65,6 +104,8 @@ branch
     Name of the checked-out branch.
 
     **default:** ``master``
+agent.log_file
+    If ``handler`` is ``agent``, the path to the log file. Filename must end in ``.ratchet``
 endpoint
     URL items are posted to.
     
