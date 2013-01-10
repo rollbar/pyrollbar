@@ -342,8 +342,8 @@ def _build_base_data(request, level='error'):
         'uuid': str(uuid.uuid4()),
     }
     
-    if FRAMEWORK_DATA_HOOK:
-        FRAMEWORK_DATA_HOOK(request, data)
+    if BASE_DATA_HOOK:
+        BASE_DATA_HOOK(request, data)
     
     return data
 

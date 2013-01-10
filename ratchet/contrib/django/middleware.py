@@ -77,7 +77,7 @@ class RatchetNotifierMiddleware(object):
         
         kw = self.settings.copy()
         access_token = kw.pop('access_token')
-        environment = kw.pop('environment', 'development' if self.settings.DEBUG else 'production')
+        environment = kw.pop('environment', 'development' if settings.DEBUG else 'production')
         
         ratchet.init(access_token, environment, **kw)
         
