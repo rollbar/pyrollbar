@@ -10,6 +10,7 @@ import threading
 import time
 import traceback
 import urlparse
+import uuid
 
 import requests
 
@@ -38,12 +39,15 @@ try:
     from tornado.httpserver import HTTPRequest as TornadoRequest
 except ImportError:
     TornadoRequest = None
-
+    
+BASE_DATA_HOOK = None
 
 log = logging.getLogger(__name__)
 logging.basicConfig()
 
-VERSION = '0.2.1'
+agent_log = None
+
+VERSION = '0.3.0'
 DEFAULT_ENDPOINT = 'https://submit.ratchet.io/api/1/'
 DEFAULT_TIMEOUT = 3
 
@@ -54,9 +58,10 @@ SETTINGS = {
     'environment': 'production',
     'root': None,  # root path to your code
     'branch': None,  # git branch name
-    'handler': 'thread',  # 'blocking' or 'thread'
+    'handler': 'thread',  # 'blocking', 'thread' or 'agent'
     'endpoint': DEFAULT_ENDPOINT,
     'timeout': DEFAULT_TIMEOUT,
+    'agent.log_file': 'log.ratchet',
     'scrub_fields': ['passwd', 'password', 'secret'],
     'notifier': {
         'name': 'pyratchet',
@@ -79,9 +84,14 @@ def init(access_token, environment='production', **kw):
                  'staging', 'yourname'
     **kw: provided keyword arguments will override keys in SETTINGS.
     """
+    global agent_log
+    
     SETTINGS['access_token'] = access_token
     SETTINGS['environment'] = environment
     SETTINGS.update(kw)
+    
+    if SETTINGS.get('handler') == 'agent':
+        agent_log = _create_agent_log()
 
 
 def report_exc_info(exc_info, request=None, **kw):
@@ -132,6 +142,8 @@ def send_payload(payload):
     handler = SETTINGS.get('handler')
     if handler == 'blocking':
         _send_payload(payload)
+    elif handler == 'agent':
+        agent_log.error(json.dumps(payload))
     else:
         # default to 'thread'
         thread = threading.Thread(target=_send_payload, args=(payload,))
@@ -229,6 +241,26 @@ class PagedResult(Result):
 
 ## internal functions
 
+    
+def _create_agent_log():
+    """
+    Creates .ratchet log file for use with ratchet-agent
+    """
+    log_file = SETTINGS['agent.log_file']
+    if not log_file.endswith('.ratchet'):
+        log.error("Provided agent log file does not end with .ratchet, which it must. "
+            "Using default instead.")
+        log_file = DEFAULTS['agent.log_file']
+    
+    retval = logging.getLogger('ratchet_agent')
+    handler = logging.FileHandler(log_file, 'a', 'utf-8')
+    formatter = logging.Formatter('%(message)s')
+    handler.setFormatter(formatter)
+    retval.addHandler(handler)
+    retval.setLevel(logging.WARNING)
+    return retval
+
+
 def _report_exc_info(exc_info, request=None, **kw):
     """
     Called by report_exc_info() wrapper
@@ -236,7 +268,7 @@ def _report_exc_info(exc_info, request=None, **kw):
     if not _check_config():
         return
 
-    data = _build_base_data()
+    data = _build_base_data(request)
 
     # exception info
     cls, exc, trace = exc_info
@@ -268,7 +300,7 @@ def _report_message(message, level, request, extra_data, payload_data):
     if not _check_config():
         return
 
-    data = _build_base_data()
+    data = _build_base_data(request)
     data['level'] = level
 
     # message
@@ -300,14 +332,20 @@ def _check_config():
     return True
 
 
-def _build_base_data(level='error'):
-    return {
+def _build_base_data(request, level='error'):
+    data = {
         'timestamp': int(time.time()),
         'environment': SETTINGS['environment'],
         'level': level,
         'language': 'python',
         'notifier': SETTINGS['notifier'],
+        'uuid': str(uuid.uuid4()),
     }
+    
+    if FRAMEWORK_DATA_HOOK:
+        FRAMEWORK_DATA_HOOK(request, data)
+    
+    return data
 
 
 def _add_person_data(data, request):
@@ -374,7 +412,7 @@ def _build_person_data(request):
         if not user_id:
             return None
         return {'id': str(user_id)}
-            
+    
 
 def _add_request_data(data, request):
     """
