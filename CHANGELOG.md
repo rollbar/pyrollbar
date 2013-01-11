@@ -1,5 +1,8 @@
 # Change Log
 
+**0.3.1**
+- Fixed pypi package
+
 **0.3.0**
 - Merge django-ratchet and pyramid_ratchet into pyratchet
 - Add ability to write to a ratchet-agent log file

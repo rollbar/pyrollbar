@@ -1,5 +1,5 @@
 import os.path
-from setuptools import setup
+from setuptools import setup, find_packages
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
@@ -11,8 +11,8 @@ except IOError:
 
 setup(
     name='ratchet',
-    packages=['ratchet'],
-    version='0.3.0',
+    packages=find_packages(),
+    version='0.3.1',
     description='Ratchet.io generic python library',
     long_description=README,
     author='Brian Rue',

@@ -47,7 +47,7 @@ logging.basicConfig()
 
 agent_log = None
 
-VERSION = '0.3.0'
+VERSION = '0.3.1'
 DEFAULT_ENDPOINT = 'https://submit.ratchet.io/api/1/'
 DEFAULT_TIMEOUT = 3
 
