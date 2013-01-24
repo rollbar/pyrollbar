@@ -1,5 +1,8 @@
 # Change Log
 
+**0.3.2**
+- Added new default scrub fields
+
 **0.3.1**
 - Fixed pypi package
 

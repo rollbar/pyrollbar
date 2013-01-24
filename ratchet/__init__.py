@@ -62,7 +62,7 @@ SETTINGS = {
     'endpoint': DEFAULT_ENDPOINT,
     'timeout': DEFAULT_TIMEOUT,
     'agent.log_file': 'log.ratchet',
-    'scrub_fields': ['passwd', 'password', 'secret'],
+    'scrub_fields': ['passwd', 'password', 'secret', 'confirm_password', 'password_confirmation'],
     'notifier': {
         'name': 'pyratchet',
         'version': VERSION
