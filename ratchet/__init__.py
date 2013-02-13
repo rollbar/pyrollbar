@@ -69,6 +69,7 @@ SETTINGS = {
     },
 }
 
+_initialized = False
 
 ## public api
 
@@ -84,14 +85,17 @@ def init(access_token, environment='production', **kw):
                  'staging', 'yourname'
     **kw: provided keyword arguments will override keys in SETTINGS.
     """
-    global agent_log
-    
-    SETTINGS['access_token'] = access_token
-    SETTINGS['environment'] = environment
-    SETTINGS.update(kw)
-    
-    if SETTINGS.get('handler') == 'agent':
-        agent_log = _create_agent_log()
+    global agent_log, _initialized
+
+    if not _initialized:
+        _initialized = True
+
+        SETTINGS['access_token'] = access_token
+        SETTINGS['environment'] = environment
+        SETTINGS.update(kw)
+
+        if SETTINGS.get('handler') == 'agent':
+            agent_log = _create_agent_log()
 
 
 def report_exc_info(exc_info, request=None, **kw):
@@ -109,7 +113,7 @@ def report_exc_info(exc_info, request=None, **kw):
         ratchet.report_exc_info(sys.exc_info())
     """
     try:
-        _report_exc_info(exc_info, request, **kw)
+        return _report_exc_info(exc_info, request, **kw)
     except Exception, e:
         log.exception("Exception while reporting exc_info to Ratchet. %r", e)
 
@@ -292,6 +296,8 @@ def _report_exc_info(exc_info, request=None, **kw):
     payload = _build_payload(data)
     send_payload(payload)
 
+    return data['uuid']
+
 
 def _report_message(message, level, request, extra_data, payload_data):
     """
@@ -316,12 +322,14 @@ def _report_message(message, level, request, extra_data, payload_data):
     _add_request_data(data, request)
     _add_person_data(data, request)
     data['server'] = _build_server_data()
-    
+
     if payload_data:
         data.update(payload_data)
 
     payload = _build_payload(data)
     send_payload(payload)
+
+    return data['uuid']
 
 
 def _check_config():

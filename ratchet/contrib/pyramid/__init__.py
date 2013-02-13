@@ -12,9 +12,7 @@ import ratchet
 
 DEFAULT_WEB_BASE = 'https://ratchet.io'
 
-
 log = logging.getLogger(__name__)
-
 
 def handle_error(settings, request):
     ratchet.report_exc_info(sys.exc_info(), request)
@@ -38,7 +36,7 @@ def ratchet_tween_factory(pyramid_handler, registry):
     def ratchet_tween(request):
         # for testing out the integration
         try:
-            if (settings.get('allow_test', 'true') == 'true' and 
+            if (settings.get('allow_test', 'true') == 'true' and
                 request.GET.get('pyramid_ratchet_test') == 'true'):
                 try:
                     raise Exception("pyramid_ratchet test exception")
@@ -46,7 +44,7 @@ def ratchet_tween_factory(pyramid_handler, registry):
                     handle_error(settings, request)
         except:
             log.exception("Error in pyramid_ratchet_test block")
-            
+
         try:
             response = pyramid_handler(request)
         except whitelist:
@@ -74,13 +72,13 @@ def patch_debugtoolbar(settings):
     ratchet_web_base = settings.get('ratchet.web_base', DEFAULT_WEB_BASE)
     if ratchet_web_base.endswith('/'):
         ratchet_web_base = ratchet_web_base[:-1]
-    
+
     def insert_ratchet_console(request, html):
         # insert after the closing </h1>
         item_uuid = request.environ.get('ratchet.uuid')
         if not item_uuid:
             return html
-        
+
         url = '%s/item/uuid/?uuid=%s' % (ratchet_web_base, item_uuid)
         link = '<a style="color:white;" href="%s">View in Ratchet.io</a>' % url
         new_data = "<h2>Ratchet.io: %s</h2>" % link
@@ -106,21 +104,42 @@ def includeme(config):
     settings = config.registry.settings
     if settings.get('ratchet.patch_debugtoolbar', 'true') == 'true':
         patch_debugtoolbar(settings)
-        
+
     def hook(request, data):
         data['framework'] = 'pyramid'
-        
+
         request.environ['ratchet.uuid'] = data['uuid']
-            
+
     ratchet.BASE_DATA_HOOK = hook
-    
+
     kw = parse_settings(settings)
-    
+
     access_token = kw.pop('access_token')
     environment = kw.pop('environment', 'production')
-    
+
     if kw.get('scrub_fields'):
         kw['scrub_fields'] = set([str.strip(x) for x in kw.get('scrub_fields').split('\n') if x])
-    
+
     ratchet.init(access_token, environment, **kw)
 
+
+def create_ratchet_middleware(app, global_config=None, **kw):
+    access_token = kw.pop('access_token')
+    environment = kw.pop('environment', 'production')
+
+    ratchet.init(access_token, environment, **kw)
+    return RatchetMiddleware(global_config or {}, app)
+
+
+class RatchetMiddleware(object):
+    def __init__(self, settings, app):
+        self.settings = settings
+        self.app = app
+
+    def __call__(self, environ, start_resp):
+        try:
+            return self.app(environ, start_resp)
+        except Exception, e:
+            from pyramid.request import Request
+            handle_error(self.settings, Request(environ))
+            raise

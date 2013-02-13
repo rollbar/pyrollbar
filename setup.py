@@ -12,7 +12,12 @@ except IOError:
 setup(
     name='ratchet',
     packages=find_packages(),
-    version='0.3.2',
+    version='0.4.0',
+    entry_points= {
+        'paste.filter_app_factory': [
+            'pyramid=ratchet.contrib.pyramid:create_ratchet_middleware'
+        ]
+    },
     description='Ratchet.io generic python library',
     long_description=README,
     author='Brian Rue',
