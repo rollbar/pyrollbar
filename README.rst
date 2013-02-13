@@ -76,6 +76,39 @@ Other options can be passed as keyword arguments. See the reference below for al
     ratchet.branch = master
     ratchet.root = %(here)s
 
+The above will configure ratchet to catch and report all exceptions that occur in your Pyramid app. However, if there are any middleware
+applications that wrap your app, Ratchet will not be able to catch exceptions. 
+
+In order to catch exceptions from Pyramid and middleware code, you will need to create a ``pipeline`` where the ratchet middleware wraps your Pyramid app.
+
+- Change your ``ini`` file to use a ``pipeline``::
+
+    From
+
+    [app:main]
+    ...
+
+    To
+
+    [pipeline:main]
+    pipeline =
+        ratchet
+        YOUR_APP_NAME
+
+    [app:YOUR_APP_NAME]
+    pyramid.includes =
+        pyramid_debugtoolbar
+        ratchet.contrib.pyramid
+
+    [filter:ratchet]
+    access_token = YOUR_ACCESS_TOKEN_HERE
+    environment = production
+    branch = master
+    root = %(here)s
+
+
+Unfortunately, the ratchet tween and the ratchet filter configurations contains duplicated information. We'll look into fixing this in future versions.
+
 Usage
 -----
 The Django and Pyramid integration will automatically report uncaught exceptions to Ratchet.
