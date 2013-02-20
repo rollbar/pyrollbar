@@ -47,7 +47,7 @@ logging.basicConfig()
 
 agent_log = None
 
-VERSION = '0.3.1'
+VERSION = '0.4.1'
 DEFAULT_ENDPOINT = 'https://submit.ratchet.io/api/1/'
 DEFAULT_TIMEOUT = 3
 
@@ -98,11 +98,16 @@ def init(access_token, environment='production', **kw):
             agent_log = _create_agent_log()
 
 
-def report_exc_info(exc_info, request=None, **kw):
+def report_exc_info(exc_info, request=None, extra_data=None, payload_data=None, **kw):
     """
-    Reports an exception to Ratchet, using exc_info (from calling sys.exc_info()) and an optional
-    WebOb or Werkzeug-based request object.
-    Any keyword args will be applied last and override what's built here.
+    Reports an exception to Ratchet, using exc_info (from calling sys.exc_info()) 
+    
+    exc_info: the result of calling sys.exc_info()
+    request: optional, a WebOb or Werkzeug-based request object.
+    extra_data: optional, will be included in the 'custom' section of the payload
+    payload_data: optional, dict that will override values in the final payload 
+                  (e.g. 'level' or 'fingerprint')
+    kw: provided for legacy purposes; will override arguments in `extra_data`
 
     Example usage:
 
@@ -110,10 +115,10 @@ def report_exc_info(exc_info, request=None, **kw):
     try:
         do_something()
     except:
-        ratchet.report_exc_info(sys.exc_info())
+        ratchet.report_exc_info(sys.exc_info(), request, {'foo': 'bar'}, {'level': 'warning'})
     """
     try:
-        return _report_exc_info(exc_info, request, **kw)
+        return _report_exc_info(exc_info, request, extra_data, payload_data)
     except Exception, e:
         log.exception("Exception while reporting exc_info to Ratchet. %r", e)
 
@@ -265,7 +270,7 @@ def _create_agent_log():
     return retval
 
 
-def _report_exc_info(exc_info, request=None, **kw):
+def _report_exc_info(exc_info, request, extra_data, payload_data):
     """
     Called by report_exc_info() wrapper
     """
@@ -289,9 +294,18 @@ def _report_exc_info(exc_info, request=None, **kw):
         }
     }
 
+    if extra_data:
+        if isinstance(extra_data, dict):
+            data['custom'] = extra_data
+        else:
+            data['custom'] = {'value': extra_data}
+
     _add_request_data(data, request)
     _add_person_data(data, request)
     data['server'] = _build_server_data()
+    
+    if payload_data:
+        data.update(payload_data)
 
     payload = _build_payload(data)
     send_payload(payload)
@@ -608,7 +622,10 @@ def _get_api(path, access_token=None, **params):
 
 
 def _parse_response(path, access_token, params, resp):
-    if resp.status_code != 200:
+    if resp.status_code == 429:
+        log.warning("Ratchet.io: over rate limit, data was dropped. Payload was: %r", params)
+        return
+    elif resp.status_code != 200:
         log.warning("Got unexpected status code from Ratchet.io api: %s\nResponse:\n%s",
             resp.status_code, resp.text)
 

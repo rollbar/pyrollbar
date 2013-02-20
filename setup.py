@@ -12,7 +12,7 @@ except IOError:
 setup(
     name='ratchet',
     packages=find_packages(),
-    version='0.4.0',
+    version='0.4.1',
     entry_points= {
         'paste.filter_app_factory': [
             'pyramid=ratchet.contrib.pyramid:create_ratchet_middleware'

@@ -1,5 +1,9 @@
 # Change Log
 
+**0.4.1**
+- report_exc_info() now takes two additional named args: `extra_data` and `payload_data`, like report_message().
+- on 429 response (over rate limit), log a warning but don't parse and print an exception.
+
 **0.3.2**
 - Added new default scrub fields
 
