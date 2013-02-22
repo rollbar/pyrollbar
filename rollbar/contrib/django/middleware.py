@@ -1,10 +1,10 @@
 """
-django-ratchet middleware
+django-rollbar middleware
 
 To install, add the following in your settings.py:
-1. add 'ratchet.contrib.django.middleware.RatchetNotifierMiddleware' to MIDDLEWARE_CLASSES 
+1. add 'rollbar.contrib.django.middleware.RollbarNotifierMiddleware' to MIDDLEWARE_CLASSES 
 2. add a section like this:
-RATCHET = {
+ROLLBAR = {
     'access_token': 'tokengoeshere',
 }
 
@@ -14,7 +14,7 @@ See README.rst for full installation and configuration instructions.
 import logging
 import sys
 
-import ratchet
+import rollbar
 
 from django.core.exceptions import MiddlewareNotUsed
 from django.conf import settings
@@ -23,25 +23,25 @@ log = logging.getLogger(__name__)
 
 
 DEFAULTS = {
-    'web_base': 'https://ratchet.io',
+    'web_base': 'https://rollbar.com',
     'enabled': True,
     'patch_debugview': True,
 }
 
 
-def _patch_debugview(ratchet_web_base):
+def _patch_debugview(rollbar_web_base):
     try:
         from django.views import debug
     except ImportError:
         return
     
-    if ratchet_web_base.endswith('/'):
-        ratchet_web_base = ratchet_web_base[:-1]
+    if rollbar_web_base.endswith('/'):
+        rollbar_web_base = rollbar_web_base[:-1]
     
     # modify the TECHNICAL_500_TEMPLATE
     new_data = """
-{% if view_in_ratchet_url %}
-  <h3 style="margin-bottom:15px;"><a href="{{ view_in_ratchet_url }}" target="_blank">View in Ratchet.io</a></h3>
+{% if view_in_rollbar_url %}
+  <h3 style="margin-bottom:15px;"><a href="{{ view_in_rollbar_url }}" target="_blank">View in Rollbar</a></h3>
 {% endif %}
     """
     insert_before = '<table class="meta">'
@@ -54,19 +54,19 @@ def _patch_debugview(ratchet_web_base):
     def new_get_traceback_data(exception_reporter):
         data = old_get_traceback_data(exception_reporter)
         try:
-            item_uuid = exception_reporter.request.META.get('ratchet.uuid')
+            item_uuid = exception_reporter.request.META.get('rollbar.uuid')
             if item_uuid:
-                url = '%s/item/uuid/?uuid=%s' % (ratchet_web_base, item_uuid)
-                data['view_in_ratchet_url'] = url
+                url = '%s/item/uuid/?uuid=%s' % (rollbar_web_base, item_uuid)
+                data['view_in_rollbar_url'] = url
         except:
-            log.exception("Exception while adding view-in-ratchet link to technical_500_template.")
+            log.exception("Exception while adding view-in-rollbar link to technical_500_template.")
         return data
     debug.ExceptionReporter.get_traceback_data = new_get_traceback_data
 
 
-class RatchetNotifierMiddleware(object):
+class RollbarNotifierMiddleware(object):
     def __init__(self):
-        self.settings = getattr(settings, 'RATCHET', {})
+        self.settings = getattr(settings, 'ROLLBAR', {})
         if not self.settings.get('access_token'):
             raise MiddlewareNotUsed
 
@@ -79,14 +79,14 @@ class RatchetNotifierMiddleware(object):
         access_token = kw.pop('access_token')
         environment = kw.pop('environment', 'development' if settings.DEBUG else 'production')
         
-        ratchet.init(access_token, environment, **kw)
+        rollbar.init(access_token, environment, **kw)
         
         def hook(request, data):
             data['framework'] = 'django'
             
-            request.META['ratchet.uuid'] = data['uuid']
+            request.META['rollbar.uuid'] = data['uuid']
             
-        ratchet.BASE_DATA_HOOK = hook
+        rollbar.BASE_DATA_HOOK = hook
         
         # monkeypatch debug module
         if self._get_setting('patch_debugview'):
@@ -119,4 +119,4 @@ class RatchetNotifierMiddleware(object):
         return response
 
     def process_exception(self, request, exc):
-        ratchet.report_exc_info(sys.exc_info(), request)
+        rollbar.report_exc_info(sys.exc_info(), request)

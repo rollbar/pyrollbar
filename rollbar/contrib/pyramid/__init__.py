@@ -1,5 +1,5 @@
 """
-Plugin for Pyramid apps to submit errors to Ratchet.io
+Plugin for Pyramid apps to submit errors to Rollbar
 """
 
 import logging
@@ -8,18 +8,18 @@ import sys
 from pyramid.httpexceptions import WSGIHTTPException
 from pyramid.tweens import EXCVIEW
 
-import ratchet
+import rollbar
 
-DEFAULT_WEB_BASE = 'https://ratchet.io'
+DEFAULT_WEB_BASE = 'https://rollbar.com'
 
 log = logging.getLogger(__name__)
 
 def handle_error(settings, request):
-    ratchet.report_exc_info(sys.exc_info(), request)
+    rollbar.report_exc_info(sys.exc_info(), request)
 
 
 def parse_settings(settings):
-    prefix = 'ratchet.'
+    prefix = 'rollbar.'
     out = {}
     for k, v in settings.iteritems():
         if k.startswith(prefix):
@@ -27,23 +27,23 @@ def parse_settings(settings):
     return out
 
 
-def ratchet_tween_factory(pyramid_handler, registry):
+def rollbar_tween_factory(pyramid_handler, registry):
     settings = parse_settings(registry.settings)
 
     whitelist = ()
     blacklist = (WSGIHTTPException,)
 
-    def ratchet_tween(request):
+    def rollbar_tween(request):
         # for testing out the integration
         try:
             if (settings.get('allow_test', 'true') == 'true' and
-                request.GET.get('pyramid_ratchet_test') == 'true'):
+                request.GET.get('pyramid_rollbar_test') == 'true'):
                 try:
-                    raise Exception("pyramid_ratchet test exception")
+                    raise Exception("pyramid_rollbar test exception")
                 except:
                     handle_error(settings, request)
         except:
-            log.exception("Error in pyramid_ratchet_test block")
+            log.exception("Error in pyramid_rollbar_test block")
 
         try:
             response = pyramid_handler(request)
@@ -57,31 +57,31 @@ def ratchet_tween_factory(pyramid_handler, registry):
             raise
         return response
 
-    return ratchet_tween
+    return rollbar_tween
 
 
 def patch_debugtoolbar(settings):
     """
-    Patches the pyramid_debugtoolbar (if installed) to display a link to the related ratchet item.
+    Patches the pyramid_debugtoolbar (if installed) to display a link to the related rollbar item.
     """
     try:
         from pyramid_debugtoolbar import tbtools
     except ImportError:
         return
 
-    ratchet_web_base = settings.get('ratchet.web_base', DEFAULT_WEB_BASE)
-    if ratchet_web_base.endswith('/'):
-        ratchet_web_base = ratchet_web_base[:-1]
+    rollbar_web_base = settings.get('rollbar.web_base', DEFAULT_WEB_BASE)
+    if rollbar_web_base.endswith('/'):
+        rollbar_web_base = rollbar_web_base[:-1]
 
-    def insert_ratchet_console(request, html):
+    def insert_rollbar_console(request, html):
         # insert after the closing </h1>
-        item_uuid = request.environ.get('ratchet.uuid')
+        item_uuid = request.environ.get('rollbar.uuid')
         if not item_uuid:
             return html
 
-        url = '%s/item/uuid/?uuid=%s' % (ratchet_web_base, item_uuid)
-        link = '<a style="color:white;" href="%s">View in Ratchet.io</a>' % url
-        new_data = "<h2>Ratchet.io: %s</h2>" % link
+        url = '%s/item/uuid/?uuid=%s' % (rollbar_web_base, item_uuid)
+        link = '<a style="color:white;" href="%s">View in Rollbar</a>' % url
+        new_data = "<h2>Rollbar: %s</h2>" % link
         insertion_marker = "</h1>"
         replacement = insertion_marker + new_data
         return html.replace(insertion_marker, replacement, 1)
@@ -90,7 +90,7 @@ def patch_debugtoolbar(settings):
     old_render_full = tbtools.Traceback.render_full
     def new_render_full(self, request, *args, **kw):
         html = old_render_full(self, request, *args, **kw)
-        return insert_ratchet_console(request, html)
+        return insert_rollbar_console(request, html)
     tbtools.Traceback.render_full = new_render_full
 
 
@@ -98,19 +98,19 @@ def includeme(config):
     """
     Pyramid entry point
     """
-    config.add_tween('ratchet.contrib.pyramid.ratchet_tween_factory', under=EXCVIEW)
+    config.add_tween('rollbar.contrib.pyramid.rollbar_tween_factory', under=EXCVIEW)
 
     # run patch_debugtoolbar, unless they disabled it
     settings = config.registry.settings
-    if settings.get('ratchet.patch_debugtoolbar', 'true') == 'true':
+    if settings.get('rollbar.patch_debugtoolbar', 'true') == 'true':
         patch_debugtoolbar(settings)
 
     def hook(request, data):
         data['framework'] = 'pyramid'
 
-        request.environ['ratchet.uuid'] = data['uuid']
+        request.environ['rollbar.uuid'] = data['uuid']
 
-    ratchet.BASE_DATA_HOOK = hook
+    rollbar.BASE_DATA_HOOK = hook
 
     kw = parse_settings(settings)
 
@@ -120,18 +120,18 @@ def includeme(config):
     if kw.get('scrub_fields'):
         kw['scrub_fields'] = set([str.strip(x) for x in kw.get('scrub_fields').split('\n') if x])
 
-    ratchet.init(access_token, environment, **kw)
+    rollbar.init(access_token, environment, **kw)
 
 
-def create_ratchet_middleware(app, global_config=None, **kw):
+def create_rollbar_middleware(app, global_config=None, **kw):
     access_token = kw.pop('access_token')
     environment = kw.pop('environment', 'production')
 
-    ratchet.init(access_token, environment, **kw)
-    return RatchetMiddleware(global_config or {}, app)
+    rollbar.init(access_token, environment, **kw)
+    return RollbarMiddleware(global_config or {}, app)
 
 
-class RatchetMiddleware(object):
+class RollbarMiddleware(object):
     def __init__(self, settings, app):
         self.settings = settings
         self.app = app

@@ -10,19 +10,19 @@ except IOError:
     README = ''
 
 setup(
-    name='ratchet',
+    name='rollbar',
     packages=find_packages(),
-    version='0.4.1',
+    version='0.5.0',
     entry_points= {
         'paste.filter_app_factory': [
-            'pyramid=ratchet.contrib.pyramid:create_ratchet_middleware'
+            'pyramid=rollbar.contrib.pyramid:create_rollbar_middleware'
         ]
     },
-    description='Ratchet.io generic python library',
+    description='Rollbar generic python library',
     long_description=README,
     author='Brian Rue',
-    author_email='brian@ratchet.io',
-    url='http://github.com/ratchetio/pyratchet',
+    author_email='brian@rollbar.com',
+    url='http://github.com/rollbar/pyrollbar',
     classifiers=[
         "Programming Language :: Python",
         "License :: OSI Approved :: MIT License",

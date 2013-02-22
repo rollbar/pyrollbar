@@ -1,5 +1,5 @@
 """
-Plugin for Pyramid apps to submit errors to Ratchet.io
+Plugin for Pyramid apps to submit errors to Rollbar
 """
 
 import copy
@@ -47,8 +47,8 @@ logging.basicConfig()
 
 agent_log = None
 
-VERSION = '0.4.1'
-DEFAULT_ENDPOINT = 'https://submit.ratchet.io/api/1/'
+VERSION = '0.5.0'
+DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/'
 DEFAULT_TIMEOUT = 3
 
 # configuration settings
@@ -61,10 +61,10 @@ SETTINGS = {
     'handler': 'thread',  # 'blocking', 'thread' or 'agent'
     'endpoint': DEFAULT_ENDPOINT,
     'timeout': DEFAULT_TIMEOUT,
-    'agent.log_file': 'log.ratchet',
+    'agent.log_file': 'log.rollbar',
     'scrub_fields': ['passwd', 'password', 'secret', 'confirm_password', 'password_confirmation'],
     'notifier': {
-        'name': 'pyratchet',
+        'name': 'pyrollbar',
         'version': VERSION
     },
 }
@@ -77,7 +77,7 @@ def init(access_token, environment='production', **kw):
     """
     Saves configuration variables in this module's SETTINGS.
 
-    access_token: project access token. Get this from the Ratchet.io UI:
+    access_token: project access token. Get this from the Rollbar UI:
                   - click "Settings" in the top nav
                   - click "Projects" in the left nav
                   - copy-paste the appropriate token.
@@ -100,7 +100,7 @@ def init(access_token, environment='production', **kw):
 
 def report_exc_info(exc_info, request=None, extra_data=None, payload_data=None, **kw):
     """
-    Reports an exception to Ratchet, using exc_info (from calling sys.exc_info()) 
+    Reports an exception to Rollbar, using exc_info (from calling sys.exc_info()) 
     
     exc_info: the result of calling sys.exc_info()
     request: optional, a WebOb or Werkzeug-based request object.
@@ -111,21 +111,21 @@ def report_exc_info(exc_info, request=None, extra_data=None, payload_data=None, 
 
     Example usage:
 
-    ratchet.init(access_token='YOUR_PROJECT_ACCESS_TOKEN')
+    rollbar.init(access_token='YOUR_PROJECT_ACCESS_TOKEN')
     try:
         do_something()
     except:
-        ratchet.report_exc_info(sys.exc_info(), request, {'foo': 'bar'}, {'level': 'warning'})
+        rollbar.report_exc_info(sys.exc_info(), request, {'foo': 'bar'}, {'level': 'warning'})
     """
     try:
         return _report_exc_info(exc_info, request, extra_data, payload_data)
     except Exception, e:
-        log.exception("Exception while reporting exc_info to Ratchet. %r", e)
+        log.exception("Exception while reporting exc_info to Rollbar. %r", e)
 
 
 def report_message(message, level='error', request=None, extra_data=None, payload_data=None):
     """
-    Reports an arbitrary string message to Ratchet.
+    Reports an arbitrary string message to Rollbar.
 
     message: the string body of the message
     level: level to report at. One of: 'critical', 'error', 'warning', 'info', 'debug'
@@ -136,7 +136,7 @@ def report_message(message, level='error', request=None, extra_data=None, payloa
     try:
         _report_message(message, level, request, extra_data, payload_data)
     except Exception, e:
-        log.exception("Exception while reporting message to Ratchet. %r", e)
+        log.exception("Exception while reporting message to Rollbar. %r", e)
 
 
 def send_payload(payload):
@@ -253,15 +253,15 @@ class PagedResult(Result):
     
 def _create_agent_log():
     """
-    Creates .ratchet log file for use with ratchet-agent
+    Creates .rollbar log file for use with rollbar-agent
     """
     log_file = SETTINGS['agent.log_file']
-    if not log_file.endswith('.ratchet'):
-        log.error("Provided agent log file does not end with .ratchet, which it must. "
+    if not log_file.endswith('.rollbar'):
+        log.error("Provided agent log file does not end with .rollbar, which it must. "
             "Using default instead.")
         log_file = DEFAULTS['agent.log_file']
     
-    retval = logging.getLogger('ratchet_agent')
+    retval = logging.getLogger('rollbar_agent')
     handler = logging.FileHandler(log_file, 'a', 'utf-8')
     formatter = logging.Formatter('%(message)s')
     handler.setFormatter(formatter)
@@ -349,7 +349,7 @@ def _report_message(message, level, request, extra_data, payload_data):
 def _check_config():
     # make sure we have an access_token
     if not SETTINGS.get('access_token'):
-        log.warning("pyratchet: No access_token provided. Please configure by calling ratchet.init() with your access token.")
+        log.warning("pyrollbar: No access_token provided. Please configure by calling rollbar.init() with your access token.")
         return False
     return True
 
@@ -374,7 +374,7 @@ def _add_person_data(data, request):
     try:
         person_data = _build_person_data(request)
     except Exception, e:
-        log.exception("Exception while building person data for Ratchet paylooad: %r", e)
+        log.exception("Exception while building person data for Rollbar paylooad: %r", e)
     else:
         if person_data:
             data['person'] = person_data
@@ -384,14 +384,14 @@ def _build_person_data(request):
     """
     Returns a dictionary describing the logged-in user using data from `request.
 
-    Try request.ratchet_person first, then 'user', then 'user_id'
+    Try request.rollbar_person first, then 'user', then 'user_id'
     """
-    if hasattr(request, 'ratchet_person'):
-        ratchet_person_prop = request.ratchet_person
+    if hasattr(request, 'rollbar_person'):
+        rollbar_person_prop = request.rollbar_person
         try:
-            person = ratchet_person_prop()
+            person = rollbar_person_prop()
         except TypeError:
-            person = ratchet_person_prop
+            person = rollbar_person_prop
 
         if person and isinstance(person, dict):
             return person
@@ -444,7 +444,7 @@ def _add_request_data(data, request):
         request_data = _build_request_data(request)
         request_data = _scrub_request_data(request_data)
     except Exception, e:
-        log.exception("Exception while building request_data for Ratchet payload: %r", e)
+        log.exception("Exception while building request_data for Rollbar payload: %r", e)
     else:
         if request_data:
             data['request'] = request_data
@@ -623,17 +623,17 @@ def _get_api(path, access_token=None, **params):
 
 def _parse_response(path, access_token, params, resp):
     if resp.status_code == 429:
-        log.warning("Ratchet.io: over rate limit, data was dropped. Payload was: %r", params)
+        log.warning("Rollbar: over rate limit, data was dropped. Payload was: %r", params)
         return
     elif resp.status_code != 200:
-        log.warning("Got unexpected status code from Ratchet.io api: %s\nResponse:\n%s",
+        log.warning("Got unexpected status code from Rollbar api: %s\nResponse:\n%s",
             resp.status_code, resp.text)
 
     data = resp.text
     try:
         json_data = json.loads(data)
     except (TypeError, ValueError):
-        log.warning('Could not decode Ratchet.io api response:\n%s', data)
+        log.warning('Could not decode Rollbar api response:\n%s', data)
         raise ApiException('Request to %s returned invalid JSON response', path)
     else:
         if json_data.get('err'):

@@ -2,4 +2,4 @@
 *.swp
 *.swo
 dist/
-ratchet.egg-info/
+rollbar.egg-info/
