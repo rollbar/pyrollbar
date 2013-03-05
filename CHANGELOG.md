@@ -1,5 +1,8 @@
 # Change Log
 
+**0.5.1**
+- Catching possible malformed API responses
+
 **0.5.0**
 - Rename to rollbar
 

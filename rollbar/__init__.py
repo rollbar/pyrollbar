@@ -47,7 +47,7 @@ logging.basicConfig()
 
 agent_log = None
 
-VERSION = '0.5.0'
+VERSION = '0.5.1'
 DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/'
 DEFAULT_TIMEOUT = 3
 
@@ -604,7 +604,10 @@ def _build_payload(data):
 
 
 def _send_payload(payload):
-    return _post_api('item/', payload)
+    try:
+        _post_api('item/', payload)
+    except Exception, e:
+        log.exception('Exception while posting item %r', e)
 
 
 def _post_api(path, payload):
@@ -628,8 +631,13 @@ def _parse_response(path, access_token, params, resp):
     elif resp.status_code != 200:
         log.warning("Got unexpected status code from Rollbar api: %s\nResponse:\n%s",
             resp.status_code, resp.text)
-
-    data = resp.text
+    
+    try:
+        data = resp.text
+    except Exception, e:
+        data = resp.content
+        log.error('resp.text is undefined, resp.content is %r', resp.content)
+    
     try:
         json_data = json.loads(data)
     except (TypeError, ValueError):
