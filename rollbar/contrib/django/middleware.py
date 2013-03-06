@@ -44,6 +44,10 @@ def _patch_debugview(rollbar_web_base):
   <h3 style="margin-bottom:15px;"><a href="{{ view_in_rollbar_url }}" target="_blank">View in Rollbar</a></h3>
 {% endif %}
     """
+
+    if new_data in debug.TECHNICAL_500_TEMPLATE:
+        return
+
     insert_before = '<table class="meta">'
     replacement = new_data + insert_before
     debug.TECHNICAL_500_TEMPLATE = debug.TECHNICAL_500_TEMPLATE.replace(insert_before, 

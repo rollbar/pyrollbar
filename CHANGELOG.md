@@ -1,5 +1,8 @@
 # Change Log
 
+**0.5.2**
+- Fixed bug where django debug page can get patched twice
+
 **0.5.1**
 - Catching possible malformed API responses
 
