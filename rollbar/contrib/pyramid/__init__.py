@@ -107,8 +107,9 @@ def includeme(config):
 
     def hook(request, data):
         data['framework'] = 'pyramid'
-
-        request.environ['rollbar.uuid'] = data['uuid']
+        
+        if request:
+            request.environ['rollbar.uuid'] = data['uuid']
 
     rollbar.BASE_DATA_HOOK = hook
 

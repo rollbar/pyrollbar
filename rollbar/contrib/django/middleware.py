@@ -88,7 +88,8 @@ class RollbarNotifierMiddleware(object):
         def hook(request, data):
             data['framework'] = 'django'
             
-            request.META['rollbar.uuid'] = data['uuid']
+            if request:
+                request.META['rollbar.uuid'] = data['uuid']
             
         rollbar.BASE_DATA_HOOK = hook
         

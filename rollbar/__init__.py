@@ -47,7 +47,7 @@ logging.basicConfig()
 
 agent_log = None
 
-VERSION = '0.5.2'
+VERSION = '0.5.3'
 DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/'
 DEFAULT_TIMEOUT = 3
 

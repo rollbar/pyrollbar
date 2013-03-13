@@ -1,5 +1,8 @@
 # Change Log
 
+**0.5.3**
+- Fixed bug when reporting messages without a request object
+
 **0.5.2**
 - Fixed bug where django debug page can get patched twice
 
