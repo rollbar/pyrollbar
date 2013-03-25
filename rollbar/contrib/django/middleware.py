@@ -19,6 +19,7 @@ import rollbar
 from django.core.exceptions import MiddlewareNotUsed
 from django.conf import settings
 from django.http import Http404
+import collections
 
 log = logging.getLogger(__name__)
 
@@ -102,7 +103,7 @@ class RollbarNotifierMiddleware(object):
         if self._get_setting('patch_debugview'):
             try:
                 _patch_debugview(self._get_setting('web_base'))
-            except Exception, e:
+            except Exception as e:
                 log.error("Rollbar - unable to monkeypatch debugview to add 'View in Rollbar' link."
                     " To disable, set `ROLLBAR['patch_debugview'] = False` in settings.py."
                     " Exception was: %r", e)
@@ -125,7 +126,7 @@ class RollbarNotifierMiddleware(object):
         except KeyError:
             if name in DEFAULTS:
                 default_val = DEFAULTS[name]
-                if callable(default_val):
+                if isinstance(default_val, collections.Callable):
                     return default_val()
                 return default_val
             return default
