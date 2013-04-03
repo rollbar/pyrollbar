@@ -47,7 +47,7 @@ logging.basicConfig()
 
 agent_log = None
 
-VERSION = '0.5.4'
+VERSION = '0.5.5'
 DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/'
 DEFAULT_TIMEOUT = 3
 
@@ -274,13 +274,17 @@ def _report_exc_info(exc_info, request, extra_data, payload_data):
     """
     Called by report_exc_info() wrapper
     """
-    if not _check_config():
+    # check if exception is marked ignored
+    cls, exc, trace = exc_info
+    if getattr(exc, '_rollbar_ignore', False):
         return
 
+    if not _check_config():
+        return
+    
     data = _build_base_data(request)
 
     # exception info
-    cls, exc, trace = exc_info
     # most recent call last
     raw_frames = traceback.extract_tb(trace)
     frames = [{'filename': f[0], 'lineno': f[1], 'method': f[2], 'code': f[3]} for f in raw_frames]

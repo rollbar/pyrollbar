@@ -1,5 +1,8 @@
 # Change Log
 
+**0.5.5**
+- Support for ignoring exceptions by setting `exc._rollbar_ignore = True`. Such exceptions reported through rollbar.report_exc_info() -- which is used under the hood in the Django and Pyramid middlewares -- will be ignored instead of reported.
+
 **0.5.4**
 - Django: catch exceptions when patching the debugview, for better support for django 1.3.
 
