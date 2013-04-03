@@ -1,5 +1,8 @@
 # Change Log
 
+**0.5.4**
+- Django: catch exceptions when patching the debugview, for better support for django 1.3.
+
 **0.5.3**
 - Fixed bug when reporting messages without a request object
 
