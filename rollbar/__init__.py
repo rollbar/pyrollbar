@@ -6,6 +6,7 @@ import copy
 import json
 import logging
 import socket
+import sys
 import threading
 import time
 import traceback
@@ -47,7 +48,7 @@ logging.basicConfig()
 
 agent_log = None
 
-VERSION = '0.5.5'
+VERSION = '0.5.6'
 DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/'
 DEFAULT_TIMEOUT = 3
 
@@ -98,16 +99,16 @@ def init(access_token, environment='production', **kw):
             agent_log = _create_agent_log()
 
 
-def report_exc_info(exc_info, request=None, extra_data=None, payload_data=None, **kw):
+def report_exc_info(exc_info=None, request=None, extra_data=None, payload_data=None, **kw):
     """
     Reports an exception to Rollbar, using exc_info (from calling sys.exc_info()) 
     
-    exc_info: the result of calling sys.exc_info()
+    exc_info: optional, should be the result of calling sys.exc_info(). If omitted, sys.exc_info() will be called here.
     request: optional, a WebOb or Werkzeug-based request object.
     extra_data: optional, will be included in the 'custom' section of the payload
     payload_data: optional, dict that will override values in the final payload 
                   (e.g. 'level' or 'fingerprint')
-    kw: provided for legacy purposes; will override arguments in `extra_data`
+    kw: provided for legacy purposes; unused.
 
     Example usage:
 
@@ -117,6 +118,9 @@ def report_exc_info(exc_info, request=None, extra_data=None, payload_data=None, 
     except:
         rollbar.report_exc_info(sys.exc_info(), request, {'foo': 'bar'}, {'level': 'warning'})
     """
+    if exc_info is None:
+        exc_info = sys.exc_info()
+    
     try:
         return _report_exc_info(exc_info, request, extra_data, payload_data)
     except Exception, e:

@@ -3,7 +3,7 @@ pyrollbar
 
 pyrollbar is a generic library for reporting exceptions and other messages to Rollbar_::
 
-    import rollbar, sys
+    import rollbar
     rollbar.init('YOUR_ACCESS_TOKEN', 'production')  # access_token, environment
 
     try:
@@ -12,7 +12,7 @@ pyrollbar is a generic library for reporting exceptions and other messages to Ro
         rollbar.report_message('Got an IOError in the main loop', 'warning')
     except:
         # catch-all
-        rollbar.report_exc_info(sys.exc_info())
+        rollbar.report_exc_info()
 
 
 Requirements
