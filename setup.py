@@ -18,7 +18,7 @@ setup(
             'pyramid=rollbar.contrib.pyramid:create_rollbar_middleware'
         ]
     },
-    description='Rollbar generic python library',
+    description='Logs exceptions and other data to Rollbar. Provides a generic interface, as well as a Django middleware and a Pyramid tween.',
     long_description=README,
     author='Brian Rue',
     author_email='brian@rollbar.com',
@@ -27,8 +27,9 @@ setup(
         "Programming Language :: Python",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Environment :: Web Environment",
+        "Framework :: Django",
         "Framework :: Pyramid",
         "Intended Audience :: Developers",
         "Topic :: Internet :: WWW/HTTP",
