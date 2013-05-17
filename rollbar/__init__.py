@@ -48,7 +48,7 @@ logging.basicConfig()
 
 agent_log = None
 
-VERSION = '0.5.6'
+VERSION = '0.5.7'
 DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/'
 DEFAULT_TIMEOUT = 3
 
@@ -57,6 +57,7 @@ DEFAULT_TIMEOUT = 3
 SETTINGS = {
     'access_token': None,
     'environment': 'production',
+    'exception_level_filters': [],
     'root': None,  # root path to your code
     'branch': None,  # git branch name
     'handler': 'thread',  # 'blocking', 'thread' or 'agent'
@@ -254,6 +255,18 @@ class PagedResult(Result):
 
 ## internal functions
 
+
+def _filtered_level(exception):
+    for cls, level in SETTINGS['exception_level_filters']:
+        if isinstance(exception, cls):
+            return level
+    
+    return None
+
+
+def _is_ignored(exception):
+    return _filtered_level(exception) == 'ignored'
+
     
 def _create_agent_log():
     """
@@ -280,13 +293,17 @@ def _report_exc_info(exc_info, request, extra_data, payload_data):
     """
     # check if exception is marked ignored
     cls, exc, trace = exc_info
-    if getattr(exc, '_rollbar_ignore', False):
+    if getattr(exc, '_rollbar_ignore', False) or _is_ignored(exc):
         return
 
     if not _check_config():
         return
     
     data = _build_base_data(request)
+    
+    filtered_level = _filtered_level(exc)
+    if filtered_level:
+        data['level'] = filtered_level
 
     # exception info
     # most recent call last
@@ -328,8 +345,7 @@ def _report_message(message, level, request, extra_data, payload_data):
     if not _check_config():
         return
 
-    data = _build_base_data(request)
-    data['level'] = level
+    data = _build_base_data(request, level=level)
 
     # message
     data['body'] = {

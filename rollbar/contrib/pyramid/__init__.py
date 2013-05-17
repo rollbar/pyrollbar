@@ -7,6 +7,7 @@ import sys
 
 from pyramid.httpexceptions import WSGIHTTPException
 from pyramid.tweens import EXCVIEW
+from pyramid.util import DottedNameResolver
 
 import rollbar
 
@@ -120,7 +121,22 @@ def includeme(config):
 
     if kw.get('scrub_fields'):
         kw['scrub_fields'] = set([str.strip(x) for x in kw.get('scrub_fields').split('\n') if x])
-
+    
+    if kw.get('exception_level_filters'):
+        r = DottedNameResolver()
+        exception_level_filters = []
+        for line in kw.get('exception_level_filters').split('\n'):
+            if line:
+                dotted_path, level = line.split()
+                
+                try:
+                    cls = r.resolve(dotted_path)
+                    exception_level_filters.append((cls, level))
+                except ImportError:
+                    log.error('Could not import %r' % dotted_path)
+        
+        kw['exception_level_filters'] = exception_level_filters
+    
     rollbar.init(access_token, environment, **kw)
 
 

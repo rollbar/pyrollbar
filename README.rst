@@ -147,6 +147,29 @@ scrub_fields
     List of field names to scrub out of POST. Values will be replaced with astrickses. If overridiing, make sure to list all fields you want to scrub, not just fields you want to add to the default. Param names are converted to lowercase before comparing against the scrub list.
 
     **default** ``['passwd', 'password', 'secret', 'confirm_password', 'password_confirmation']``
+exception_level_filters
+    List of tuples in the form ``(class, level)`` where ``class`` is an Exception class you want to always filter to the respective ``level``. Any subclasses of the given ``class`` will also be matched.
+    
+    Valid levels: ``'critical'``, ``'error'``, ``'warning'``, ``'info'``, ``'debug'`` and ``'ignored'``. Use ``'ignored'`` if you want an Exception (sub)class to never be reported to Rollbar.
+    
+    Any exceptions not found in this configuration setting will default to ``'error'``.
+    
+    Django ``settings.py`` example (and Django default)::
+        
+        from django.http import Http404
+        
+        ROLLBAR = {
+            ...
+            'exception_level_filters': [
+                (Http404, 'warning')
+            ]
+        }
+
+    In a Pyramid ``ini`` file, define each tuple as an individual whitespace delimited line, for example::
+        
+        rollbar.exception_level_filters =
+            pyramid.exceptions.ConfigurationError critical
+            ...
 
 
 Developer Resources

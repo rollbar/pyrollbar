@@ -18,6 +18,7 @@ import rollbar
 
 from django.core.exceptions import MiddlewareNotUsed
 from django.conf import settings
+from django.http import Http404
 
 log = logging.getLogger(__name__)
 
@@ -26,6 +27,9 @@ DEFAULTS = {
     'web_base': 'https://rollbar.com',
     'enabled': True,
     'patch_debugview': True,
+    'exception_level_filters': [
+        (Http404, 'warning')
+    ]
 }
 
 
@@ -82,6 +86,7 @@ class RollbarNotifierMiddleware(object):
         kw = self.settings.copy()
         access_token = kw.pop('access_token')
         environment = kw.pop('environment', 'development' if settings.DEBUG else 'production')
+        kw.setdefault('exception_level_filters', DEFAULTS['exception_level_filters'])
         
         rollbar.init(access_token, environment, **kw)
         

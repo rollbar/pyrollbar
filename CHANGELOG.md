@@ -1,5 +1,8 @@
 # Change Log
 
+**0.5.7**
+- Added `exception_level_filters` configuration setting to customize the level that specific exceptions are reported as.
+
 **0.5.6**
 - First argument to `rollbar.report_exc_info()` is now optional. You can now call it with no arguments from within an `except` block, and it will behave is if you had called like `rollbar.report_exc_info(sys.exc_info())`
 
