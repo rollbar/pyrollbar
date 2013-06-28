@@ -11,6 +11,7 @@ import threading
 import time
 import traceback
 import urlparse
+import urllib
 import uuid
 
 import requests
@@ -507,13 +508,34 @@ def _scrub_request_data(request_data):
     """
     Scrubs out sensitive information out of request data
     """
-    if request_data and request_data.get('POST'):
-        request_data['POST'] = _scrub_request_params(request_data['POST'])
-    
+    if request_data:
+        if request_data.get('POST'):
+            request_data['POST'] = _scrub_request_params(request_data['POST'])
+
+        if request_data.get('GET'):
+            request_data['GET'] = _scrub_request_params(request_data['GET'])
+
+        if request_data.get('url'):
+            request_data['url'] = _scrub_request_url(request_data['url'])
+
     return request_data
 
-    
-def _scrub_request_params(params):
+
+def _scrub_request_url(url_string):
+    url = urlparse.urlparse(url_string)
+    qs_params = urlparse.parse_qs(url.query)
+
+    # use dash for replacement character so it looks better since it wont be url escaped
+    scrubbed_qs_params = _scrub_request_params(qs_params, replacement_character='-')
+    scrubbed_qs = urllib.urlencode(scrubbed_qs_params, doseq=True)
+
+    scrubbed_url = (url.scheme, url.netloc, url.path, url.params, scrubbed_qs, url.fragment)
+    scrubbed_url_string = urlparse.urlunparse(scrubbed_url)
+
+    return scrubbed_url_string
+
+
+def _scrub_request_params(params, replacement_character='*'):
     """
     Given request.POST/request.GET, returns a dict with passwords scrubbed out
     (replaced with astrickses)
@@ -524,9 +546,9 @@ def _scrub_request_params(params):
     for k, v in params.items():
         if k.lower() in scrub_fields:
             if isinstance(v, list):
-                params[k] = ['*' * len(x) for x in v]
+                params[k] = [replacement_character * len(x) for x in v]
             else:
-                params[k] = '*' * len(v)
+                params[k] = replacement_character * len(v)
     
     return params
 
