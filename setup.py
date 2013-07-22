@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
-README_PATH = os.path.join(HERE, 'README.rst')
+README_PATH = os.path.join(HERE, 'README.md')
 try:
     README = open(README_PATH).read()
 except IOError:
