@@ -1,4 +1,5 @@
-# Rollbar notifier for Python <!-- [![Build Status](https://secure.travis-ci.org/rollbar/pyrollbar.png?branch=master)](https://travis-ci.org/rollbar/pyrollbar) -->
+# Rollbar notifier for Python
+<!-- [![Build Status](https://secure.travis-ci.org/rollbar/pyrollbar.png?branch=master)](https://travis-ci.org/rollbar/pyrollbar) -->
 
 Python notifier for reporting exceptions, errors, and log messages to [Rollbar](https://rollbar.com).
 
