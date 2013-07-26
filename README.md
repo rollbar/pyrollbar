@@ -249,6 +249,18 @@ Any exceptions not found in this configuration setting will default to ```'error
 Default: ```['passwd', 'password', 'secret', 'confirm_password', 'password_confirmation']```
 
   </dd>
+  <dt>timeout</dt>
+  <dd>Timeout for any HTTP requests made to the Rollbar API (in seconds).
+
+Default: ```3```
+
+  </dd>
+  <dt>allow_logging_basic_config</dt>
+  <dd>When True, ```logging.basicConfig()``` will be called to set up the logging system. Set to False to skip this call. If using Flask, you'll want to set to ```False```. If using Pyramid or Django, ```True``` should be fine.
+
+Default: ```True```
+
+  </dd>
   </dl>
 
 ### Examples

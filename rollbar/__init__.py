@@ -45,11 +45,10 @@ except ImportError:
 BASE_DATA_HOOK = None
 
 log = logging.getLogger(__name__)
-logging.basicConfig()
 
 agent_log = None
 
-VERSION = '0.5.7'
+VERSION = '0.5.8'
 DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/'
 DEFAULT_TIMEOUT = 3
 
@@ -70,6 +69,7 @@ SETTINGS = {
         'name': 'pyrollbar',
         'version': VERSION
     },
+    'allow_logging_basic_config': True,  # set to False to avoid a call to logging.basicConfig()
 }
 
 _initialized = False
@@ -96,6 +96,9 @@ def init(access_token, environment='production', **kw):
         SETTINGS['access_token'] = access_token
         SETTINGS['environment'] = environment
         SETTINGS.update(kw)
+
+        if SETTINGS.get('allow_logging_basic_config'):
+            logging.basicConfig()
 
         if SETTINGS.get('handler') == 'agent':
             agent_log = _create_agent_log()
