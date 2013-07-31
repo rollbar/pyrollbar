@@ -238,6 +238,27 @@ Valid levels: ```'critical'```, ```'error'```, ```'warning'```, ```'info'```, ``
 Use ```'ignored'``` if you want an Exception (sub)class to never be reported to Rollbar.
     
 Any exceptions not found in this configuration setting will default to ```'error'```.
+
+Django ```settings.py``` example (and Django default):
+        
+```python
+from django.http import Http404
+
+ROLLBAR = {
+    ...
+    'exception_level_filters': [
+        (Http404, 'warning')
+    ]
+}
+```
+
+In a Pyramid ``ini`` file, define each tuple as an individual whitespace delimited line, for example:
+        
+```
+rollbar.exception_level_filters =
+    pyramid.exceptions.ConfigurationError critical
+    #...
+```
    
   </dd>
   <dt>root</dt>
@@ -263,29 +284,3 @@ Default: ```True```
   </dd>
   </dl>
 
-### Examples
-
-### Django
-
-```settings.py``` example (and Django default):
-        
-```python
-from django.http import Http404
-
-ROLLBAR = {
-    ...
-    'exception_level_filters': [
-        (Http404, 'warning')
-    ]
-}
-```
-
-### Pyramid
-
-In a Pyramid ``ini`` file, define each tuple as an individual whitespace delimited line, for example:
-        
-```
-rollbar.exception_level_filters =
-    pyramid.exceptions.ConfigurationError critical
-    #...
-```
