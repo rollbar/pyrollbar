@@ -1,5 +1,8 @@
 # Change Log
 
+**0.5.8**
+- Added `allow_logging_basic_config` config flag for compatability with Flask. If using Flask, set to False.
+
 **0.5.7**
 - Added `exception_level_filters` configuration setting to customize the level that specific exceptions are reported as.
 

@@ -238,24 +238,8 @@ Valid levels: ```'critical'```, ```'error'```, ```'warning'```, ```'info'```, ``
 Use ```'ignored'``` if you want an Exception (sub)class to never be reported to Rollbar.
     
 Any exceptions not found in this configuration setting will default to ```'error'```.
-   
-  </dd>
-  <dt>root</dt>
-  <dd>Absolute path to the root of your application, not including the final ```/```. 
-  </dd>
-  <dt>scrub_fields</dt>
-  <dd>List of field names to scrub out of POST. Values will be replaced with astrickses. If overridiing, make sure to list all fields you want to scrub, not just fields you want to add to the default. Param names are converted to lowercase before comparing against the scrub list.
 
-Default: ```['passwd', 'password', 'secret', 'confirm_password', 'password_confirmation']```
-
-  </dd>
-  </dl>
-
-### Examples
-
-### Django
-
-```settings.py``` example (and Django default):
+Django ```settings.py``` example (and Django default):
         
 ```python
 from django.http import Http404
@@ -268,8 +252,6 @@ ROLLBAR = {
 }
 ```
 
-### Pyramid
-
 In a Pyramid ``ini`` file, define each tuple as an individual whitespace delimited line, for example:
         
 ```
@@ -277,3 +259,28 @@ rollbar.exception_level_filters =
     pyramid.exceptions.ConfigurationError critical
     #...
 ```
+   
+  </dd>
+  <dt>root</dt>
+  <dd>Absolute path to the root of your application, not including the final ```/```. 
+  </dd>
+  <dt>scrub_fields</dt>
+  <dd>List of field names to scrub out of POST. Values will be replaced with astrickses. If overridiing, make sure to list all fields you want to scrub, not just fields you want to add to the default. Param names are converted to lowercase before comparing against the scrub list.
+
+Default: ```['passwd', 'password', 'secret', 'confirm_password', 'password_confirmation']```
+
+  </dd>
+  <dt>timeout</dt>
+  <dd>Timeout for any HTTP requests made to the Rollbar API (in seconds).
+
+Default: ```3```
+
+  </dd>
+  <dt>allow_logging_basic_config</dt>
+  <dd>When True, ```logging.basicConfig()``` will be called to set up the logging system. Set to False to skip this call. If using Flask, you'll want to set to ```False```. If using Pyramid or Django, ```True``` should be fine.
+
+Default: ```True```
+
+  </dd>
+  </dl>
+
