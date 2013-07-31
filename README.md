@@ -30,7 +30,7 @@ except:
 
 - Python 2.6 or 2.7
 - requests 0.12+
-- a Rollbar account
+- A Rollbar account
 
 ## Configuration
 
