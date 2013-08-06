@@ -73,14 +73,17 @@ def main():
         sys.exit(0 if sent else 1)
 
     cur_cmd_name = None
-    cur_line = sys.stdin.readline()
-    while cur_line:
-        cur_line = cur_line.strip()
-        parts = cur_line.split(' ')
-
-        if parts:
-            cur_cmd_name = parts[0]
-            parts = parts[1:]
-            _do_cmd(cur_cmd_name, ' '.join(parts))
-
+    try:
         cur_line = sys.stdin.readline()
+        while cur_line:
+            cur_line = cur_line.strip()
+            parts = cur_line.split(' ')
+
+            if parts:
+                cur_cmd_name = parts[0]
+                parts = parts[1:]
+                _do_cmd(cur_cmd_name, ' '.join(parts))
+
+            cur_line = sys.stdin.readline()
+    except Exception, e:
+        pass
