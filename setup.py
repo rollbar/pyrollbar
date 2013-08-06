@@ -12,11 +12,12 @@ except IOError:
 setup(
     name='rollbar',
     packages=find_packages(),
-    version='0.5.8',
+    version='0.5.9',
     entry_points= {
         'paste.filter_app_factory': [
             'pyramid=rollbar.contrib.pyramid:create_rollbar_middleware'
-        ]
+        ],
+        'console_scripts': ['rollbar=rollbar.cli:main']
     },
     description='Logs exceptions and other data to Rollbar. Provides a generic interface, as well as a Django middleware and a Pyramid tween.',
     long_description=README,
