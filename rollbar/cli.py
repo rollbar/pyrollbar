@@ -60,37 +60,27 @@ def main():
 
     rollbar.init(access_token, environment=env, endpoint=endpoint)
 
-    def _do_cmd(cmd_name, lines):
+    def _do_cmd(cmd_name, line):
         cmd = CMDS.get(cmd_name.lower())
         if cmd:
-            cmd(lines)
+            cmd([line])
             return True
 
         return False
 
     if len(args) > 1:
-        sent = _do_cmd(args[0], [' '.join(args[1:])])
+        sent = _do_cmd(args[0], ' '.join(args[1:]))
         sys.exit(0 if sent else 1)
 
     cur_cmd_name = None
-    lines = []
     cur_line = sys.stdin.readline()
     while cur_line:
         cur_line = cur_line.strip()
         parts = cur_line.split(' ')
 
-        if cur_cmd_name is None:
-            cur_cmd_name = parts[0] if parts else None
+        if parts:
+            cur_cmd_name = parts[0]
             parts = parts[1:]
-
-        if not cur_line and cur_cmd_name:
-            if _do_cmd(cur_cmd_name, lines):
-                lines = []
-                cur_cmd_name = None
-        else:
-            lines.append(' '.join(parts))
+            _do_cmd(cur_cmd_name, ' '.join(parts))
 
         cur_line = sys.stdin.readline()
-
-    if cur_cmd_name and lines:
-        _do_cmd(cur_cmd_name, lines)
