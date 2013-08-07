@@ -40,6 +40,12 @@ def main():
                       help="The Rollbar API endpoint url to send data to.",
                       metavar='ENDPOINT_URL',
                       default=rollbar.DEFAULT_ENDPOINT)
+    parser.add_option('-m', '--handler',
+                      dest='handler',
+                      help="The method in which to report errors.",
+                      metavar='HANDLER',
+                      choices=["thread", "blocking", "agent"],
+                      default="blocking")
     parser.add_option('-v', '--verbose',
                       dest='verbose',
                       help="Print verbose output.",
@@ -51,6 +57,7 @@ def main():
     access_token = options.access_token
     env = options.environment
     endpoint = options.endpoint_url
+    handler = options.handler
     verbose = options.verbose
 
     if not access_token:
@@ -58,7 +65,7 @@ def main():
     if not env:
         parser.error('missing environment')
 
-    rollbar.init(access_token, environment=env, endpoint=endpoint)
+    rollbar.init(access_token, environment=env, endpoint=endpoint, handler=handler)
 
     def _do_cmd(cmd_name, line):
         cmd = CMDS.get(cmd_name.lower())
