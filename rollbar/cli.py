@@ -92,5 +92,5 @@ def main():
                 _do_cmd(cur_cmd_name, ' '.join(parts))
 
             cur_line = sys.stdin.readline()
-    except Exception, e:
+    except (KeyboardInterrupt, SystemExit), e:
         pass
