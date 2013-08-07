@@ -1,4 +1,3 @@
-import fileinput
 import optparse
 import sys
 
@@ -75,7 +74,8 @@ def main():
 
     cur_cmd_name = None
     try:
-        for cur_line in fileinput.input():
+        cur_line = sys.stdin.readline()
+        while cur_line:
             cur_line = cur_line.strip()
             parts = cur_line.split(' ')
 
