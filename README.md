@@ -141,7 +141,7 @@ rollbar -t $POST_SERVER_ITEM_ACCESS_TOKEN -e test debug testing access token
 
 #### Reference
 
-```bash
+```
 $ rollbar --help
 Usage: rollbar [options]
 
