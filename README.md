@@ -123,6 +123,42 @@ rollbar.init('POST_SERVER_ITEM_ACCESS_TOKEN', environment='production')
 
 Other options can be passed as keyword arguments. See the reference below for all options.
 
+### Command-line usage
+
+pyrollbar 0.5.9 comes with a command-line tool that can be used with other UNIX utilities to create an ad-hoc monitoring solution.
+
+e.g. Report all 5xx haproxy requests as ```error```
+
+```bash
+tail -f /var/log/haproxy.log | awk '{print $11,$0}' | grep '^5' | awk '{$1="";print "warning",$0}' | rollbar -t $POST_SERVER_ITEM_ACCESS_TOKEN -e production -v
+```
+
+e.g. Test an access token
+
+```bash
+rollbar -t $POST_SERVER_ITEM_ACCESS_TOKEN -e test debug testing access token
+```
+
+#### Reference
+
+```bash
+$ rollbar --help
+Usage: rollbar [options]
+
+Options:
+  --version             show program's version number and exit
+  -h, --help            show this help message and exit
+  -t ACCESS_TOKEN, --access_token=ACCESS_TOKEN
+                        You project's access token from rollbar.com.
+  -e ENVIRONMENT, --environment=ENVIRONMENT
+                        The environment to report errors and messages to.
+  -u ENDPOINT_URL, --url=ENDPOINT_URL
+                        The Rollbar API endpoint url to send data to.
+  -m HANDLER, --handler=HANDLER
+                        The method in which to report errors.
+  -v, --verbose         Print verbose output.
+```
+
 ## Usage
 
 The Django and Pyramid integration will automatically report uncaught exceptions to Rollbar.
@@ -203,6 +239,7 @@ WSGIServer(('', 8000), application).serve_forever()
   <dl>
   <dt>access_token</dt>
   <dd>Access token from your Rollbar project handler
+
 One of:
 
 - blocking -- runs in main thread
