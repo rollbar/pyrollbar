@@ -127,7 +127,7 @@ Other options can be passed as keyword arguments. See the reference below for al
 
 pyrollbar 0.5.9 comes with a command-line tool that can be used with other UNIX utilities to create an ad-hoc monitoring solution.
 
-e.g. Report all 5xx haproxy requests as ```error```
+e.g. Report all 5xx haproxy requests as ```warning```
 
 ```bash
 tail -f /var/log/haproxy.log | awk '{print $11,$0}' | grep '^5' | awk '{$1="";print "warning",$0}' | rollbar -t $POST_SERVER_ITEM_ACCESS_TOKEN -e production -v
