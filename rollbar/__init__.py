@@ -41,6 +41,11 @@ try:
     from tornado.httpserver import HTTPRequest as TornadoRequest
 except ImportError:
     TornadoRequest = None
+
+try:
+    from bottle import BaseRequest as BottleRequest
+except ImportError:
+    BottleRequest = None
     
 BASE_DATA_HOOK = None
 
@@ -504,6 +509,10 @@ def _build_request_data(request):
     if TornadoRequest and isinstance(request, TornadoRequest):
         return _build_tornado_request_data(request)
 
+    #bottle
+    if BottleRequest and isinstance(request, BottleRequest):
+        return _build_bottle_request_data(request)
+
     return None
 
 
@@ -624,6 +633,17 @@ def _build_tornado_request_data(request):
 
     return request_data
 
+def _build_bottle_request_data(request):
+    request_data = {
+        'url': request.url,
+        'user_ip': request.remote_addr,
+        'headers': dict(request.headers),
+        'method': request.method,
+        'GET': dict(request.query),
+        'POST': dict(request.forms),
+    }
+
+    return request_data
 
 def _build_server_data():
     """
