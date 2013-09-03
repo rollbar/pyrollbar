@@ -113,6 +113,29 @@ root = %(here)s
 
 Unfortunately, the Rollbar tween and the Rollbar filter configurations contains duplicated information. We'll look into fixing this in future versions.
 
+### Bottle
+
+Import the plugin and install!
+Can be installed globally or on a per route basis.
+
+```
+import bottle
+from rollbar.bottle import RollbarReporterPlugin
+
+rrp = RollbarReporterPlugin(YOUR_ACCESS_TOKEN, environment=YOUR_ENVIRONMENT) #setup rollbar
+
+bottle.app.install(rrp) #install globally
+
+@bottle.app.get('/')
+def raise_error():
+  '''
+  When navigating to /, we'll get a regular 500 page from bottle, 
+  as well as have the error below listed on Rollbar.
+  '''
+  raise Exception('Hello, Rollbar!')
+```
+
+
 ### Other
 
 For generic Python or a non-Django/non-Pyramid framework just initialize the Rollbar library with your access token and environment.
