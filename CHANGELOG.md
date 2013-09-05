@@ -1,5 +1,12 @@
 # Change Log
 
+**0.5.10**
+- Added `code_version` configuration setting
+- Added support for bottle request objects
+
+**0.5.9**
+- Added a command line interface for reporting messages to Rollbar
+
 **0.5.8**
 - Added `allow_logging_basic_config` config flag for compatability with Flask. If using Flask, set to False.
 
