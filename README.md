@@ -122,7 +122,7 @@ Can be installed globally or on a per route basis.
 import bottle
 from rollbar.contrib.bottle import RollbarReporterPlugin
 
-rrp = RollbarReporterPlugin(YOUR_ACCESS_TOKEN, environment=YOUR_ENVIRONMENT) #setup rollbar
+rrp = RollbarReporterPlugin(access_token=YOUR_ACCESS_TOKEN, environment=YOUR_ENVIRONMENT) #setup rollbar
 
 bottle.install(rrp) #install globally
 
