@@ -120,11 +120,11 @@ Can be installed globally or on a per route basis.
 
 ```
 import bottle
-from rollbar.contrib.bottle import RollbarReporterPlugin
+from rollbar.contrib.bottle import RollbarBottleReporter
 
-rrp = RollbarReporterPlugin(access_token=YOUR_ACCESS_TOKEN, environment=YOUR_ENVIRONMENT) #setup rollbar
+rbr = RollbarBottleReporter(access_token=YOUR_ACCESS_TOKEN, environment=YOUR_ENVIRONMENT) #setup rollbar
 
-bottle.install(rrp) #install globally
+bottle.install(rbr) #install globally
 
 @bottle.get('/')
 def raise_error():
