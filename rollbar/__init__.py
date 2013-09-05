@@ -48,7 +48,7 @@ log = logging.getLogger(__name__)
 
 agent_log = None
 
-VERSION = '0.5.8'
+VERSION = '0.5.10'
 DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/'
 DEFAULT_TIMEOUT = 3
 
@@ -60,6 +60,7 @@ SETTINGS = {
     'exception_level_filters': [],
     'root': None,  # root path to your code
     'branch': None,  # git branch name
+    'code_version': None,
     'handler': 'thread',  # 'blocking', 'thread' or 'agent'
     'endpoint': DEFAULT_ENDPOINT,
     'timeout': DEFAULT_TIMEOUT,
@@ -391,6 +392,9 @@ def _build_base_data(request, level='error'):
         'notifier': SETTINGS['notifier'],
         'uuid': str(uuid.uuid4()),
     }
+    
+    if SETTINGS.get('code_version'):
+        data['code_version'] = SETTINGS['code_version']
     
     if BASE_DATA_HOOK:
         BASE_DATA_HOOK(request, data)
