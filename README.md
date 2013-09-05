@@ -120,19 +120,22 @@ Can be installed globally or on a per route basis.
 
 ```
 import bottle
-from rollbar.bottle import RollbarReporterPlugin
+from rollbar.contrib.bottle import RollbarReporterPlugin
 
 rrp = RollbarReporterPlugin(YOUR_ACCESS_TOKEN, environment=YOUR_ENVIRONMENT) #setup rollbar
 
-bottle.app.install(rrp) #install globally
+bottle.install(rrp) #install globally
 
-@bottle.app.get('/')
+@bottle.get('/')
 def raise_error():
   '''
   When navigating to /, we'll get a regular 500 page from bottle, 
   as well as have the error below listed on Rollbar.
   '''
   raise Exception('Hello, Rollbar!')
+
+if __name__ == '__main__':
+    bottle.run(host='localhost', port=8080)
 ```
 
 
