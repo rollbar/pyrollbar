@@ -16,7 +16,8 @@ class RollbarBottleReporter(object):
             try:
                 return callback(*args, **kwargs)
             except Exception, e:
-                rollbar.report_exc_info(sys.exc_info(), request=bottle.request)
+                if not isinstance(e, bottle.BaseResponse):
+                    rollbar.report_exc_info(sys.exc_info(), request=bottle.request)
                 raise
 
         return wrapper
