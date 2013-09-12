@@ -9,6 +9,11 @@ class RollbarBottleReporter(object):
     api = 2
 
     def __init__(self, *args, **kwargs):
+        if 'exception_level_filters' in kwargs:
+            kwargs['exception_level_filters'].append((bottle.BaseResponse, 'ignored'))
+        else:
+            kwargs['exception_level_filters'] = [(bottle.baseResponse, 'ignored')]
+
         rollbar.init(*args, **kwargs)
 
     def __call__(self, callback):
@@ -16,8 +21,7 @@ class RollbarBottleReporter(object):
             try:
                 return callback(*args, **kwargs)
             except Exception, e:
-                if not isinstance(e, bottle.BaseResponse):
-                    rollbar.report_exc_info(sys.exc_info(), request=bottle.request)
+                rollbar.report_exc_info(sys.exc_info(), request=bottle.request)
                 raise
 
         return wrapper
