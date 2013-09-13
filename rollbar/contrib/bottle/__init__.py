@@ -12,7 +12,7 @@ class RollbarBottleReporter(object):
         if 'exception_level_filters' in kwargs:
             kwargs['exception_level_filters'].append((bottle.BaseResponse, 'ignored'))
         else:
-            kwargs['exception_level_filters'] = [(bottle.baseResponse, 'ignored')]
+            kwargs['exception_level_filters'] = [(bottle.BaseResponse, 'ignored')]
 
         rollbar.init(*args, **kwargs)
 
