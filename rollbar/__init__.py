@@ -53,7 +53,7 @@ log = logging.getLogger(__name__)
 
 agent_log = None
 
-VERSION = '0.5.10'
+VERSION = '0.5.11'
 DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/'
 DEFAULT_TIMEOUT = 3
 

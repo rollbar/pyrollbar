@@ -1,5 +1,8 @@
 # Change Log
 
+**0.5.11**
+- Don't report bottle.BaseResponse exceptions in the bottle plugin
+
 **0.5.10**
 - Added `code_version` configuration setting
 - Added support for bottle request objects
