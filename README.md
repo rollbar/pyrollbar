@@ -1,6 +1,7 @@
 # Rollbar notifier for Python
 <!-- [![Build Status](https://secure.travis-ci.org/rollbar/pyrollbar.png?branch=master)](https://travis-ci.org/rollbar/pyrollbar) -->
 
+<!-- RemoveNext -->
 Python notifier for reporting exceptions, errors, and log messages to [Rollbar](https://rollbar.com).
 
 <!-- Sub:[TOC] -->
@@ -56,6 +57,9 @@ ROLLBAR = {
 }
 ```
 
+<!-- RemoveNextIfProject -->
+Be sure to replace ```POST_SERVER_ITEM_ACCESS_TOKEN``` with your project's ```post_server_item``` access token, which you can find in the Rollbar.com interface.
+
 ### Pyramid
 
 In your ``ini`` file (e.g. ``production.ini``), add ``rollbar.contrib.pyramid`` to the end of your ``pyramid.includes``:
@@ -71,14 +75,16 @@ Add these rollbar configuration variables:
 
 ```
 [app:main]
-rollbar.access_token = POST_SERVER_ITEM_ACCESS_TOKEN_HERE
+rollbar.access_token = POST_SERVER_ITEM_ACCESS_TOKEN
 rollbar.environment = production
 rollbar.branch = master
 rollbar.root = %(here)s
 ```
+<!-- RemoveNextIfProject -->
+Be sure to replace ```POST_SERVER_ITEM_ACCESS_TOKEN``` with your project's ```post_server_item``` access token, which you can find in the Rollbar.com interface.
 
 The above will configure rollbar to catch and report all exceptions that occur in your Pyramid app. However, if there are any middleware
-applications that wrap your app, Rollbar will not be able to catch exceptions. 
+applications that wrap your app, Rollbar will not be able to catch exceptions.
 
 In order to catch exceptions from Pyramid and middleware code, you will need to create a ```pipeline``` where the rollbar middleware wraps your Pyramid app.
 
@@ -118,11 +124,11 @@ Unfortunately, the Rollbar tween and the Rollbar filter configurations contains 
 Import the plugin and install!
 Can be installed globally or on a per route basis.
 
-```
+```python
 import bottle
 from rollbar.contrib.bottle import RollbarBottleReporter
 
-rbr = RollbarBottleReporter(access_token=YOUR_ACCESS_TOKEN, environment=YOUR_ENVIRONMENT) #setup rollbar
+rbr = RollbarBottleReporter(access_token='POST_SERVER_ITEM_ACCESS_TOKEN', environment='production') #setup rollbar
 
 bottle.install(rbr) #install globally
 
@@ -137,6 +143,9 @@ def raise_error():
 if __name__ == '__main__':
     bottle.run(host='localhost', port=8080)
 ```
+
+<!-- RemoveNextIfProject -->
+Be sure to replace ```POST_SERVER_ITEM_ACCESS_TOKEN``` with your project's ```post_server_item``` access token, which you can find in the Rollbar.com interface.
 
 
 ### Other
