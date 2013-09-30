@@ -53,7 +53,7 @@ log = logging.getLogger(__name__)
 
 agent_log = None
 
-VERSION = '0.5.11'
+VERSION = '0.5.12'
 DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/'
 DEFAULT_TIMEOUT = 3
 
@@ -656,6 +656,7 @@ def _build_server_data():
     # server environment
     server_data = {
         'host': socket.gethostname(),
+        'argv': sys.argv
     }
 
     for key in ['branch', 'root']:

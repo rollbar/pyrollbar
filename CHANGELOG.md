@@ -1,5 +1,8 @@
 # Change Log
 
+**0.5.12**
+- Add sys.argv to server data
+
 **0.5.11**
 - Don't report bottle.BaseResponse exceptions in the bottle plugin
 
