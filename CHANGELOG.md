@@ -1,5 +1,8 @@
 # Change Log
 
+**0.5.13**
+- Collect JSON post data in Flask when mimetype is `application/json`
+
 **0.5.12**
 - Add sys.argv to server data
 
