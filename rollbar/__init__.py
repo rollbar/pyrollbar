@@ -615,7 +615,7 @@ def _build_werkzeug_request_data(request):
     request_data = {
         'url': request.url,
         'GET': dict(request.args),
-        'POST': dict(request.get_json(force=True)) or dict(request.form),
+        'POST': dict(request.get_json()) or dict(request.form),
         'user_ip': _extract_user_ip(request),
         'headers': dict(request.headers),
         'method': request.method,
