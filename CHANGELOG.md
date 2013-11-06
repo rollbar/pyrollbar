@@ -1,5 +1,9 @@
 # Change Log
 
+**0.5.14**
+- Fix bug with non-JSON post data in Flask
+- Add slightly better integration with Flask. See [rollbar-flask-example](https://github.com/rollbar/rollbar-flask-example) for example usage.
+
 **0.5.13**
 - Collect JSON post data in Flask when mimetype is `application/json`
 
