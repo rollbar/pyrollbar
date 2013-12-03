@@ -274,7 +274,10 @@ WSGIServer(('', 8000), application).serve_forever()
   <dl>
   <dt>access_token</dt>
   <dd>Access token from your Rollbar project handler
-
+  </dd>
+  <dt>handler</dt>
+  <dd>The method for reporting rollbar items to api.rollbar.com
+  
 One of:
 
 - blocking -- runs in main thread
