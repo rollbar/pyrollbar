@@ -25,3 +25,5 @@ class RollbarBottleReporter(object):
                 raise
 
         return wrapper
+
+

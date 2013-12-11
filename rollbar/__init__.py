@@ -16,6 +16,7 @@ import uuid
 
 import requests
 
+
 # import request objects from various frameworks, if available
 try:
     from webob import BaseRequest as WebobBaseRequest
@@ -46,6 +47,49 @@ try:
     from bottle import BaseRequest as BottleRequest
 except ImportError:
     BottleRequest = None
+
+
+# Get the current request object. Implementation varies on
+# library support. Modified below when we know which framework
+# is being used.
+def get_request():
+
+    # TODO(cory): add in a generic _get_locals_request() which
+    # will iterate up through the call stack and look for a variable
+    # that appears to be valid request object.
+    for fn in (_get_bottle_request,
+               _get_flask_request,
+               _get_pyramid_request,
+               _get_pylons_request):
+        try:
+            req = fn()
+            if req is not None:
+                return req
+        except:
+            pass
+
+    return None
+
+
+def _get_bottle_request():
+    from bottle import request
+    return request
+
+
+def _get_flask_request():
+    from flask import request
+    return request
+
+
+def _get_pyramid_request():
+    from pyramid.threadlocal import get_current_request
+    return get_current_request()
+
+
+def _get_pylons_request():
+    from pylons import request
+    return request
+
 
 BASE_DATA_HOOK = None
 
@@ -507,13 +551,13 @@ def _build_request_data(request):
 
     if WerkzeugLocalProxy and isinstance(request, WerkzeugLocalProxy):
         actual_request = request._get_current_object()
-        return _build_werkzeug_request_data(request)
+        return _build_werkzeug_request_data(actual_request)
 
     # tornado
     if TornadoRequest and isinstance(request, TornadoRequest):
         return _build_tornado_request_data(request)
 
-    #bottle
+    # bottle
     if BottleRequest and isinstance(request, BottleRequest):
         return _build_bottle_request_data(request)
 
