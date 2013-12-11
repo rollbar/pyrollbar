@@ -3,7 +3,7 @@ import logging
 from flask import Flask
 
 import rollbar
-from rollbar.logger import RollbarHandler, RollbarRequestAdapter
+from rollbar.logger import RollbarHandler
 
 ACCESS_TOKEN = '...'
 ENVIRONMENT = 'development'
@@ -22,9 +22,6 @@ rollbar_handler.setHistoryLevel(logging.DEBUG)
 
 # attach the history handler to the root logger
 logger.addHandler(rollbar_handler)
-
-# wrap the logger to add request data
-logger = RollbarRequestAdapter(logger)
 
 
 app = Flask(__name__)

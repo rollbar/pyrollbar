@@ -76,7 +76,7 @@ class RollbarHandler(logging.Handler):
         exc_info = record.exc_info
         message = record.getMessage() or self.format(record)
 
-        request = getattr(record, 'request', None)
+        request = rollbar.get_request()
         extra_data = getattr(record, 'extra_data', {})
         payload_data = getattr(record, 'payload_data', {})
 
@@ -142,17 +142,3 @@ class RollbarHandler(logging.Handler):
             data['uuid'] = record.rollbar_uuid
         
         return data
-
-
-
-class RollbarRequestAdapter(logging.LoggerAdapter):
-    """
-    Add the current request object if we can.
-    """
-    def __init__(self, logger):
-        logging.LoggerAdapter.__init__(self, logger, None)
-
-    def process(self, message, kw):
-        rollbar_data = kw.setdefault('extra', {})
-        rollbar_data.setdefault('request', rollbar.get_request())
-        return message, kw
