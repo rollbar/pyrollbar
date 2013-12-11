@@ -68,10 +68,11 @@ class RollbarHandler(logging.Handler):
         logging.Handler.setLevel(self, level)
 
     def emit(self, record):
+        level = record.levelname.lower()
+
         if level not in self.SUPPORTED_LEVELS:
             return
 
-        level = record.levelname.lower()
         exc_info = record.exc_info
         message = record.getMessage() or self.format(record)
 
