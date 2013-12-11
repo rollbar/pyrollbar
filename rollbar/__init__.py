@@ -49,12 +49,12 @@ except ImportError:
     BottleRequest = None
 
 
-"""
-Get the current request object. Implementation varies on
-library support. Modified below when we know which framework
-is being used.
-"""
 def get_request():
+    """
+    Get the current request object. Implementation varies on
+    library support. Modified below when we know which framework
+    is being used.
+    """
 
     # TODO(cory): add in a generic _get_locals_request() which
     # will iterate up through the call stack and look for a variable
