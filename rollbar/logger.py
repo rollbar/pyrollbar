@@ -68,12 +68,12 @@ class RollbarHandler(logging.Handler):
         logging.Handler.setLevel(self, level)
 
     def emit(self, record):
+        if level not in self.SUPPORTED_LEVELS:
+            return
+
         level = record.levelname.lower()
         exc_info = record.exc_info
         message = record.getMessage() or self.format(record)
-
-        if level not in self.SUPPORTED_LEVELS:
-            return
 
         request = getattr(record, 'request', None)
         extra_data = getattr(record, 'extra_data', {})
@@ -90,7 +90,6 @@ class RollbarHandler(logging.Handler):
         try:
             if exc_info:
                 if message:
-                    extra_data = extra_data or {}
                     extra_data['message'] = message
 
                 uuid = rollbar.report_exc_info(exc_info,
