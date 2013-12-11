@@ -58,7 +58,6 @@ class RollbarHandler(logging.Handler):
         records we save to the history.
         """
         self.notify_level = level
-        print self.notify_level
 
     def setHistoryLevel(self, level):
         """
@@ -124,8 +123,6 @@ class RollbarHandler(logging.Handler):
 
             # prune the messages if we have too many
             self._history.records = list(records[-self.history_size:])
-
-            print [r.getMessage() for r in record.history]
 
     def _build_history_data(self, record):
         data = {'timestamp': record.created,
