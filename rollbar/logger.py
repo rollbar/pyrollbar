@@ -78,9 +78,9 @@ class RollbarHandler(logging.Handler):
 
         request = getattr(record, 'request', None)
         extra_data = getattr(record, 'extra_data', {})
-        payload_data = getattr(record, 'payload_data', None)
+        payload_data = getattr(record, 'payload_data', {})
 
-        self._add_history(record, extra_data)
+        self._add_history(record, payload_data)
 
         # after we've added the history data, check to see if the
         # notify level is satisfied
@@ -91,7 +91,17 @@ class RollbarHandler(logging.Handler):
         try:
             if exc_info:
                 if message:
-                    extra_data['message'] = message
+                    message_template = {
+                        'body': {
+                            'trace': {
+                                'exception': {
+                                    'description': message
+                                 }
+                            }
+                        }
+                    }
+                    payload_data = rollbar.dict_merge(payload_data, message_template)
+
 
                 uuid = rollbar.report_exc_info(exc_info,
                                                level=level,
@@ -110,14 +120,14 @@ class RollbarHandler(logging.Handler):
             if uuid:
                 record.rollbar_uuid = uuid
 
-    def _add_history(self, record, extra_data):
+    def _add_history(self, record, payload_data):
         if hasattr(self._history, 'records'):
             records = self._history.records
             record.history = list(records[-self.history_size:])
 
             if record.history:
                 history_data = [self._build_history_data(r) for r in record.history]
-                extra_data['history'] = history_data
+                payload_data.setdefault('server', {})['history'] = history_data
 
             records.append(record)
 

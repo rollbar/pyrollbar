@@ -386,7 +386,7 @@ def _report_exc_info(exc_info, request, extra_data, payload_data):
     data['server'] = _build_server_data()
 
     if payload_data:
-        data.update(payload_data)
+        data = dict_merge(data, payload_data)
 
     payload = _build_payload(data)
     send_payload(payload)
@@ -418,7 +418,7 @@ def _report_message(message, level, request, extra_data, payload_data):
     data['server'] = _build_server_data()
 
     if payload_data:
-        data.update(payload_data)
+        data = dict_merge(payload_data)
 
     payload = _build_payload(data)
     send_payload(payload)
@@ -794,6 +794,22 @@ def _django_extract_user_ip(request):
     if real_ip:
         return real_ip
     return request.environ['REMOTE_ADDR']
+
+
+# http://www.xormedia.com/recursively-merge-dictionaries-in-python.html
+def dict_merge(a, b):
+    '''recursively merges dict's. not just simple a['key'] = b['key'], if
+    both a and bhave a key who's value is a dict then dict_merge is called
+    on both values and the result stored in the returned dictionary.'''
+    if not isinstance(b, dict):
+        return b
+    result = copy.deepcopy(a)
+    for k, v in b.iteritems():
+        if k in result and isinstance(result[k], dict):
+            result[k] = dict_merge(result[k], v)
+        else:
+            result[k] = copy.deepcopy(v)
+    return result
 
 
 class ErrorIgnoringJSONEncoder(json.JSONEncoder):
