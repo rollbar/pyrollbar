@@ -418,7 +418,7 @@ def _report_message(message, level, request, extra_data, payload_data):
     data['server'] = _build_server_data()
 
     if payload_data:
-        data = dict_merge(payload_data)
+        data = dict_merge(data, payload_data)
 
     payload = _build_payload(data)
     send_payload(payload)
