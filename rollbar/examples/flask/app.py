@@ -5,14 +5,20 @@ from flask import Flask
 import rollbar
 from rollbar.logger import RollbarHandler, RollbarRequestAdapter
 
-rollbar.init('92c10f5616944b81a2e6f3c6493a0ec2', 'development')
+ACCESS_TOKEN = '...'
+ENVIRONMENT = 'development'
+
+rollbar.init(ACCESS_TOKEN, ENVIRONMENT)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-# report ERROR and above to Rollbar
+# report WARNING and above to Rollbar
 rollbar_handler = RollbarHandler(history_size=3)
 rollbar_handler.setLevel(logging.WARNING)
+
+# gather history for DEBUG+ log messages
+rollbar_handler.setHistoryLevel(logging.DEBUG)
 
 # attach the history handler to the root logger
 logger.addHandler(rollbar_handler)
