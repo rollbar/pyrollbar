@@ -1,5 +1,8 @@
 # Change Log
 
+**0.6.0**
+- `report_message()` now returns the UUID of the reported occurrence.
+
 **0.5.14**
 - Fix bug with non-JSON post data in Flask
 - Add slightly better integration with Flask. See [rollbar-flask-example](https://github.com/rollbar/rollbar-flask-example) for example usage.

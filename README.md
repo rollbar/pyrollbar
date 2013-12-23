@@ -160,7 +160,7 @@ Other options can be passed as keyword arguments. See the reference below for al
 
 ### Command-line usage
 
-pyrollbar 0.5.9 comes with a command-line tool that can be used with other UNIX utilities to create an ad-hoc monitoring solution.
+pyrollbar comes with a command-line tool that can be used with other UNIX utilities to create an ad-hoc monitoring solution.
 
 e.g. Report all 5xx haproxy requests as ```warning```
 

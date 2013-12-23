@@ -99,7 +99,7 @@ log = logging.getLogger(__name__)
 
 agent_log = None
 
-VERSION = '0.5.14'
+VERSION = '0.6.0'
 DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/'
 DEFAULT_TIMEOUT = 3
 
@@ -195,7 +195,7 @@ def report_message(message, level='error', request=None, extra_data=None, payloa
     payload_data: param names to pass in the 'data' level of the payload; overrides defaults.
     """
     try:
-        _report_message(message, level, request, extra_data, payload_data)
+        return _report_message(message, level, request, extra_data, payload_data)
     except Exception, e:
         log.exception("Exception while reporting message to Rollbar. %r", e)
 
