@@ -16,7 +16,14 @@ DEFAULT_WEB_BASE = 'https://rollbar.com'
 log = logging.getLogger(__name__)
 
 def handle_error(settings, request):
-    rollbar.report_exc_info(sys.exc_info(), request)
+    payload_data = None
+    try:
+        context = request.matched_route.name
+        payload_data = {'context': context}
+    except:
+        pass
+
+    rollbar.report_exc_info(sys.exc_info(), request, payload_data=payload_data)
 
 
 def parse_settings(settings):
