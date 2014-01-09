@@ -21,7 +21,14 @@ class RollbarBottleReporter(object):
             try:
                 return callback(*args, **kwargs)
             except Exception, e:
-                rollbar.report_exc_info(sys.exc_info(), request=bottle.request)
+                payload_data = None
+                try:
+                    route = bottle.request['bottle.route']
+                    payload_data = {'context': route.name or route.rule}
+                except:
+                    pass
+
+                rollbar.report_exc_info(sys.exc_info(), request=bottle.request, payload_data=payload_data)
                 raise
 
         return wrapper
