@@ -17,6 +17,7 @@ import sys
 import rollbar
 
 from django.core.exceptions import MiddlewareNotUsed
+from django.core.urlresolvers import resolve
 from django.conf import settings
 from django.http import Http404
 
@@ -91,6 +92,19 @@ class RollbarNotifierMiddleware(object):
         rollbar.init(access_token, environment, **kw)
         
         def hook(request, data):
+            try:
+                # try django 1.5 method for getting url_name
+                url_name = request.resolver_match.url_name
+            except:
+                # fallback to older method
+                try:
+                    url_name = resolve(request.path_info).url_name
+                except:
+                    url_name = None
+
+            if url_name:
+                data['context'] = url_name
+
             data['framework'] = 'django'
             
             if request:
