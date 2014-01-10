@@ -1,5 +1,8 @@
 # Change Log
 
+**0.6.1**
+- Added Django, Pyramid, Flask and Bottle support for default contexts.
+
 **0.6.0**
 - `report_message()` now returns the UUID of the reported occurrence.
 
