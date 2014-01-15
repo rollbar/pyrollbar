@@ -15,7 +15,7 @@ DEFAULT_WEB_BASE = 'https://rollbar.com'
 
 log = logging.getLogger(__name__)
 
-def handle_error(settings, request):
+def handle_error(settings, request, exc_info):
     payload_data = None
     try:
         context = request.matched_route.name
@@ -23,7 +23,7 @@ def handle_error(settings, request):
     except:
         pass
 
-    rollbar.report_exc_info(sys.exc_info(), request, payload_data=payload_data)
+    rollbar.report_exc_info(exc_info, request, payload_data=payload_data)
 
 
 def parse_settings(settings):
@@ -164,6 +164,7 @@ class RollbarMiddleware(object):
         try:
             return self.app(environ, start_resp)
         except Exception, e:
+            exc_info = sys.exc_info()
             from pyramid.request import Request
-            handle_error(self.settings, Request(environ))
+            handle_error(self.settings, Request(environ), exc_info)
             raise
