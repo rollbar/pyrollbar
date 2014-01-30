@@ -1,5 +1,10 @@
 # Change Log
 
+**0.6.2**
+- Fixed json request data formatting for reports in Bottle requests
+- Now send json request data for Django and Pyramid apps
+- Set framework and request context properly for all reports in Flask and Bottle apps
+
 **0.6.1**
 - Added Django, Pyramid, Flask and Bottle support for default contexts.
 

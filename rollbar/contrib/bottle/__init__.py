@@ -16,19 +16,21 @@ class RollbarBottleReporter(object):
 
         rollbar.init(*args, **kwargs)
 
+        def hook(request, data):
+            data['framework'] = 'bottle'
+
+            if request:
+                route = request['bottle.route']
+                data['context'] = route.name or route.rule
+
+        rollbar.BASE_DATA_HOOK = hook
+
     def __call__(self, callback):
         def wrapper(*args, **kwargs):
             try:
                 return callback(*args, **kwargs)
             except Exception, e:
-                payload_data = None
-                try:
-                    route = bottle.request['bottle.route']
-                    payload_data = {'context': route.name or route.rule}
-                except:
-                    pass
-
-                rollbar.report_exc_info(sys.exc_info(), request=bottle.request, payload_data=payload_data)
+                rollbar.report_exc_info(sys.exc_info(), request=bottle.request)
                 raise
 
         return wrapper

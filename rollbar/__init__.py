@@ -99,7 +99,7 @@ log = logging.getLogger(__name__)
 
 agent_log = None
 
-VERSION = '0.6.1'
+VERSION = '0.6.2'
 DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/'
 DEFAULT_TIMEOUT = 3
 
@@ -623,6 +623,12 @@ def _build_webob_request_data(request):
         'headers': dict(request.headers),
     }
 
+    try:
+        if request.json:
+            request_data['body'] = request.body
+    except:
+        pass
+
     # pyramid matchdict
     if getattr(request, 'matchdict', None):
         request_data['params'] = request.matchdict
@@ -646,6 +652,11 @@ def _build_django_request_data(request):
         'user_ip': _django_extract_user_ip(request),
     }
 
+    try:
+        request_data['body'] = request.body
+    except:
+        pass
+
     # headers
     headers = {}
     for k, v in request.environ.iteritems():
@@ -661,12 +672,15 @@ def _build_werkzeug_request_data(request):
     request_data = {
         'url': request.url,
         'GET': dict(request.args),
-        'POST': dict(request.get_json() or request.form),
+        'POST': dict(request.form),
         'user_ip': _extract_user_ip(request),
         'headers': dict(request.headers),
         'method': request.method,
         'files_keys': request.files.keys(),
     }
+
+    if request.get_json():
+        request_data['body'] = request.data
 
     return request_data
 
@@ -689,9 +703,16 @@ def _build_bottle_request_data(request):
         'user_ip': request.remote_addr,
         'headers': dict(request.headers),
         'method': request.method,
-        'GET': dict(request.query),
-        'POST': dict(request.forms),
+        'GET': dict(request.query)
     }
+
+    if request.json:
+        try:
+            request_data['body'] = request.body.getvalue()
+        except:
+            pass
+    else:
+        request_data['POST'] = dict(request.forms)
 
     return request_data
 
