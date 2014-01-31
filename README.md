@@ -119,6 +119,11 @@ root = %(here)s
 
 Unfortunately, the Rollbar tween and the Rollbar filter configurations contains duplicated information. We'll look into fixing this in future versions.
 
+### Flask
+
+Check out [rollbar-flask-example](https://github.com/rollbar/rollbar-flask-example).
+
+
 ### Bottle
 
 Import the plugin and install!
