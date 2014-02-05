@@ -180,7 +180,7 @@ def report_exc_info(exc_info=None, request=None, extra_data=None, payload_data=N
 
     try:
         return _report_exc_info(exc_info, request, extra_data, payload_data)
-    except Exception, e:
+    except Exception as e:
         log.exception("Exception while reporting exc_info to Rollbar. %r", e)
 
 
@@ -196,7 +196,7 @@ def report_message(message, level='error', request=None, extra_data=None, payloa
     """
     try:
         return _report_message(message, level, request, extra_data, payload_data)
-    except Exception, e:
+    except Exception as e:
         log.exception("Exception while reporting message to Rollbar. %r", e)
 
 
@@ -456,7 +456,7 @@ def _build_base_data(request, level='error'):
 def _add_person_data(data, request):
     try:
         person_data = _build_person_data(request)
-    except Exception, e:
+    except Exception as e:
         log.exception("Exception while building person data for Rollbar paylooad: %r", e)
     else:
         if person_data:
@@ -526,7 +526,7 @@ def _add_request_data(data, request):
     try:
         request_data = _build_request_data(request)
         request_data = _scrub_request_data(request_data)
-    except Exception, e:
+    except Exception as e:
         log.exception("Exception while building request_data for Rollbar payload: %r", e)
     else:
         if request_data:
@@ -747,7 +747,7 @@ def _build_payload(data):
 def _send_payload(payload):
     try:
         _post_api('item/', payload)
-    except Exception, e:
+    except Exception as e:
         log.exception('Exception while posting item %r', e)
 
 
@@ -775,7 +775,7 @@ def _parse_response(path, access_token, params, resp):
 
     try:
         data = resp.text
-    except Exception, e:
+    except Exception as e:
         data = resp.content
         log.error('resp.text is undefined, resp.content is %r', resp.content)
 
