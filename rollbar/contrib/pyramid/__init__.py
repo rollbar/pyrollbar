@@ -22,7 +22,7 @@ def handle_error(settings, request):
 def parse_settings(settings):
     prefix = 'rollbar.'
     out = {}
-    for k, v in settings.iteritems():
+    for k, v in settings.items():
         if k.startswith(prefix):
             out[k[len(prefix):]] = v
     return out

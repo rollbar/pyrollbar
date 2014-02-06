@@ -10,11 +10,19 @@ import sys
 import threading
 import time
 import traceback
-import urlparse
 import urllib
 import uuid
 
 import requests
+
+try:
+    # Python 3
+    import urllib.parse as urlparse
+    from urllib.parse import urlencode
+except ImportError:
+    # Python 2
+    import urlparse
+    from urllib import urlencode
 
 
 # import request objects from various frameworks, if available
@@ -589,7 +597,7 @@ def _scrub_request_url(url_string):
 
     # use dash for replacement character so it looks better since it wont be url escaped
     scrubbed_qs_params = _scrub_request_params(qs_params, replacement_character='-')
-    scrubbed_qs = urllib.urlencode(scrubbed_qs_params, doseq=True)
+    scrubbed_qs = urlencode(scrubbed_qs_params, doseq=True)
 
     scrubbed_url = (url.scheme, url.netloc, url.path, url.params, scrubbed_qs, url.fragment)
     scrubbed_url_string = urlparse.urlunparse(scrubbed_url)
@@ -659,7 +667,7 @@ def _build_django_request_data(request):
 
     # headers
     headers = {}
-    for k, v in request.environ.iteritems():
+    for k, v in request.environ.items():
         if k.startswith('HTTP_'):
             header_name = '-'.join(k[len('HTTP_'):].replace('_', ' ').title().split(' '))
             headers[header_name] = v
@@ -825,7 +833,7 @@ def dict_merge(a, b):
     if not isinstance(b, dict):
         return b
     result = copy.deepcopy(a)
-    for k, v in b.iteritems():
+    for k, v in b.items():
         if k in result and isinstance(result[k], dict):
             result[k] = dict_merge(result[k], v)
         else:
