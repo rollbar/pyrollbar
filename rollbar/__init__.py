@@ -29,6 +29,11 @@ except ImportError:
     DjangoHttpRequest = None
 
 try:
+    from rest_framework.request import Request as RestFrameworkRequest
+except ImportError:
+    RestFrameworkRequest = None
+
+try:
     from werkzeug.wrappers import Request as WerkzeugRequest
 except ImportError:
     WerkzeugRequest = None
@@ -545,6 +550,10 @@ def _build_request_data(request):
 
     # django
     if DjangoHttpRequest and isinstance(request, DjangoHttpRequest):
+        return _build_django_request_data(request)
+
+    # django rest framework
+    if RestFrameworkRequest and isinstance(request, RestFrameworkRequest):
         return _build_django_request_data(request)
 
     # werkzeug (flask)
