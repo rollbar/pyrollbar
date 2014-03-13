@@ -8,6 +8,7 @@ import sys
 from pyramid.httpexceptions import WSGIHTTPException
 from pyramid.tweens import EXCVIEW
 from pyramid.util import DottedNameResolver
+from pyramid.settings import asbool
 
 import rollbar
 
@@ -99,48 +100,50 @@ def includeme(config):
     """
     Pyramid entry point
     """
-    config.add_tween('rollbar.contrib.pyramid.rollbar_tween_factory', under=EXCVIEW)
-
-    # run patch_debugtoolbar, unless they disabled it
     settings = config.registry.settings
-    if settings.get('rollbar.patch_debugtoolbar', 'true') == 'true':
-        patch_debugtoolbar(settings)
 
-    def hook(request, data):
-        data['framework'] = 'pyramid'
-        
-        if request:
-            request.environ['rollbar.uuid'] = data['uuid']
+    if asbool(settings.get('rollbar.enabled', True)):
+        config.add_tween('rollbar.contrib.pyramid.rollbar_tween_factory', under=EXCVIEW)
 
-            if request.matched_route:
-                data['context'] = request.matched_route.name
+        # run patch_debugtoolbar, unless they disabled it
+        if asbool(settings.get('rollbar.patch_debugtoolbar', True)):
+            patch_debugtoolbar(settings)
 
-    rollbar.BASE_DATA_HOOK = hook
+        def hook(request, data):
+            data['framework'] = 'pyramid'
 
-    kw = parse_settings(settings)
+            if request:
+                request.environ['rollbar.uuid'] = data['uuid']
 
-    access_token = kw.pop('access_token')
-    environment = kw.pop('environment', 'production')
+                if request.matched_route:
+                    data['context'] = request.matched_route.name
 
-    if kw.get('scrub_fields'):
-        kw['scrub_fields'] = set([str.strip(x) for x in kw.get('scrub_fields').split('\n') if x])
-    
-    if kw.get('exception_level_filters'):
-        r = DottedNameResolver()
-        exception_level_filters = []
-        for line in kw.get('exception_level_filters').split('\n'):
-            if line:
-                dotted_path, level = line.split()
-                
-                try:
-                    cls = r.resolve(dotted_path)
-                    exception_level_filters.append((cls, level))
-                except ImportError:
-                    log.error('Could not import %r' % dotted_path)
-        
-        kw['exception_level_filters'] = exception_level_filters
-    
-    rollbar.init(access_token, environment, **kw)
+        rollbar.BASE_DATA_HOOK = hook
+
+        kw = parse_settings(settings)
+
+        access_token = kw.pop('access_token')
+        environment = kw.pop('environment', 'production')
+
+        if kw.get('scrub_fields'):
+            kw['scrub_fields'] = set([str.strip(x) for x in kw.get('scrub_fields').split('\n') if x])
+
+        if kw.get('exception_level_filters'):
+            r = DottedNameResolver()
+            exception_level_filters = []
+            for line in kw.get('exception_level_filters').split('\n'):
+                if line:
+                    dotted_path, level = line.split()
+
+                    try:
+                        cls = r.resolve(dotted_path)
+                        exception_level_filters.append((cls, level))
+                    except ImportError:
+                        log.error('Could not import %r' % dotted_path)
+
+            kw['exception_level_filters'] = exception_level_filters
+
+        rollbar.init(access_token, environment, **kw)
 
 
 def create_rollbar_middleware(app, global_config=None, **kw):
