@@ -2,12 +2,16 @@ import copy
 import json
 import mock
 
-import urlparse
-
 import rollbar
 
 from . import BaseTest
 
+try:
+    # Python 3
+    import urllib.parse as urlparse
+except ImportError:
+    # Python 2
+    import urlparse
 
 _test_access_token = 'aaaabbbbccccddddeeeeffff00001111'
 _default_settings = copy.deepcopy(rollbar.SETTINGS)
