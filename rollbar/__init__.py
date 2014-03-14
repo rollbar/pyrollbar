@@ -450,7 +450,7 @@ def _build_base_data(request, level='error'):
         'timestamp': int(time.time()),
         'environment': SETTINGS['environment'],
         'level': level,
-        'language': 'python',
+        'language': 'python %s' % '.'.join(str(x) for x in sys.version_info[:3]),
         'notifier': SETTINGS['notifier'],
         'uuid': str(uuid.uuid4()),
     }
