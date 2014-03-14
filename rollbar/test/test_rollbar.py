@@ -1,17 +1,19 @@
 import copy
 import json
 import mock
-import unittest
+
 import urlparse
 
 import rollbar
+
+from . import BaseTest
 
 
 _test_access_token = 'aaaabbbbccccddddeeeeffff00001111'
 _default_settings = copy.deepcopy(rollbar.SETTINGS)
 
 
-class RollbarTest(unittest.TestCase):
+class RollbarTest(BaseTest):
     def setUp(self):
         rollbar._initialized = False
         rollbar.SETTINGS = copy.deepcopy(_default_settings)
