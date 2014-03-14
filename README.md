@@ -280,6 +280,12 @@ WSGIServer(('', 8000), application).serve_forever()
   <dt>access_token</dt>
   <dd>Access token from your Rollbar project
   </dd>
+  <dt>enabled</dt>
+  <dd>Controls whether or not Rollbar will report any data
+
+Default: ```True```
+
+  </dd>
   <dt>handler</dt>
   <dd>The method for reporting rollbar items to api.rollbar.com
   

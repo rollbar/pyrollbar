@@ -112,6 +112,7 @@ DEFAULT_TIMEOUT = 3
 # configure by calling init() or overriding directly
 SETTINGS = {
     'access_token': None,
+    'enabled': True,
     'environment': 'production',
     'exception_level_filters': [],
     'root': None,  # root path to your code
@@ -432,10 +433,15 @@ def _report_message(message, level, request, extra_data, payload_data):
 
 
 def _check_config():
+    if not SETTINGS.get('enabled'):
+        log.info("pyrollbar: Not reporting because rollbar is disabled.")
+        return False
+
     # make sure we have an access_token
     if not SETTINGS.get('access_token'):
         log.warning("pyrollbar: No access_token provided. Please configure by calling rollbar.init() with your access token.")
         return False
+
     return True
 
 
