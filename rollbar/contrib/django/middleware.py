@@ -116,7 +116,7 @@ class RollbarNotifierMiddleware(object):
         if self._get_setting('patch_debugview'):
             try:
                 _patch_debugview(self._get_setting('web_base'))
-            except Exception, e:
+            except Exception as e:
                 log.error("Rollbar - unable to monkeypatch debugview to add 'View in Rollbar' link."
                     " To disable, set `ROLLBAR['patch_debugview'] = False` in settings.py."
                     " Exception was: %r", e)
