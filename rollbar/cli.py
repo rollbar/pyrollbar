@@ -11,7 +11,7 @@ def _gen_report_message(level):
     def _wrapped(lines):
         line_data = '\n'.join(lines)
         if verbose:
-            print 'Rollbar [%s]: %s' % (level, line_data)
+            print('Rollbar [%s]: %s' % (level, line_data))
         rollbar.report_message(line_data, level=level, extra_data={'cli_version': VERSION})
     return _wrapped
 
@@ -92,5 +92,5 @@ def main():
                 _do_cmd(cur_cmd_name, ' '.join(parts))
 
             cur_line = sys.stdin.readline()
-    except (KeyboardInterrupt, SystemExit), e:
+    except (KeyboardInterrupt, SystemExit) as e:
         pass

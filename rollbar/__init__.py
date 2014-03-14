@@ -10,11 +10,19 @@ import sys
 import threading
 import time
 import traceback
-import urlparse
 import urllib
 import uuid
 
 import requests
+
+try:
+    # Python 3
+    import urllib.parse as urlparse
+    from urllib.parse import urlencode
+except ImportError:
+    # Python 2
+    import urlparse
+    from urllib import urlencode
 
 
 # import request objects from various frameworks, if available
@@ -186,7 +194,7 @@ def report_exc_info(exc_info=None, request=None, extra_data=None, payload_data=N
 
     try:
         return _report_exc_info(exc_info, request, extra_data, payload_data)
-    except Exception, e:
+    except Exception as e:
         log.exception("Exception while reporting exc_info to Rollbar. %r", e)
 
 
@@ -202,7 +210,7 @@ def report_message(message, level='error', request=None, extra_data=None, payloa
     """
     try:
         return _report_message(message, level, request, extra_data, payload_data)
-    except Exception, e:
+    except Exception as e:
         log.exception("Exception while reporting message to Rollbar. %r", e)
 
 
@@ -467,7 +475,7 @@ def _build_base_data(request, level='error'):
 def _add_person_data(data, request):
     try:
         person_data = _build_person_data(request)
-    except Exception, e:
+    except Exception as e:
         log.exception("Exception while building person data for Rollbar paylooad: %r", e)
     else:
         if person_data:
@@ -537,7 +545,7 @@ def _add_request_data(data, request):
     try:
         request_data = _build_request_data(request)
         request_data = _scrub_request_data(request_data)
-    except Exception, e:
+    except Exception as e:
         log.exception("Exception while building request_data for Rollbar payload: %r", e)
     else:
         if request_data:
@@ -604,7 +612,7 @@ def _scrub_request_url(url_string):
 
     # use dash for replacement character so it looks better since it wont be url escaped
     scrubbed_qs_params = _scrub_request_params(qs_params, replacement_character='-')
-    scrubbed_qs = urllib.urlencode(scrubbed_qs_params, doseq=True)
+    scrubbed_qs = urlencode(scrubbed_qs_params, doseq=True)
 
     scrubbed_url = (url.scheme, url.netloc, url.path, url.params, scrubbed_qs, url.fragment)
     scrubbed_url_string = urlparse.urlunparse(scrubbed_url)
@@ -674,7 +682,7 @@ def _build_django_request_data(request):
 
     # headers
     headers = {}
-    for k, v in request.environ.iteritems():
+    for k, v in request.environ.items():
         if k.startswith('HTTP_'):
             header_name = '-'.join(k[len('HTTP_'):].replace('_', ' ').title().split(' '))
             headers[header_name] = v
@@ -762,7 +770,7 @@ def _build_payload(data):
 def _send_payload(payload):
     try:
         _post_api('item/', payload)
-    except Exception, e:
+    except Exception as e:
         log.exception('Exception while posting item %r', e)
 
 
@@ -790,7 +798,7 @@ def _parse_response(path, access_token, params, resp):
 
     try:
         data = resp.text
-    except Exception, e:
+    except Exception as e:
         data = resp.content
         log.error('resp.text is undefined, resp.content is %r', resp.content)
 
@@ -840,7 +848,7 @@ def dict_merge(a, b):
     if not isinstance(b, dict):
         return b
     result = copy.deepcopy(a)
-    for k, v in b.iteritems():
+    for k, v in b.items():
         if k in result and isinstance(result[k], dict):
             result[k] = dict_merge(result[k], v)
         else:

@@ -23,7 +23,7 @@ def handle_error(settings, request):
 def parse_settings(settings):
     prefix = 'rollbar.'
     out = {}
-    for k, v in settings.iteritems():
+    for k, v in settings.items():
         if k.startswith(prefix):
             out[k[len(prefix):]] = v
     return out
@@ -163,7 +163,7 @@ class RollbarMiddleware(object):
     def __call__(self, environ, start_resp):
         try:
             return self.app(environ, start_resp)
-        except Exception, e:
+        except Exception as e:
             from pyramid.request import Request
             handle_error(self.settings, Request(environ))
             raise
