@@ -139,7 +139,7 @@ class RollbarNotifierMiddleware(object):
         except KeyError:
             if name in DEFAULTS:
                 default_val = DEFAULTS[name]
-                if callable(default_val):
+                if hasattr(default_val, '__call__'):
                     return default_val()
                 return default_val
             return default
