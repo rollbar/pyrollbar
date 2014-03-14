@@ -23,6 +23,7 @@ setup(
     long_description=README,
     author='Brian Rue',
     author_email='brian@rollbar.com',
+    test_suite='rollbar.test',
     url='http://github.com/rollbar/pyrollbar',
     classifiers=[
         "Programming Language :: Python",
