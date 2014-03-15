@@ -4,4 +4,6 @@ Huge thanks to the following contributors (by github username). For the most up-
 
 - [alex-laties](https://github.com/alex-laties)
 - [dmitry-mukhin](https://github.com/dmitry-mukhin)
+- [jbrumwell](https://github.com/jbrumwell)
+- [rhcarvalho](https://github.com/rhcarvalho)
 - [tschieggm](https://github.com/tschieggm)

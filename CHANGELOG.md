@@ -1,5 +1,10 @@
 # Change Log
 
+**0.7.0**
+- Python 3 support
+- Now support extracting data from Django REST framework requests
+- New `enabled` configuration setting
+
 **0.6.2**
 - Fixed json request data formatting for reports in Bottle requests
 - Now send json request data for Django and Pyramid apps
