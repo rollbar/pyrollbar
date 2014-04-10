@@ -378,3 +378,14 @@ You can also find us in IRC: [#rollbar on chat.freenode.net](irc://chat.freenode
 
 For bug reports, please [open an issue on GitHub](https://github.com/rollbar/pyrollbar/issues/new).
 
+
+## Contributing
+
+1. Fork it
+2. Create your feature branch (```git checkout -b my-new-feature```).
+3. Commit your changes (```git commit -am 'Added some feature'```)
+4. Push to the branch (```git push origin my-new-feature```)
+5. Create new Pull Request
+
+Tests are in `rollbar/test`. To run the tests: `python setup.py test`
+
