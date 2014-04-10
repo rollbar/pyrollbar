@@ -3,3 +3,4 @@
 *.swo
 dist/
 rollbar.egg-info/
+*.egg

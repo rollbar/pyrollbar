@@ -43,5 +43,8 @@ setup(
     install_requires=[
         'requests',
         ],
+    tests_require=[
+        'mock',
+        ],
     )
 
