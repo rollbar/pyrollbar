@@ -150,21 +150,21 @@ class RollbarTest(BaseTest):
             'confirm_password': 341254213
         }
 
-        scrubbed = rollbar._scrub_request_params(params)
+        scrubbed = rollbar._scrub_request_params(params, replacement_character='-')
 
         self.assertDictEqual(scrubbed, {
             'foo': 'bar',
             'bar': {
                 'foo': {
-                    'password': '********',
+                    'password': '--------',
                     'clear': 'text'
                 },
-                'secret': ['****']
+                'secret': ['----']
             },
-            'passwd': [{'*': '*'}, {'*': '*'}],
-            'secret': {'*': '*'},
-            'password_confirmation': '*',
-            'confirm_password': '*'
+            'passwd': [{'-': '-'}, {'-': '-'}],
+            'secret': {'-': '-'},
+            'password_confirmation': '-',
+            'confirm_password': '-'
         })
 
     def test_url_scrubbing(self):

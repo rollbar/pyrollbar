@@ -637,7 +637,7 @@ def _scrub_request_params(params, replacement_character='*'):
             elif isinstance(params, list):
                 return [_scrub(v, k) for v in params]
             elif isinstance(params, dict):
-                return {'*': '*'}
+                return {replacement_character: replacement_character}
             else:
                 return replacement_character
         elif isinstance(params, dict):
