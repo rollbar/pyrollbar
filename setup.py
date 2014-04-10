@@ -12,7 +12,7 @@ except IOError:
 setup(
     name='rollbar',
     packages=find_packages(),
-    version='0.7.0',
+    version='0.7.1',
     entry_points= {
         'paste.filter_app_factory': [
             'pyramid=rollbar.contrib.pyramid:create_rollbar_middleware'

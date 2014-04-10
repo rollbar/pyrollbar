@@ -628,14 +628,24 @@ def _scrub_request_params(params, replacement_character='*'):
     scrub_fields = set(SETTINGS['scrub_fields'])
     params = dict(params)
 
-    for k, v in params.items():
-        if k.lower() in scrub_fields:
-            if isinstance(v, list):
-                params[k] = [replacement_character * len(x) for x in v]
+    def _scrub(params, k=None):
+        if k is not None and k.lower() in scrub_fields:
+            if isinstance(params, basestring):
+                return replacement_character * len(params)
+            elif isinstance(params, list):
+                return [_scrub(v, k) for v in params]
+            elif isinstance(params, dict):
+                return {'*': '*'}
             else:
-                params[k] = replacement_character * len(v)
+                return replacement_character
+        elif isinstance(params, dict):
+            return {_k: _scrub(v, _k) for _k, v in params.items()}
+        elif isinstance(params, list):
+            return [_scrub(x, k) for x in params]
+        else:
+            return params
 
-    return params
+    return _scrub(params)
 
 
 def _build_webob_request_data(request):
@@ -703,7 +713,7 @@ def _build_werkzeug_request_data(request):
     }
 
     if request.get_json():
-        request_data['body'] = request.data
+        request_data['body'] = _scrub_request_params(request.json)
 
     return request_data
 
