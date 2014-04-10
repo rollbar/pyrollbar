@@ -19,10 +19,12 @@ try:
     # Python 3
     import urllib.parse as urlparse
     from urllib.parse import urlencode
+    string_types = str
 except ImportError:
     # Python 2
     import urlparse
     from urllib import urlencode
+    string_types = basestring
 
 
 # import request objects from various frameworks, if available
@@ -630,7 +632,7 @@ def _scrub_request_params(params, replacement_character='*'):
 
     def _scrub(params, k=None):
         if k is not None and k.lower() in scrub_fields:
-            if isinstance(params, basestring):
+            if isinstance(params, string_types):
                 return replacement_character * len(params)
             elif isinstance(params, list):
                 return [_scrub(v, k) for v in params]
@@ -639,7 +641,7 @@ def _scrub_request_params(params, replacement_character='*'):
             else:
                 return replacement_character
         elif isinstance(params, dict):
-            return {_k: _scrub(v, _k) for _k, v in params.items()}
+            return dict((_k,  _scrub(v, _k)) for _k, v in params.items())
         elif isinstance(params, list):
             return [_scrub(x, k) for x in params]
         else:
