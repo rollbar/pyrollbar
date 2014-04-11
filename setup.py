@@ -45,6 +45,7 @@ setup(
         ],
     tests_require=[
         'mock',
+        'webob',
         ],
     )
 

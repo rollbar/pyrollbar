@@ -57,6 +57,24 @@ class RollbarTest(BaseTest):
         self.assertEqual(server_data['branch'], 'master')
         self.assertEqual(server_data['root'], '/home/test/')
 
+    def test_webob_request_data(self):
+        import webob
+        request = webob.Request.blank('/the/path?q=hello&password=hunter2', 
+            base_url='http://example.com',
+            headers={'X-Real-Ip': '5.6.7.8'},
+            POST='foo=bar&confirm_password=hunter3')
+        
+        unscrubbed = rollbar._build_webob_request_data(request)
+        self.assertEqual(unscrubbed['url'], 'http://example.com/the/path?q=hello&password=hunter2')
+        self.assertEqual(unscrubbed['user_ip'], '5.6.7.8')
+        self.assertDictEqual(unscrubbed['GET'], {'q': 'hello', 'password': 'hunter2'})
+        self.assertDictEqual(unscrubbed['POST'], {'foo': 'bar', 'confirm_password': 'hunter3'})
+
+        scrubbed = rollbar._scrub_request_data(unscrubbed)
+        self.assertEqual(scrubbed['url'], 'http://example.com/the/path?q=hello&password=-------')
+        self.assertDictEqual(unscrubbed['GET'], {'q': 'hello', 'password': '*******'})
+        self.assertDictEqual(unscrubbed['POST'], {'foo': 'bar', 'confirm_password': '*******'})
+
     @mock.patch('rollbar.send_payload')
     def test_report_exception(self, send_payload):
         try:
