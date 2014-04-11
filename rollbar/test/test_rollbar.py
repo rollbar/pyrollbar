@@ -144,6 +144,60 @@ class RollbarTest(BaseTest):
             'password_confirmation': 'password_confirmation'
         })
 
+    def test_json_scrubbing(self):
+        params = {
+            'foo': 'bar',
+            'bar': {
+                'foo': {
+                    'password': 'password',
+                    'clear': 'text'
+                },
+                'secret': ['1234']
+            },
+            'passwd': [
+                {'bar': None},
+                {'password': 'passwd'}
+            ],
+            'secret': {
+                'password': {
+                    'confirm_password': 'confirm_password',
+                    'foo': 'bar'
+                }
+            },
+            'password_confirmation': None,
+            'confirm_password': 341254213
+        }
+
+        scrubbed = rollbar._scrub_request_params(params, replacement_character='-')
+
+        self.assertDictEqual(scrubbed, {
+            'foo': 'bar',
+            'bar': {
+                'foo': {
+                    'password': '--------',
+                    'clear': 'text'
+                },
+                'secret': ['----']
+            },
+            'passwd': [{'-': '-'}, {'-': '-'}],
+            'secret': {'-': '-'},
+            'password_confirmation': '-',
+            'confirm_password': '-'
+        })
+
+    def test_non_dict_scrubbing(self):
+        params = "string"
+        scrubbed = rollbar._scrub_request_params(params)
+        self.assertEqual(scrubbed, params)
+
+        params = 1234
+        scrubbed = rollbar._scrub_request_params(params)
+        self.assertEqual(scrubbed, params)
+
+        params = [{'password': 'password', 'foo': 'bar'}]
+        scrubbed = rollbar._scrub_request_params(params)
+        self.assertEqual([{'password': '********', 'foo': 'bar'}], scrubbed)
+
     def test_url_scrubbing(self):
         url = 'http://foo.com/?password=password&foo=bar&secret=secret'
 
