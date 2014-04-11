@@ -628,7 +628,6 @@ def _scrub_request_params(params, replacement_character='*'):
     (replaced with astrickses)
     """
     scrub_fields = set(SETTINGS['scrub_fields'])
-    params = dict(params)
 
     def _scrub(params, k=None):
         if k is not None and k.lower() in scrub_fields:

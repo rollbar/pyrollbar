@@ -167,6 +167,19 @@ class RollbarTest(BaseTest):
             'confirm_password': '-'
         })
 
+    def test_non_dict_scrubbing(self):
+        params = "string"
+        scrubbed = rollbar._scrub_request_params(params)
+        self.assertEqual(scrubbed, params)
+
+        params = 1234
+        scrubbed = rollbar._scrub_request_params(params)
+        self.assertEqual(scrubbed, params)
+
+        params = [{'password': 'password', 'foo': 'bar'}]
+        scrubbed = rollbar._scrub_request_params(params)
+        self.assertEqual([{'password': '********', 'foo': 'bar'}], scrubbed)
+
     def test_url_scrubbing(self):
         url = 'http://foo.com/?password=password&foo=bar&secret=secret'
 
