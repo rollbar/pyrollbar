@@ -71,7 +71,12 @@ class RollbarTest(BaseTest):
         self.assertDictEqual(unscrubbed['POST'], {'foo': 'bar', 'confirm_password': 'hunter3'})
 
         scrubbed = rollbar._scrub_request_data(unscrubbed)
-        self.assertEqual(scrubbed['url'], 'http://example.com/the/path?q=hello&password=-------')
+        self.assertTrue(
+            # order might get switched; that's ok
+            scrubbed['url'] == 'http://example.com/the/path?q=hello&password=-------'
+            or
+            scrubbed['url'] == 'http://example.com/the/path?password=-------&q=hello'
+            )
         self.assertDictEqual(unscrubbed['GET'], {'q': 'hello', 'password': '*******'})
         self.assertDictEqual(unscrubbed['POST'], {'foo': 'bar', 'confirm_password': '*******'})
 
