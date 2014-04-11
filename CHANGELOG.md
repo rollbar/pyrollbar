@@ -1,5 +1,8 @@
 # Change Log
 
+**0.7.1**
+- Support scrubbing for werkzeug json bodies ([#19](https://github.com/rollbar/pyrollbar/pull/19))
+
 **0.7.0**
 - Python 3 support
 - Now support extracting data from Django REST framework requests
