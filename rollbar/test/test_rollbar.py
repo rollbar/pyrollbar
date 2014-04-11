@@ -194,6 +194,10 @@ class RollbarTest(BaseTest):
         scrubbed = rollbar._scrub_request_params(params)
         self.assertEqual(scrubbed, params)
 
+        params = None
+        scrubbed = rollbar._scrub_request_params(params)
+        self.assertEqual(scrubbed, params)
+
         params = [{'password': 'password', 'foo': 'bar'}]
         scrubbed = rollbar._scrub_request_params(params)
         self.assertEqual([{'password': '********', 'foo': 'bar'}], scrubbed)
