@@ -714,7 +714,7 @@ def _build_werkzeug_request_data(request):
     }
 
     if request.get_json():
-        request_data['body'] = _scrub_request_params(request.json)
+        request_data['body'] = json.dumps(_scrub_request_params(request.json))
 
     return request_data
 
