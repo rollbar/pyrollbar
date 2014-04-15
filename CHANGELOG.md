@@ -1,5 +1,8 @@
 # Change Log
 
+**0.7.2**
+- Fix for scrubbing werkzeug json bodies ([#20](https://github.com/rollbar/pyrollbar/pull/20))
+
 **0.7.1**
 - Support scrubbing for werkzeug json bodies ([#19](https://github.com/rollbar/pyrollbar/pull/19))
 
