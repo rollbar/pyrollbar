@@ -1,5 +1,8 @@
 # Change Log
 
+**0.7.3**
+- Added in an optional `endpoint` parameter to `search_items()`.
+
 **0.7.2**
 - Fix for scrubbing werkzeug json bodies ([#20](https://github.com/rollbar/pyrollbar/pull/20))
 

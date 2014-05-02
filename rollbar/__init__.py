@@ -114,7 +114,7 @@ log = logging.getLogger(__name__)
 
 agent_log = None
 
-VERSION = '0.7.2'
+VERSION = '0.7.3'
 DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/'
 DEFAULT_TIMEOUT = 3
 
@@ -236,7 +236,7 @@ def send_payload(payload):
         thread.start()
 
 
-def search_items(title, return_fields=None, access_token=None, **search_fields):
+def search_items(title, return_fields=None, access_token=None, endpoint=None, **search_fields):
     """
     Searches a project for items that match the input criteria.
 
@@ -259,6 +259,7 @@ def search_items(title, return_fields=None, access_token=None, **search_fields):
                     title=title,
                     fields=return_fields,
                     access_token=access_token,
+                    endpoint=endpoint,
                     **search_fields)
 
 
@@ -308,21 +309,22 @@ class PagedResult(Result):
         result = result.next_page()
         print 'Second page: %d, data: %s' % (result.page, result.data)
     """
-    def __init__(self, access_token, path, page_num, params, data):
+    def __init__(self, access_token, path, page_num, params, data, endpoint=None):
         super(PagedResult, self).__init__(access_token, path, params, data)
         self.page = page_num
+        self.endpoint = endpoint
 
     def next_page(self):
         params = copy.copy(self.params)
         params['page'] = self.page + 1
-        return _get_api(self.path, **params)
+        return _get_api(self.path, endpoint=self.endpoint, **params)
 
     def prev_page(self):
         if self.page <= 1:
             return self
         params = copy.copy(self.params)
         params['page'] = self.page - 1
-        return _get_api(self.path, **params)
+        return _get_api(self.path, endpoint=self.endpoint, **params)
 
 
 ## internal functions
@@ -791,15 +793,15 @@ def _post_api(path, payload):
     return _parse_response(path, SETTINGS['access_token'], payload, resp)
 
 
-def _get_api(path, access_token=None, **params):
+def _get_api(path, access_token=None, endpoint=None, **params):
     access_token = access_token or SETTINGS['access_token']
-    url = urlparse.urljoin(SETTINGS['endpoint'], path)
+    url = urlparse.urljoin(endpoint or SETTINGS['endpoint'], path)
     params['access_token'] = access_token
     resp = requests.get(url, params=params)
-    return _parse_response(path, access_token, params, resp)
+    return _parse_response(path, access_token, params, resp, endpoint=endpoint)
 
 
-def _parse_response(path, access_token, params, resp):
+def _parse_response(path, access_token, params, resp, endpoint=None):
     if resp.status_code == 429:
         log.warning("Rollbar: over rate limit, data was dropped. Payload was: %r", params)
         return
@@ -825,7 +827,7 @@ def _parse_response(path, access_token, params, resp):
         result = json_data.get('result')
 
         if 'page' in result:
-            return PagedResult(access_token, path, result['page'], params, result)
+            return PagedResult(access_token, path, result['page'], params, result, endpoint=endpoint)
         else:
             return Result(access_token, path, params, result)
 
