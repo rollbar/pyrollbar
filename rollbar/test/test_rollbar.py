@@ -226,3 +226,34 @@ class RollbarTest(BaseTest):
         payload = json.loads(send_payload.call_args[0][0])
 
         self.assertEqual(payload['data']['uuid'], uuid)
+
+    @mock.patch('rollbar.send_payload')
+    def test_report_exc_info_level(self, send_payload):
+
+        try:
+            raise Exception('level_error')
+        except:
+            rollbar.report_exc_info()
+
+        self.assertEqual(send_payload.called, True)
+        payload = json.loads(send_payload.call_args[0][0])
+        self.assertEqual(payload['data']['level'], 'error')
+
+        try:
+            raise Exception('level_info')
+        except:
+            rollbar.report_exc_info(level='info')
+
+        self.assertEqual(send_payload.called, True)
+        payload = json.loads(send_payload.call_args[0][0])
+        self.assertEqual(payload['data']['level'], 'info')
+
+        # payload takes precendence over 'level'
+        try:
+            raise Exception('payload_warn')
+        except:
+            rollbar.report_exc_info(level='info', payload_data={'level': 'warn'})
+
+        self.assertEqual(send_payload.called, True)
+        payload = json.loads(send_payload.call_args[0][0])
+        self.assertEqual(payload['data']['level'], 'warn')
