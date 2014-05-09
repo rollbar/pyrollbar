@@ -172,7 +172,7 @@ def init(access_token, environment='production', **kw):
             agent_log = _create_agent_log()
 
 
-def report_exc_info(exc_info=None, request=None, extra_data=None, payload_data=None, **kw):
+def report_exc_info(exc_info=None, request=None, extra_data=None, payload_data=None, level=None, **kw):
     """
     Reports an exception to Rollbar, using exc_info (from calling sys.exc_info())
 
@@ -195,7 +195,7 @@ def report_exc_info(exc_info=None, request=None, extra_data=None, payload_data=N
         exc_info = sys.exc_info()
 
     try:
-        return _report_exc_info(exc_info, request, extra_data, payload_data)
+        return _report_exc_info(exc_info, request, extra_data, payload_data, level=level)
     except Exception as e:
         log.exception("Exception while reporting exc_info to Rollbar. %r", e)
 
@@ -361,7 +361,7 @@ def _create_agent_log():
     return retval
 
 
-def _report_exc_info(exc_info, request, extra_data, payload_data):
+def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     """
     Called by report_exc_info() wrapper
     """
@@ -378,6 +378,10 @@ def _report_exc_info(exc_info, request, extra_data, payload_data):
     filtered_level = _filtered_level(exc)
     if filtered_level:
         data['level'] = filtered_level
+
+    # explicitly override the level with provided level
+    if level:
+        data['level'] = level
 
     # exception info
     # most recent call last
