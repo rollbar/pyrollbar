@@ -115,7 +115,7 @@ log = logging.getLogger(__name__)
 
 agent_log = None
 
-VERSION = '0.7.3'
+VERSION = '0.7.4'
 DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/'
 DEFAULT_TIMEOUT = 3
 
@@ -124,6 +124,7 @@ DEFAULT_TIMEOUT = 3
 SETTINGS = {
     'access_token': None,
     'enabled': True,
+    'include_locals': True,
     'environment': 'production',
     'exception_level_filters': [],
     'root': None,  # root path to your code
@@ -173,7 +174,7 @@ def init(access_token, environment='production', **kw):
             agent_log = _create_agent_log()
 
 
-def report_exc_info(exc_info=None, request=None, extra_data=None, payload_data=None, **kw):
+def report_exc_info(exc_info=None, request=None, extra_data=None, payload_data=None, level=None, **kw):
     """
     Reports an exception to Rollbar, using exc_info (from calling sys.exc_info())
 
@@ -196,7 +197,7 @@ def report_exc_info(exc_info=None, request=None, extra_data=None, payload_data=N
         exc_info = sys.exc_info()
 
     try:
-        return _report_exc_info(exc_info, request, extra_data, payload_data)
+        return _report_exc_info(exc_info, request, extra_data, payload_data, level=level)
     except Exception as e:
         log.exception("Exception while reporting exc_info to Rollbar. %r", e)
 
@@ -362,7 +363,7 @@ def _create_agent_log():
     return retval
 
 
-def _report_exc_info(exc_info, request, extra_data, payload_data):
+def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     """
     Called by report_exc_info() wrapper
     """
@@ -379,6 +380,10 @@ def _report_exc_info(exc_info, request, extra_data, payload_data):
     filtered_level = _filtered_level(exc)
     if filtered_level:
         data['level'] = filtered_level
+
+    # explicitly override the level with provided level
+    if level:
+        data['level'] = level
 
     # exception info
     # most recent call last
@@ -565,50 +570,49 @@ def _add_arginfo_data(data, exc_info):
     while cur_tb:
         tb_frame = cur_tb.tb_frame
         cur_tb = cur_tb.tb_next
+        cur_frame = frames[frame_num]
 
         # Create placeholders for args/kwargs
         args = []
         kw = {}
 
-        try:
-            arginfo = inspect.getargvalues(tb_frame)
-            func = _get_func_from_frame(tb_frame)
+        if SETTINGS['include_locals']:
+            try:
+                arginfo = inspect.getargvalues(tb_frame)
+                local_vars = arginfo.locals
 
-            if func:
-                argspec = inspect.getargspec(func)
-            else:
-                argspec = None
+                func = _get_func_from_frame(tb_frame)
+                if func:
+                    argspec = inspect.getargspec(func)
+                else:
+                    argspec = None
 
-            cur_frame = frames[frame_num]
-            local_vars = arginfo.locals
+                # Fill in all of the named args
+                for named_arg in arginfo.args:
+                    args.append(local_vars[named_arg])
 
+                # Add any varargs
+                if arginfo.varargs is not None:
+                    args.extend(local_vars[arginfo.varargs])
 
-            # Fill in all of the named args
-            for named_arg in arginfo.args:
-                args.append(local_vars[named_arg])
+                # Fill in all of the kwargs
+                if arginfo.keywords is not None:
+                    kw.update(local_vars[arginfo.keywords])
 
-            # Add any varargs
-            if arginfo.varargs is not None:
-                args.extend(local_vars[arginfo.varargs])
+                if argspec:
+                    # Put any of the args that have defaults into kwargs
+                    num_defaults = len(argspec.defaults)
+                    if num_defaults:
+                        # The last len(argspec.defaults) args in arginfo.args should be added
+                        # to kwargs and removed from args
+                        kw.update(dict(zip(arginfo.args[-num_defaults:], args[-num_defaults:])))
+                        args = args[:-num_defaults]
 
-            # Fill in all of the kwargs
-            if arginfo.keywords is not None:
-                kw.update(local_vars[arginfo.keywords])
+                args = _scrub_obj(args)
+                kw = _scrub_obj(kw)
 
-            if argspec:
-                # Put any of the args that have defaults into kwargs
-                num_defaults = len(argspec.defaults)
-                if num_defaults:
-                    # The last len(argspec.defaults) args in arginfo.args should be added
-                    # to kwargs and removed from args
-                    kw.update(dict(zip(arginfo.args[-num_defaults:], args[-num_defaults:])))
-                    args = args[:-num_defaults]
-
-            args = _scrub_obj(args)
-            kw = _scrub_obj(kw)
-
-        except Exception as e:
-            log.exception('Error while extracting arguments from frame. Ignoring.')
+            except Exception as e:
+                log.exception('Error while extracting arguments from frame. Ignoring.')
 
         cur_frame['args'] = args
         cur_frame['kwargs'] = kw
@@ -936,7 +940,8 @@ def dict_merge(a, b):
     on both values and the result stored in the returned dictionary.'''
     if not isinstance(b, dict):
         return b
-    result = copy.deepcopy(a)
+
+    result = a
     for k, v in b.items():
         if k in result and isinstance(result[k], dict):
             result[k] = dict_merge(result[k], v)

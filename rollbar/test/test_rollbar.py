@@ -83,13 +83,13 @@ class RollbarTest(BaseTest):
     @mock.patch('rollbar.send_payload')
     def test_report_exception(self, send_payload):
 
-        def _raise(asdf, dummy1=1, dummy2=333):
+        def _raise():
             try:
                 raise Exception('foo')
             except:
                 rollbar.report_exc_info()
 
-        _raise('asdf-value')
+        _raise()
 
         self.assertEqual(send_payload.called, True)
 
@@ -104,12 +104,6 @@ class RollbarTest(BaseTest):
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
-        self.assertNotIn('asdf', payload['data']['body']['trace']['frames'][-1]['kwargs'])
-        self.assertIn('dummy1', payload['data']['body']['trace']['frames'][-1]['kwargs'])
-        self.assertIn('dummy2', payload['data']['body']['trace']['frames'][-1]['kwargs'])
-        self.assertEqual(payload['data']['body']['trace']['frames'][-1]['kwargs']['dummy1'], 1)
-        self.assertEqual(payload['data']['body']['trace']['frames'][-1]['kwargs']['dummy2'], 333)
-        self.assertEqual(payload['data']['body']['trace']['frames'][-1]['args'], ['asdf-value'])
 
     @mock.patch('rollbar.send_payload')
     def test_report_messsage(self, send_payload):
@@ -239,6 +233,37 @@ class RollbarTest(BaseTest):
         payload = json.loads(send_payload.call_args[0][0])
 
         self.assertEqual(payload['data']['uuid'], uuid)
+
+    @mock.patch('rollbar.send_payload')
+    def test_report_exc_info_level(self, send_payload):
+
+        try:
+            raise Exception('level_error')
+        except:
+            rollbar.report_exc_info()
+
+        self.assertEqual(send_payload.called, True)
+        payload = json.loads(send_payload.call_args[0][0])
+        self.assertEqual(payload['data']['level'], 'error')
+
+        try:
+            raise Exception('level_info')
+        except:
+            rollbar.report_exc_info(level='info')
+
+        self.assertEqual(send_payload.called, True)
+        payload = json.loads(send_payload.call_args[0][0])
+        self.assertEqual(payload['data']['level'], 'info')
+
+        # payload takes precendence over 'level'
+        try:
+            raise Exception('payload_warn')
+        except:
+            rollbar.report_exc_info(level='info', payload_data={'level': 'warn'})
+
+        self.assertEqual(send_payload.called, True)
+        payload = json.loads(send_payload.call_args[0][0])
+        self.assertEqual(payload['data']['level'], 'warn')
 
     @mock.patch('rollbar.send_payload')
     def test_args_lambda_no_args(self, send_payload):

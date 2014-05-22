@@ -1,5 +1,11 @@
 # Change Log
 
+**0.7.5**
+- Initial support for sending args and kwargs for traceback frames.
+
+**0.7.4**
+- Added level kwarg added to `rollbar.report_exc_info()` ([#22](https://github.com/rollbar/pyrollbar/pull/22))
+
 **0.7.3**
 - Added in an optional `endpoint` parameter to `search_items()`.
 
