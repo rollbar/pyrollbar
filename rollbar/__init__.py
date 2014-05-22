@@ -3,6 +3,7 @@ Plugin for Pyramid apps to submit errors to Rollbar
 """
 
 import copy
+import inspect
 import json
 import logging
 import socket
@@ -383,6 +384,7 @@ def _report_exc_info(exc_info, request, extra_data, payload_data):
     # most recent call last
     raw_frames = traceback.extract_tb(trace)
     frames = [{'filename': f[0], 'lineno': f[1], 'method': f[2], 'code': f[3]} for f in raw_frames]
+
     data['body'] = {
         'trace': {
             'frames': frames,
@@ -399,6 +401,7 @@ def _report_exc_info(exc_info, request, extra_data, payload_data):
         else:
             data['custom'] = {'value': extra_data}
 
+    _add_arginfo_data(data, exc_info)
     _add_request_data(data, request)
     _add_person_data(data, request)
     data['server'] = _build_server_data()
@@ -542,6 +545,77 @@ def _build_person_data(request):
         return {'id': str(user_id)}
 
 
+def _get_func_from_frame(frame):
+    func_name = inspect.getframeinfo(frame).function
+    caller = frame.f_back
+    if caller:
+        func = caller.f_locals.get(func_name,
+                                   caller.f_globals.get(func_name))
+    else:
+        func = None
+
+    return func
+
+
+def _add_arginfo_data(data, exc_info):
+    frames = data['body']['trace']['frames']
+
+    cur_tb = exc_info[2]
+    frame_num = 0
+    while cur_tb:
+        tb_frame = cur_tb.tb_frame
+        cur_tb = cur_tb.tb_next
+
+        # Create placeholders for args/kwargs
+        args = []
+        kw = {}
+
+        try:
+            arginfo = inspect.getargvalues(tb_frame)
+            func = _get_func_from_frame(tb_frame)
+
+            if func:
+                argspec = inspect.getargspec(func)
+            else:
+                argspec = None
+
+            cur_frame = frames[frame_num]
+            local_vars = arginfo.locals
+
+
+            # Fill in all of the named args
+            for named_arg in arginfo.args:
+                args.append(local_vars[named_arg])
+
+            # Add any varargs
+            if arginfo.varargs is not None:
+                args.extend(local_vars[arginfo.varargs])
+
+            # Fill in all of the kwargs
+            if arginfo.keywords is not None:
+                kw.update(local_vars[arginfo.keywords])
+
+            if argspec:
+                # Put any of the args that have defaults into kwargs
+                num_defaults = len(argspec.defaults)
+                if num_defaults:
+                    # The last len(argspec.defaults) args in arginfo.args should be added
+                    # to kwargs and removed from args
+                    kw.update(dict(zip(arginfo.args[-num_defaults:], args[-num_defaults:])))
+                    args = args[:-num_defaults]
+
+            args = _scrub_obj(args)
+            kw = _scrub_obj(kw)
+
+        except Exception, e:
+            log.exception('Error while extracting arguments from frame. Ignoring.')
+
+        cur_frame['args'] = args
+        cur_frame['kwargs'] = kw
+
+        frame_num += 1
+
+
 def _add_request_data(data, request):
     """
     Attempts to build request data; if successful, sets the 'request' key on `data`.
@@ -599,10 +673,10 @@ def _scrub_request_data(request_data):
     """
     if request_data:
         if request_data.get('POST'):
-            request_data['POST'] = _scrub_request_params(request_data['POST'])
+            request_data['POST'] = _scrub_obj(request_data['POST'])
 
         if request_data.get('GET'):
-            request_data['GET'] = _scrub_request_params(request_data['GET'])
+            request_data['GET'] = _scrub_obj(request_data['GET'])
 
         if request_data.get('url'):
             request_data['url'] = _scrub_request_url(request_data['url'])
@@ -615,7 +689,7 @@ def _scrub_request_url(url_string):
     qs_params = urlparse.parse_qs(url.query)
 
     # use dash for replacement character so it looks better since it wont be url escaped
-    scrubbed_qs_params = _scrub_request_params(qs_params, replacement_character='-')
+    scrubbed_qs_params = _scrub_obj(qs_params, replacement_character='-')
     scrubbed_qs = urlencode(scrubbed_qs_params, doseq=True)
 
     scrubbed_url = (url.scheme, url.netloc, url.path, url.params, scrubbed_qs, url.fragment)
@@ -624,31 +698,33 @@ def _scrub_request_url(url_string):
     return scrubbed_url_string
 
 
-def _scrub_request_params(params, replacement_character='*'):
+def _scrub_obj(obj, replacement_character='*'):
     """
-    Given request.POST/request.GET, returns a dict with passwords scrubbed out
-    (replaced with astrickses)
+    Given an object, (e.g. dict/list/string) return the same object with sensitive
+    data scrubbed out, (replaced with astrickses.)
+
+    Fields to scrub out are defined in SETTINGS['scrub_fields'].
     """
     scrub_fields = set(SETTINGS['scrub_fields'])
 
-    def _scrub(params, k=None):
+    def _scrub(obj, k=None):
         if k is not None and k.lower() in scrub_fields:
-            if isinstance(params, string_types):
-                return replacement_character * len(params)
-            elif isinstance(params, list):
-                return [_scrub(v, k) for v in params]
-            elif isinstance(params, dict):
+            if isinstance(obj, string_types):
+                return replacement_character * len(obj)
+            elif isinstance(obj, list):
+                return [_scrub(v, k) for v in obj]
+            elif isinstance(obj, dict):
                 return {replacement_character: replacement_character}
             else:
                 return replacement_character
-        elif isinstance(params, dict):
-            return dict((_k,  _scrub(v, _k)) for _k, v in params.items())
-        elif isinstance(params, list):
-            return [_scrub(x, k) for x in params]
+        elif isinstance(obj, dict):
+            return dict((_k,  _scrub(v, _k)) for _k, v in obj.items())
+        elif isinstance(obj, list):
+            return [_scrub(x, k) for x in obj]
         else:
-            return params
+            return obj
 
-    return _scrub(params)
+    return _scrub(obj)
 
 
 def _build_webob_request_data(request):
