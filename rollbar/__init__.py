@@ -611,7 +611,7 @@ def _add_arginfo_data(data, exc_info):
             args = _scrub_obj(args)
             kw = _scrub_obj(kw)
 
-        except Exception, e:
+        except Exception as e:
             log.exception('Error while extracting arguments from frame. Ignoring.')
 
         cur_frame['args'] = args
