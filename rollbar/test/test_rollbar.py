@@ -82,10 +82,14 @@ class RollbarTest(BaseTest):
 
     @mock.patch('rollbar.send_payload')
     def test_report_exception(self, send_payload):
-        try:
-            raise Exception('foo')
-        except:
-            rollbar.report_exc_info()
+
+        def _raise(asdf, dummy1=1, dummy2=333):
+            try:
+                raise Exception('foo')
+            except:
+                rollbar.report_exc_info()
+
+        _raise('asdf-value')
 
         self.assertEqual(send_payload.called, True)
 
@@ -97,6 +101,15 @@ class RollbarTest(BaseTest):
         self.assertIn('exception', payload['data']['body']['trace'])
         self.assertEqual(payload['data']['body']['trace']['exception']['message'], 'foo')
         self.assertEqual(payload['data']['body']['trace']['exception']['class'], 'Exception')
+
+        self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
+        self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
+        self.assertNotIn('asdf', payload['data']['body']['trace']['frames'][-1]['kwargs'])
+        self.assertIn('dummy1', payload['data']['body']['trace']['frames'][-1]['kwargs'])
+        self.assertIn('dummy2', payload['data']['body']['trace']['frames'][-1]['kwargs'])
+        self.assertEqual(payload['data']['body']['trace']['frames'][-1]['kwargs']['dummy1'], 1)
+        self.assertEqual(payload['data']['body']['trace']['frames'][-1]['kwargs']['dummy2'], 333)
+        self.assertEqual(payload['data']['body']['trace']['frames'][-1]['args'], ['asdf-value'])
 
     @mock.patch('rollbar.send_payload')
     def test_report_messsage(self, send_payload):
@@ -123,7 +136,7 @@ class RollbarTest(BaseTest):
             'password_confirmation': 'password_confirmation'
         }
 
-        scrubbed = rollbar._scrub_request_params(params)
+        scrubbed = rollbar._scrub_obj(params)
 
         self.assertDictEqual(scrubbed, {
             'foo': 'bar',
@@ -137,7 +150,7 @@ class RollbarTest(BaseTest):
 
         rollbar.SETTINGS['scrub_fields'] = ['foo', 'password']
 
-        scrubbed = rollbar._scrub_request_params(params)
+        scrubbed = rollbar._scrub_obj(params)
 
         self.assertDictEqual(scrubbed, {
             'foo': '***',
@@ -173,7 +186,7 @@ class RollbarTest(BaseTest):
             'confirm_password': 341254213
         }
 
-        scrubbed = rollbar._scrub_request_params(params, replacement_character='-')
+        scrubbed = rollbar._scrub_obj(params, replacement_character='-')
 
         self.assertDictEqual(scrubbed, {
             'foo': 'bar',
@@ -192,19 +205,19 @@ class RollbarTest(BaseTest):
 
     def test_non_dict_scrubbing(self):
         params = "string"
-        scrubbed = rollbar._scrub_request_params(params)
+        scrubbed = rollbar._scrub_obj(params)
         self.assertEqual(scrubbed, params)
 
         params = 1234
-        scrubbed = rollbar._scrub_request_params(params)
+        scrubbed = rollbar._scrub_obj(params)
         self.assertEqual(scrubbed, params)
 
         params = None
-        scrubbed = rollbar._scrub_request_params(params)
+        scrubbed = rollbar._scrub_obj(params)
         self.assertEqual(scrubbed, params)
 
         params = [{'password': 'password', 'foo': 'bar'}]
-        scrubbed = rollbar._scrub_request_params(params)
+        scrubbed = rollbar._scrub_obj(params)
         self.assertEqual([{'password': '********', 'foo': 'bar'}], scrubbed)
 
     def test_url_scrubbing(self):
@@ -226,6 +239,7 @@ class RollbarTest(BaseTest):
         payload = json.loads(send_payload.call_args[0][0])
 
         self.assertEqual(payload['data']['uuid'], uuid)
+
 
     @mock.patch('rollbar.send_payload')
     def test_report_exc_info_level(self, send_payload):
@@ -257,3 +271,233 @@ class RollbarTest(BaseTest):
         self.assertEqual(send_payload.called, True)
         payload = json.loads(send_payload.call_args[0][0])
         self.assertEqual(payload['data']['level'], 'warn')
+
+
+
+    @mock.patch('rollbar.send_payload')
+    def test_args_lambda_no_args(self, send_payload):
+
+        _raise = lambda: foo()
+
+        try:
+            _raise()
+        except:
+            rollbar.report_exc_info()
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = json.loads(send_payload.call_args[0][0])
+
+        self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
+        self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
+        self.assertEqual(0, len(payload['data']['body']['trace']['frames'][-1]['args']))
+        self.assertEqual(0, len(payload['data']['body']['trace']['frames'][-1]['kwargs']))
+
+    @mock.patch('rollbar.send_payload')
+    def test_args_lambda_with_args(self, send_payload):
+
+        _raise = lambda arg1, arg2: foo(arg1, arg2)
+
+        try:
+            _raise('arg1-value', 'arg2-value')
+        except:
+            rollbar.report_exc_info()
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = json.loads(send_payload.call_args[0][0])
+
+        self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
+        self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
+        self.assertEqual(2, len(payload['data']['body']['trace']['frames'][-1]['args']))
+        self.assertEqual(0, len(payload['data']['body']['trace']['frames'][-1]['kwargs']))
+        self.assertEqual('arg1-value', payload['data']['body']['trace']['frames'][-1]['args'][0])
+        self.assertEqual('arg2-value', payload['data']['body']['trace']['frames'][-1]['args'][1])
+
+    @mock.patch('rollbar.send_payload')
+    def test_args_lambda_with_defaults(self, send_payload):
+
+        _raise = lambda arg1='default': foo(arg1)
+
+        try:
+            _raise(arg1='arg1-value')
+        except:
+            rollbar.report_exc_info()
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = json.loads(send_payload.call_args[0][0])
+
+        self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
+        self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
+
+        # NOTE(cory): Lambdas are a bit strange. We treat default values for lambda args
+        #             as positional.
+        self.assertEqual(1, len(payload['data']['body']['trace']['frames'][-1]['args']))
+        self.assertEqual(0, len(payload['data']['body']['trace']['frames'][-1]['kwargs']))
+        self.assertEqual('arg1-value', payload['data']['body']['trace']['frames'][-1]['args'][0])
+
+    @mock.patch('rollbar.send_payload')
+    def test_args_lambda_with_star_args(self, send_payload):
+
+        _raise = lambda *args: foo(arg1)
+
+        try:
+            _raise('arg1-value')
+        except:
+            rollbar.report_exc_info()
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = json.loads(send_payload.call_args[0][0])
+
+        self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
+        self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
+
+        self.assertEqual(1, len(payload['data']['body']['trace']['frames'][-1]['args']))
+        self.assertEqual(0, len(payload['data']['body']['trace']['frames'][-1]['kwargs']))
+        self.assertEqual('arg1-value', payload['data']['body']['trace']['frames'][-1]['args'][0])
+
+    @mock.patch('rollbar.send_payload')
+    def test_args_lambda_with_star_args_and_args(self, send_payload):
+
+        _raise = lambda arg1, *args: foo(arg1)
+
+        try:
+            _raise('arg1-value', 1, 2)
+        except:
+            rollbar.report_exc_info()
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = json.loads(send_payload.call_args[0][0])
+
+        self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
+        self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
+
+        self.assertEqual(3, len(payload['data']['body']['trace']['frames'][-1]['args']))
+        self.assertEqual(0, len(payload['data']['body']['trace']['frames'][-1]['kwargs']))
+        self.assertEqual('arg1-value', payload['data']['body']['trace']['frames'][-1]['args'][0])
+        self.assertEqual(1, payload['data']['body']['trace']['frames'][-1]['args'][1])
+        self.assertEqual(2, payload['data']['body']['trace']['frames'][-1]['args'][2])
+
+    @mock.patch('rollbar.send_payload')
+    def test_args_lambda_with_kwargs(self, send_payload):
+
+        _raise = lambda **args: foo(arg1)
+
+        try:
+            _raise(arg1='arg1-value', arg2=2)
+        except:
+            rollbar.report_exc_info()
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = json.loads(send_payload.call_args[0][0])
+
+        self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
+        self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
+
+        self.assertEqual(0, len(payload['data']['body']['trace']['frames'][-1]['args']))
+        self.assertEqual(2, len(payload['data']['body']['trace']['frames'][-1]['kwargs']))
+        self.assertEqual('arg1-value', payload['data']['body']['trace']['frames'][-1]['kwargs']['arg1'])
+        self.assertEqual(2, payload['data']['body']['trace']['frames'][-1]['kwargs']['arg2'])
+
+    @mock.patch('rollbar.send_payload')
+    def test_args_lambda_with_kwargs_and_args(self, send_payload):
+
+        _raise = lambda arg1, arg2, **args: foo(arg1)
+
+        try:
+            _raise('a1', 'a2', arg3='arg3-value', arg4=2)
+        except:
+            rollbar.report_exc_info()
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = json.loads(send_payload.call_args[0][0])
+
+        self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
+        self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
+
+        self.assertEqual(2, len(payload['data']['body']['trace']['frames'][-1]['args']))
+        self.assertEqual(2, len(payload['data']['body']['trace']['frames'][-1]['kwargs']))
+        self.assertEqual('a1', payload['data']['body']['trace']['frames'][-1]['args'][0])
+        self.assertEqual('a2', payload['data']['body']['trace']['frames'][-1]['args'][1])
+        self.assertEqual('arg3-value', payload['data']['body']['trace']['frames'][-1]['kwargs']['arg3'])
+        self.assertEqual(2, payload['data']['body']['trace']['frames'][-1]['kwargs']['arg4'])
+
+    @mock.patch('rollbar.send_payload')
+    def test_args_lambda_with_kwargs_and_args_and_defaults(self, send_payload):
+
+        _raise = lambda arg1, arg2, arg3='default-value', **args: foo(arg1)
+
+        try:
+            _raise('a1', 'a2', arg3='arg3-value', arg4=2)
+        except:
+            rollbar.report_exc_info()
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = json.loads(send_payload.call_args[0][0])
+
+        self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
+        self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
+
+        # NOTE(cory): again, default values are strange for lambdas and we include them as
+        #             positional args.
+        self.assertEqual(3, len(payload['data']['body']['trace']['frames'][-1]['args']))
+        self.assertEqual(1, len(payload['data']['body']['trace']['frames'][-1]['kwargs']))
+        self.assertEqual('a1', payload['data']['body']['trace']['frames'][-1]['args'][0])
+        self.assertEqual('a2', payload['data']['body']['trace']['frames'][-1]['args'][1])
+        self.assertEqual('arg3-value', payload['data']['body']['trace']['frames'][-1]['args'][2])
+        self.assertEqual(2, payload['data']['body']['trace']['frames'][-1]['kwargs']['arg4'])
+
+    @mock.patch('rollbar.send_payload')
+    def test_args_generators(self, send_payload):
+
+        def _raise(arg1):
+            for i in xrange(2):
+                if i > 0:
+                    raise Exception()
+                else:
+                    yield i
+
+        try:
+            l = list(_raise('hello world'))
+        except:
+            rollbar.report_exc_info()
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = json.loads(send_payload.call_args[0][0])
+
+        self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
+        self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
+
+        self.assertEqual(1, len(payload['data']['body']['trace']['frames'][-1]['args']))
+        self.assertEqual(0, len(payload['data']['body']['trace']['frames'][-1]['kwargs']))
+        self.assertEqual('hello world', payload['data']['body']['trace']['frames'][-1]['args'][0])
+
+    @mock.patch('rollbar.send_payload')
+    def test_scrub_kwargs(self, send_payload):
+
+        def _raise(password='sensitive', clear='text'):
+            raise Exception()
+
+        try:
+            _raise()
+        except:
+            rollbar.report_exc_info()
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = json.loads(send_payload.call_args[0][0])
+
+        self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
+        self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
+
+        self.assertEqual(0, len(payload['data']['body']['trace']['frames'][-1]['args']))
+        self.assertEqual(2, len(payload['data']['body']['trace']['frames'][-1]['kwargs']))
+        self.assertEqual('*********', payload['data']['body']['trace']['frames'][-1]['kwargs']['password'])
+        self.assertEqual('text', payload['data']['body']['trace']['frames'][-1]['kwargs']['clear'])
