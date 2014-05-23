@@ -22,11 +22,13 @@ try:
     import urllib.parse as urlparse
     from urllib.parse import urlencode
     import reprlib 
+    string_types = (str, bytes)
 except ImportError:
     # Python 2
     import urlparse
     from urllib import urlencode
     import repr as reprlib
+    string_types = types.StringTypes
 
 
 # import request objects from various frameworks, if available
@@ -731,7 +733,7 @@ def _scrub_obj(obj, replacement_character='*'):
 
     def _scrub(obj, k=None):
         if k is not None and k.lower() in scrub_fields:
-            if isinstance(obj, types.StringTypes):
+            if isinstance(obj, string_types):
                 return replacement_character * len(obj)
             elif isinstance(obj, list):
                 return [_scrub(v, k) for v in obj]
