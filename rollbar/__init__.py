@@ -11,6 +11,7 @@ import sys
 import threading
 import time
 import traceback
+import types
 import urllib
 import uuid
 
@@ -20,12 +21,12 @@ try:
     # Python 3
     import urllib.parse as urlparse
     from urllib.parse import urlencode
-    string_types = str
+    import reprlib 
 except ImportError:
     # Python 2
     import urlparse
     from urllib import urlencode
-    string_types = basestring
+    import repr as reprlib
 
 
 # import request objects from various frameworks, if available
@@ -139,7 +140,26 @@ SETTINGS = {
         'version': VERSION
     },
     'allow_logging_basic_config': True,  # set to False to avoid a call to logging.basicConfig()
+    'locals': {
+        'enabled': True,
+        'sizes': {
+            'maxdict': 10,
+            'maxarray': 10,
+            'maxlist': 10,
+            'maxtuple': 10,
+            'maxset': 10,
+            'maxfrozenset': 10,
+            'maxdeque': 10,
+            'maxstring': 100,
+            'maxlong': 40,
+            'maxother': 100,
+        }
+    }
 }
+
+Repr = reprlib.Repr()
+for name, size in SETTINGS['locals']['sizes'].iteritems():
+    setattr(Repr, name, size)
 
 _initialized = False
 
@@ -574,45 +594,43 @@ def _add_arginfo_data(data, exc_info):
         args = []
         kw = {}
 
-        try:
-            arginfo = inspect.getargvalues(tb_frame)
-            func = _get_func_from_frame(tb_frame)
+        if SETTINGS['locals']['enabled']:
+            try:
+                arginfo = inspect.getargvalues(tb_frame)
+                local_vars = arginfo.locals
 
-            if func:
-                argspec = inspect.getargspec(func)
-            else:
-                argspec = None
+                func = _get_func_from_frame(tb_frame)
+                if func:
+                    argspec = inspect.getargspec(func)
+                else:
+                    argspec = None
 
-            cur_frame = frames[frame_num]
-            local_vars = arginfo.locals
+                # Fill in all of the named args
+                for named_arg in arginfo.args:
+                    args.append(_local_repr(local_vars[named_arg]))
 
+                # Add any varargs
+                if arginfo.varargs is not None:
+                    args.extend(map(_local_repr, local_vars[arginfo.varargs]))
 
-            # Fill in all of the named args
-            for named_arg in arginfo.args:
-                args.append(local_vars[named_arg])
+                # Fill in all of the kwargs
+                if arginfo.keywords is not None:
+                    kw.update(dict((k, _local_repr(v)) for k, v in local_vars[arginfo.keywords].iteritems()))
 
-            # Add any varargs
-            if arginfo.varargs is not None:
-                args.extend(local_vars[arginfo.varargs])
+                if argspec and argspec.defaults:
+                    # Put any of the args that have defaults into kwargs
+                    num_defaults = len(argspec.defaults)
+                    if num_defaults:
+                        # The last len(argspec.defaults) args in arginfo.args should be added
+                        # to kwargs and removed from args
+                        kw.update(dict(zip(arginfo.args[-num_defaults:], args[-num_defaults:])))
+                        args = args[:-num_defaults]
 
-            # Fill in all of the kwargs
-            if arginfo.keywords is not None:
-                kw.update(local_vars[arginfo.keywords])
+                args = _scrub_obj(args)
+                kw = _scrub_obj(kw)
 
-            if argspec:
-                # Put any of the args that have defaults into kwargs
-                num_defaults = len(argspec.defaults)
-                if num_defaults:
-                    # The last len(argspec.defaults) args in arginfo.args should be added
-                    # to kwargs and removed from args
-                    kw.update(dict(zip(arginfo.args[-num_defaults:], args[-num_defaults:])))
-                    args = args[:-num_defaults]
-
-            args = _scrub_obj(args)
-            kw = _scrub_obj(kw)
-
-        except Exception as e:
-            log.exception('Error while extracting arguments from frame. Ignoring.')
+            except Exception as e:
+                log.exception('Error while extracting arguments from frame. Ignoring.')
 
         cur_frame['args'] = args
         cur_frame['kwargs'] = kw
@@ -713,7 +731,7 @@ def _scrub_obj(obj, replacement_character='*'):
 
     def _scrub(obj, k=None):
         if k is not None and k.lower() in scrub_fields:
-            if isinstance(obj, string_types):
+            if isinstance(obj, types.StringTypes):
                 return replacement_character * len(obj)
             elif isinstance(obj, list):
                 return [_scrub(v, k) for v in obj]
@@ -729,6 +747,15 @@ def _scrub_obj(obj, replacement_character='*'):
             return obj
 
     return _scrub(obj)
+
+
+def _local_repr(obj):
+    orig = repr(obj)
+    reprd = Repr.repr(obj)
+    if reprd == orig:
+        return obj
+    else:
+        return reprd
 
 
 def _build_webob_request_data(request):
@@ -956,7 +983,7 @@ class ErrorIgnoringJSONEncoder(json.JSONEncoder):
 
     def default(self, o):
         try:
-            return repr(o)
+            return Repr.repr(o)
         except:
             try:
                 return str(o)
