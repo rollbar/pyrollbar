@@ -492,3 +492,52 @@ class RollbarTest(BaseTest):
         self.assertEqual(2, len(payload['data']['body']['trace']['frames'][-1]['kwargs']))
         self.assertEqual('*********', payload['data']['body']['trace']['frames'][-1]['kwargs']['password'])
         self.assertEqual('text', payload['data']['body']['trace']['frames'][-1]['kwargs']['clear'])
+
+    @mock.patch('rollbar.send_payload')
+    def test_large_arg_val(self, send_payload):
+
+        def _raise(large):
+            raise Exception()
+
+        try:
+            large = ''.join(['#'] * 200)
+            _raise(large)
+        except:
+            rollbar.report_exc_info()
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = json.loads(send_payload.call_args[0][0])
+
+        self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
+        self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
+
+        self.assertEqual(1, len(payload['data']['body']['trace']['frames'][-1]['args']))
+        self.assertEqual(0, len(payload['data']['body']['trace']['frames'][-1]['kwargs']))
+        self.assertEqual("'###############################################...################################################'",
+                         payload['data']['body']['trace']['frames'][-1]['args'][0])
+
+
+    @mock.patch('rollbar.send_payload')
+    def test_long_list_arg_val(self, send_payload):
+
+        def _raise(large):
+            raise Exception()
+
+        try:
+            large = ['hi'] * 30
+            _raise(large)
+        except:
+            rollbar.report_exc_info()
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = json.loads(send_payload.call_args[0][0])
+
+        self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
+        self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
+
+        self.assertEqual(1, len(payload['data']['body']['trace']['frames'][-1]['args']))
+        self.assertEqual(0, len(payload['data']['body']['trace']['frames'][-1]['kwargs']))
+        self.assertEqual("['hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', ...]",
+                         payload['data']['body']['trace']['frames'][-1]['args'][0])
