@@ -158,7 +158,7 @@ SETTINGS = {
 }
 
 Repr = reprlib.Repr()
-for name, size in SETTINGS['locals']['sizes'].iteritems():
+for name, size in SETTINGS['locals']['sizes'].items():
     setattr(Repr, name, size)
 
 _initialized = False
@@ -616,7 +616,7 @@ def _add_arginfo_data(data, exc_info):
 
                 # Fill in all of the kwargs
                 if arginfo.keywords is not None:
-                    kw.update(dict((k, _local_repr(v)) for k, v in local_vars[arginfo.keywords].iteritems()))
+                    kw.update(dict((k, _local_repr(v)) for k, v in local_vars[arginfo.keywords].items()))
 
                 if argspec and argspec.defaults:
                     # Put any of the args that have defaults into kwargs
