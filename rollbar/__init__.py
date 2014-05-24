@@ -256,7 +256,7 @@ def send_payload(payload):
         _send_payload(payload)
     elif handler == 'agent':
         payload = ErrorIgnoringJSONEncoder().encode(payload)
-        agent_log.error(json.dumps(payload))
+        agent_log.error(payload)
     else:
         # default to 'thread'
         thread = threading.Thread(target=_send_payload, args=(payload,))
