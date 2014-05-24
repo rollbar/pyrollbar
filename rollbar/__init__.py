@@ -118,7 +118,7 @@ log = logging.getLogger(__name__)
 
 agent_log = None
 
-VERSION = '0.7.4'
+VERSION = '0.7.5'
 DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/'
 DEFAULT_TIMEOUT = 3
 
@@ -244,7 +244,7 @@ def report_message(message, level='error', request=None, extra_data=None, payloa
 
 def send_payload(payload):
     """
-    Sends a fully-formed payload (i.e. a string from json.dumps()).
+    Sends a payload object, (the result of calling _build_payload()).
     Uses the configured handler from SETTINGS['handler']
 
     Available handlers:
