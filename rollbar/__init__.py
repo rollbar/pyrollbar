@@ -159,9 +159,8 @@ SETTINGS = {
     }
 }
 
-Repr = reprlib.Repr()
-for name, size in SETTINGS['locals']['sizes'].items():
-    setattr(Repr, name, size)
+# Set in init()
+_repr = None
 
 _initialized = False
 
@@ -179,7 +178,7 @@ def init(access_token, environment='production', **kw):
                  'staging', 'yourname'
     **kw: provided keyword arguments will override keys in SETTINGS.
     """
-    global agent_log, _initialized
+    global agent_log, _initialized, _repr
 
     if not _initialized:
         _initialized = True
@@ -193,6 +192,10 @@ def init(access_token, environment='production', **kw):
 
         if SETTINGS.get('handler') == 'agent':
             agent_log = _create_agent_log()
+
+        _repr = reprlib.Repr()
+        for name, size in SETTINGS['locals']['sizes'].items():
+            setattr(_repr, name, size)
 
 
 def report_exc_info(exc_info=None, request=None, extra_data=None, payload_data=None, level=None, **kw):
@@ -754,7 +757,7 @@ def _scrub_obj(obj, replacement_character='*'):
 
 def _local_repr(obj):
     orig = repr(obj)
-    reprd = Repr.repr(obj)
+    reprd = _repr.repr(obj)
     if reprd == orig:
         return obj
     else:
@@ -986,7 +989,7 @@ class ErrorIgnoringJSONEncoder(json.JSONEncoder):
 
     def default(self, o):
         try:
-            return Repr.repr(o)
+            return _repr.repr(o)
         except:
             try:
                 return str(o)
