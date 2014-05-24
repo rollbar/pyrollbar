@@ -143,7 +143,7 @@ SETTINGS = {
     },
     'allow_logging_basic_config': True,  # set to False to avoid a call to logging.basicConfig()
     'locals': {
-        'enabled': True,
+        'enabled': False,
         'sizes': {
             'maxdict': 10,
             'maxarray': 10,

@@ -21,6 +21,7 @@ class RollbarTest(BaseTest):
     def setUp(self):
         rollbar._initialized = False
         rollbar.SETTINGS = copy.deepcopy(_default_settings)
+        rollbar.SETTINGS['locals']['enabled'] = True
         rollbar.init(_test_access_token)
 
     def test_default_configuration(self):
