@@ -255,6 +255,7 @@ def send_payload(payload):
     if handler == 'blocking':
         _send_payload(payload)
     elif handler == 'agent':
+        payload = ErrorIgnoringJSONEncoder().encode(payload)
         agent_log.error(json.dumps(payload))
     else:
         # default to 'thread'
@@ -890,19 +891,27 @@ def _build_payload(data):
         'access_token': SETTINGS['access_token'],
         'data': data
     }
-    return ErrorIgnoringJSONEncoder().encode(payload)
+    return payload
 
 
 def _send_payload(payload):
     try:
-        _post_api('item/', payload)
+        _post_api('item/', payload, access_token=payload.get('access_token'))
     except Exception as e:
         log.exception('Exception while posting item %r', e)
 
 
-def _post_api(path, payload):
+def _post_api(path, payload, access_token=None):
+    headers = {'Content-Type': 'application/json'}
+
+    if access_token is not None:
+        headers['X-Rollbar-Access-Token'] = access_token
+
+    # Serialize this ourselves so we can handle error cases more gracefully
+    payload = ErrorIgnoringJSONEncoder().encode(payload)
+
     url = urlparse.urljoin(SETTINGS['endpoint'], path)
-    resp = requests.post(url, data=payload, timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT))
+    resp = requests.post(url, data=payload, headers=headers, timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT))
     return _parse_response(path, SETTINGS['access_token'], payload, resp)
 
 
