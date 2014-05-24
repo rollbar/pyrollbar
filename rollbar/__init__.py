@@ -250,6 +250,7 @@ def send_payload(payload):
     Available handlers:
     - 'blocking': calls _send_payload() (which makes an HTTP request) immediately, blocks on it
     - 'thread': starts a single-use thread that will call _send_payload(). returns immediately.
+    - 'agent': writes to a log file to be processed by rollbar-agent
     """
     handler = SETTINGS.get('handler')
     if handler == 'blocking':
