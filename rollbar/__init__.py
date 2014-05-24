@@ -589,6 +589,7 @@ def _add_arginfo_data(data, exc_info):
     cur_tb = exc_info[2]
     frame_num = 0
     while cur_tb:
+        cur_frame = frames[frame_num]
         tb_frame = cur_tb.tb_frame
         cur_tb = cur_tb.tb_next
 
@@ -969,7 +970,7 @@ def dict_merge(a, b):
     on both values and the result stored in the returned dictionary.'''
     if not isinstance(b, dict):
         return b
-    result = copy.deepcopy(a)
+    result = a
     for k, v in b.items():
         if k in result and isinstance(result[k], dict):
             result[k] = dict_merge(result[k], v)
