@@ -1,5 +1,4 @@
 import copy
-import json
 import mock
 
 import rollbar
@@ -21,6 +20,7 @@ class RollbarTest(BaseTest):
     def setUp(self):
         rollbar._initialized = False
         rollbar.SETTINGS = copy.deepcopy(_default_settings)
+        rollbar.SETTINGS['locals']['enabled'] = True
         rollbar.init(_test_access_token)
 
     def test_default_configuration(self):
@@ -93,7 +93,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertEqual(payload['access_token'], _test_access_token)
         self.assertIn('body', payload['data'])
@@ -111,7 +111,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertEqual(payload['access_token'], _test_access_token)
         self.assertIn('body', payload['data'])
@@ -230,9 +230,10 @@ class RollbarTest(BaseTest):
     def test_uuid(self, send_payload):
         uuid = rollbar.report_message('foo')
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertEqual(payload['data']['uuid'], uuid)
+
 
     @mock.patch('rollbar.send_payload')
     def test_report_exc_info_level(self, send_payload):
@@ -243,7 +244,7 @@ class RollbarTest(BaseTest):
             rollbar.report_exc_info()
 
         self.assertEqual(send_payload.called, True)
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
         self.assertEqual(payload['data']['level'], 'error')
 
         try:
@@ -252,7 +253,7 @@ class RollbarTest(BaseTest):
             rollbar.report_exc_info(level='info')
 
         self.assertEqual(send_payload.called, True)
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
         self.assertEqual(payload['data']['level'], 'info')
 
         # payload takes precendence over 'level'
@@ -262,7 +263,7 @@ class RollbarTest(BaseTest):
             rollbar.report_exc_info(level='info', payload_data={'level': 'warn'})
 
         self.assertEqual(send_payload.called, True)
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
         self.assertEqual(payload['data']['level'], 'warn')
 
     @mock.patch('rollbar.send_payload')
@@ -277,7 +278,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
@@ -296,7 +297,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
@@ -317,7 +318,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
@@ -340,7 +341,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
@@ -361,7 +362,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
@@ -384,7 +385,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
@@ -406,7 +407,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
@@ -430,7 +431,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
@@ -461,7 +462,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
@@ -483,7 +484,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
@@ -507,7 +508,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
@@ -532,7 +533,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])

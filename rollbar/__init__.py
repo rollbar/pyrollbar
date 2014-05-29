@@ -118,7 +118,7 @@ log = logging.getLogger(__name__)
 
 agent_log = None
 
-VERSION = '0.7.4'
+VERSION = '0.7.5'
 DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/'
 DEFAULT_TIMEOUT = 3
 
@@ -143,7 +143,7 @@ SETTINGS = {
     },
     'allow_logging_basic_config': True,  # set to False to avoid a call to logging.basicConfig()
     'locals': {
-        'enabled': True,
+        'enabled': False,
         'sizes': {
             'maxdict': 10,
             'maxarray': 10,
@@ -159,9 +159,8 @@ SETTINGS = {
     }
 }
 
-Repr = reprlib.Repr()
-for name, size in SETTINGS['locals']['sizes'].items():
-    setattr(Repr, name, size)
+# Set in init()
+_repr = None
 
 _initialized = False
 
@@ -179,7 +178,7 @@ def init(access_token, environment='production', **kw):
                  'staging', 'yourname'
     **kw: provided keyword arguments will override keys in SETTINGS.
     """
-    global agent_log, _initialized
+    global agent_log, _initialized, _repr
 
     if not _initialized:
         _initialized = True
@@ -193,6 +192,10 @@ def init(access_token, environment='production', **kw):
 
         if SETTINGS.get('handler') == 'agent':
             agent_log = _create_agent_log()
+
+        _repr = reprlib.Repr()
+        for name, size in SETTINGS['locals']['sizes'].items():
+            setattr(_repr, name, size)
 
 
 def report_exc_info(exc_info=None, request=None, extra_data=None, payload_data=None, level=None, **kw):
@@ -241,18 +244,20 @@ def report_message(message, level='error', request=None, extra_data=None, payloa
 
 def send_payload(payload):
     """
-    Sends a fully-formed payload (i.e. a string from json.dumps()).
+    Sends a payload object, (the result of calling _build_payload()).
     Uses the configured handler from SETTINGS['handler']
 
     Available handlers:
     - 'blocking': calls _send_payload() (which makes an HTTP request) immediately, blocks on it
     - 'thread': starts a single-use thread that will call _send_payload(). returns immediately.
+    - 'agent': writes to a log file to be processed by rollbar-agent
     """
     handler = SETTINGS.get('handler')
     if handler == 'blocking':
         _send_payload(payload)
     elif handler == 'agent':
-        agent_log.error(json.dumps(payload))
+        payload = ErrorIgnoringJSONEncoder().encode(payload)
+        agent_log.error(payload)
     else:
         # default to 'thread'
         thread = threading.Thread(target=_send_payload, args=(payload,))
@@ -589,9 +594,9 @@ def _add_arginfo_data(data, exc_info):
     cur_tb = exc_info[2]
     frame_num = 0
     while cur_tb:
+        cur_frame = frames[frame_num]
         tb_frame = cur_tb.tb_frame
         cur_tb = cur_tb.tb_next
-        cur_frame = frames[frame_num]
 
         # Create placeholders for args/kwargs
         args = []
@@ -754,7 +759,7 @@ def _scrub_obj(obj, replacement_character='*'):
 
 def _local_repr(obj):
     orig = repr(obj)
-    reprd = Repr.repr(obj)
+    reprd = _repr.repr(obj)
     if reprd == orig:
         return obj
     else:
@@ -887,19 +892,27 @@ def _build_payload(data):
         'access_token': SETTINGS['access_token'],
         'data': data
     }
-    return ErrorIgnoringJSONEncoder().encode(payload)
+    return payload
 
 
 def _send_payload(payload):
     try:
-        _post_api('item/', payload)
+        _post_api('item/', payload, access_token=payload.get('access_token'))
     except Exception as e:
         log.exception('Exception while posting item %r', e)
 
 
-def _post_api(path, payload):
+def _post_api(path, payload, access_token=None):
+    headers = {'Content-Type': 'application/json'}
+
+    if access_token is not None:
+        headers['X-Rollbar-Access-Token'] = access_token
+
+    # Serialize this ourselves so we can handle error cases more gracefully
+    payload = ErrorIgnoringJSONEncoder().encode(payload)
+
     url = urlparse.urljoin(SETTINGS['endpoint'], path)
-    resp = requests.post(url, data=payload, timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT))
+    resp = requests.post(url, data=payload, headers=headers, timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT))
     return _parse_response(path, SETTINGS['access_token'], payload, resp)
 
 
@@ -987,7 +1000,7 @@ class ErrorIgnoringJSONEncoder(json.JSONEncoder):
 
     def default(self, o):
         try:
-            return Repr.repr(o)
+            return _repr.repr(o)
         except:
             try:
                 return str(o)
