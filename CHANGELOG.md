@@ -1,5 +1,8 @@
 # Change Log
 
+**0.7.6**
+- Added local variables for all in-project frames and the last frame.
+
 **0.7.5**
 - Initial support for sending args and kwargs for traceback frames.
 - Optimization to send the access token in a header.
