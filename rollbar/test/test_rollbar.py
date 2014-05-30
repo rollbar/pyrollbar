@@ -102,8 +102,8 @@ class RollbarTest(BaseTest):
         self.assertEqual(payload['data']['body']['trace']['exception']['message'], 'foo')
         self.assertEqual(payload['data']['body']['trace']['exception']['class'], 'Exception')
 
-        self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
-        self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
+        self.assertNotIn('args', payload['data']['body']['trace']['frames'][-1])
+        self.assertNotIn('kwargs', payload['data']['body']['trace']['frames'][-1])
 
     @mock.patch('rollbar.send_payload')
     def test_report_messsage(self, send_payload):
@@ -280,10 +280,8 @@ class RollbarTest(BaseTest):
 
         payload = send_payload.call_args[0][0]
 
-        self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
-        self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
-        self.assertEqual(0, len(payload['data']['body']['trace']['frames'][-1]['args']))
-        self.assertEqual(0, len(payload['data']['body']['trace']['frames'][-1]['kwargs']))
+        self.assertNotIn('args', payload['data']['body']['trace']['frames'][-1])
+        self.assertNotIn('kwargs', payload['data']['body']['trace']['frames'][-1])
 
     @mock.patch('rollbar.send_payload')
     def test_args_lambda_with_args(self, send_payload):
@@ -300,9 +298,8 @@ class RollbarTest(BaseTest):
         payload = send_payload.call_args[0][0]
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
-        self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
+        self.assertNotIn('kwargs', payload['data']['body']['trace']['frames'][-1])
         self.assertEqual(2, len(payload['data']['body']['trace']['frames'][-1]['args']))
-        self.assertEqual(0, len(payload['data']['body']['trace']['frames'][-1]['kwargs']))
         self.assertEqual('arg1-value', payload['data']['body']['trace']['frames'][-1]['args'][0])
         self.assertEqual('arg2-value', payload['data']['body']['trace']['frames'][-1]['args'][1])
 
@@ -321,12 +318,11 @@ class RollbarTest(BaseTest):
         payload = send_payload.call_args[0][0]
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
-        self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
+        self.assertNotIn('kwargs', payload['data']['body']['trace']['frames'][-1])
 
         # NOTE(cory): Lambdas are a bit strange. We treat default values for lambda args
         #             as positional.
         self.assertEqual(1, len(payload['data']['body']['trace']['frames'][-1]['args']))
-        self.assertEqual(0, len(payload['data']['body']['trace']['frames'][-1]['kwargs']))
         self.assertEqual('arg1-value', payload['data']['body']['trace']['frames'][-1]['args'][0])
 
     @mock.patch('rollbar.send_payload')
@@ -344,10 +340,9 @@ class RollbarTest(BaseTest):
         payload = send_payload.call_args[0][0]
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
-        self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
+        self.assertNotIn('kwargs', payload['data']['body']['trace']['frames'][-1])
 
         self.assertEqual(1, len(payload['data']['body']['trace']['frames'][-1]['args']))
-        self.assertEqual(0, len(payload['data']['body']['trace']['frames'][-1]['kwargs']))
         self.assertEqual('arg1-value', payload['data']['body']['trace']['frames'][-1]['args'][0])
 
     @mock.patch('rollbar.send_payload')
@@ -365,10 +360,9 @@ class RollbarTest(BaseTest):
         payload = send_payload.call_args[0][0]
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
-        self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
+        self.assertNotIn('kwargs', payload['data']['body']['trace']['frames'][-1])
 
         self.assertEqual(3, len(payload['data']['body']['trace']['frames'][-1]['args']))
-        self.assertEqual(0, len(payload['data']['body']['trace']['frames'][-1]['kwargs']))
         self.assertEqual('arg1-value', payload['data']['body']['trace']['frames'][-1]['args'][0])
         self.assertEqual(1, payload['data']['body']['trace']['frames'][-1]['args'][1])
         self.assertEqual(2, payload['data']['body']['trace']['frames'][-1]['args'][2])
@@ -387,10 +381,9 @@ class RollbarTest(BaseTest):
 
         payload = send_payload.call_args[0][0]
 
-        self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
+        self.assertNotIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
 
-        self.assertEqual(0, len(payload['data']['body']['trace']['frames'][-1]['args']))
         self.assertEqual(2, len(payload['data']['body']['trace']['frames'][-1]['kwargs']))
         self.assertEqual('arg1-value', payload['data']['body']['trace']['frames'][-1]['kwargs']['arg1'])
         self.assertEqual(2, payload['data']['body']['trace']['frames'][-1]['kwargs']['arg2'])
@@ -465,10 +458,9 @@ class RollbarTest(BaseTest):
         payload = send_payload.call_args[0][0]
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
-        self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
+        self.assertNotIn('kwargs', payload['data']['body']['trace']['frames'][-1])
 
         self.assertEqual(1, len(payload['data']['body']['trace']['frames'][-1]['args']))
-        self.assertEqual(0, len(payload['data']['body']['trace']['frames'][-1]['kwargs']))
         self.assertEqual('hello world', payload['data']['body']['trace']['frames'][-1]['args'][0])
 
     @mock.patch('rollbar.send_payload')
@@ -486,10 +478,9 @@ class RollbarTest(BaseTest):
 
         payload = send_payload.call_args[0][0]
 
-        self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
+        self.assertNotIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
 
-        self.assertEqual(0, len(payload['data']['body']['trace']['frames'][-1]['args']))
         self.assertEqual(2, len(payload['data']['body']['trace']['frames'][-1]['kwargs']))
         self.assertEqual('*********', payload['data']['body']['trace']['frames'][-1]['kwargs']['password'])
         self.assertEqual('text', payload['data']['body']['trace']['frames'][-1]['kwargs']['clear'])
@@ -511,10 +502,9 @@ class RollbarTest(BaseTest):
         payload = send_payload.call_args[0][0]
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
-        self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
+        self.assertNotIn('kwargs', payload['data']['body']['trace']['frames'][-1])
 
         self.assertEqual(1, len(payload['data']['body']['trace']['frames'][-1]['args']))
-        self.assertEqual(0, len(payload['data']['body']['trace']['frames'][-1]['kwargs']))
         self.assertEqual("'###############################################...################################################'",
                          payload['data']['body']['trace']['frames'][-1]['args'][0])
 
@@ -536,9 +526,117 @@ class RollbarTest(BaseTest):
         payload = send_payload.call_args[0][0]
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
-        self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
+        self.assertNotIn('kwargs', payload['data']['body']['trace']['frames'][-1])
 
         self.assertEqual(1, len(payload['data']['body']['trace']['frames'][-1]['args']))
-        self.assertEqual(0, len(payload['data']['body']['trace']['frames'][-1]['kwargs']))
         self.assertEqual("['hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', ...]",
                          payload['data']['body']['trace']['frames'][-1]['args'][0])
+
+
+    @mock.patch('rollbar.send_payload')
+    def test_last_frame_has_locals(self, send_payload):
+
+        def _raise():
+            some_var = 'some value'
+            raise Exception()
+
+        try:
+            _raise()
+        except:
+            rollbar.report_exc_info()
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = send_payload.call_args[0][0]
+
+        self.assertNotIn('args', payload['data']['body']['trace']['frames'][-1])
+        self.assertNotIn('kwargs', payload['data']['body']['trace']['frames'][-1])
+
+        self.assertIn('locals', payload['data']['body']['trace']['frames'][-1])
+        self.assertIn('some_var', payload['data']['body']['trace']['frames'][-1]['locals'])
+        self.assertEqual("some value",
+                         payload['data']['body']['trace']['frames'][-1]['locals']['some_var'])
+
+
+    @mock.patch('rollbar.send_payload')
+    def test_all_project_frames_have_locals(self, send_payload):
+
+        prev_root = rollbar.SETTINGS['root']
+        rollbar.SETTINGS['root'] = __file__
+        try:
+            step1()
+        except:
+            rollbar.report_exc_info()
+        finally:
+            rollbar.SETTINGS['root'] = prev_root
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = send_payload.call_args[0][0]
+
+        for frame in payload['data']['body']['trace']['frames']:
+            self.assertIn('locals', frame)
+
+
+    @mock.patch('rollbar.send_payload')
+    def test_only_last_frame_has_locals(self, send_payload):
+
+        prev_root = rollbar.SETTINGS['root']
+        rollbar.SETTINGS['root'] = 'dummy'
+        try:
+            step1()
+        except:
+            rollbar.report_exc_info()
+        finally:
+            rollbar.SETTINGS['root'] = prev_root
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = send_payload.call_args[0][0]
+
+        num_frames = len(payload['data']['body']['trace']['frames'])
+        for i, frame in enumerate(payload['data']['body']['trace']['frames']):
+            if i < num_frames - 1:
+                self.assertNotIn('locals', frame)
+            else:
+                self.assertIn('locals', frame)
+
+
+    @mock.patch('rollbar.send_payload')
+    def test_modify_arg(self, send_payload):
+        # Record locals for all frames
+        prev_root = rollbar.SETTINGS['root']
+        rollbar.SETTINGS['root'] = __file__
+        try:
+            called_with('original value')
+        except:
+            rollbar.report_exc_info()
+        finally:
+            rollbar.SETTINGS['root'] = prev_root
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = send_payload.call_args[0][0]
+
+        frames = payload['data']['body']['trace']['frames']
+        called_with_frame = frames[1]
+        
+        self.assertEqual('changed', called_with_frame['args'][0])
+
+
+
+### Helpers
+
+def step1():
+    val1 = 1
+    step2()
+
+
+def step2():
+    val2 = 2
+    raise Exception()
+
+
+def called_with(arg1):
+    arg1 = 'changed'
+    step1()

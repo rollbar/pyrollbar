@@ -432,7 +432,7 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
         else:
             data['custom'] = {'value': extra_data}
 
-    _add_arginfo_data(data, exc_info)
+    _add_locals_data(data, exc_info)
     _add_request_data(data, request)
     _add_person_data(data, request)
     data['server'] = _build_server_data()
@@ -588,60 +588,73 @@ def _get_func_from_frame(frame):
     return func
 
 
-def _add_arginfo_data(data, exc_info):
+def _add_locals_data(data, exc_info):
+    if not SETTINGS['locals']['enabled']:
+        return
+
     frames = data['body']['trace']['frames']
 
     cur_tb = exc_info[2]
     frame_num = 0
+    num_frames = len(frames)
     while cur_tb:
         cur_frame = frames[frame_num]
         tb_frame = cur_tb.tb_frame
         cur_tb = cur_tb.tb_next
 
-        # Create placeholders for args/kwargs
+        # Create placeholders for args/kwargs/locals
         args = []
         kw = {}
+        _locals = {}
 
-        if SETTINGS['locals']['enabled']:
-            try:
-                arginfo = inspect.getargvalues(tb_frame)
-                local_vars = arginfo.locals
+        try:
+            arginfo = inspect.getargvalues(tb_frame)
+            local_vars = arginfo.locals
 
-                func = _get_func_from_frame(tb_frame)
-                if func:
-                    argspec = inspect.getargspec(func)
-                else:
-                    argspec = None
+            func = _get_func_from_frame(tb_frame)
+            if func:
+                argspec = inspect.getargspec(func)
+            else:
+                argspec = None
 
-                # Fill in all of the named args
-                for named_arg in arginfo.args:
-                    args.append(_local_repr(local_vars[named_arg]))
+            # Fill in all of the named args
+            for named_arg in arginfo.args:
+                args.append(_local_repr(local_vars[named_arg]))
 
-                # Add any varargs
-                if arginfo.varargs is not None:
-                    args.extend(map(_local_repr, local_vars[arginfo.varargs]))
+            # Add any varargs
+            if arginfo.varargs is not None:
+                args.extend(map(_local_repr, local_vars[arginfo.varargs]))
 
-                # Fill in all of the kwargs
-                if arginfo.keywords is not None:
-                    kw.update(dict((k, _local_repr(v)) for k, v in local_vars[arginfo.keywords].items()))
+            # Fill in all of the kwargs
+            if arginfo.keywords is not None:
+                kw.update(dict((k, _local_repr(v)) for k, v in local_vars[arginfo.keywords].items()))
 
-                if argspec and argspec.defaults:
-                    # Put any of the args that have defaults into kwargs
-                    num_defaults = len(argspec.defaults)
-                    if num_defaults:
-                        # The last len(argspec.defaults) args in arginfo.args should be added
-                        # to kwargs and removed from args
-                        kw.update(dict(zip(arginfo.args[-num_defaults:], args[-num_defaults:])))
-                        args = args[:-num_defaults]
+            if argspec and argspec.defaults:
+                # Put any of the args that have defaults into kwargs
+                num_defaults = len(argspec.defaults)
+                if num_defaults:
+                    # The last len(argspec.defaults) args in arginfo.args should be added
+                    # to kwargs and removed from args
+                    kw.update(dict(zip(arginfo.args[-num_defaults:], args[-num_defaults:])))
+                    args = args[:-num_defaults]
 
-                args = _scrub_obj(args)
-                kw = _scrub_obj(kw)
+            # Optionally fill in locals for this frame
+            if local_vars and _check_add_locals(cur_frame, frame_num, num_frames):
+                _locals.update(dict((k, _local_repr(v)) for k, v in local_vars.items()))
 
-            except Exception as e:
-                log.exception('Error while extracting arguments from frame. Ignoring.')
+            args = _scrub_obj(args)
+            kw = _scrub_obj(kw)
+            _locals = _scrub_obj(_locals)
 
-        cur_frame['args'] = args
-        cur_frame['kwargs'] = kw
+        except Exception as e:
+            log.exception('Error while extracting arguments from frame. Ignoring.')
+
+        if args:
+            cur_frame['args'] = args
+        if kw:
+            cur_frame['kwargs'] = kw
+        if _locals:
+            cur_frame['locals'] = _locals
 
         frame_num += 1
 
@@ -658,6 +671,16 @@ def _add_request_data(data, request):
     else:
         if request_data:
             data['request'] = request_data
+
+
+def _check_add_locals(frame, frame_num, total_frames):
+    """
+    Returns True if we should record local variables for the given frame.
+    """
+    # Include the last frames locals
+    # Include any frame locals that came from a file in the project's root
+    return any(((frame_num == total_frames - 1),
+                ('root' in SETTINGS and (frame.get('filename') or '').lower().startswith((SETTINGS['root'] or '').lower()))))
 
 
 def _build_request_data(request):
