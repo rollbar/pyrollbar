@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import copy
 import mock
 
@@ -17,6 +15,7 @@ except ImportError:
 _test_access_token = 'aaaabbbbccccddddeeeeffff00001111'
 _default_settings = copy.deepcopy(rollbar.SETTINGS)
 
+SNOWMAN = '\xe2\x98\x83'
 
 class RollbarTest(BaseTest):
     def setUp(self):
@@ -231,7 +230,7 @@ class RollbarTest(BaseTest):
         })
 
     def test_utf8_url_val_scrubbing(self):
-        url = u'http://foo.com/?password=password&foo=bar&secret=☃'
+        url = 'http://foo.com/?password=password&foo=bar&secret=%s' % SNOWMAN
 
         scrubbed_url = urlparse.urlparse(rollbar._scrub_request_url(url))
         qs_params = urlparse.parse_qs(scrubbed_url.query)
@@ -239,14 +238,14 @@ class RollbarTest(BaseTest):
         self.assertDictEqual(qs_params, {
             'password': ['--------'],
             'foo': ['bar'],
-            'secret': ['-']
+            'secret': [''.join(['-'] * len(SNOWMAN))]
         })
 
 
     def test_utf8_url_key_scrubbing(self):
-        url = u'http://foo.com/?password=password&foo=bar&☃=secret'
+        url = 'http://foo.com/?password=password&foo=bar&%s=secret' % SNOWMAN
 
-        rollbar.SETTINGS['scrub_fields'].append(u'☃')
+        rollbar.SETTINGS['scrub_fields'].append(SNOWMAN)
         scrubbed_url = rollbar._scrub_request_url(url)
 
         # NOTE(cory): parse_qs expects bytes so we need to re-encode the unicode
@@ -254,47 +253,46 @@ class RollbarTest(BaseTest):
         # http://stackoverflow.com/questions/16614695/python-urlparse-parse-qs-unicode-url
         qs_params = urlparse.parse_qs(urlparse.urlparse(scrubbed_url).query.encode('ascii'))
 
-        snowman_str = u'☃'.encode('utf8')
-
-        self.assertEqual(['------'], qs_params[snowman_str])
+        self.assertEqual(['------'], qs_params[SNOWMAN])
         self.assertEqual(['--------'], qs_params['password'])
         self.assertEqual(['bar'], qs_params['foo'])
 
 
     def test_unicode_val_scrubbing(self):
+        s = '%s is a unicode snowman!' % SNOWMAN
         obj = {
-            'password': u'☃ is a unicode snowman!'
+            'password': s
         }
 
         scrubbed = rollbar._scrub_obj(obj)
 
         self.assertDictEqual(scrubbed, {
-            'password': '***********************'
+            'password': ''.join(['*'] * len(s))
         })
 
     def test_unicode_key_scrubbing(self):
+        s = 'is a unicode snowman!'
         obj = {
-            u'☃': u'is a unicode snowman!'
+            SNOWMAN: s
         }
 
-        rollbar.SETTINGS['scrub_fields'].append(u'☃')
+        rollbar.SETTINGS['scrub_fields'].append(SNOWMAN)
         scrubbed = rollbar._scrub_obj(obj)
 
         self.assertDictEqual(scrubbed, {
-            u'☃': '*********************'
+            SNOWMAN: ''.join(['*'] * len(s))
         })
 
-
         obj2 = {
-            u'☃': u'is a unicode snowman!'
+            SNOWMAN: s
         }
 
         rollbar.SETTINGS['scrub_fields'].pop()
-        rollbar.SETTINGS['scrub_fields'].append(u'☃'.encode('utf8'))
+        rollbar.SETTINGS['scrub_fields'].append(SNOWMAN)
         scrubbed = rollbar._scrub_obj(obj2)
 
         self.assertDictEqual(scrubbed, {
-            u'☃': '*********************'
+            SNOWMAN: ''.join(['*'] * len(s))
         })
 
     @mock.patch('rollbar.send_payload')
