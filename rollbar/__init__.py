@@ -118,7 +118,7 @@ log = logging.getLogger(__name__)
 
 agent_log = None
 
-VERSION = '0.7.6'
+VERSION = '0.7.7'
 DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/'
 DEFAULT_TIMEOUT = 3
 
@@ -743,6 +743,9 @@ def _scrub_request_url(url_string):
 
     # use dash for replacement character so it looks better since it wont be url escaped
     scrubbed_qs_params = _scrub_obj(qs_params, replacement_character='-')
+
+    # Make sure the keys and values are all utf8-encoded strings
+    scrubbed_qs_params = dict((_to_str(k), map(_to_str, v)) for k, v in scrubbed_qs_params.items())
     scrubbed_qs = urlencode(scrubbed_qs_params, doseq=True)
 
     scrubbed_url = (url.scheme, url.netloc, url.path, url.params, scrubbed_qs, url.fragment)
@@ -761,7 +764,7 @@ def _scrub_obj(obj, replacement_character='*'):
     scrub_fields = set(SETTINGS['scrub_fields'])
 
     def _scrub(obj, k=None):
-        if k is not None and k.lower() in scrub_fields:
+        if k is not None and _in_scrub_fields(k, scrub_fields):
             if isinstance(obj, string_types):
                 return replacement_character * len(obj)
             elif isinstance(obj, list):
@@ -779,6 +782,26 @@ def _scrub_obj(obj, replacement_character='*'):
 
     return _scrub(obj)
 
+
+def _to_str(x):
+    try:
+        return str(x)
+    except UnicodeEncodeError:
+        try:
+            return unicode(x).encode('utf8')
+        except UnicodeEncodeError:
+            return x.encode('utf8')
+
+
+def _in_scrub_fields(val, scrub_fields):
+    val = _to_str(val).lower()
+    for field in set(scrub_fields):
+        field = _to_str(field)
+        if field == val:
+            return True
+
+    return False
+        
 
 def _local_repr(obj):
     orig = repr(obj)

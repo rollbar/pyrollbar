@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import copy
 import mock
 
@@ -177,7 +179,8 @@ class RollbarTest(BaseTest):
                 }
             },
             'password_confirmation': None,
-            'confirm_password': 341254213
+            'confirm_password': 341254213,
+            333: 444
         }
 
         scrubbed = rollbar._scrub_obj(params, replacement_character='-')
@@ -194,7 +197,8 @@ class RollbarTest(BaseTest):
             'passwd': [{'-': '-'}, {'-': '-'}],
             'secret': {'-': '-'},
             'password_confirmation': '-',
-            'confirm_password': '-'
+            'confirm_password': '-',
+            333: 444
         })
 
     def test_non_dict_scrubbing(self):
@@ -224,6 +228,73 @@ class RollbarTest(BaseTest):
             'password': ['--------'],
             'foo': ['bar'],
             'secret': ['------']
+        })
+
+    def test_utf8_url_val_scrubbing(self):
+        url = u'http://foo.com/?password=password&foo=bar&secret=☃'
+
+        scrubbed_url = urlparse.urlparse(rollbar._scrub_request_url(url))
+        qs_params = urlparse.parse_qs(scrubbed_url.query)
+
+        self.assertDictEqual(qs_params, {
+            'password': ['--------'],
+            'foo': ['bar'],
+            'secret': ['-']
+        })
+
+
+    def test_utf8_url_key_scrubbing(self):
+        url = u'http://foo.com/?password=password&foo=bar&☃=secret'
+
+        rollbar.SETTINGS['scrub_fields'].append(u'☃')
+        scrubbed_url = rollbar._scrub_request_url(url)
+
+        # NOTE(cory): parse_qs expects bytes so we need to re-encode the unicode
+        #             string using ASCII codepoint.
+        # http://stackoverflow.com/questions/16614695/python-urlparse-parse-qs-unicode-url
+        qs_params = urlparse.parse_qs(urlparse.urlparse(scrubbed_url).query.encode('ascii'))
+
+        snowman_str = u'☃'.encode('utf8')
+
+        self.assertEqual(['------'], qs_params[snowman_str])
+        self.assertEqual(['--------'], qs_params['password'])
+        self.assertEqual(['bar'], qs_params['foo'])
+
+
+    def test_unicode_val_scrubbing(self):
+        obj = {
+            'password': u'☃ is a unicode snowman!'
+        }
+
+        scrubbed = rollbar._scrub_obj(obj)
+
+        self.assertDictEqual(scrubbed, {
+            'password': '***********************'
+        })
+
+    def test_unicode_key_scrubbing(self):
+        obj = {
+            u'☃': u'is a unicode snowman!'
+        }
+
+        rollbar.SETTINGS['scrub_fields'].append(u'☃')
+        scrubbed = rollbar._scrub_obj(obj)
+
+        self.assertDictEqual(scrubbed, {
+            u'☃': '*********************'
+        })
+
+
+        obj2 = {
+            u'☃': u'is a unicode snowman!'
+        }
+
+        rollbar.SETTINGS['scrub_fields'].pop()
+        rollbar.SETTINGS['scrub_fields'].append(u'☃'.encode('utf8'))
+        scrubbed = rollbar._scrub_obj(obj2)
+
+        self.assertDictEqual(scrubbed, {
+            u'☃': '*********************'
         })
 
     @mock.patch('rollbar.send_payload')
@@ -562,7 +633,7 @@ class RollbarTest(BaseTest):
     def test_all_project_frames_have_locals(self, send_payload):
 
         prev_root = rollbar.SETTINGS['root']
-        rollbar.SETTINGS['root'] = __file__
+        rollbar.SETTINGS['root'] = __file__.rstrip('pyc')
         try:
             step1()
         except:
@@ -606,7 +677,7 @@ class RollbarTest(BaseTest):
     def test_modify_arg(self, send_payload):
         # Record locals for all frames
         prev_root = rollbar.SETTINGS['root']
-        rollbar.SETTINGS['root'] = __file__
+        rollbar.SETTINGS['root'] = __file__.rstrip('pyc')
         try:
             called_with('original value')
         except:
