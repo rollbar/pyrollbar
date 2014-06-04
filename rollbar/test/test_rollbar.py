@@ -252,10 +252,7 @@ class RollbarTest(BaseTest):
         rollbar.SETTINGS['scrub_fields'].append(SNOWMAN)
         scrubbed_url = rollbar._scrub_request_url(url)
 
-        # NOTE(cory): parse_qs expects bytes so we need to re-encode the unicode
-        #             string using ASCII codepoint.
-        # http://stackoverflow.com/questions/16614695/python-urlparse-parse-qs-unicode-url
-        qs_params = urlparse.parse_qs(urlparse.urlparse(scrubbed_url).query.encode('ascii'))
+        qs_params = urlparse.parse_qs(urlparse.urlparse(scrubbed_url).query)
 
         self.assertEqual(['------'], qs_params[SNOWMAN])
         self.assertEqual(['--------'], qs_params['password'])
