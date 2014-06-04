@@ -25,8 +25,12 @@ class RollbarTest(BaseTest):
     def setUp(self):
         rollbar._initialized = False
         rollbar.SETTINGS = copy.deepcopy(_default_settings)
-        rollbar.SETTINGS['locals']['enabled'] = True
-        rollbar.init(_test_access_token)
+        rollbar.init(_test_access_token, locals={'enabled': True}, dummy_key='asdf', timeout=12345)
+
+    def test_merged_settings(self):
+        self.assertDictEqual(rollbar.SETTINGS['locals'], {'enabled': True, 'sizes': rollbar.DEFAULT_LOCALS_SIZES})
+        self.assertEqual(rollbar.SETTINGS['timeout'], 12345)
+        self.assertEqual(rollbar.SETTINGS['dummy_key'], 'asdf')
 
     def test_default_configuration(self):
         self.assertEqual(rollbar.SETTINGS['access_token'], _test_access_token)

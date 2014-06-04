@@ -122,6 +122,19 @@ VERSION = '0.8.0'
 DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/'
 DEFAULT_TIMEOUT = 3
 
+DEFAULT_LOCALS_SIZES = {
+    'maxdict': 10,
+    'maxarray': 10,
+    'maxlist': 10,
+    'maxtuple': 10,
+    'maxset': 10,
+    'maxfrozenset': 10,
+    'maxdeque': 10,
+    'maxstring': 100,
+    'maxlong': 40,
+    'maxother': 100,
+}
+
 # configuration settings
 # configure by calling init() or overriding directly
 SETTINGS = {
@@ -144,18 +157,7 @@ SETTINGS = {
     'allow_logging_basic_config': True,  # set to False to avoid a call to logging.basicConfig()
     'locals': {
         'enabled': False,
-        'sizes': {
-            'maxdict': 10,
-            'maxarray': 10,
-            'maxlist': 10,
-            'maxtuple': 10,
-            'maxset': 10,
-            'maxfrozenset': 10,
-            'maxdeque': 10,
-            'maxstring': 100,
-            'maxlong': 40,
-            'maxother': 100,
-        }
+        'sizes': DEFAULT_LOCALS_SIZES
     }
 }
 
@@ -178,14 +180,16 @@ def init(access_token, environment='production', **kw):
                  'staging', 'yourname'
     **kw: provided keyword arguments will override keys in SETTINGS.
     """
-    global agent_log, _initialized, _repr
+    global SETTINGS, agent_log, _initialized, _repr
 
     if not _initialized:
         _initialized = True
 
         SETTINGS['access_token'] = access_token
         SETTINGS['environment'] = environment
-        SETTINGS.update(kw)
+
+        # Merge the extra config settings into SETTINGS
+        SETTINGS = dict_merge(SETTINGS, kw)
 
         if SETTINGS.get('allow_logging_basic_config'):
             logging.basicConfig()
