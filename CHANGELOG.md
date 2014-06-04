@@ -1,5 +1,9 @@
 # Change Log
 
+**0.8.0**
+- Local variables collection now enabled by default.
+- Fixed scrubbing for utf8 param names.
+
 **0.7.6**
 - Added local variables for all in-project frames and the last frame.
 
