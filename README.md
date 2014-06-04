@@ -157,7 +157,7 @@ Be sure to replace ```POST_SERVER_ITEM_ACCESS_TOKEN``` with your project's ```po
 For generic Python or a non-Django/non-Pyramid framework just initialize the Rollbar library with your access token and environment.
 
 ```python
-rollbar.init('POST_SERVER_ITEM_ACCESS_TOKEN', environment='production')
+rollbar.init('POST_SERVER_ITEM_ACCESS_TOKEN', environment='production', **other_config_params)
 ```
 
 Other options can be passed as keyword arguments. See the reference below for all options.
@@ -200,7 +200,7 @@ Options:
 
 ## Usage
 
-The Django and Pyramid integration will automatically report uncaught exceptions to Rollbar.
+The Django, Pyramid, Flask, and Bottle integrations will automatically report uncaught exceptions to Rollbar.
 
 ### Exceptions
 
@@ -279,24 +279,6 @@ WSGIServer(('', 8000), application).serve_forever()
   <dt>access_token</dt>
   <dd>Access token from your Rollbar project
   </dd>
-  <dt>enabled</dt>
-  <dd>Controls whether or not Rollbar will report any data
-
-Default: ```True```
-
-  </dd>
-  <dt>handler</dt>
-  <dd>The method for reporting rollbar items to api.rollbar.com
-  
-One of:
-
-- blocking -- runs in main thread
-- thread -- spawns a new thread
-- agent -- writes messages to a log file for consumption by rollbar-agent
-
-Default: ```thread```
-
-  </dd>
   <dt>agent.log_file</dt>
   <dd>If ```handler``` is ```agent```, the path to the log file. Filename must end in ```.rollbar```
   </dd>
@@ -304,6 +286,14 @@ Default: ```thread```
   <dd>Name of the checked-out branch.
 
 Default: ```master```
+
+  </dd>
+  <dt>code_version</dt>
+  <dd>A string describing the current code revision/version (i.e. a git sha). Max 40 characters. Default `None`</dd>
+  <dt>enabled</dt>
+  <dd>Controls whether or not Rollbar will report any data
+
+Default: ```True```
 
   </dd>
   <dt>endpoint</dt>
@@ -346,11 +336,55 @@ rollbar.exception_level_filters =
 ```
    
   </dd>
+  <dt>handler</dt>
+  <dd>The method for reporting rollbar items to api.rollbar.com
+  
+One of:
+
+- blocking -- runs in main thread
+- thread -- spawns a new thread
+- agent -- writes messages to a log file for consumption by rollbar-agent
+
+Default: ```thread```
+
+  </dd>
+  <dt>locals</dt>
+  <dd>Configuration for collecting local variables. A dictionary:
+    <dl>
+      <dt>enabled</dt>
+      <dd>If `True`, variable values will be collected for stack traces. Default `True`.</dd>
+      <dt>sizes</dt>
+      <dd>Dictionary of configuration describing the max size to repr() for each type.
+        <dl>
+          <dt>maxdict</dt>
+          <dd>Default 10</dd>
+          <dt>maxarray</dt>
+          <dd>Default 10</dd>
+          <dt>maxlist</dt>
+          <dd>Default 10</dd>
+          <dt>maxtuple</dt>
+          <dd>Default 10</dd>
+          <dt>maxset</dt>
+          <dd>Default 10</dd>
+          <dt>maxfrozenset</dt>
+          <dd>Default 10</dd>
+          <dt>maxdeque</dt>
+          <dd>Default 10</dt>
+          <dt>maxstring</dt>
+          <dd>Default 100</dd>
+          <dt>maxlong</dt>
+          <dd>Default 40</dd>
+          <dt>maxother</dt>
+          <dd>Default 100</dd>
+        </dl>
+      </dd>
+    </dl>
+  </dd>
   <dt>root</dt>
   <dd>Absolute path to the root of your application, not including the final ```/```. 
   </dd>
   <dt>scrub_fields</dt>
-  <dd>List of field names to scrub out of POST. Values will be replaced with astrickses. If overridiing, make sure to list all fields you want to scrub, not just fields you want to add to the default. Param names are converted to lowercase before comparing against the scrub list.
+  <dd>List of sensitive field names to scrub out of request params and locals. Values will be replaced with astrickses. If overridiing, make sure to list all fields you want to scrub, not just fields you want to add to the default. Param names are converted to lowercase before comparing against the scrub list.
 
 Default: ```['passwd', 'password', 'secret', 'confirm_password', 'password_confirmation']```
 
