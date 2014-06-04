@@ -1,5 +1,6 @@
 import copy
 import mock
+import urllib
 
 import rollbar
 
@@ -8,9 +9,12 @@ from . import BaseTest
 try:
     # Python 3
     import urllib.parse as urlparse
+    urllibquote = urlparse.quote
 except ImportError:
     # Python 2
     import urlparse
+    import urllib
+    urllibquote = urllib.quote
 
 _test_access_token = 'aaaabbbbccccddddeeeeffff00001111'
 _default_settings = copy.deepcopy(rollbar.SETTINGS)
@@ -243,7 +247,7 @@ class RollbarTest(BaseTest):
 
 
     def test_utf8_url_key_scrubbing(self):
-        url = 'http://foo.com/?password=password&foo=bar&%s=secret' % SNOWMAN
+        url = 'http://foo.com/?password=password&foo=bar&%s=secret' % urllibquote(SNOWMAN)
 
         rollbar.SETTINGS['scrub_fields'].append(SNOWMAN)
         scrubbed_url = rollbar._scrub_request_url(url)
