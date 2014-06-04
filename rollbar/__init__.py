@@ -745,7 +745,7 @@ def _scrub_request_url(url_string):
     scrubbed_qs_params = _scrub_obj(qs_params, replacement_character='-')
 
     # Make sure the keys and values are all utf8-encoded strings
-    scrubbed_qs_params = dict((_to_str(k), map(_to_str, v)) for k, v in scrubbed_qs_params.items())
+    scrubbed_qs_params = dict((_to_str(k), list(map(_to_str, v))) for k, v in scrubbed_qs_params.items())
     scrubbed_qs = urlencode(scrubbed_qs_params, doseq=True)
 
     scrubbed_url = (url.scheme, url.netloc, url.path, url.params, scrubbed_qs, url.fragment)
