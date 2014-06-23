@@ -1,5 +1,9 @@
 # Change Log
 
+**0.8.1**
+- Only attempt local variable extraction if traceback frames are of the correct type, print a warning otherwise
+- Fix JSON request param extraction for Werkzeug requests (Pyramid, Flask, etc)
+
 **0.8.0**
 - Local variables collection now enabled by default.
 - Fixed scrubbing for utf8 param names.
