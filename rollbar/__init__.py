@@ -606,6 +606,15 @@ def _add_locals_data(data, exc_info):
         tb_frame = cur_tb.tb_frame
         cur_tb = cur_tb.tb_next
 
+        frame_num += 1
+
+        if not isinstance(tb_frame, types.FrameType):
+            # this can happen if the traceback or frame is wrapped in some way,
+            # for example by `ExceptionInfo` in
+            # https://github.com/celery/billiard/blob/master/billiard/einfo.py
+            log.warning('Traceback frame not a types.FrameType. Ignoring.')
+            continue
+
         # Create placeholders for args/kwargs/locals
         args = []
         kw = {}
@@ -659,8 +668,6 @@ def _add_locals_data(data, exc_info):
             cur_frame['kwargs'] = kw
         if _locals:
             cur_frame['locals'] = _locals
-
-        frame_num += 1
 
 
 def _add_request_data(data, request):
