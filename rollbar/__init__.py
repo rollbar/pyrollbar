@@ -21,7 +21,7 @@ try:
     # Python 3
     import urllib.parse as urlparse
     from urllib.parse import urlencode
-    import reprlib 
+    import reprlib
     string_types = (str, bytes)
 except ImportError:
     # Python 2
@@ -38,14 +38,23 @@ except ImportError:
     WebobBaseRequest = None
 
 try:
-    from django.http import HttpRequest as DjangoHttpRequest
+    from django.core.exceptions import ImproperlyConfigured
 except ImportError:
     DjangoHttpRequest = None
-
-try:
-    from rest_framework.request import Request as RestFrameworkRequest
-except ImportError:
     RestFrameworkRequest = None
+
+else:
+    try:
+        from django.http import HttpRequest as DjangoHttpRequest
+    except (ImportError, ImproperlyConfigured):
+        DjangoHttpRequest = None
+
+    try:
+        from rest_framework.request import Request as RestFrameworkRequest
+    except (ImportError, ImproperlyConfigured):
+        RestFrameworkRequest = None
+
+    del ImproperlyConfigured
 
 try:
     from werkzeug.wrappers import Request as WerkzeugRequest
@@ -813,7 +822,7 @@ def _in_scrub_fields(val, scrub_fields):
             return True
 
     return False
-        
+
 
 def _local_repr(obj):
     orig = repr(obj)
