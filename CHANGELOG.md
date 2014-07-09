@@ -1,5 +1,8 @@
 # Change Log
 
+**0.8.2**
+- Fix uncaught ImproperlyConfigured exception when importing Rollbar in a Django REST Framework environment without a settings module loaded ([#28](https://github.com/rollbar/pyrollbar/pull/28))
+
 **0.8.1**
 - Only attempt local variable extraction if traceback frames are of the correct type, print a warning otherwise
 - Fix JSON request param extraction for Werkzeug requests (Pyramid, Flask, etc)
