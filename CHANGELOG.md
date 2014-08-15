@@ -1,5 +1,8 @@
 # Change Log
 
+**0.8.3**
+- Provide a way to blacklist types from being repr()'d while gathering local variables.
+
 **0.8.2**
 - Fix uncaught ImproperlyConfigured exception when importing Rollbar in a Django REST Framework environment without a settings module loaded ([#28](https://github.com/rollbar/pyrollbar/pull/28))
 

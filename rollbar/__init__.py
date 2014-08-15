@@ -127,7 +127,7 @@ log = logging.getLogger(__name__)
 
 agent_log = None
 
-VERSION = '0.8.2'
+VERSION = '0.8.3'
 DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/'
 DEFAULT_TIMEOUT = 3
 
@@ -174,6 +174,10 @@ SETTINGS = {
 _repr = None
 
 _initialized = False
+
+# Do not call repr() on these types while gathering local variables
+blacklisted_local_types = []
+
 
 ## public api
 
@@ -825,6 +829,9 @@ def _in_scrub_fields(val, scrub_fields):
 
 
 def _local_repr(obj):
+    if isinstance(obj, tuple(blacklisted_local_types)):
+        return type(obj)
+
     orig = repr(obj)
     reprd = _repr.repr(obj)
     if reprd == orig:
