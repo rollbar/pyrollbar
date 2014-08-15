@@ -12,7 +12,7 @@ except IOError:
 setup(
     name='rollbar',
     packages=find_packages(),
-    version='0.8.2',
+    version='0.8.3',
     entry_points= {
         'paste.filter_app_factory': [
             'pyramid=rollbar.contrib.pyramid:create_rollbar_middleware'
@@ -21,8 +21,8 @@ setup(
     },
     description='Logs exceptions and other data to Rollbar. Provides a generic interface, as well as a Django middleware and a Pyramid tween.',
     long_description=README,
-    author='Brian Rue',
-    author_email='brian@rollbar.com',
+    author='Rollbar, Inc.',
+    author_email='support@rollbar.com',
     test_suite='rollbar.test',
     url='http://github.com/rollbar/pyrollbar',
     classifiers=[
