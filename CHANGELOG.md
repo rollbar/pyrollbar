@@ -1,5 +1,12 @@
 # Change Log
 
+**0.9.0**
+- Improvements to RollbarHandler logging handler. It now:
+  - extracts more information out of each record (i.e. metadata like pathname and creation time)
+  - uses the format string, with arguments not yet replaced, as the main message body. This will result in much better grouping in Rollbar.
+
+Note about upgrading from 0.8.x: unless you are using RollbarHandler, there are no breaking changes. If you are using RolbarHandler, then this will change the way your data appears in Rollbar (to the better, in our opinion).
+
 **0.8.3**
 - Provide a way to blacklist types from being repr()'d while gathering local variables.
 
