@@ -3,7 +3,7 @@ Hooks for integrating with the python logging framework.
 
 Usage:
     import logging
-    from rollbar.logging import RollbarHandler
+    from rollbar.logger import RollbarHandler
 
     rollbar.init('ACCESS_TOKEN', 'ENVIRONMENT')
 
@@ -74,10 +74,29 @@ class RollbarHandler(logging.Handler):
             return
 
         exc_info = record.exc_info
-        message = record.getMessage() or self.format(record)
 
+        # use the original message, not the formatted one
+        message = record.msg
         request = rollbar.get_request()
-        extra_data = getattr(record, 'extra_data', {})
+        extra_data = {
+            'args': record.args, 
+            'record': {
+                'created': record.created,
+                'funcName': record.funcName,
+                'lineno': record.lineno,
+                'module': record.module,
+                'name': record.name,
+                'pathname': record.pathname,
+                'process': record.process,
+                'processName': record.processName,
+                'relativeCreated': record.relativeCreated,
+                'thread': record.thread,
+                'threadName': record.threadName
+            }
+        }
+
+        extra_data.update(getattr(record, 'extra_data', {}))
+
         payload_data = getattr(record, 'payload_data', {})
 
         self._add_history(record, payload_data)
