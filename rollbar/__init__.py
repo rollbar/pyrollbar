@@ -1002,6 +1002,9 @@ def _parse_response(path, access_token, params, resp, endpoint=None):
     if resp.status_code == 429:
         log.warning("Rollbar: over rate limit, data was dropped. Payload was: %r", params)
         return
+    elif resp.status_code == 413:
+        log.warning("Rollbar: request entity too large. Payload was: %r", params)
+        return
     elif resp.status_code != 200:
         log.warning("Got unexpected status code from Rollbar api: %s\nResponse:\n%s",
             resp.status_code, resp.text)
