@@ -1,5 +1,8 @@
 # Change Log
 
+**Next release (tbd)**
+- For Tornado requests, gather request start time. See [#33](https://github.com/rollbar/pyrollbar/pull/33)
+
 **0.9.0**
 - Improvements to RollbarHandler logging handler. It now:
   - extracts more information out of each record (i.e. metadata like pathname and creation time)
