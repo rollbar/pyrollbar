@@ -917,6 +917,7 @@ def _build_tornado_request_data(request):
         'headers': dict(request.headers),
         'method': request.method,
         'files_keys': request.files.keys(),
+        'start_time': getattr(request, '_start_time', None),
     }
     request_data[request.method] = request.arguments
 
