@@ -254,15 +254,18 @@ def application(environ, start_response):
 
     yield '<p>Hello world</p>'
 
+    # extra fields we'd like to send along to rollbar (optional)
+    extra_data = {'datacenter': 'us1', 'app' : {'version': '1.1'}}
+
     try:
         # will raise a NameError about 'bar' not being defined
         foo = bar
     except:
         # report full exception info
-        rollbar.report_exc_info(sys.exc_info(), request)
+        rollbar.report_exc_info(sys.exc_info(), request, extra_data=extra_data)
 
         # and/or, just send a string message with a level
-        rollbar.report_message("Here's a message", 'info', request)
+        rollbar.report_message("Here's a message", 'info', request, extra_data=extra_data)
 
         yield '<p>Caught an exception</p>'
 
