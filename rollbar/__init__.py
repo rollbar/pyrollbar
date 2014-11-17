@@ -76,6 +76,17 @@ try:
 except ImportError:
     BottleRequest = None
 
+try:
+    from tornado.gen import coroutine as tornado_coroutine
+    from tornado.httpclient import AsyncHTTPClient as TornadoAsyncHTTPClient
+except ImportError:
+    def tornado_coroutine(func):
+        def wrap(*args, **kwargs):
+            return func(*args, **kwargs)
+        return wrap
+
+    TornadoAsyncHTTPClient = None
+
 
 def get_request():
     """
@@ -154,7 +165,7 @@ SETTINGS = {
     'root': None,  # root path to your code
     'branch': None,  # git branch name
     'code_version': None,
-    'handler': 'thread',  # 'blocking', 'thread' or 'agent'
+    'handler': 'thread',  # 'blocking', 'thread', 'agent' or 'tornado'
     'endpoint': DEFAULT_ENDPOINT,
     'timeout': DEFAULT_TIMEOUT,
     'agent.log_file': 'log.rollbar',
@@ -268,6 +279,7 @@ def send_payload(payload):
     - 'blocking': calls _send_payload() (which makes an HTTP request) immediately, blocks on it
     - 'thread': starts a single-use thread that will call _send_payload(). returns immediately.
     - 'agent': writes to a log file to be processed by rollbar-agent
+    - 'tornado': calls _send_payload_tornado() (which makes an async HTTP request using tornado's AsyncHTTPClient)
     """
     handler = SETTINGS.get('handler')
     if handler == 'blocking':
@@ -275,6 +287,11 @@ def send_payload(payload):
     elif handler == 'agent':
         payload = ErrorIgnoringJSONEncoder().encode(payload)
         agent_log.error(payload)
+    elif handler == 'tornado':
+        if TornadoAsyncHTTPClient is None:
+            log.error('Unable to find tornado')
+            return
+        _send_payload_tornado(payload)
     else:
         # default to 'thread'
         thread = threading.Thread(target=_send_payload, args=(payload,))
@@ -987,6 +1004,7 @@ def _post_api(path, payload, access_token=None):
     payload = ErrorIgnoringJSONEncoder().encode(payload)
 
     url = urlparse.urljoin(SETTINGS['endpoint'], path)
+
     resp = requests.post(url, data=payload, headers=headers, timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT))
     return _parse_response(path, SETTINGS['access_token'], payload, resp)
 
@@ -997,6 +1015,38 @@ def _get_api(path, access_token=None, endpoint=None, **params):
     params['access_token'] = access_token
     resp = requests.get(url, params=params)
     return _parse_response(path, access_token, params, resp, endpoint=endpoint)
+
+
+def _send_payload_tornado(payload):
+    try:
+        _post_api_tornado('item/', payload, access_token=payload.get('access_token'))
+    except Exception as e:
+        log.exception('Exception while posting item %r', e)
+
+
+@tornado_coroutine
+def _post_api_tornado(path, payload, access_token=None):
+    headers = {'Content-Type': 'application/json'}
+
+    if access_token is not None:
+        headers['X-Rollbar-Access-Token'] = access_token
+
+    # Serialize this ourselves so we can handle error cases more gracefully
+    payload = ErrorIgnoringJSONEncoder().encode(payload)
+
+    url = urlparse.urljoin(SETTINGS['endpoint'], path)
+
+    resp = yield TornadoAsyncHTTPClient().fetch(
+        url, body=payload, method='POST', connect_timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT),
+        request_timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT)
+    )
+
+    r = requests.Response()
+    r._content = resp.body
+    r.status_code = resp.code
+    r.headers.update(resp.headers)
+
+    _parse_response(path, SETTINGS['access_token'], payload, r)
 
 
 def _parse_response(path, access_token, params, resp, endpoint=None):
