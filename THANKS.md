@@ -10,3 +10,4 @@ Huge thanks to the following contributors (by github username). For the most up-
 - [jedipi](https://github.com/jedipi)
 - [rhcarvalho](https://github.com/rhcarvalho)
 - [tschieggm](https://github.com/tschieggm)
+- [zvirusz](https://github.com/zvirusz)

@@ -1,9 +1,15 @@
 # Change Log
 
-**Next release (tbd)**
-- For Tornado requests, gather request start time. See [#33](https://github.com/rollbar/pyrollbar/pull/33)
+**0.9.1**
+
+New features:
+
+- For Tornado requests, gather the request start time. See [#33](https://github.com/rollbar/pyrollbar/pull/33)
+- Add handler which uses Tornado's `AsyncHTTPClient`. To use this, set your 'handler' to 'tornado'. See [#34](https://github.com/rollbar/pyrollbar/pull/34)
+
 
 **0.9.0**
+
 - Improvements to RollbarHandler logging handler. It now:
   - extracts more information out of each record (i.e. metadata like pathname and creation time)
   - uses the format string, with arguments not yet replaced, as the main message body. This will result in much better grouping in Rollbar.
