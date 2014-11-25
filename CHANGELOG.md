@@ -1,5 +1,9 @@
 # Change Log
 
+**0.8.4**
+- Added an option to disable SSL certificate verification, (pr#36).
+- Added `__version__` specifier to `__init__.py`.
+
 **0.8.3**
 - Provide a way to blacklist types from being repr()'d while gathering local variables.
 
