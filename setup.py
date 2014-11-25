@@ -1,3 +1,4 @@
+import re
 import os.path
 from setuptools import setup, find_packages
 
@@ -5,14 +6,20 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 
 README_PATH = os.path.join(HERE, 'README.md')
 try:
-    README = open(README_PATH).read()
+    with open(README_PATH) as fd:
+        README = fd.read()
 except IOError:
     README = ''
+
+INIT_PATH = os.path.join(HERE, 'rollbar/__init__.py')
+with open(INIT_PATH) as fd:
+    INIT_DATA = fd.read()
+    VERSION = re.search(r"^__version__ = ['\"]([^'\"]+)['\"]", INIT_DATA, re.MULTILINE).group(1)
 
 setup(
     name='rollbar',
     packages=find_packages(),
-    version='0.9.1',
+    version=VERSION,
     entry_points= {
         'paste.filter_app_factory': [
             'pyramid=rollbar.contrib.pyramid:create_rollbar_middleware'

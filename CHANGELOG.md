@@ -1,5 +1,9 @@
 # Change Log
 
+**0.9.2**
+- Added an option to disable SSL certificate verification, [#36](https://github.com/rollbar/pyrollbar/pull/36).
+- Added `__version__` specifier to `__init__.py`.
+
 **0.9.1**
 
 New features:

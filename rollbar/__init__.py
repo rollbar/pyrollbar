@@ -1,6 +1,7 @@
 """
 Plugin for Pyramid apps to submit errors to Rollbar
 """
+__version__ = '0.9.2'
 
 import copy
 import inspect
@@ -138,7 +139,7 @@ log = logging.getLogger(__name__)
 
 agent_log = None
 
-VERSION = '0.9.1'
+VERSION = __version__
 DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/'
 DEFAULT_TIMEOUT = 3
 
@@ -178,7 +179,8 @@ SETTINGS = {
     'locals': {
         'enabled': True,
         'sizes': DEFAULT_LOCALS_SIZES
-    }
+    },
+    'verify_https': True
 }
 
 # Set in init()
@@ -1004,8 +1006,12 @@ def _post_api(path, payload, access_token=None):
     payload = ErrorIgnoringJSONEncoder().encode(payload)
 
     url = urlparse.urljoin(SETTINGS['endpoint'], path)
+    resp = requests.post(url,
+                         data=payload,
+                         headers=headers,
+                         timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT),
+                         verify=SETTINGS.get('verify_https', True))
 
-    resp = requests.post(url, data=payload, headers=headers, timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT))
     return _parse_response(path, SETTINGS['access_token'], payload, resp)
 
 
@@ -1013,7 +1019,7 @@ def _get_api(path, access_token=None, endpoint=None, **params):
     access_token = access_token or SETTINGS['access_token']
     url = urlparse.urljoin(endpoint or SETTINGS['endpoint'], path)
     params['access_token'] = access_token
-    resp = requests.get(url, params=params)
+    resp = requests.get(url, params=params, verify=SETTINGS.get('verify_https', True))
     return _parse_response(path, access_token, params, resp, endpoint=endpoint)
 
 
