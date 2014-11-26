@@ -6,6 +6,7 @@ Huge thanks to the following contributors (by github username). For the most up-
 - [dmitry-mukhin](https://github.com/dmitry-mukhin)
 - [homm](https://github.com/homm)
 - [jamesonjlee](https://github.com/jamesonjlee)
+- [jbowes](https://github.com/jbowes)
 - [jbrumwell](https://github.com/jbrumwell)
 - [jedipi](https://github.com/jedipi)
 - [rhcarvalho](https://github.com/rhcarvalho)
