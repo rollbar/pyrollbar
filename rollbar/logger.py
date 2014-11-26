@@ -77,9 +77,8 @@ class RollbarHandler(logging.Handler):
 
         # use the original message, not the formatted one
         message = record.msg
-        request = rollbar.get_request()
         extra_data = {
-            'args': record.args, 
+            'args': record.args,
             'record': {
                 'created': record.created,
                 'funcName': record.funcName,
@@ -104,8 +103,11 @@ class RollbarHandler(logging.Handler):
         # after we've added the history data, check to see if the
         # notify level is satisfied
         if record.levelno < self.notify_level:
-            return 
+            return
 
+        # Wait until we know we're going to send a report before trying to
+        # load the request
+        request = rollbar.get_request()
         uuid = None
         try:
             if exc_info:
@@ -159,5 +161,5 @@ class RollbarHandler(logging.Handler):
 
         if hasattr(record, 'rollbar_uuid'):
             data['uuid'] = record.rollbar_uuid
-        
+
         return data

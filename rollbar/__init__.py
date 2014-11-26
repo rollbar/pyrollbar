@@ -114,21 +114,29 @@ def get_request():
 
 
 def _get_bottle_request():
+    if BottleRequest is None:
+        return None
     from bottle import request
     return request
 
 
 def _get_flask_request():
+    if WerkzeugRequest is None:
+        return None
     from flask import request
     return request
 
 
 def _get_pyramid_request():
+    if WebobBaseRequest is None:
+        return None
     from pyramid.threadlocal import get_current_request
     return get_current_request()
 
 
 def _get_pylons_request():
+    if WebobBaseRequest is None:
+        return None
     from pylons import request
     return request
 
