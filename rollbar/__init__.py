@@ -401,19 +401,23 @@ class PagedResult(Result):
 
 ## internal functions
 
+def _resolve_exception_class(idx, filter):
+    cls, level = filter
+    if isinstance(cls, str):
+        # Lazily resolve class name
+        parts = cls.split('.')
+        module = ".".join(parts[:-1])
+        if module in sys.modules and hasattr(sys.modules[module], parts[-1]):
+            cls = getattr(sys.modules[module], parts[-1])
+            SETTINGS['exception_level_filters'][idx] = (cls, level)
+        else:
+            cls = None
+    return cls, level
 
 def _filtered_level(exception):
-    for i, item in enumerate(SETTINGS['exception_level_filters']):
-        cls, level = item
-        if isinstance(cls, str):
-            # Lazily resolve class name
-            parts = cls.split('.')
-            module = ".".join(parts[:-1])
-            if module not in sys.modules or not hasattr(sys.modules[module], parts[-1]):
-                continue
-            cls = getattr(sys.modules[module], parts[-1])
-            SETTINGS['exception_level_filters'][i] = (cls, level)
-        if isinstance(exception, cls):
+    for i, filter in enumerate(SETTINGS['exception_level_filters']):
+        cls, level = _resolve_exception_class(i, filter)
+        if cls and isinstance(exception, cls):
             return level
 
     return None

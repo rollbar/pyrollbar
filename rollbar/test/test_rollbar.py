@@ -1,5 +1,4 @@
 import copy
-import exceptions
 import mock
 import unittest
 import urllib
@@ -120,8 +119,8 @@ class RollbarTest(BaseTest):
     def test_exception_filters(self, send_payload):
 
         rollbar.SETTINGS['exception_level_filters'] = [
-            (exceptions.OSError, 'ignored'),
-            ('exceptions.NotImplementedError', 'ignored'),
+            (OSError, 'ignored'),
+            ('rollbar.ApiException', 'ignored'),
             ('bogus.DoesntExist', 'ignored'),
         ]
 
@@ -137,9 +136,9 @@ class RollbarTest(BaseTest):
             except:
                 rollbar.report_exc_info()
 
-        def _raise_not_implemented_error():
+        def _raise_api_exception():
             try:
-                raise NotImplementedError('bar')
+                raise rollbar.ApiException('bar')
             except:
                 rollbar.report_exc_info()
 
@@ -149,7 +148,7 @@ class RollbarTest(BaseTest):
         _raise_os_error()
         self.assertEqual(1, send_payload.call_count)
 
-        _raise_not_implemented_error()
+        _raise_api_exception()
         self.assertEqual(1, send_payload.call_count)
 
 
