@@ -122,7 +122,7 @@ class RollbarTest(BaseTest):
         rollbar.SETTINGS['exception_level_filters'] = [
             (exceptions.OSError, 'ignored'),
             ('exceptions.NotImplementedError', 'ignored'),
-            ('bogus.DoesntExists', 'ignored'),
+            ('bogus.DoesntExist', 'ignored'),
         ]
 
         def _raise_exception():
