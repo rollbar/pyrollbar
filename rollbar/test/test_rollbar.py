@@ -1,5 +1,6 @@
 import copy
 import mock
+import unittest
 import urllib
 
 import rollbar
@@ -113,6 +114,43 @@ class RollbarTest(BaseTest):
 
         self.assertNotIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('kwargs', payload['data']['body']['trace']['frames'][-1])
+
+    @mock.patch('rollbar.send_payload')
+    def test_exception_filters(self, send_payload):
+
+        rollbar.SETTINGS['exception_level_filters'] = [
+            (OSError, 'ignored'),
+            ('rollbar.ApiException', 'ignored'),
+            ('bogus.DoesntExist', 'ignored'),
+        ]
+
+        def _raise_exception():
+            try:
+                raise Exception('foo')
+            except:
+                rollbar.report_exc_info()
+
+        def _raise_os_error():
+            try:
+                raise OSError('bar')
+            except:
+                rollbar.report_exc_info()
+
+        def _raise_api_exception():
+            try:
+                raise rollbar.ApiException('bar')
+            except:
+                rollbar.report_exc_info()
+
+        _raise_exception()
+        self.assertTrue(send_payload.called)
+
+        _raise_os_error()
+        self.assertEqual(1, send_payload.call_count)
+
+        _raise_api_exception()
+        self.assertEqual(1, send_payload.call_count)
+
 
     @mock.patch('rollbar.send_payload')
     def test_report_messsage(self, send_payload):
@@ -714,3 +752,6 @@ def step2():
 def called_with(arg1):
     arg1 = 'changed'
     step1()
+
+if __name__ == '__main__':
+    unittest.main()
