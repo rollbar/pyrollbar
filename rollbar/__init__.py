@@ -401,9 +401,19 @@ class PagedResult(Result):
 
 ## internal functions
 
+# Python 2.x and 3.x compatible string test
+try:
+    isinstance('', basestring)
+    def isstr(s):
+        return isinstance(s, basestring)
+except NameError:
+    def isstr(s):
+        return isinstance(s, str)
+
+
 def _resolve_exception_class(idx, filter):
     cls, level = filter
-    if isinstance(cls, basestring):
+    if isstr(cls):
         # Lazily resolve class name
         parts = cls.split('.')
         module = ".".join(parts[:-1])
