@@ -1,5 +1,8 @@
 # Change Log
 
+**0.9.3**
+- `exception_level_filters` can now take a string that defines the class to filter, [#38](https://github.com/rollbar/pyrollbar/pull/38).
+
 **0.9.2**
 - Added an option to disable SSL certificate verification, [#36](https://github.com/rollbar/pyrollbar/pull/36).
 - Added `__version__` specifier to `__init__.py`.
