@@ -403,7 +403,7 @@ class PagedResult(Result):
 
 def _resolve_exception_class(idx, filter):
     cls, level = filter
-    if isinstance(cls, str):
+    if isinstance(cls, basestring):
         # Lazily resolve class name
         parts = cls.split('.')
         module = ".".join(parts[:-1])
