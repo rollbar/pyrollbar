@@ -801,7 +801,8 @@ def _scrub_request_data(request_data):
     """
     if request_data:
         for field in ['POST', 'GET', 'headers']:
-            request_data[field] = _scrub_obj(request_data[field])
+            if request_data.get(field):
+                request_data[field] = _scrub_obj(request_data[field])
 
         if request_data.get('url'):
             request_data['url'] = _scrub_request_url(request_data['url'])
