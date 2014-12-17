@@ -800,11 +800,8 @@ def _scrub_request_data(request_data):
     Scrubs out sensitive information out of request data
     """
     if request_data:
-        if request_data.get('POST'):
-            request_data['POST'] = _scrub_obj(request_data['POST'])
-
-        if request_data.get('GET'):
-            request_data['GET'] = _scrub_obj(request_data['GET'])
+        for field in ['POST', 'GET', 'headers']:
+            request_data[field] = _scrub_obj(request_data[field])
 
         if request_data.get('url'):
             request_data['url'] = _scrub_request_url(request_data['url'])
@@ -841,7 +838,7 @@ def _scrub_obj(obj, replacement_character='*'):
     def _scrub(obj, k=None):
         if k is not None and _in_scrub_fields(k, scrub_fields):
             if isinstance(obj, string_types):
-                return replacement_character * len(obj)
+                return replacement_character * min(50, len(obj))
             elif isinstance(obj, list):
                 return [_scrub(v, k) for v in obj]
             elif isinstance(obj, dict):
