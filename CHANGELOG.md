@@ -1,5 +1,8 @@
 # Change Log
 
+**0.9.4**
+- Request headers are now scrubbed, [pr#41](https://github.com/rollbar/pyrollbar/pull/41).
+
 **0.9.3**
 - `exception_level_filters` can now take a string that defines the class to filter, [#38](https://github.com/rollbar/pyrollbar/pull/38).
 
