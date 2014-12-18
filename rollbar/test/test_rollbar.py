@@ -68,17 +68,26 @@ class RollbarTest(BaseTest):
         self.assertEqual(server_data['root'], '/home/test/')
 
     def test_webob_request_data(self):
+        rollbar.SETTINGS['scrub_fields'].extend(['token', 'secret', 'cookies', 'authorization'])
+
         import webob
-        request = webob.Request.blank('/the/path?q=hello&password=hunter2', 
-            base_url='http://example.com',
-            headers={'X-Real-Ip': '5.6.7.8'},
-            POST='foo=bar&confirm_password=hunter3')
+        request = webob.Request.blank('/the/path?q=hello&password=hunter2',
+            base_url = 'http://example.com',
+            headers = {
+                'X-Real-Ip': '5.6.7.8',
+                'Cookies': 'name=value; password=hash;',
+                'Authorization': 'I am from NSA'
+            },
+            POST = 'foo=bar&confirm_password=hunter3&token=secret')
         
         unscrubbed = rollbar._build_webob_request_data(request)
         self.assertEqual(unscrubbed['url'], 'http://example.com/the/path?q=hello&password=hunter2')
         self.assertEqual(unscrubbed['user_ip'], '5.6.7.8')
         self.assertDictEqual(unscrubbed['GET'], {'q': 'hello', 'password': 'hunter2'})
-        self.assertDictEqual(unscrubbed['POST'], {'foo': 'bar', 'confirm_password': 'hunter3'})
+        self.assertDictEqual(unscrubbed['POST'], {'foo': 'bar', 'confirm_password': 'hunter3', 'token': 'secret'})
+        self.assertEqual('5.6.7.8', unscrubbed['headers']['X-Real-Ip'])
+        self.assertEqual('name=value; password=hash;', unscrubbed['headers']['Cookies'])
+        self.assertEqual('I am from NSA', unscrubbed['headers']['Authorization'])
 
         scrubbed = rollbar._scrub_request_data(unscrubbed)
         self.assertTrue(
@@ -87,8 +96,11 @@ class RollbarTest(BaseTest):
             or
             scrubbed['url'] == 'http://example.com/the/path?password=-------&q=hello'
             )
-        self.assertDictEqual(unscrubbed['GET'], {'q': 'hello', 'password': '*******'})
-        self.assertDictEqual(unscrubbed['POST'], {'foo': 'bar', 'confirm_password': '*******'})
+        self.assertDictEqual(scrubbed['GET'], {'q': 'hello', 'password': '*******'})
+        self.assertDictEqual(scrubbed['POST'], {'foo': 'bar', 'confirm_password': '*******', 'token': '******'})
+        self.assertEqual('5.6.7.8', scrubbed['headers']['X-Real-Ip'])
+        self.assertEqual('**************************', scrubbed['headers']['Cookies'])
+        self.assertEqual('*************', scrubbed['headers']['Authorization'])
 
     @mock.patch('rollbar.send_payload')
     def test_report_exception(self, send_payload):
