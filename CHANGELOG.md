@@ -1,5 +1,9 @@
 # Change Log
 
+**0.9.6**
+- Fix memory leak when using the RollbarHandler logging handler (see [#43](https://github.com/rollbar/pyrollbar/pull/43))
+- Fix bug where named function arguments were not scrubbed correctly
+
 **0.9.5**
 - Fix bug with local variable gathering that was breaking when getting the arguments for a class constructor.
 
