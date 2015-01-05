@@ -630,6 +630,46 @@ class RollbarTest(BaseTest):
         self.assertEqual('text', payload['data']['body']['trace']['frames'][-1]['kwargs']['clear'])
 
     @mock.patch('rollbar.send_payload')
+    def test_scrub_locals(self, send_payload):
+        def _raise():
+            password = 'sensitive'
+            raise Exception()
+
+        try:
+            _raise()
+        except:
+            rollbar.report_exc_info()
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = send_payload.call_args[0][0]
+
+        self.assertEqual('*********', payload['data']['body']['trace']['frames'][-1]['locals']['password'])
+
+    @mock.patch('rollbar.send_payload')
+    def test_cannot_scrub_local_ref(self, send_payload):
+        """
+        NOTE(cory): This test checks to make sure that we do not scrub a local variable that is a reference
+                    to a parameter that is scrubbed.
+                    Ideally we would be able to scrub 'copy' as well since we know that it has the same
+                    value as a field that was scrubbed.
+        """
+        def _raise(password='sensitive'):
+            copy = password
+            raise Exception()
+
+        try:
+            _raise()
+        except:
+            rollbar.report_exc_info()
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = send_payload.call_args[0][0]
+
+        self.assertEqual('sensitive', payload['data']['body']['trace']['frames'][-1]['locals']['copy'])
+
+    @mock.patch('rollbar.send_payload')
     def test_large_arg_val(self, send_payload):
 
         def _raise(large):
