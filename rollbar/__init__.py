@@ -689,7 +689,7 @@ def _add_locals_data(data, exc_info):
 
             func = _get_func_from_frame(tb_frame)
             if func:
-                if inspect.ismethod(func):
+                if inspect.isfunction(func) or inspect.ismethod(func):
                     argspec = inspect.getargspec(func)
                 elif inspect.isclass(func):
                     init_func = getattr(func, '__init__', None)
