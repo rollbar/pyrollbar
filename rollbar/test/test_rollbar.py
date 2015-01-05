@@ -391,6 +391,26 @@ class RollbarTest(BaseTest):
         self.assertEqual(payload['data']['level'], 'warn')
 
     @mock.patch('rollbar.send_payload')
+    def test_args_constructor(self, send_payload):
+
+        class tmp(object):
+            def __init__(self, arg1):
+                self.arg1 = arg1
+                foo()
+
+        try:
+            t = tmp(33)
+        except:
+            rollbar.report_exc_info()
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = send_payload.call_args[0][0]
+
+        self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
+        self.assertEqual(33, payload['data']['body']['trace']['frames'][-1]['args'][1])
+
+    @mock.patch('rollbar.send_payload')
     def test_args_lambda_no_args(self, send_payload):
 
         _raise = lambda: foo()

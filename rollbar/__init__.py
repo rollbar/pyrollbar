@@ -1,7 +1,7 @@
 """
 Plugin for Pyramid apps to submit errors to Rollbar
 """
-__version__ = '0.9.4'
+__version__ = '0.9.5'
 
 import copy
 import inspect
@@ -685,12 +685,16 @@ def _add_locals_data(data, exc_info):
         try:
             arginfo = inspect.getargvalues(tb_frame)
             local_vars = arginfo.locals
+            argspec = None
 
             func = _get_func_from_frame(tb_frame)
             if func:
-                argspec = inspect.getargspec(func)
-            else:
-                argspec = None
+                if inspect.ismethod(func):
+                    argspec = inspect.getargspec(func)
+                elif inspect.isclass(func):
+                    init_func = getattr(func, '__init__', None)
+                    if init_func:
+                        argspec = inspect.getargspec(init_func)
 
             # Fill in all of the named args
             for named_arg in arginfo.args:

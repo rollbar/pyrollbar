@@ -1,5 +1,8 @@
 # Change Log
 
+**0.9.5**
+- Fix bug with local variable gathering that was breaking when getting the arguments for a class constructor.
+
 **0.9.4**
 - Request headers are now scrubbed, [pr#41](https://github.com/rollbar/pyrollbar/pull/41).
 
