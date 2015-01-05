@@ -144,10 +144,10 @@ class RollbarHandler(logging.Handler):
     def _add_history(self, record, payload_data):
         if hasattr(self._history, 'records'):
             records = self._history.records
-            record.history = list(records[-self.history_size:])
+            history = list(records[-self.history_size:])
 
-            if record.history:
-                history_data = [self._build_history_data(r) for r in record.history]
+            if history:
+                history_data = [self._build_history_data(r) for r in history]
                 payload_data.setdefault('server', {})['history'] = history_data
 
             records.append(record)
