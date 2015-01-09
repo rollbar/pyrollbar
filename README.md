@@ -169,13 +169,13 @@ pyrollbar comes with a command-line tool that can be used with other UNIX utilit
 e.g. Report all 5xx haproxy requests as ```warning```
 
 ```bash
-tail -f /var/log/haproxy.log | awk '{print $11,$0}' | grep '^5' | awk '{$1="";print "warning",$0}' | rollbar -t $POST_SERVER_ITEM_ACCESS_TOKEN -e production -v
+tail -f /var/log/haproxy.log | awk '{print $11,$0}' | grep '^5' | awk '{$1="";print "warning",$0}' | rollbar -t POST_SERVER_ITEM_ACCESS_TOKEN -e production -v
 ```
 
 e.g. Test an access token
 
 ```bash
-rollbar -t $POST_SERVER_ITEM_ACCESS_TOKEN -e test debug testing access token
+rollbar -t POST_SERVER_ITEM_ACCESS_TOKEN -e test debug testing access token
 ```
 
 #### Reference
