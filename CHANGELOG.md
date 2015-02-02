@@ -168,3 +168,4 @@ Note about upgrading from 0.8.x: unless you are using RollbarHandler, there are 
 **0.1.8**
 - Add support for Django request objects
 
+
