@@ -5,5 +5,8 @@ python:
   - "2.7"
   - "3.2"
   - "3.3"
+before_script:
+  - pip install codecov
 script:
-  - python setup.py test
+  - coverage run setup.py test
+  - codecov
