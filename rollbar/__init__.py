@@ -834,7 +834,7 @@ def _scrub_request_url(url_string):
 def _scrub_obj(obj, replacement_character='*'):
     """
     Given an object, (e.g. dict/list/string) return the same object with sensitive
-    data scrubbed out, (replaced with astrickses.)
+    data scrubbed out, (replaced with asterisks.)
 
     Fields to scrub out are defined in SETTINGS['scrub_fields'].
     """
