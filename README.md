@@ -387,7 +387,7 @@ Default: ```thread```
   <dd>Absolute path to the root of your application, not including the final ```/```. 
   </dd>
   <dt>scrub_fields</dt>
-  <dd>List of sensitive field names to scrub out of request params and locals. Values will be replaced with astrickses. If overridiing, make sure to list all fields you want to scrub, not just fields you want to add to the default. Param names are converted to lowercase before comparing against the scrub list.
+  <dd>List of sensitive field names to scrub out of request params and locals. Values will be replaced with asterisks. If overriding, make sure to list all fields you want to scrub, not just fields you want to add to the default. Param names are converted to lowercase before comparing against the scrub list.
 
 Default: ```['passwd', 'password', 'secret', 'confirm_password', 'password_confirmation']```
 
