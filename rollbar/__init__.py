@@ -488,7 +488,7 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
             'frames': frames,
             'exception': {
                 'class': cls.__name__,
-                'message': str(exc),
+                'message': _to_str(exc),
             }
         }
     }
@@ -860,15 +860,18 @@ def _scrub_obj(obj, replacement_character='*'):
     return _scrub(obj)
 
 
-def _to_str(x):
-    try:
-        return str(x)
-    except UnicodeEncodeError:
+if sys.version_info[0] > 2:
+    def _to_str(x):
+        return str(x).encode('utf-8')
+else:
+    def _to_str(x):
         try:
-            return unicode(x).encode('utf8')
+            return str(x)
         except UnicodeEncodeError:
-            return x.encode('utf8')
-
+            try:
+                return unicode(x).encode('utf-8')
+            except UnicodeEncodeError:
+                return x.encode('utf-8')
 
 def _in_scrub_fields(val, scrub_fields):
     val = _to_str(val).lower()
