@@ -1,3 +1,4 @@
+import sys
 import copy
 import mock
 import unittest
@@ -121,7 +122,7 @@ class RollbarTest(BaseTest):
         self.assertIn('body', payload['data'])
         self.assertIn('trace', payload['data']['body'])
         self.assertIn('exception', payload['data']['body']['trace'])
-        self.assertEqual(payload['data']['body']['trace']['exception']['message'], 'foo')
+        self.assertEqual(payload['data']['body']['trace']['exception']['message'], 'foo'.encode('utf-8'))
         self.assertEqual(payload['data']['body']['trace']['exception']['class'], 'Exception')
 
         self.assertNotIn('args', payload['data']['body']['trace']['frames'][-1])
@@ -804,8 +805,28 @@ class RollbarTest(BaseTest):
 
         frames = payload['data']['body']['trace']['frames']
         called_with_frame = frames[1]
-        
+
         self.assertEqual('changed', called_with_frame['args'][0])
+
+    @mock.patch('rollbar.send_payload')
+    def test_unicode_exc_info(self, send_payload):
+        unicode_char = '\u221a'
+
+        if sys.version_info[0] < 3:
+            message = unicode_char.decode('unicode-escape')
+            expected = '\xe2\x88\x9a'
+        else:
+            message = unicode_char
+            expected = message.encode('utf-8')
+
+        try:
+            raise Exception(message)
+        except:
+            rollbar.report_exc_info()
+
+        self.assertEqual(send_payload.called, True)
+        payload = send_payload.call_args[0][0]
+        self.assertEqual(payload['data']['body']['trace']['exception']['message'], expected)
 
 
 
