@@ -130,6 +130,11 @@ try:
 except ImportError:
     treq = None
 
+try:
+    from falcon import Request as FalconRequest
+except ImportError:
+    FalconRequest = None
+
 
 def get_request():
     """
@@ -1054,6 +1059,10 @@ def _build_request_data(request):
     if SanicRequest and isinstance(request, SanicRequest):
         return _build_sanic_request_data(request)
 
+    # falcon
+    if FalconRequest and isinstance(request, FalconRequest):
+        return _build_falcon_request_data(request)
+
     # Plain wsgi (should be last)
     if isinstance(request, dict) and 'wsgi.version' in request:
         return _build_wsgi_request_data(request)
@@ -1183,6 +1192,19 @@ def _build_sanic_request_data(request):
             pass
     else:
         request_data['POST'] = request.form
+
+    return request_data
+
+
+def _build_falcon_request_data(request):
+    request_data = {
+        'url': request.url,
+        'user_ip': _wsgi_extract_user_ip(request.env),
+        'headers': dict(request.headers),
+        'method': request.method,
+        'GET': dict(request.params),
+        'context': dict(request.context),
+    }
 
     return request_data
 
