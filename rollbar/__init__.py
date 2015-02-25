@@ -88,6 +88,8 @@ except ImportError:
 
     TornadoAsyncHTTPClient = None
 
+import wsgiref.util
+import wsgiref.headers
 
 def get_request():
     """
@@ -796,6 +798,10 @@ def _build_request_data(request):
     if BottleRequest and isinstance(request, BottleRequest):
         return _build_bottle_request_data(request)
 
+    # Plain wsgi
+    if isinstance(request, dict) and 'wsgi.version' in request:
+        return _build_wsgi_request_data(request)
+
     return None
 
 
@@ -994,6 +1000,36 @@ def _build_bottle_request_data(request):
             pass
     else:
         request_data['POST'] = dict(request.forms)
+
+    return request_data
+
+def _build_wsgi_request_data(request):
+    request_data = {
+        'url': wsgiref.util.request_uri(request),
+        'user_ip': request.get('REMOTE_ADDR'),
+        'method': request.get('REQUEST_METHOD'),
+    }
+    if 'QUERY_STRING' in request:
+        request_data['GET'] = urlparse.parse_qs(request['QUERY_STRING'], keep_blank_values=True)
+        # Collapse single item arrays
+        request_data['GET'] = { k: v[0] if len(v) == 1 else v for k, v in request_data['GET'].iteritems()}
+
+    # headers
+    headers = {}
+    for k, v in request.iteritems():
+        if k.startswith('HTTP_'):
+            header_name = '-'.join(k[len('HTTP_'):].replace('_', ' ').title().split(' '))
+            headers[header_name] = v
+    request_data['headers'] = headers
+
+    try:
+        length = int(request.get('CONTENT_LENGTH', 0))
+    except ValueError:
+        length = 0
+    input = request.get('wsgi.input')
+    if length and input and input.seekable():
+        input.seek(0, 0)
+        request_data['body'] = input.read(length)
 
     return request_data
 
