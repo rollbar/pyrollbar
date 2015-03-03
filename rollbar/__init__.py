@@ -179,7 +179,7 @@ SETTINGS = {
     'root': None,  # root path to your code
     'branch': None,  # git branch name
     'code_version': None,
-    'handler': 'thread',  # 'blocking', 'thread', 'agent' or 'tornado'
+    'handler': 'thread',  # 'blocking', 'thread', 'agent', 'tornado' or 'gae'
     'endpoint': DEFAULT_ENDPOINT,
     'timeout': DEFAULT_TIMEOUT,
     'agent.log_file': 'log.rollbar',
