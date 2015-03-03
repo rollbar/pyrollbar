@@ -78,11 +78,6 @@ except ImportError:
     BottleRequest = None
 
 try:
-    from google.appengine.api.urlfetch import fetch as AppEngineFetch
-except ImportError:
-    AppEngineFetch = None
-
-try:
     from tornado.gen import coroutine as tornado_coroutine
     from tornado.httpclient import AsyncHTTPClient as TornadoAsyncHTTPClient
 except ImportError:
@@ -307,11 +302,6 @@ def send_payload(payload):
             log.error('Unable to find tornado')
             return
         _send_payload_tornado(payload)
-    elif handler == 'gae':
-        if AppEngineFetch is None:
-            log.error('Unable to find AppEngine URLFetch module')
-            return
-        _send_payload_appengine(payload)
     else:
         # default to 'thread'
         thread = threading.Thread(target=_send_payload, args=(payload,))
@@ -1041,31 +1031,6 @@ def _send_payload(payload):
     except Exception as e:
         log.exception('Exception while posting item %r', e)
 
-def _send_payload_appengine(payload):
-    try:
-        _post_api_appengine('item/', payload, access_token=payload.get('access_token'))
-    except Exception as e:
-        log.exception('Exception while posting item %r', e)
-
-def _post_api_appengine(path, payload, access_token=None):
-    headers = {'Content-Type': 'application/json'}
-
-    if access_token is not None:
-        headers['X-Rollbar-Access-Token'] = access_token
-
-    # Serialize this ourselves so we can handle error cases more gracefully
-    payload = ErrorIgnoringJSONEncoder().encode(payload)
-
-    url = urlparse.urljoin(SETTINGS['endpoint'], path)
-    resp = AppEngineFetch(url,
-                          method="POST",
-                         payload=payload,
-                         headers=headers,
-                         allow_truncated=False,
-                         deadline=SETTINGS.get('timeout', DEFAULT_TIMEOUT),
-                         validate_certificate=SETTINGS.get('verify_https', True))
-
-    return _parse_response(path, SETTINGS['access_token'], payload, resp)
 
 def _post_api(path, payload, access_token=None):
     headers = {'Content-Type': 'application/json'}
@@ -1127,15 +1092,6 @@ def _post_api_tornado(path, payload, access_token=None):
 
 
 def _parse_response(path, access_token, params, resp, endpoint=None):
-    if isinstance(resp, requests.Response):
-        try:
-            data = resp.text
-        except Exception as e:
-            data = resp.content
-            log.error('resp.text is undefined, resp.content is %r', resp.content)
-    else:
-        data = resp.content
-
     if resp.status_code == 429:
         log.warning("Rollbar: over rate limit, data was dropped. Payload was: %r", params)
         return
@@ -1144,7 +1100,13 @@ def _parse_response(path, access_token, params, resp, endpoint=None):
         return
     elif resp.status_code != 200:
         log.warning("Got unexpected status code from Rollbar api: %s\nResponse:\n%s",
-            resp.status_code, data)
+            resp.status_code, resp.text)
+
+    try:
+        data = resp.text
+    except Exception as e:
+        data = resp.content
+        log.error('resp.text is undefined, resp.content is %r', resp.content)
 
     try:
         json_data = json.loads(data)
