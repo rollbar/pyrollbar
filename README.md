@@ -347,6 +347,8 @@ One of:
 - blocking -- runs in main thread
 - thread -- spawns a new thread
 - agent -- writes messages to a log file for consumption by rollbar-agent
+- tornado -- uses the Tornado async library to send the payload
+- gae -- uses the Google AppEngineFetch library to send the payload
 
 Default: ```thread```
 

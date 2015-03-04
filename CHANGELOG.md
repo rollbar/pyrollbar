@@ -1,5 +1,8 @@
 # Change Log
 
+**0.9.7**
+- Add support for Google App Engine ([#44](https://github.com/rollbar/pyrollbar/pull/44))
+
 **0.9.6**
 - Fix memory leak when using the RollbarHandler logging handler (see [#43](https://github.com/rollbar/pyrollbar/pull/43))
 - Fix bug where named function arguments were not scrubbed correctly
