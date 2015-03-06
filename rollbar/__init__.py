@@ -1024,9 +1024,9 @@ def _build_wsgi_request_data(request):
     if 'QUERY_STRING' in request:
         request_data['GET'] = urlparse.parse_qs(request['QUERY_STRING'], keep_blank_values=True)
         # Collapse single item arrays
-        request_data['GET'] = { k: v[0] if len(v) == 1 else v for k, v in request_data['GET'].iteritems()}
+        request_data['GET'] = dict((k, v[0] if len(v) == 1 else v) for k, v in request_data['GET'].items())
 
-    request_data['headers'] = _extract_wsgi_headers(request.iteritems())
+    request_data['headers'] = _extract_wsgi_headers(request.items())
 
     try:
         length = int(request.get('CONTENT_LENGTH', 0))
