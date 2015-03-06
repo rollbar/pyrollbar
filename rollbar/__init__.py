@@ -15,6 +15,7 @@ import traceback
 import types
 import urllib
 import uuid
+import wsgiref.util
 
 import requests
 
@@ -92,9 +93,6 @@ except ImportError:
         return wrap
 
     TornadoAsyncHTTPClient = None
-
-import wsgiref.util
-import wsgiref.headers
 
 def get_request():
     """
@@ -808,7 +806,7 @@ def _build_request_data(request):
     if BottleRequest and isinstance(request, BottleRequest):
         return _build_bottle_request_data(request)
 
-    # Plain wsgi
+    # Plain wsgi (should be last)
     if isinstance(request, dict) and 'wsgi.version' in request:
         return _build_wsgi_request_data(request)
 
@@ -939,13 +937,21 @@ def _build_webob_request_data(request):
     return request_data
 
 
+def _extract_wsgi_headers(items):
+    headers = {}
+    for k, v in items:
+        if k.startswith('HTTP_'):
+            header_name = '-'.join(k[len('HTTP_'):].replace('_', ' ').title().split(' '))
+            headers[header_name] = v
+    return headers
+
 def _build_django_request_data(request):
     request_data = {
         'url': request.build_absolute_uri(),
         'method': request.method,
         'GET': dict(request.GET),
         'POST': dict(request.POST),
-        'user_ip': _django_extract_user_ip(request),
+        'user_ip': _wsgi_extract_user_ip(request.environ),
     }
 
     try:
@@ -953,13 +959,7 @@ def _build_django_request_data(request):
     except:
         pass
 
-    # headers
-    headers = {}
-    for k, v in request.environ.items():
-        if k.startswith('HTTP_'):
-            header_name = '-'.join(k[len('HTTP_'):].replace('_', ' ').title().split(' '))
-            headers[header_name] = v
-    request_data['headers'] = headers
+    request_data['headers'] = _extract_wsgi_headers(request.environ.items())
 
     return request_data
 
@@ -994,6 +994,7 @@ def _build_tornado_request_data(request):
 
     return request_data
 
+
 def _build_bottle_request_data(request):
     request_data = {
         'url': request.url,
@@ -1013,10 +1014,11 @@ def _build_bottle_request_data(request):
 
     return request_data
 
+
 def _build_wsgi_request_data(request):
     request_data = {
         'url': wsgiref.util.request_uri(request),
-        'user_ip': request.get('REMOTE_ADDR'),
+        'user_ip': _wsgi_extract_user_ip(request),
         'method': request.get('REQUEST_METHOD'),
     }
     if 'QUERY_STRING' in request:
@@ -1024,13 +1026,7 @@ def _build_wsgi_request_data(request):
         # Collapse single item arrays
         request_data['GET'] = { k: v[0] if len(v) == 1 else v for k, v in request_data['GET'].iteritems()}
 
-    # headers
-    headers = {}
-    for k, v in request.iteritems():
-        if k.startswith('HTTP_'):
-            header_name = '-'.join(k[len('HTTP_'):].replace('_', ' ').title().split(' '))
-            headers[header_name] = v
-    request_data['headers'] = headers
+    request_data['headers'] = _extract_wsgi_headers(request.iteritems())
 
     try:
         length = int(request.get('CONTENT_LENGTH', 0))
@@ -1038,10 +1034,13 @@ def _build_wsgi_request_data(request):
         length = 0
     input = request.get('wsgi.input')
     if length and input and input.seekable():
+        pos = input.tell()
         input.seek(0, 0)
         request_data['body'] = input.read(length)
+        input.seek(pos, 0)
 
     return request_data
+
 
 def _build_server_data():
     """
@@ -1210,14 +1209,14 @@ def _extract_user_ip(request):
     return request.remote_addr
 
 
-def _django_extract_user_ip(request):
-    forwarded_for = request.environ.get('HTTP_X_FORWARDED_FOR')
+def _wsgi_extract_user_ip(environ):
+    forwarded_for = environ.get('HTTP_X_FORWARDED_FOR')
     if forwarded_for:
         return forwarded_for
-    real_ip = request.environ.get('HTTP_X_REAL_IP')
+    real_ip = environ.get('HTTP_X_REAL_IP')
     if real_ip:
         return real_ip
-    return request.environ['REMOTE_ADDR']
+    return environ['REMOTE_ADDR']
 
 
 # http://www.xormedia.com/recursively-merge-dictionaries-in-python.html
