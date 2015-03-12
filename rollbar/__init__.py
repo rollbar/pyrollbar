@@ -1033,7 +1033,7 @@ def _build_wsgi_request_data(request):
     except ValueError:
         length = 0
     input = request.get('wsgi.input')
-    if length and input and input.seekable():
+    if length and input and hasattr(input, 'seek') and hasattr(input, 'tell'):
         pos = input.tell()
         input.seek(0, 0)
         request_data['body'] = input.read(length)

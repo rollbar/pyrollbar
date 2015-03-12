@@ -1,6 +1,7 @@
 import sys
 import copy
 import mock
+import StringIO
 import unittest
 import urllib
 
@@ -105,7 +106,7 @@ class RollbarTest(BaseTest):
 
     def test_wsgi_request_data(self):
         request = {
-            'CONTENT_LENGTH': '',
+            'CONTENT_LENGTH': str(len('body body body')),
             'CONTENT_TYPE': '',
             'DOCUMENT_URI': '/api/test',
             'GATEWAY_INTERFACE': 'CGI/1.1',
@@ -121,7 +122,7 @@ class RollbarTest(BaseTest):
             'SERVER_NAME': 'example.com',
             'SERVER_PORT': '80',
             'SERVER_PROTOCOL': 'HTTP/1.1',
-            'wsgi.input': 'not a stream',
+            'wsgi.input': StringIO.StringIO('body body body'),
             'wsgi.multiprocess': True,
             'wsgi.multithread': False,
             'wsgi.run_once': False,
@@ -132,6 +133,7 @@ class RollbarTest(BaseTest):
         self.assertEqual(data['url'], 'http://example.com/api/test?format=json&param1=value1&param2=value2')
         self.assertEqual(data['user_ip'], '127.0.0.1')
         self.assertEqual(data['method'], 'GET')
+        self.assertEqual(data['body'], 'body body body')
         self.assertDictEqual(data['GET'], {'format': 'json', 'param1': 'value1', 'param2': 'value2'})
         self.assertDictEqual(data['headers'], {'Connection': 'close', 'Host': 'example.com', 'User-Agent': 'Agent'})
 
