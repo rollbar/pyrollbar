@@ -1,6 +1,10 @@
 import sys
 import copy
 import mock
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 import unittest
 import urllib
 
@@ -102,6 +106,39 @@ class RollbarTest(BaseTest):
         self.assertEqual('5.6.7.8', scrubbed['headers']['X-Real-Ip'])
         self.assertEqual('**************************', scrubbed['headers']['Cookies'])
         self.assertEqual('*************', scrubbed['headers']['Authorization'])
+
+    def test_wsgi_request_data(self):
+        request = {
+            'CONTENT_LENGTH': str(len('body body body')),
+            'CONTENT_TYPE': '',
+            'DOCUMENT_URI': '/api/test',
+            'GATEWAY_INTERFACE': 'CGI/1.1',
+            'HTTP_CONNECTION': 'close',
+            'HTTP_HOST': 'example.com',
+            'HTTP_USER_AGENT': 'Agent',
+            'PATH_INFO': '/api/test',
+            'QUERY_STRING': 'format=json&param1=value1&param2=value2',
+            'REMOTE_ADDR': '127.0.0.1',
+            'REQUEST_METHOD': 'GET',
+            'SCRIPT_NAME': '',
+            'SERVER_ADDR': '127.0.0.1',
+            'SERVER_NAME': 'example.com',
+            'SERVER_PORT': '80',
+            'SERVER_PROTOCOL': 'HTTP/1.1',
+            'wsgi.input': StringIO('body body body'),
+            'wsgi.multiprocess': True,
+            'wsgi.multithread': False,
+            'wsgi.run_once': False,
+            'wsgi.url_scheme': 'http',
+            'wsgi.version': (1, 0)
+        }
+        data = rollbar._build_wsgi_request_data(request)
+        self.assertEqual(data['url'], 'http://example.com/api/test?format=json&param1=value1&param2=value2')
+        self.assertEqual(data['user_ip'], '127.0.0.1')
+        self.assertEqual(data['method'], 'GET')
+        self.assertEqual(data['body'], 'body body body')
+        self.assertDictEqual(data['GET'], {'format': 'json', 'param1': 'value1', 'param2': 'value2'})
+        self.assertDictEqual(data['headers'], {'Connection': 'close', 'Host': 'example.com', 'User-Agent': 'Agent'})
 
     @mock.patch('rollbar.send_payload')
     def test_report_exception(self, send_payload):
