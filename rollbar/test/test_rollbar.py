@@ -125,7 +125,7 @@ class RollbarTest(BaseTest):
             'SERVER_NAME': 'example.com',
             'SERVER_PORT': '80',
             'SERVER_PROTOCOL': 'HTTP/1.1',
-            'wsgi.input': StringIO.StringIO('body body body'),
+            'wsgi.input': StringIO('body body body'),
             'wsgi.multiprocess': True,
             'wsgi.multithread': False,
             'wsgi.run_once': False,
