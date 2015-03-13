@@ -1,7 +1,10 @@
 import sys
 import copy
 import mock
-import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 import unittest
 import urllib
 
