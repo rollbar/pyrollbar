@@ -1,5 +1,8 @@
 # Change Log
 
+**0.9.8**
+- Support bare WSGI requests ([#55](https://github.com/rollbar/pyrollbar/pull/55))
+
 **0.9.7**
 - Add support for Google App Engine ([#44](https://github.com/rollbar/pyrollbar/pull/44))
 
