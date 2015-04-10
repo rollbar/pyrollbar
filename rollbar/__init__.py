@@ -505,6 +505,7 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     }
 
     if extra_data:
+        extra_data = _scrub_obj(extra_data)
         if isinstance(extra_data, dict):
             data['custom'] = extra_data
         else:
@@ -541,6 +542,7 @@ def _report_message(message, level, request, extra_data, payload_data):
     }
 
     if extra_data:
+        extra_data = _scrub_obj(extra_data)
         data['body']['message'].update(extra_data)
 
     _add_request_data(data, request)
