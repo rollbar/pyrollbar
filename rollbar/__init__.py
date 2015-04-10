@@ -7,6 +7,7 @@ import copy
 import inspect
 import json
 import logging
+import os
 import socket
 import sys
 import threading
@@ -1049,7 +1050,8 @@ def _build_server_data():
     # server environment
     server_data = {
         'host': socket.gethostname(),
-        'argv': sys.argv
+        'argv': sys.argv,
+        'pid': os.getpid()
     }
 
     for key in ['branch', 'root']:
