@@ -1,5 +1,10 @@
 # Change Log
 
+**0.9.9**
+- Add exception handler for RQ (requires some instrumentation). See [#57](https://github.com/rollbar/pyrollbar/pull/57)
+- Scrub fields inside `extra_data` 
+- Gather the process PID and report it along with the other 'server' data
+
 **0.9.8**
 - Support bare WSGI requests ([#55](https://github.com/rollbar/pyrollbar/pull/55))
 
