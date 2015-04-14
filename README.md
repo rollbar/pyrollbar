@@ -70,7 +70,7 @@ pyramid.includes =
     rollbar.contrib.pyramid
 ```
   
-Add these rollbar configuration variables:
+And add these rollbar configuration variables:
 
 ```
 [app:main]
@@ -82,21 +82,16 @@ rollbar.root = %(here)s
 <!-- RemoveNextIfProject -->
 Be sure to replace ```POST_SERVER_ITEM_ACCESS_TOKEN``` with your project's ```post_server_item``` access token, which you can find in the Rollbar.com interface.
 
-The above will configure rollbar to catch and report all exceptions that occur in your Pyramid app. However, if there are any middleware
-applications that wrap your app, Rollbar will not be able to catch exceptions.
+The above will configure Rollbar to catch and report all exceptions that occur inside your Pyramid app. However, in order to catch exceptions in middlewares or in Pyramid itself, you will also need to wrap your app inside a ```pipeline``` with Rollbar as a ```filter```.
 
-In order to catch exceptions from Pyramid and middleware code, you will need to create a ```pipeline``` where the rollbar middleware wraps your Pyramid app.
-
-Change your ```ini``` file to use a ```pipeline```:
-
-From
+To do this, first change your ```ini``` file to use a ```pipeline```. Change this:
 
 ```
 [app:main]
 #...
 ```
 
-To
+To:
 
 ```
 [pipeline:main]
@@ -109,6 +104,11 @@ pyramid.includes =
     pyramid_debugtoolbar
     rollbar.contrib.pyramid
 
+rollbar.access_token = POST_SERVER_ITEM_ACCESS_TOKEN
+rollbar.environment = production
+rollbar.branch = master
+rollbar.root = %(here)s
+
 [filter:rollbar]
 use = egg:rollbar#pyramid
 access_token = POST_SERVER_ITEM_ACCESS_TOKEN
@@ -117,7 +117,8 @@ branch = master
 root = %(here)s
 ```
 
-Unfortunately, the Rollbar tween and the Rollbar filter configurations contains duplicated information. We'll look into fixing this in future versions.
+Note that the access_token, environment, and other Rollbar config params do need to be present in both the ```app``` section and the ```filter``` section.
+
 
 ### Flask
 
