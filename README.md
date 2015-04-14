@@ -1,4 +1,4 @@
-# Rollbar notifier for Python [![Build Status](https://travis-ci.org/rollbar/pyrollbar.png?branch=v0.9.9)](https://travis-ci.org/rollbar/pyrollbar) [![codecov.io](https://codecov.io/github/rollbar/pyrollbar/coverage.svg?branch=master)](https://codecov.io/github/rollbar/pyrollbar?branch=master)
+# Rollbar notifier for Python [![Build Status](https://travis-ci.org/rollbar/pyrollbar.png?branch=v0.9.9)](https://travis-ci.org/rollbar/pyrollbar)
 
 <!-- RemoveNext -->
 Python notifier for reporting exceptions, errors, and log messages to [Rollbar](https://rollbar.com).
