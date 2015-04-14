@@ -110,6 +110,7 @@ pyramid.includes =
     rollbar.contrib.pyramid
 
 [filter:rollbar]
+use = egg:rollbar#pyramid
 access_token = POST_SERVER_ITEM_ACCESS_TOKEN
 environment = production
 branch = master
