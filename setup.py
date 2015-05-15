@@ -53,6 +53,8 @@ setup(
     tests_require=[
         'mock',
         'webob',
+        'Flask',
+        'blinker'
         ],
     )
 

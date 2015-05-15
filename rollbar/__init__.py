@@ -61,12 +61,12 @@ else:
 
 try:
     from werkzeug.wrappers import Request as WerkzeugRequest
-except ImportError:
+except (ImportError, SyntaxError):
     WerkzeugRequest = None
 
 try:
     from werkzeug.local import LocalProxy as WerkzeugLocalProxy
-except ImportError:
+except (ImportError, SyntaxError):
     WerkzeugLocalProxy = None
 
 try:
@@ -978,7 +978,7 @@ def _build_werkzeug_request_data(request):
         'files_keys': request.files.keys(),
     }
 
-    if request.get_json():
+    if request.json:
         request_data['body'] = json.dumps(_scrub_obj(request.json))
 
     return request_data

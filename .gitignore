@@ -4,4 +4,5 @@
 dist/
 rollbar.egg-info/
 *.egg
+.eggs/
 .idea/
