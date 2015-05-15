@@ -1,5 +1,8 @@
 # Change Log
 
+**0.9.10**
+- Fix request data collection in Flask 0.9. See [#61](https://github.com/rollbar/pyrollbar/pull/61)
+
 **0.9.9**
 - Add exception handler for RQ (requires some instrumentation). See [#57](https://github.com/rollbar/pyrollbar/pull/57)
 - Scrub fields inside `extra_data` 
