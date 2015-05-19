@@ -1,5 +1,8 @@
 # Change Log
 
+**0.9.11**
+- Implement workarounds for NaN and Infinity "numbers" in payloads. See [#62](https://github.com/rollbar/pyrollbar/pull/62)
+
 **0.9.10**
 - Fix request data collection in Flask 0.9. See [#61](https://github.com/rollbar/pyrollbar/pull/61)
 
