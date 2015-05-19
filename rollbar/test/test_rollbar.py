@@ -685,6 +685,25 @@ class RollbarTest(BaseTest):
         self.assertEqual('*********', payload['data']['body']['trace']['frames'][-1]['locals']['password'])
 
     @mock.patch('rollbar.send_payload')
+    def test_scrub_nans(self, send_payload):
+        def _raise():
+            infinity = float('Inf')
+            not_a_number = float('NaN')
+            raise Exception()
+
+        try:
+            _raise()
+        except:
+            rollbar.report_exc_info()
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = send_payload.call_args[0][0]
+
+        self.assertEqual('Inf', payload['data']['body']['trace']['frames'][-1]['locals']['infinity'])
+        self.assertEqual('NaN', payload['data']['body']['trace']['frames'][-1]['locals']['not_a_number'])
+
+    @mock.patch('rollbar.send_payload')
     def test_cannot_scrub_local_ref(self, send_payload):
         """
         NOTE(cory): This test checks to make sure that we do not scrub a local variable that is a reference
