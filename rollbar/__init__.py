@@ -8,6 +8,7 @@ import inspect
 import json
 import logging
 import math
+import numbers
 import os
 import socket
 import sys
@@ -876,7 +877,7 @@ def _scrub_obj(obj, replacement_character='*'):
             return 'NaN'
         elif isinstance(obj, float) and math.isinf(obj):
             return 'Inf'
-        elif isinstance(obj, (int, long, float)) and str(obj + 0) != str(obj):
+        elif isinstance(obj, (numbers.Integral, float)) and str(obj + 0) != str(obj):
             return str(obj)
         else:
             return obj
