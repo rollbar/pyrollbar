@@ -700,7 +700,7 @@ class RollbarTest(BaseTest):
 
         payload = send_payload.call_args[0][0]
 
-        self.assertEqual('Inf', payload['data']['body']['trace']['frames'][-1]['locals']['infinity'])
+        self.assertEqual('Infinity', payload['data']['body']['trace']['frames'][-1]['locals']['infinity'])
         self.assertEqual('NaN', payload['data']['body']['trace']['frames'][-1]['locals']['not_a_number'])
 
     @mock.patch('rollbar.send_payload')

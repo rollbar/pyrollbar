@@ -876,7 +876,7 @@ def _scrub_obj(obj, replacement_character='*'):
         elif isinstance(obj, float) and math.isnan(obj):
             return 'NaN'
         elif isinstance(obj, float) and math.isinf(obj):
-            return 'Inf'
+            return 'Infinity'
         elif isinstance(obj, (numbers.Integral, float)) and str(obj + 0) != str(obj):
             return str(obj)
         else:
