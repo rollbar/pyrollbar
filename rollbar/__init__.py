@@ -784,31 +784,31 @@ def _build_request_data(request):
     """
 
     # webob (pyramid)
-    if WebobBaseRequest and isinstance(request, WebobBaseRequest):
+    if WebobBaseRequest and (issubclass(request, WebobBaseRequest) or isinstance(request, WebobBaseRequest)):
         return _build_webob_request_data(request)
 
     # django
-    if DjangoHttpRequest and isinstance(request, DjangoHttpRequest):
+    if DjangoHttpRequest and (issubclass(request, DjangoHttpRequest) or isinstance(request, DjangoHttpRequest)):
         return _build_django_request_data(request)
 
     # django rest framework
-    if RestFrameworkRequest and isinstance(request, RestFrameworkRequest):
+    if RestFrameworkRequest and (issubclass(request, RestFrameworkRequest) or isinstance(request, RestFrameworkRequest)):
         return _build_django_request_data(request)
 
     # werkzeug (flask)
-    if WerkzeugRequest and isinstance(request, WerkzeugRequest):
+    if WerkzeugRequest and (issubclass(request, WerkzeugRequest) or isinstance(request, WerkzeugRequest)):
         return _build_werkzeug_request_data(request)
 
-    if WerkzeugLocalProxy and isinstance(request, WerkzeugLocalProxy):
+    if WerkzeugLocalProxy and (issubclass(request, WerkzeugLocalProxy) or isinstance(request, WerkzeugLocalProxy)):
         actual_request = request._get_current_object()
         return _build_werkzeug_request_data(actual_request)
 
     # tornado
-    if TornadoRequest and isinstance(request, TornadoRequest):
+    if TornadoRequest and (issubclass(request, TornadoRequest) or isinstance(request, TornadoRequest)):
         return _build_tornado_request_data(request)
 
     # bottle
-    if BottleRequest and isinstance(request, BottleRequest):
+    if BottleRequest and (issubclass(request, BottleRequest) or isinstance(request, BottleRequest)):
         return _build_bottle_request_data(request)
 
     # Plain wsgi (should be last)
