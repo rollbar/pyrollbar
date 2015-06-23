@@ -986,8 +986,11 @@ def _build_werkzeug_request_data(request):
         'files_keys': request.files.keys(),
     }
 
-    if request.json:
-        request_data['body'] = json.dumps(_scrub_obj(request.json))
+    try:
+        if request.json:
+            request_data['body'] = json.dumps(_scrub_obj(request.json))
+    except Exception:
+        pass
 
     return request_data
 
