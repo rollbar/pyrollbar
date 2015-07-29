@@ -1,7 +1,7 @@
 # Change Log
 
 **0.9.12**
-- Fix a bug that was causing a crash while reporting an error that happened in a Wekzeug request that had no `request.json`. See [#64](https://github.com/rollbar/pyrollbar/pull/64)
+- Fix a bug that was causing a crash while reporting an error that happened in a Werkzeug request that had no `request.json`. See [#64](https://github.com/rollbar/pyrollbar/pull/64)
 
 **0.9.11**
 - Implement workarounds for NaN and Infinity "numbers" in payloads. See [#62](https://github.com/rollbar/pyrollbar/pull/62)
