@@ -823,7 +823,7 @@ def _scrub_request_data(request_data):
     Scrubs out sensitive information out of request data
     """
     if request_data:
-        for field in ['POST', 'GET', 'headers']:
+        for field in ['POST', 'GET', 'headers', 'json']:
             if request_data.get(field):
                 request_data[field] = _scrub_obj(request_data[field])
 
@@ -930,7 +930,7 @@ def _build_webob_request_data(request):
 
     try:
         if request.json:
-            request_data['body'] = request.body
+            request_data['json'] = request.json
     except:
         pass
 
