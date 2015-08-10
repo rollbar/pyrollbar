@@ -107,7 +107,8 @@ class RollbarHandler(logging.Handler):
 
         # Wait until we know we're going to send a report before trying to
         # load the request
-        request = rollbar.get_request()
+        request = getattr(record, "request", None) or rollbar.get_request()
+
         uuid = None
         try:
             if exc_info:
