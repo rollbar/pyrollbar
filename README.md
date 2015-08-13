@@ -28,7 +28,7 @@ except:
 
 ## Requirements
 
-- Python 2.6, 2.7, 3.2 or 3.3
+- Python 2.6, 2.7, 3.2, 3.3 or 3.4
 - requests 0.12+
 - A Rollbar account
 
