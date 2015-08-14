@@ -1,5 +1,8 @@
 # Change Log
 
+**0.9.13**
+- If present, get request from log record. Otherwise try to guess current request as usual.
+
 **0.9.12**
 - Fix a bug that was causing a crash while reporting an error that happened in a Werkzeug request that had no `request.json`. See [#64](https://github.com/rollbar/pyrollbar/pull/64)
 
