@@ -1,5 +1,8 @@
 # Change Log
 
+**0.9.14**
+- Fix logging loop when using Flask in a non-request context, and also using the Rollbar logging handler. See [#68](https://github.com/rollbar/pyrollbar/pull/68)
+
 **0.9.13**
 - If present, get request from log record. Otherwise try to guess current request as usual.
 
