@@ -800,7 +800,10 @@ def _build_request_data(request):
         return _build_werkzeug_request_data(request)
 
     if WerkzeugLocalProxy and isinstance(request, WerkzeugLocalProxy):
-        actual_request = request._get_current_object()
+        try:
+            actual_request = request._get_current_object()
+        except RuntimeError:
+            return None
         return _build_werkzeug_request_data(actual_request)
 
     # tornado
