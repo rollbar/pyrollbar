@@ -141,8 +141,7 @@ try:
                 self.remaining -= len(chunk)
 
         def connectionLost(self, reason):
-            print 'Finished receiving body:', reason.getErrorMessage()
-            self.finished.callback(self.remaining)
+            self.finished.callback(self.response)
 except ImportError:
     TwistedHTTPClient = None
     inlineCallbacks = passthrough_decorator
@@ -1245,10 +1244,10 @@ def _send_payload_twisted(payload):
 
 @inlineCallbacks
 def _post_api_twisted(path, payload, access_token=None):
-    headers = {'Content-Type': 'application/json'}
+    headers = {'Content-Type': ['application/json']}
 
     if access_token is not None:
-        headers['X-Rollbar-Access-Token'] = access_token
+        headers['X-Rollbar-Access-Token'] = [access_token]
 
     # Serialize this ourselves so we can handle error cases more gracefully
     payload = ErrorIgnoringJSONEncoder().encode(payload)
