@@ -1254,12 +1254,7 @@ def _post_api_twisted(path, payload, access_token=None):
 
     url = urlparse.urljoin(SETTINGS['endpoint'], path)
 
-    #resp = yield TornadoAsyncHTTPClient().fetch(
-    #    url, body=payload, method='POST', connect_timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT),
-    #    request_timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT)
-    #)
-
-    agent = TwistedHTTPClient(reactor)
+    agent = TwistedHTTPClient(reactor, connectTimeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT))
     resp = yield agent.request(
            'POST',
            url,
