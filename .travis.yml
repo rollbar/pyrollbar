@@ -11,11 +11,14 @@ python:
 env:
   - FLASK_VERSION=0.9
   - FLASK_VERSION=0.10.1
+  - TWISTED_VERSION=15.4
 
 matrix:
   exclude:
     - python: "3.2"
       env: FLASK_VERSION=0.9
+    - python: "3.2"
+      env: TWISTED_VERSION=15.4
     - python: "3.3"
       env: FLASK_VERSION=0.9
     - python: "3.4"
@@ -25,7 +28,7 @@ install:
   - pip install Flask==$FLASK_VERSION
   - pip install service_identity
   - pip install pyOpenSSL
-  - pip install twisted
+  - pip install Twisted==$TWISTED_VERSION
 
 script:
   - python setup.py test
