@@ -351,6 +351,7 @@ One of:
 - agent -- writes messages to a log file for consumption by rollbar-agent
 - tornado -- uses the Tornado async library to send the payload
 - gae -- uses the Google AppEngineFetch library to send the payload
+- twisted -- uses the Twisted event-driven networking library to send the payload
 
 Default: ```thread```
 

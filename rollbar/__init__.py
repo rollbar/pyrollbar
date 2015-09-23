@@ -22,6 +22,8 @@ import wsgiref.util
 
 import requests
 
+log = logging.getLogger(__name__)
+
 try:
     # Python 3
     import urllib.parse as urlparse
@@ -86,16 +88,91 @@ try:
 except ImportError:
     AppEngineFetch = None
 
+def passthrough_decorator(func):
+    def wrap(*args, **kwargs):
+        return func(*args, **kwargs)
+    return wrap
+
 try:
     from tornado.gen import coroutine as tornado_coroutine
     from tornado.httpclient import AsyncHTTPClient as TornadoAsyncHTTPClient
 except ImportError:
-    def tornado_coroutine(func):
-        def wrap(*args, **kwargs):
-            return func(*args, **kwargs)
-        return wrap
-
+    tornado_coroutine = passthrough_decorator
     TornadoAsyncHTTPClient = None
+
+try:
+    from twisted.internet import reactor
+    from twisted.web.client import Agent as TwistedHTTPClient
+    from twisted.internet.defer import inlineCallbacks, Deferred, returnValue
+    from twisted.internet.protocol import Protocol
+    from twisted.web.http_headers import Headers as TwistedHeaders
+    from zope.interface import implements
+
+    from twisted.internet.defer import succeed
+    from twisted.web.iweb import IBodyProducer
+
+
+    class StringProducer(object):
+        implements(IBodyProducer)
+
+        def __init__(self, body):
+            self.body = body
+            self.length = len(body)
+
+        def startProducing(self, consumer):
+            consumer.write(self.body)
+            return succeed(None)
+
+        def pauseProducing(self):
+            pass
+
+        def stopProducing(self):
+            pass
+
+
+    class ResponseAccumulator(Protocol):
+        def __init__(self, length, finished):
+            self.remaining = length
+            self.finished = finished
+            self.response = ''
+
+        def dataReceived(self, bytes):
+            if self.remaining:
+                chunk = bytes[:self.remaining]
+                self.response += chunk
+                self.remaining -= len(chunk)
+
+        def connectionLost(self, reason):
+            self.finished.callback(self.response)
+
+    from twisted.python import log as twisted_log
+    def log_handler(event):
+        """
+        Default uncaught error handler
+        """
+        try:
+            if not event.get('isError') or 'failure' not in event:
+                return
+
+            err = event['failure']
+            report_exc_info((err.type, err.value, err.getTracebackObject()))
+        except:
+            log.exception('Error while reporting to Rollbar')
+
+    twisted_log.addObserver(log_handler)
+
+    try:
+        # Verify we can make HTTPS requests with Twisted.
+        # From http://twistedmatrix.com/documents/12.0.0/core/howto/ssl.html
+        from OpenSSL import SSL
+    except ImportError:
+        log.exception('Rollbar requires SSL to work with Twisted')
+        raise 
+except ImportError:
+    TwistedHTTPClient = None
+    inlineCallbacks = passthrough_decorator
+    StringProducer = None
+    
 
 def get_request():
     """
@@ -151,8 +228,6 @@ def _get_pylons_request():
 
 BASE_DATA_HOOK = None
 
-log = logging.getLogger(__name__)
-
 agent_log = None
 
 VERSION = __version__
@@ -182,7 +257,7 @@ SETTINGS = {
     'root': None,  # root path to your code
     'branch': None,  # git branch name
     'code_version': None,
-    'handler': 'thread',  # 'blocking', 'thread', 'agent', 'tornado' or 'gae'
+    'handler': 'thread',  # 'blocking', 'thread', 'agent', 'tornado', 'gae' or 'twisted'
     'endpoint': DEFAULT_ENDPOINT,
     'timeout': DEFAULT_TIMEOUT,
     'agent.log_file': 'log.rollbar',
@@ -315,6 +390,11 @@ def send_payload(payload):
             log.error('Unable to find AppEngine URLFetch module')
             return
         _send_payload_appengine(payload)
+    elif handler == 'twisted':
+        if TwistedHTTPClient is None:
+            log.error('Unable to find twisted')
+            return
+        _send_payload_twisted(payload)
     else:
         # default to 'thread'
         thread = threading.Thread(target=_send_payload, args=(payload,))
@@ -1177,6 +1257,43 @@ def _post_api_tornado(path, payload, access_token=None):
     r.headers.update(resp.headers)
 
     _parse_response(path, SETTINGS['access_token'], payload, r)
+
+
+def _send_payload_twisted(payload):
+    try:
+        _post_api_twisted('item/', payload, access_token=payload.get('access_token'))
+    except Exception as e:
+        log.exception('Exception while posting item %r', e)
+
+
+@inlineCallbacks
+def _post_api_twisted(path, payload, access_token=None):
+    headers = {'Content-Type': ['application/json']}
+
+    if access_token is not None:
+        headers['X-Rollbar-Access-Token'] = [access_token]
+
+    # Serialize this ourselves so we can handle error cases more gracefully
+    payload = ErrorIgnoringJSONEncoder().encode(payload)
+
+    url = urlparse.urljoin(SETTINGS['endpoint'], path)
+
+    agent = TwistedHTTPClient(reactor, connectTimeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT))
+    resp = yield agent.request(
+           'POST',
+           url,
+           TwistedHeaders(headers),
+           StringProducer(payload))
+
+    r = requests.Response()
+    r.status_code = resp.code
+    r.headers.update(resp.headers.getAllRawHeaders())
+    bodyDeferred = Deferred()
+    resp.deliverBody(ResponseAccumulator(resp.length, bodyDeferred))
+    body = yield bodyDeferred
+    r._content = body
+    _parse_response(path, SETTINGS['access_token'], payload, r)
+    yield returnValue(None)
 
 
 def _parse_response(path, access_token, params, resp, endpoint=None):
