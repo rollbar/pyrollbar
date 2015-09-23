@@ -25,8 +25,8 @@ matrix:
       env: FLASK_VERSION=0.9
 
 install:
-  - if [ -v FLASK_VERSION ]; then pip install Flask==$FLASK_VERSION;
-  - if [ -v TWISTED_VERSION ]; then pip install Twisted==$TWISTED_VERSION service_identity pyOpenSSL;
+  - if [ -v FLASK_VERSION ]; then pip install Flask==$FLASK_VERSION; fi
+  - if [ -v TWISTED_VERSION ]; then pip install Twisted==$TWISTED_VERSION service_identity pyOpenSSL; fi
 
 script:
   - python setup.py test
