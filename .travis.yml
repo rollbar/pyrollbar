@@ -9,16 +9,14 @@ python:
   - "3.4"
 
 env:
-  - FLASK_VERSION=0.9
-  - FLASK_VERSION=0.10.1
-  - TWISTED_VERSION=15.4
+  - FLASK_VERSION=0.9 TWISTED_VERSION=15.4
+  - FLASK_VERSION=0.10.1 TWISTED_VERSION=15.4
+  -
 
 matrix:
   exclude:
     - python: "3.2"
-      env: FLASK_VERSION=0.9
-    - python: "3.2"
-      env: TWISTED_VERSION=15.4
+      env: FLASK_VERSION=0.9 TWISTED_VERSION=15.4
     - python: "3.3"
       env: FLASK_VERSION=0.9
     - python: "3.4"
