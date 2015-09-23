@@ -164,7 +164,12 @@ try:
                 return
 
             err = event['failure']
-            report_exc_info((err.type, err.value, err.getTracebackObject()))
+
+            # Don't report Rollbar internal errors to ourselves
+            if issubclass(err.type, ApiException):
+                log.error('Rollbar internal error: %s', err.value)
+            else:
+                report_exc_info((err.type, err.value, err.getTracebackObject()))
         except:
             log.exception('Error while reporting to Rollbar')
 
