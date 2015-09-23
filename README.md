@@ -154,6 +154,11 @@ if __name__ == '__main__':
 Be sure to replace ```POST_SERVER_ITEM_ACCESS_TOKEN``` with your project's ```post_server_item``` access token, which you can find in the Rollbar.com interface.
 
 
+### Twisted
+
+Check out the [Twisted example](https://github.com/rollbar/pyrollbar/tree/master/rollbar/examples/twisted).
+
+
 ### Other
 
 For generic Python or a non-Django/non-Pyramid framework just initialize the Rollbar library with your access token and environment.

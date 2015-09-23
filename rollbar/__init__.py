@@ -102,18 +102,27 @@ except ImportError:
 
 try:
     from twisted.internet import reactor
-    from twisted.web.client import Agent as TwistedHTTPClient
-    from twisted.internet.defer import inlineCallbacks, Deferred, returnValue
+    from twisted.internet.defer import inlineCallbacks, Deferred, returnValue, succeed
     from twisted.internet.protocol import Protocol
+    from twisted.python import log as twisted_log
+    from twisted.web.client import Agent as TwistedHTTPClient
     from twisted.web.http_headers import Headers as TwistedHeaders
-    from zope.interface import implements
-
-    from twisted.internet.defer import succeed
     from twisted.web.iweb import IBodyProducer
 
+    from zope.interface import implementer
 
+
+    try:
+        # Verify we can make HTTPS requests with Twisted.
+        # From http://twistedmatrix.com/documents/12.0.0/core/howto/ssl.html
+        from OpenSSL import SSL
+    except ImportError:
+        log.exception('Rollbar requires SSL to work with Twisted')
+        raise
+
+
+    @implementer(IBodyProducer)
     class StringProducer(object):
-        implements(IBodyProducer)
 
         def __init__(self, body):
             self.body = body
@@ -145,7 +154,7 @@ try:
         def connectionLost(self, reason):
             self.finished.callback(self.response)
 
-    from twisted.python import log as twisted_log
+
     def log_handler(event):
         """
         Default uncaught error handler
@@ -155,19 +164,20 @@ try:
                 return
 
             err = event['failure']
-            report_exc_info((err.type, err.value, err.getTracebackObject()))
+
+            # Don't report Rollbar internal errors to ourselves
+            if issubclass(err.type, ApiException):
+                log.error('Rollbar internal error: %s', err.value)
+            else:
+                report_exc_info((err.type, err.value, err.getTracebackObject()))
         except:
             log.exception('Error while reporting to Rollbar')
 
+
+    # Add Rollbar as a log handler which will report uncaught errors
     twisted_log.addObserver(log_handler)
 
-    try:
-        # Verify we can make HTTPS requests with Twisted.
-        # From http://twistedmatrix.com/documents/12.0.0/core/howto/ssl.html
-        from OpenSSL import SSL
-    except ImportError:
-        log.exception('Rollbar requires SSL to work with Twisted')
-        raise 
+
 except ImportError:
     TwistedHTTPClient = None
     inlineCallbacks = passthrough_decorator
