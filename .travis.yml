@@ -23,6 +23,8 @@ matrix:
 
 install:
   - pip install Flask==$FLASK_VERSION
+  - pip install pyOpenSSL
+  - pip install twisted
 
 script:
   - python setup.py test
