@@ -13,3 +13,4 @@ Huge thanks to the following contributors (by github username). For the most up-
 - [tschieggm](https://github.com/tschieggm)
 - [zvirusz](https://github.com/zvirusz)
 - [isra17](https://github.com/isra17)
+- [juggernaut](https://github.com/juggernaut)

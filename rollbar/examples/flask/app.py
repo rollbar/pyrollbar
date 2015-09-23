@@ -5,7 +5,7 @@ from flask import Flask
 import rollbar
 from rollbar.logger import RollbarHandler
 
-ACCESS_TOKEN = '...'
+ACCESS_TOKEN = 'ACCESS_TOKEN'
 ENVIRONMENT = 'development'
 
 rollbar.init(ACCESS_TOKEN, ENVIRONMENT)
