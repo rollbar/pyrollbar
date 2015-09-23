@@ -22,6 +22,8 @@ import wsgiref.util
 
 import requests
 
+log = logging.getLogger(__name__)
+
 try:
     # Python 3
     import urllib.parse as urlparse
@@ -142,6 +144,30 @@ try:
 
         def connectionLost(self, reason):
             self.finished.callback(self.response)
+
+    from twisted.python import log as twisted_log
+    def log_handler(event):
+        """
+        Default uncaught error handler
+        """
+        try:
+            if not event.get('isError') or 'failure' not in event:
+                return
+
+            err = event['failure']
+            report_exc_info((err.type, err.value, err.getTracebackObject()))
+        except:
+            log.exception('Error while reporting to Rollbar')
+
+    twisted_log.addObserver(log_handler)
+
+    try:
+        # Verify we can make HTTPS requests with Twisted.
+        # From http://twistedmatrix.com/documents/12.0.0/core/howto/ssl.html
+        from OpenSSL import SSL
+    except ImportError:
+        log.exception('Rollbar requires SSL to work with Twisted')
+        raise 
 except ImportError:
     TwistedHTTPClient = None
     inlineCallbacks = passthrough_decorator
@@ -201,8 +227,6 @@ def _get_pylons_request():
 
 
 BASE_DATA_HOOK = None
-
-log = logging.getLogger(__name__)
 
 agent_log = None
 
