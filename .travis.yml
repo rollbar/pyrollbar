@@ -11,7 +11,6 @@ python:
 env:
   - FLASK_VERSION=0.9 TWISTED_VERSION=15.4
   - FLASK_VERSION=0.10.1 TWISTED_VERSION=15.4
-  -
 
 matrix:
   exclude:
