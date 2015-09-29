@@ -1021,6 +1021,7 @@ else:
             except UnicodeEncodeError:
                 return x.encode('utf-8')
 
+
 def _in_scrub_fields(val, scrub_fields):
     val = _to_str(val).lower()
     for field in set(scrub_fields):

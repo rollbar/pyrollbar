@@ -1,6 +1,7 @@
 import sys
 import copy
 import mock
+
 try:
     from StringIO import StringIO
 except ImportError:
@@ -16,6 +17,7 @@ try:
     # Python 3
     import urllib.parse as urlparse
     urllibquote = urlparse.quote
+    unicode = str
 except ImportError:
     # Python 2
     import urlparse
@@ -637,7 +639,7 @@ class RollbarTest(BaseTest):
     def test_args_generators(self, send_payload):
 
         def _raise(arg1):
-            for i in xrange(2):
+            for i in range(2):
                 if i > 0:
                     raise Exception()
                 else:
@@ -816,7 +818,10 @@ class RollbarTest(BaseTest):
             raise Exception()
 
         try:
-            large = [unicode('hi') for _ in xrange(30)]
+            # Use .lower() here so that the interpreter creates a new string object
+            # for each element in the list. Otherwise, they would all be the same
+            # reference and Rollbar would serialize them as <Circular Reference>
+            large = ['hi'.lower() for _ in range(30)]
             _raise(large)
         except:
             rollbar.report_exc_info()
@@ -829,7 +834,7 @@ class RollbarTest(BaseTest):
         self.assertNotIn('kwargs', payload['data']['body']['trace']['frames'][-1])
 
         self.assertEqual(1, len(payload['data']['body']['trace']['frames'][-1]['args']))
-        self.assertEqual("[u'hi', u'hi', u'hi', u'hi', u'hi', u'hi', u'hi', u'hi', u'hi', u'hi', ...]",
+        self.assertEqual("['hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', ...]",
                          payload['data']['body']['trace']['frames'][-1]['args'][0])
 
 
