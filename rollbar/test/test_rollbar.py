@@ -818,8 +818,7 @@ class RollbarTest(BaseTest):
             raise Exception()
 
         try:
-            large = ['hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi',
-                     'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi']
+            large = ['hi' for _ in range(30)]
             _raise(large)
         except:
             rollbar.report_exc_info()
