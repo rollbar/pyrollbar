@@ -818,10 +818,8 @@ class RollbarTest(BaseTest):
             raise Exception()
 
         try:
-            # Use .lower() here so that the interpreter creates a new string object
-            # for each element in the list. Otherwise, they would all be the same
-            # reference and Rollbar would serialize them as <Circular Reference>
-            large = ['hi'.lower() for _ in range(30)]
+            large = ['hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi',
+                     'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi']
             _raise(large)
         except:
             rollbar.report_exc_info()

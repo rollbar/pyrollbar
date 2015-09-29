@@ -58,10 +58,10 @@ class LogHandlerTest(BaseTest):
         # with passed request as argument.
         with mock.patch("rollbar.report_message") as report_message_mock:
             logger.warning("Warning message", extra={"request": request})
-            self.assertEquals(report_message_mock.call_args[1]["request"], request)
+            self.assertEqual(report_message_mock.call_args[1]["request"], request)
 
         # Python 2.6 doesnt support extra param in logger.exception.
         if not sys.version_info[:2] == (2, 6):
             with mock.patch("rollbar.report_exc_info") as report_exc_info:
                 logger.exception("Exception message", extra={"request": request})
-                self.assertEquals(report_exc_info.call_args[1]["request"], request)
+                self.assertEqual(report_exc_info.call_args[1]["request"], request)
