@@ -366,6 +366,9 @@ Default: ```thread```
     <dl>
       <dt>enabled</dt>
       <dd>If `True`, variable values will be collected for stack traces. Default `True`.</dd>
+      <dt>safe_repr</dt>
+      <dd>If `True`, non-built-in objects will be serialized into just their class name. If `False` `repr(obj)`
+      will be used for serialization. Default `True`.</dd>
       <dt>sizes</dt>
       <dd>Dictionary of configuration describing the max size to repr() for each type.
         <dl>
