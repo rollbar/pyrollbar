@@ -1,6 +1,7 @@
 import sys
 import copy
 import mock
+
 try:
     from StringIO import StringIO
 except ImportError:
@@ -10,17 +11,30 @@ import urllib
 
 import rollbar
 
-from . import BaseTest
+from rollbar.test import BaseTest
 
 try:
     # Python 3
     import urllib.parse as urlparse
     urllibquote = urlparse.quote
+    unicode = str
 except ImportError:
     # Python 2
     import urlparse
     import urllib
     urllibquote = urllib.quote
+
+
+try:
+    eval("""
+        def _anonymous_tuple_func(x, (a, b), y):
+            ret = x + a + b + y
+            breakme()
+            return ret
+    """)
+except SyntaxError:
+    _anonymous_tuple_func = None
+
 
 _test_access_token = 'aaaabbbbccccddddeeeeffff00001111'
 _default_settings = copy.deepcopy(rollbar.SETTINGS)
@@ -34,7 +48,8 @@ class RollbarTest(BaseTest):
         rollbar.init(_test_access_token, locals={'enabled': True}, dummy_key='asdf', timeout=12345)
 
     def test_merged_settings(self):
-        self.assertDictEqual(rollbar.SETTINGS['locals'], {'enabled': True, 'sizes': rollbar.DEFAULT_LOCALS_SIZES})
+        expected = {'enabled': True, 'sizes': rollbar.DEFAULT_LOCALS_SIZES, 'safe_repr': True}
+        self.assertDictEqual(rollbar.SETTINGS['locals'], expected)
         self.assertEqual(rollbar.SETTINGS['timeout'], 12345)
         self.assertEqual(rollbar.SETTINGS['dummy_key'], 'asdf')
 
@@ -624,7 +639,7 @@ class RollbarTest(BaseTest):
     def test_args_generators(self, send_payload):
 
         def _raise(arg1):
-            for i in xrange(2):
+            for i in range(2):
                 if i > 0:
                     raise Exception()
                 else:
@@ -644,6 +659,32 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(1, len(payload['data']['body']['trace']['frames'][-1]['args']))
         self.assertEqual('hello world', payload['data']['body']['trace']['frames'][-1]['args'][0])
+
+    @mock.patch('rollbar.send_payload')
+    def test_anonymous_tuple_args(self, send_payload):
+
+        # Only run this test on Python versions that support it
+        if not _anonymous_tuple_func:
+            return
+
+        try:
+            _anonymous_tuple_func((1, (2, 3), 4))
+        except:
+            rollbar.report_exc_info()
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = send_payload.call_args[0][0]
+
+        self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
+        self.assertNotIn('kwargs', payload['data']['body']['trace']['frames'][-1])
+
+        self.assertEqual(4, len(payload['data']['body']['trace']['frames'][-1]['args']))
+        self.assertEqual(1, payload['data']['body']['trace']['frames'][-1]['args'][0])
+        self.assertEqual(2, payload['data']['body']['trace']['frames'][-1]['args'][1])
+        self.assertEqual(3, payload['data']['body']['trace']['frames'][-1]['args'][2])
+        self.assertEqual(4, payload['data']['body']['trace']['frames'][-1]['args'][3])
+        self.assertEqual(10, payload['data']['body']['trace']['frames'][-1]['locals']['ret'])
 
     @mock.patch('rollbar.send_payload')
     def test_scrub_kwargs(self, send_payload):
@@ -704,7 +745,27 @@ class RollbarTest(BaseTest):
         self.assertEqual('NaN', payload['data']['body']['trace']['frames'][-1]['locals']['not_a_number'])
 
     @mock.patch('rollbar.send_payload')
-    def test_cannot_scrub_local_ref(self, send_payload):
+    def test_scrub_self_referencing(self, send_payload):
+        def _raise(obj):
+            raise Exception()
+
+        try:
+            obj = {}
+            obj['child'] = {
+                'parent': obj
+            }
+            _raise(obj)
+        except:
+            rollbar.report_exc_info()
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = send_payload.call_args[0][0]
+
+        self.assertEqual('<Circular Reference>', payload['data']['body']['trace']['frames'][-1]['locals']['obj']['child']['parent'])
+
+    @mock.patch('rollbar.send_payload')
+    def test_scrub_local_ref(self, send_payload):
         """
         NOTE(cory): This test checks to make sure that we do not scrub a local variable that is a reference
                     to a parameter that is scrubbed.
@@ -757,7 +818,7 @@ class RollbarTest(BaseTest):
             raise Exception()
 
         try:
-            large = ['hi'] * 30
+            large = ['hi' for _ in range(30)]
             _raise(large)
         except:
             rollbar.report_exc_info()

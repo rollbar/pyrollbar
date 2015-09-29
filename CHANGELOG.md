@@ -1,5 +1,13 @@
 # Change Log
 
+**0.10.0**
+- Added support for Twisted framework. See [#69](https://github.com/rollbar/pyrollbar/pull/69)
+- Fix a bug that was causing max recursion errors while collecting local variables. See [#77](https://github.com/rollbar/pyrollbar/pull/77)
+  - Added a configuration option, `safe_repr: True` which will cause payload serialization to use the type name for non-built-in objects. 
+    This option defaults to `True` which may cause data reported to Rollbar to contain less information for custom types.
+    Prior to this change, serialization of custom objects called `__repr__()` which may have had undesired side effects.
+- Fixed a bug that did not correctly handle anonymous tuple arguments while gathering local variables.
+
 **0.9.14**
 - Fix logging loop when using Flask in a non-request context, and also using the Rollbar logging handler. See [#68](https://github.com/rollbar/pyrollbar/pull/68)
 
