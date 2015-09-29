@@ -29,6 +29,7 @@ try:
     from urllib.parse import urlencode
     import reprlib
     string_types = (str, bytes)
+    unicode = str
 except ImportError:
     # Python 2
     import urlparse
