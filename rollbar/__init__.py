@@ -977,24 +977,27 @@ def _scrub_obj(obj, replacement_character='*', key=None):
     memo = set()
 
     def _scrub(obj, k=None):
+        # Do circular reference checks only for containers
         obj_id = id(obj)
         if obj_id in memo:
             return '<Circular Reference>'
-
-        memo.add(obj_id)
 
         if k is not None and _in_scrub_fields(k, scrub_fields):
             if isinstance(obj, string_types):
                 return replacement_character * min(50, len(obj))
             elif isinstance(obj, list):
+                memo.add(obj_id)
                 return [_scrub(v, k) for v in obj]
             elif isinstance(obj, dict):
+                memo.add(obj_id)
                 return {replacement_character: replacement_character}
             else:
                 return replacement_character
         elif isinstance(obj, dict):
+            memo.add(obj_id)
             return dict((_k,  _scrub(v, _k)) for _k, v in obj.items())
         elif isinstance(obj, list):
+            memo.add(obj_id)
             return [_scrub(x, k) for x in obj]
         elif isinstance(obj, float) and math.isnan(obj):
             return 'NaN'
