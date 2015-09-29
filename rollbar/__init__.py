@@ -16,7 +16,6 @@ import threading
 import time
 import traceback
 import types
-import urllib
 import uuid
 import wsgiref.util
 
@@ -279,6 +278,7 @@ SETTINGS = {
     'allow_logging_basic_config': True,  # set to False to avoid a call to logging.basicConfig()
     'locals': {
         'enabled': True,
+        'safe_repr': True,
         'sizes': DEFAULT_LOCALS_SIZES
     },
     'verify_https': True
@@ -803,15 +803,15 @@ def _add_locals_data(data, exc_info):
 
             # Fill in all of the named args
             for named_arg in arginfo.args:
-                args.append(_local_repr(local_vars[named_arg]))
+                args.append(_local_repr(_scrub_obj(local_vars[named_arg], key=named_arg)))
 
             # Add any varargs
             if arginfo.varargs is not None:
-                args.extend(map(_local_repr, local_vars[arginfo.varargs]))
+                args.extend(map(lambda x: _local_repr(_scrub_obj(x)), local_vars[arginfo.varargs]))
 
             # Fill in all of the kwargs
             if arginfo.keywords is not None:
-                kw.update(dict((k, _local_repr(v)) for k, v in local_vars[arginfo.keywords].items()))
+                kw.update(dict((k, _local_repr(_scrub_obj(v, key=k))) for k, v in local_vars[arginfo.keywords].items()))
 
             if argspec and argspec.defaults:
                 # Put any of the args that have defaults into kwargs
@@ -824,11 +824,11 @@ def _add_locals_data(data, exc_info):
 
             # Optionally fill in locals for this frame
             if local_vars and _check_add_locals(cur_frame, frame_num, num_frames):
-                _locals.update(dict((k, _local_repr(v)) for k, v in local_vars.items()))
+                _locals.update(dict((k, _local_repr(_scrub_obj(v, key=k))) for k, v in local_vars.items()))
 
-            args = _scrub_obj(args)
-            kw = _scrub_obj(kw)
-            _locals = _scrub_obj(_locals)
+            args = args
+            kw = kw
+            _locals = _locals
 
         except Exception as e:
             log.exception('Error while extracting arguments from frame. Ignoring.')
@@ -943,7 +943,7 @@ def _scrub_request_url(url_string):
     return scrubbed_url_string
 
 
-def _scrub_obj(obj, replacement_character='*'):
+def _scrub_obj(obj, replacement_character='*', key=None):
     """
     Given an object, (e.g. dict/list/string) return the same object with sensitive
     data scrubbed out, (replaced with asterisks.)
@@ -951,8 +951,15 @@ def _scrub_obj(obj, replacement_character='*'):
     Fields to scrub out are defined in SETTINGS['scrub_fields'].
     """
     scrub_fields = set(SETTINGS['scrub_fields'])
+    memo = set()
 
     def _scrub(obj, k=None):
+        obj_id = id(obj)
+        if obj_id in memo:
+            return '<Circular Reference>'
+
+        memo.add(obj_id)
+
         if k is not None and _in_scrub_fields(k, scrub_fields):
             if isinstance(obj, string_types):
                 return replacement_character * min(50, len(obj))
@@ -975,7 +982,7 @@ def _scrub_obj(obj, replacement_character='*'):
         else:
             return obj
 
-    return _scrub(obj)
+    return _scrub(obj, k=key)
 
 
 if sys.version_info[0] > 2:
@@ -1003,14 +1010,26 @@ def _in_scrub_fields(val, scrub_fields):
 
 def _local_repr(obj):
     if isinstance(obj, tuple(blacklisted_local_types)):
-        return type(obj)
+        return unicode(type(obj))
 
-    orig = repr(obj)
-    reprd = _repr.repr(obj)
-    if reprd == orig:
-        return obj
-    else:
-        return reprd
+    is_builtin = _is_builtin_type(obj)
+
+    if is_builtin:
+        orig_reprd = repr(obj)
+        _reprd = _repr.repr(obj)
+        if orig_reprd == _reprd:
+            return obj
+
+        return _reprd
+
+    if SETTINGS.get('locals', {}).get('safe_repr'):
+        return unicode(type(obj))
+
+    return _repr.repr(obj)
+
+
+def _is_builtin_type(obj):
+    return type(obj) in [i for i in types.__dict__.values() if isinstance(i, type)] and not isinstance(obj, types.InstanceType)
 
 
 def _build_webob_request_data(request):
