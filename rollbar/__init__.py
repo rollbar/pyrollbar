@@ -760,6 +760,16 @@ def _get_func_from_frame(frame):
     return func
 
 
+def _flatten_nested_lists(l):
+    ret = []
+    for x in l:
+        if isinstance(x, list):
+            ret.extend(_flatten_nested_lists(x))
+        else:
+            ret.append(x)
+    return ret
+
+
 def _add_locals_data(data, exc_info):
     if not SETTINGS['locals']['enabled']:
         return
@@ -801,9 +811,21 @@ def _add_locals_data(data, exc_info):
                     if init_func:
                         argspec = inspect.getargspec(init_func)
 
+            # Get all of the named args
+            #
+            # args can be a nested list of args in the case where there
+            # are anonymous tuple args provided.
+            # e.g. in Python 2 you can:
+            #   def func((x, (a, b), z)):
+            #       return x + a + b + z
+            #
+            #   func((1, (1, 2), 3))
+            named_args = _flatten_nested_lists(arginfo.args)
+
             # Fill in all of the named args
-            for named_arg in arginfo.args:
-                args.append(_local_repr(_scrub_obj(local_vars[named_arg], key=named_arg)))
+            for named_arg in named_args:
+                if named_arg in local_vars:
+                    args.append(_local_repr(_scrub_obj(local_vars[named_arg], key=named_arg)))
 
             # Add any varargs
             if arginfo.varargs is not None:
