@@ -1052,7 +1052,7 @@ def _local_repr(obj):
 
 
 def _is_builtin_type(obj):
-    return type(obj) in [i for i in types.__dict__.values() if isinstance(i, type)] and not isinstance(obj, types.InstanceType)
+    return obj.__class__.__module__ in ('__builtin__', 'builtins')
 
 
 def _build_webob_request_data(request):

@@ -24,12 +24,14 @@ except ImportError:
 
 
 try:
-    def _(x, (a, b), y):
-        return x + a + v + y
-
-    _supports_anonymous_tuple_args = True
-except:
-    _supports_anonymous_tuple_args = False
+    eval("""
+        def _anonymous_tuple_func(x, (a, b), y):
+            ret = x + a + b + y
+            breakme()
+            return ret
+    """)
+except SyntaxError:
+    _anonymous_tuple_func = None
 
 
 _test_access_token = 'aaaabbbbccccddddeeeeffff00001111'
@@ -660,16 +662,11 @@ class RollbarTest(BaseTest):
     def test_anonymous_tuple_args(self, send_payload):
 
         # Only run this test on Python versions that support it
-        if not _supports_anonymous_tuple_args:
+        if not _anonymous_tuple_func:
             return
 
-        def _raise((x, (a, b), y)):
-            ret = x + a + b + y
-            breakme()
-            return ret
-
         try:
-            _raise((1, (2, 3), 4))
+            _anonymous_tuple_func((1, (2, 3), 4))
         except:
             rollbar.report_exc_info()
 
