@@ -9,7 +9,7 @@ except ImportError:
 import unittest
 
 import rollbar
-from rollbar import urlparse
+from rollbar import urlparse, parse_qs
 
 try:
     # Python 3
@@ -169,7 +169,7 @@ class RollbarTest(BaseTest):
         self.assertIn('body', payload['data'])
         self.assertIn('trace', payload['data']['body'])
         self.assertIn('exception', payload['data']['body']['trace'])
-        self.assertEqual(payload['data']['body']['trace']['exception']['message'], 'foo'.encode('utf-8'))
+        self.assertEqual(payload['data']['body']['trace']['exception']['message'], 'foo')
         self.assertEqual(payload['data']['body']['trace']['exception']['class'], 'Exception')
 
         self.assertNotIn('args', payload['data']['body']['trace']['frames'][-1])
@@ -326,8 +326,8 @@ class RollbarTest(BaseTest):
     def test_url_scrubbing(self):
         url = 'http://foo.com/?password=password&foo=bar&secret=secret'
 
-        scrubbed_url = urlparse.urlparse(rollbar._scrub_request_url(url))
-        qs_params = urlparse.parse_qs(scrubbed_url.query)
+        scrubbed_url = urlparse(rollbar._scrub_request_url(url))
+        qs_params = parse_qs(scrubbed_url.query)
 
         self.assertDictEqual(qs_params, {
             'password': ['--------'],
@@ -338,8 +338,8 @@ class RollbarTest(BaseTest):
     def test_utf8_url_val_scrubbing(self):
         url = 'http://foo.com/?password=password&foo=bar&secret=%s' % SNOWMAN
 
-        scrubbed_url = urlparse.urlparse(rollbar._scrub_request_url(url))
-        qs_params = urlparse.parse_qs(scrubbed_url.query)
+        scrubbed_url = urlparse(rollbar._scrub_request_url(url))
+        qs_params = parse_qs(scrubbed_url.query)
 
         self.assertDictEqual(qs_params, {
             'password': ['--------'],
@@ -354,7 +354,7 @@ class RollbarTest(BaseTest):
         rollbar.SETTINGS['scrub_fields'].append(SNOWMAN)
         scrubbed_url = rollbar._scrub_request_url(url)
 
-        qs_params = urlparse.parse_qs(urlparse.urlparse(scrubbed_url).query)
+        qs_params = parse_qs(urlparse(scrubbed_url).query)
 
         self.assertEqual(['------'], qs_params[SNOWMAN])
         self.assertEqual(['--------'], qs_params['password'])
@@ -922,14 +922,7 @@ class RollbarTest(BaseTest):
 
     @mock.patch('rollbar.send_payload')
     def test_unicode_exc_info(self, send_payload):
-        unicode_char = '\u221a'
-
-        if sys.version_info[0] < 3:
-            message = unicode_char.decode('unicode-escape')
-            expected = '\xe2\x88\x9a'
-        else:
-            message = unicode_char
-            expected = message.encode('utf-8')
+        message = '\u221a'
 
         try:
             raise Exception(message)
@@ -938,7 +931,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
         payload = send_payload.call_args[0][0]
-        self.assertEqual(payload['data']['body']['trace']['exception']['message'], expected)
+        self.assertEqual(payload['data']['body']['trace']['exception']['message'], message)
 
 
 

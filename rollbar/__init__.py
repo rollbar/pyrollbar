@@ -4,7 +4,7 @@ Plugin for Pyramid apps to submit errors to Rollbar
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-__version__ = '0.10.0'
+__version__ = '0.11.0-beta.1'
 
 import base64
 import copy
@@ -23,12 +23,12 @@ import types
 import uuid
 import wsgiref.util
 
-from reprlib import repr
 
+import reprlib
 import requests
 
 from builtins import str as text
-from future.moves.urllib.parse import urlparse, urlencode
+from future.moves.urllib.parse import urlparse, urlencode, urlunparse, urljoin, parse_qs
 from past.builtins import basestring
 
 
@@ -323,7 +323,7 @@ def init(access_token, environment='production', **kw):
         if SETTINGS.get('handler') == 'agent':
             agent_log = _create_agent_log()
 
-        _repr = repr.Repr()
+        _repr = reprlib.Repr()
         for name, size in SETTINGS['locals']['sizes'].items():
             setattr(_repr, name, size)
 
@@ -939,8 +939,8 @@ def _scrub_request_data(request_data):
 
 
 def _scrub_request_url(url_string):
-    url = urlparse.urlparse(url_string)
-    qs_params = urlparse.parse_qs(url.query)
+    url = urlparse(url_string)
+    qs_params = parse_qs(url.query)
 
     # use dash for replacement character so it looks better since it wont be url escaped
     scrubbed_qs_params = _scrub_obj(qs_params, replacement_character='-')
@@ -948,7 +948,7 @@ def _scrub_request_url(url_string):
     scrubbed_qs = urlencode(scrubbed_qs_params, doseq=True)
 
     scrubbed_url = (url.scheme, url.netloc, url.path, url.params, scrubbed_qs, url.fragment)
-    scrubbed_url_string = urlparse.urlunparse(scrubbed_url)
+    scrubbed_url_string = urlunparse(scrubbed_url)
 
     return scrubbed_url_string
 
@@ -999,11 +999,13 @@ def _scrub_obj(obj, replacement_character='*', key=None):
 
 
 def _in_scrub_fields(val, scrub_fields):
-    val = text(val).lower()
-    for field in set(scrub_fields):
-        field = text(field)
-        if field == val:
-            return True
+    if isinstance(val, basestring):
+        val = _to_text(val)
+        if val:
+            val = val.lower()
+            for field in set(scrub_fields):
+                if _to_text(field) == val:
+                    return True
 
     return False
 
@@ -1148,7 +1150,7 @@ def _build_wsgi_request_data(request):
         'method': request.get('REQUEST_METHOD'),
     }
     if 'QUERY_STRING' in request:
-        request_data['GET'] = urlparse.parse_qs(request['QUERY_STRING'], keep_blank_values=True)
+        request_data['GET'] = parse_qs(request['QUERY_STRING'], keep_blank_values=True)
         # Collapse single item arrays
         request_data['GET'] = dict((k, v[0] if len(v) == 1 else v) for k, v in request_data['GET'].items())
 
@@ -1218,14 +1220,14 @@ def _post_api_appengine(path, payload, access_token=None):
     # Serialize this ourselves so we can handle error cases more gracefully
     payload = ErrorIgnoringJSONEncoder().encode(payload)
 
-    url = urlparse.urljoin(SETTINGS['endpoint'], path)
+    url = urljoin(SETTINGS['endpoint'], path)
     resp = AppEngineFetch(url,
                           method="POST",
-                         payload=payload,
-                         headers=headers,
-                         allow_truncated=False,
-                         deadline=SETTINGS.get('timeout', DEFAULT_TIMEOUT),
-                         validate_certificate=SETTINGS.get('verify_https', True))
+                          payload=payload,
+                          headers=headers,
+                          allow_truncated=False,
+                          deadline=SETTINGS.get('timeout', DEFAULT_TIMEOUT),
+                          validate_certificate=SETTINGS.get('verify_https', True))
 
     return _parse_response(path, SETTINGS['access_token'], payload, resp)
 
@@ -1238,7 +1240,7 @@ def _post_api(path, payload, access_token=None):
     # Serialize this ourselves so we can handle error cases more gracefully
     payload = ErrorIgnoringJSONEncoder().encode(payload)
 
-    url = urlparse.urljoin(SETTINGS['endpoint'], path)
+    url = urljoin(SETTINGS['endpoint'], path)
     resp = requests.post(url,
                          data=payload,
                          headers=headers,
@@ -1250,7 +1252,7 @@ def _post_api(path, payload, access_token=None):
 
 def _get_api(path, access_token=None, endpoint=None, **params):
     access_token = access_token or SETTINGS['access_token']
-    url = urlparse.urljoin(endpoint or SETTINGS['endpoint'], path)
+    url = urljoin(endpoint or SETTINGS['endpoint'], path)
     params['access_token'] = access_token
     resp = requests.get(url, params=params, verify=SETTINGS.get('verify_https', True))
     return _parse_response(path, access_token, params, resp, endpoint=endpoint)
@@ -1273,7 +1275,7 @@ def _post_api_tornado(path, payload, access_token=None):
     # Serialize this ourselves so we can handle error cases more gracefully
     payload = ErrorIgnoringJSONEncoder().encode(payload)
 
-    url = urlparse.urljoin(SETTINGS['endpoint'], path)
+    url = urljoin(SETTINGS['endpoint'], path)
 
     resp = yield TornadoAsyncHTTPClient().fetch(
         url, body=payload, method='POST', connect_timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT),
@@ -1305,7 +1307,7 @@ def _post_api_twisted(path, payload, access_token=None):
     # Serialize this ourselves so we can handle error cases more gracefully
     payload = ErrorIgnoringJSONEncoder().encode(payload)
 
-    url = urlparse.urljoin(SETTINGS['endpoint'], path)
+    url = urljoin(SETTINGS['endpoint'], path)
 
     agent = TwistedHTTPClient(reactor, connectTimeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT))
     resp = yield agent.request(
@@ -1381,6 +1383,27 @@ def _wsgi_extract_user_ip(environ):
     if real_ip:
         return real_ip
     return environ['REMOTE_ADDR']
+
+
+if python_major_version <= 2:
+    def _to_text(val):
+        if isinstance(val, unicode):
+            return val
+        elif isinstance(val, str):
+            conversion_options = [unicode, lambda x: unicode(x, encoding='utf8', errors='replace')]
+            for option in conversion_options:
+                try:
+                    return option(val)
+                except UnicodeDecodeError:
+                    pass
+
+        return None
+else:
+    def _to_text(val):
+        if isinstance(val, basestring):
+            return text(val)
+
+        return None
 
 
 # http://www.xormedia.com/recursively-merge-dictionaries-in-python.html
