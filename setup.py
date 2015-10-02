@@ -49,7 +49,7 @@ setup(
         ],
     install_requires=[
         'requests',
-        'future',
+        'six',
         ],
     tests_require=[
         'mock',

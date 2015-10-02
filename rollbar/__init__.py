@@ -24,16 +24,41 @@ import uuid
 import wsgiref.util
 
 
-import reprlib
 import requests
 
-from builtins import str as text
-from future.moves.urllib.parse import urlparse, urlencode, urlunparse, urljoin, parse_qs
-from past.builtins import basestring
+import six
+from six.moves import urllib
+from six.moves import reprlib
+
+
+urlparse = urllib.parse.urlparse
+urlunparse = urllib.parse.urlunparse
+parse_qs = urllib.parse.parse_qs
+urlencode = urllib.parse.urlencode
 
 
 log = logging.getLogger(__name__)
 python_major_version = sys.version_info[0]
+
+
+if python_major_version <= 2:
+    def text(val):
+        if isinstance(val, unicode):
+            return val
+
+        conversion_options = [unicode, lambda x: unicode(x, encoding='utf8', errors='replace')]
+        for option in conversion_options:
+            try:
+                return option(val)
+            except UnicodeDecodeError:
+                pass
+
+        return None
+else:
+    def text(val):
+        return str(val)
+
+
 
 
 # import request objects from various frameworks, if available
@@ -506,7 +531,7 @@ class PagedResult(Result):
 
 def _resolve_exception_class(idx, filter):
     cls, level = filter
-    if isinstance(cls, basestring):
+    if isinstance(cls, six.string_types):
         # Lazily resolve class name
         parts = cls.split('.')
         module = '.'.join(parts[:-1])
@@ -658,7 +683,7 @@ def _build_base_data(request, level='error'):
         'timestamp': int(time.time()),
         'environment': SETTINGS['environment'],
         'level': level,
-        'language': 'python %s' % '.'.join(text(x) for x in sys.version_info[:3]),
+        'language': 'python %s' % '.'.join(str(x) for x in sys.version_info[:3]),
         'notifier': SETTINGS['notifier'],
         'uuid': text(uuid.uuid4()),
     }
@@ -970,7 +995,7 @@ def _scrub_obj(obj, replacement_character='*', key=None):
             return '<Circular Reference>'
 
         if k is not None and _in_scrub_fields(k, scrub_fields):
-            if isinstance(obj, basestring):
+            if isinstance(obj, six.string_types):
                 return replacement_character * min(50, len(obj))
             elif isinstance(obj, list):
                 memo.add(obj_id)
@@ -999,12 +1024,12 @@ def _scrub_obj(obj, replacement_character='*', key=None):
 
 
 def _in_scrub_fields(val, scrub_fields):
-    if isinstance(val, basestring):
-        val = _to_text(val)
+    if isinstance(val, six.string_types):
+        val = text(val)
         if val:
             val = val.lower()
             for field in set(scrub_fields):
-                if _to_text(field) == val:
+                if text(field) == val:
                     return True
 
     return False
@@ -1385,27 +1410,6 @@ def _wsgi_extract_user_ip(environ):
     return environ['REMOTE_ADDR']
 
 
-if python_major_version <= 2:
-    def _to_text(val):
-        if isinstance(val, unicode):
-            return val
-        elif isinstance(val, str):
-            conversion_options = [unicode, lambda x: unicode(x, encoding='utf8', errors='replace')]
-            for option in conversion_options:
-                try:
-                    return option(val)
-                except UnicodeDecodeError:
-                    pass
-
-        return None
-else:
-    def _to_text(val):
-        if isinstance(val, basestring):
-            return text(val)
-
-        return None
-
-
 # http://www.xormedia.com/recursively-merge-dictionaries-in-python.html
 def dict_merge(a, b):
     '''recursively merges dict's. not just simple a['key'] = b['key'], if
@@ -1444,7 +1448,7 @@ class ErrorIgnoringJSONEncoder(json.JSONEncoder):
 
                 yield part
             except UnicodeDecodeError as decode_err:
-                message = '"<Undecodable object message:(%s) base64:(%s)>"' % \
+                message = '"<Undecodable object reason:(%s) base64:(%s)>"' % \
                           (decode_err.reason, base64.b64encode(part))
                 yield message
             except StopIteration as stop:
