@@ -2,6 +2,7 @@
 Tests for the ErrorIgnoringJSONEncoder
 """
 import json
+import sys
 
 from rollbar import ErrorIgnoringJSONEncoder
 
@@ -21,13 +22,19 @@ class ErrorIgnoringJSONEncoderTest(BaseTest):
 
         self.assertDictEqual(start, decoded)
 
-
     def test_encode_dict_with_invalid_utf8(self):
+        if sys.version_info[0] > 2:
+            return
+
+        invalid = "\n\xe5\xf6$\xab\x97\xb8\xb5m'\xa9u\xb3\xb0\xdey"
+
         start = {
-            'invalid': "\n\xe5\xf6$\xab\x97\xb8\xb5m'\xa9u\xb3\xb0\xdey",
+            'invalid': invalid
         }
         encoder = ErrorIgnoringJSONEncoder()
         encoded = encoder.encode(start)
         decoded = json.loads(encoded)
 
-        self.assertDictEqual(start, decoded)
+        self.assertIn('invalid', decoded)
+        self.assertIn('Undecodable', decoded['invalid'])
+        self.assertIn('invalid continuation byte', decoded['invalid'])

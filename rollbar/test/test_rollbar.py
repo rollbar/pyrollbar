@@ -7,23 +7,18 @@ try:
 except ImportError:
     from io import StringIO
 import unittest
-import urllib
 
 import rollbar
-
-from rollbar.test import BaseTest
+from rollbar import urlparse
 
 try:
     # Python 3
-    import urllib.parse as urlparse
-    urllibquote = urlparse.quote
-    unicode = str
+    from urllib.parse import quote
 except ImportError:
-    # Python 2
-    import urlparse
-    import urllib
-    urllibquote = urllib.quote
+    from urllib import quote
 
+
+from rollbar.test import BaseTest
 
 try:
     eval("""
@@ -354,7 +349,7 @@ class RollbarTest(BaseTest):
 
 
     def test_utf8_url_key_scrubbing(self):
-        url = 'http://foo.com/?password=password&foo=bar&%s=secret' % urllibquote(SNOWMAN)
+        url = 'http://foo.com/?password=password&foo=bar&%s=secret' % quote(SNOWMAN)
 
         rollbar.SETTINGS['scrub_fields'].append(SNOWMAN)
         scrubbed_url = rollbar._scrub_request_url(url)

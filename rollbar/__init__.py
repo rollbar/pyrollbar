@@ -1,8 +1,12 @@
 """
 Plugin for Pyramid apps to submit errors to Rollbar
 """
+from __future__ import absolute_import
+from __future__ import unicode_literals
+
 __version__ = '0.10.0'
 
+import base64
 import copy
 import inspect
 import json
@@ -19,23 +23,17 @@ import types
 import uuid
 import wsgiref.util
 
+from reprlib import repr
+
 import requests
 
-log = logging.getLogger(__name__)
+from builtins import str as text
+from future.moves.urllib.parse import urlparse, urlencode
+from past.builtins import basestring
 
-try:
-    # Python 3
-    import urllib.parse as urlparse
-    from urllib.parse import urlencode
-    import reprlib
-    string_types = (str, bytes)
-    unicode = str
-except ImportError:
-    # Python 2
-    import urlparse
-    from urllib import urlencode
-    import repr as reprlib
-    string_types = types.StringTypes
+
+log = logging.getLogger(__name__)
+python_major_version = sys.version_info[0]
 
 
 # import request objects from various frameworks, if available
@@ -325,7 +323,7 @@ def init(access_token, environment='production', **kw):
         if SETTINGS.get('handler') == 'agent':
             agent_log = _create_agent_log()
 
-        _repr = reprlib.Repr()
+        _repr = repr.Repr()
         for name, size in SETTINGS['locals']['sizes'].items():
             setattr(_repr, name, size)
 
@@ -505,22 +503,13 @@ class PagedResult(Result):
 
 ## internal functions
 
-# Python 2.x and 3.x compatible string test
-try:
-    isinstance('', basestring)
-    def isstr(s):
-        return isinstance(s, basestring)
-except NameError:
-    def isstr(s):
-        return isinstance(s, str)
-
 
 def _resolve_exception_class(idx, filter):
     cls, level = filter
-    if isstr(cls):
+    if isinstance(cls, basestring):
         # Lazily resolve class name
         parts = cls.split('.')
-        module = ".".join(parts[:-1])
+        module = '.'.join(parts[:-1])
         if module in sys.modules and hasattr(sys.modules[module], parts[-1]):
             cls = getattr(sys.modules[module], parts[-1])
             SETTINGS['exception_level_filters'][idx] = (cls, level)
@@ -592,7 +581,7 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
             'frames': frames,
             'exception': {
                 'class': cls.__name__,
-                'message': _to_str(exc),
+                'message': text(exc),
             }
         }
     }
@@ -669,9 +658,9 @@ def _build_base_data(request, level='error'):
         'timestamp': int(time.time()),
         'environment': SETTINGS['environment'],
         'level': level,
-        'language': 'python %s' % '.'.join(str(x) for x in sys.version_info[:3]),
+        'language': 'python %s' % '.'.join(text(x) for x in sys.version_info[:3]),
         'notifier': SETTINGS['notifier'],
-        'uuid': str(uuid.uuid4()),
+        'uuid': text(uuid.uuid4()),
     }
 
     if SETTINGS.get('code_version'):
@@ -725,9 +714,9 @@ def _build_person_data(request):
         else:
             retval = {}
             if getattr(user, 'id', None):
-                retval['id'] = str(user.id)
+                retval['id'] = text(user.id)
             elif getattr(user, 'user_id', None):
-                retval['id'] = str(user.user_id)
+                retval['id'] = text(user.user_id)
 
             # id is required, so only include username/email if we have an id
             if retval.get('id'):
@@ -746,7 +735,7 @@ def _build_person_data(request):
 
         if not user_id:
             return None
-        return {'id': str(user_id)}
+        return {'id': text(user_id)}
 
 
 def _get_func_from_frame(frame):
@@ -956,8 +945,6 @@ def _scrub_request_url(url_string):
     # use dash for replacement character so it looks better since it wont be url escaped
     scrubbed_qs_params = _scrub_obj(qs_params, replacement_character='-')
 
-    # Make sure the keys and values are all utf8-encoded strings
-    scrubbed_qs_params = dict((_to_str(k), list(map(_to_str, v))) for k, v in scrubbed_qs_params.items())
     scrubbed_qs = urlencode(scrubbed_qs_params, doseq=True)
 
     scrubbed_url = (url.scheme, url.netloc, url.path, url.params, scrubbed_qs, url.fragment)
@@ -983,7 +970,7 @@ def _scrub_obj(obj, replacement_character='*', key=None):
             return '<Circular Reference>'
 
         if k is not None and _in_scrub_fields(k, scrub_fields):
-            if isinstance(obj, string_types):
+            if isinstance(obj, basestring):
                 return replacement_character * min(50, len(obj))
             elif isinstance(obj, list):
                 memo.add(obj_id)
@@ -1003,32 +990,18 @@ def _scrub_obj(obj, replacement_character='*', key=None):
             return 'NaN'
         elif isinstance(obj, float) and math.isinf(obj):
             return 'Infinity'
-        elif isinstance(obj, (numbers.Integral, float)) and str(obj + 0) != str(obj):
-            return str(obj)
+        elif isinstance(obj, (numbers.Integral, float)) and text(obj + 0) != text(obj):
+            return text(obj)
         else:
             return obj
 
     return _scrub(obj, k=key)
 
 
-if sys.version_info[0] > 2:
-    def _to_str(x):
-        return str(x).encode('utf-8')
-else:
-    def _to_str(x):
-        try:
-            return str(x)
-        except UnicodeEncodeError:
-            try:
-                return unicode(x).encode('utf-8')
-            except UnicodeEncodeError:
-                return x.encode('utf-8')
-
-
 def _in_scrub_fields(val, scrub_fields):
-    val = _to_str(val).lower()
+    val = text(val).lower()
     for field in set(scrub_fields):
-        field = _to_str(field)
+        field = text(field)
         if field == val:
             return True
 
@@ -1037,7 +1010,7 @@ def _in_scrub_fields(val, scrub_fields):
 
 def _local_repr(obj):
     if isinstance(obj, tuple(blacklisted_local_types)):
-        return unicode(type(obj))
+        return text(type(obj))
 
     is_builtin = _is_builtin_type(obj)
 
@@ -1050,7 +1023,7 @@ def _local_repr(obj):
         return _reprd
 
     if SETTINGS.get('locals', {}).get('safe_repr'):
-        return unicode(type(obj))
+        return text(type(obj))
 
     return _repr.repr(obj)
 
@@ -1427,16 +1400,33 @@ def dict_merge(a, b):
     return result
 
 
+from json import decoder as jsondecoder
+
+
 class ErrorIgnoringJSONEncoder(json.JSONEncoder):
     def __init__(self, **kw):
+        self._orig_ensure_ascii = kw.get('ensure_ascii', True)
         kw.setdefault('skipkeys', True)
+        kw['ensure_ascii'] = False
         super(ErrorIgnoringJSONEncoder, self).__init__(**kw)
 
-    def default(self, o):
-        try:
-            return _repr.repr(o)
-        except:
+    def iterencode(self, o, _one_shot=False):
+        iterator = super(ErrorIgnoringJSONEncoder, self).iterencode(o, _one_shot=False)
+
+        while True:
             try:
-                return str(o)
-            except:
-                return "<Unencodable object>"
+                part = next(iterator)
+                if isinstance(part, bytes):
+                    part = part.decode('utf8')
+
+                yield part
+            except UnicodeDecodeError as decode_err:
+                message = '"<Undecodable object message:(%s) base64:(%s)>"' % \
+                          (decode_err.reason, base64.b64encode(part))
+                yield message
+            except StopIteration as stop:
+                break
+
+    def encode(self, o):
+        ret = super(ErrorIgnoringJSONEncoder, self).encode(o)
+        return ret
