@@ -1438,7 +1438,13 @@ class ErrorIgnoringJSONEncoder(json.JSONEncoder):
         super(ErrorIgnoringJSONEncoder, self).__init__(**kw)
 
     def iterencode(self, o, _one_shot=False):
-        iterator = super(ErrorIgnoringJSONEncoder, self).iterencode(o, _one_shot=False)
+        try:
+            iterator = super(ErrorIgnoringJSONEncoder, self).iterencode(o, _one_shot=False)
+        except TypeError as e:
+            if "unexpected keyword argument '_one_shot'" in e.message:
+                iterator = super(ErrorIgnoringJSONEncoder, self).iterencode(o)
+            else:
+                raise
 
         while True:
             try:
