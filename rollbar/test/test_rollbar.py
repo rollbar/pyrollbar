@@ -707,7 +707,7 @@ class RollbarTest(BaseTest):
 
     @mock.patch('rollbar.send_payload')
     def test_scrub_locals(self, send_payload):
-        invalid_b64 = 'CuX2JKuXuLVtJ6l1s7DeeQ=='
+        invalid_b64 = b'CuX2JKuXuLVtJ6l1s7DeeQ=='
         invalid = base64.b64decode(invalid_b64)
 
         def _raise():
@@ -964,7 +964,7 @@ class RollbarTest(BaseTest):
 
     @mock.patch('requests.post', side_effect=lambda *args, **kw: MockResponse({'status': 'OK'}, 200))
     def test_serialize_and_send_payload(self, post=None):
-        invalid_b64 = 'CuX2JKuXuLVtJ6l1s7DeeQ=='
+        invalid_b64 = b'CuX2JKuXuLVtJ6l1s7DeeQ=='
         invalid = base64.b64decode(invalid_b64)
 
         def _raise():

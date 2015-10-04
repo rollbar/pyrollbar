@@ -25,7 +25,7 @@ class ErrorIgnoringJSONEncoderTest(BaseTest):
     def test_encode_dict_with_invalid_utf8(self):
         # This base64 encoded string contains bytes that do not
         # convert to utf-8 data
-        invalid_b64 = 'CuX2JKuXuLVtJ6l1s7DeeQ=='
+        invalid_b64 = b'CuX2JKuXuLVtJ6l1s7DeeQ=='
         invalid = base64.b64decode(invalid_b64)
 
         start = {
