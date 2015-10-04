@@ -736,7 +736,7 @@ class RollbarTest(BaseTest):
         self.assertEqual('****************', payload['data']['body']['trace']['frames'][-1]['locals']['Password'])
         self.assertIn('_invalid', payload['data']['body']['trace']['frames'][-1]['locals'])
 
-        undecodable_message = '<Undecodable base64:(%s)>' % base64.b64encode(invalid)
+        undecodable_message = '<Undecodable base64:(%s)>' % base64.b64encode(invalid).decode('ascii')
         self.assertEqual(undecodable_message, payload['data']['body']['trace']['frames'][-1]['locals']['_invalid'])
 
     @mock.patch('rollbar.send_payload')
@@ -987,13 +987,8 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(post.called, True)
         payload = post.call_args[1]['data']
-        if python_major_version < 3:
-            self.assertIsInstance(payload, str)
-            self.assertIn('bug bug', payload)
-        else:
-            self.assertIsInstance(payload, bytes)
-            self.assertIn('bug bug', payload.decode('utf8'))
-
+        self.assertIsInstance(payload, str)
+        self.assertIn('bug bug', payload)
 
 
 ### Helpers

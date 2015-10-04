@@ -53,7 +53,7 @@ if python_major_version <= 2:
             except UnicodeDecodeError:
                 pass
 
-        return unicode('<Undecodable base64:(%s)>' % base64.b64encode(val))
+        return unicode('<Undecodable base64:(%s)>' % base64.b64encode(val).decode('ascii'))
 else:
     def text(val):
         try:
@@ -63,8 +63,8 @@ else:
             else:
                 str(val).encode('utf8')
                 return str(val)
-        except UnicodeDecodeError:
-            return '<Undecodable base64:(%s)>' % base64.b64encode(val)
+        except UnicodeDecodeError as err:
+            return '<Undecodable base64:(%s)>' % base64.b64encode(val).decode('ascii')
 
 
 # import request objects from various frameworks, if available
@@ -1464,19 +1464,22 @@ class ErrorIgnoringJSONEncoder(json.JSONEncoder):
                     part = part.decode('utf8')
 
                 yield part
-            except UnicodeDecodeError as decode_err:
-                message = '"<Undecodable object reason:(%s) base64:(%s)>"' % \
-                          (decode_err.reason, base64.b64encode(part))
+            except (UnicodeDecodeError, TypeError) as err:
+                err_message = str(err)
+                if isinstance(err, TypeError) and err_message.endswith('is not JSON serializable'):
+                    part = err_message[:err_message.find('is not JSON serializable', 0)]
+                message = '"<Undecodable object base64:(%s)>"' % \
+                          base64.b64encode(part).decode('ascii')
                 yield message
             except StopIteration:
                 break
-            except Exception as other_err:
-                message = '"<Undecodable object reason:(%s) base64:(%s)>"' % \
-                          (str(other_err), base64.b64encode(part))
-                yield message
 
-
+    def default(self, o):
+        return text(o)
 
     def encode(self, o):
         ret = super(ErrorIgnoringJSONEncoder, self).encode(o)
-        return ret.encode('utf8')
+        if python_major_version < 3:
+            return ret.encode('utf8')
+
+        return ret

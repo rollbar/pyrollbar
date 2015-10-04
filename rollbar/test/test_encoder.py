@@ -37,4 +37,3 @@ class ErrorIgnoringJSONEncoderTest(BaseTest):
 
         self.assertIn('invalid', decoded)
         self.assertIn('Undecodable', decoded['invalid'])
-        self.assertIn('invalid continuation byte', decoded['invalid'])
