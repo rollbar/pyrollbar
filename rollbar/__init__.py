@@ -1019,11 +1019,14 @@ def _scrub_obj(obj, replacement_character='*', key=None):
         elif isinstance(obj, list):
             memo.add(obj_id)
             return [_scrub(x, k) for x in obj]
+        elif isinstance(obj, tuple):
+            memo.add(obj_id)
+            return tuple([_scrub(x, k) for x in obj])
         elif isinstance(obj, float) and math.isnan(obj):
             return 'NaN'
         elif isinstance(obj, float) and math.isinf(obj):
             return 'Infinity'
-        elif isinstance(obj, six.integer_types):
+        elif isinstance(obj, six.integer_types + (float,)):
             return obj
         elif obj is None:
             return None

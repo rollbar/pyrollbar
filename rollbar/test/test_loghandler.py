@@ -4,13 +4,12 @@ Tests for the RollbarHandler logging handler
 import copy
 import logging
 import mock
-import urllib
 import sys
 
 import rollbar
 from rollbar.logger import RollbarHandler
 
-from . import BaseTest
+from rollbar.test import BaseTest
 
 
 _test_access_token = 'aaaabbbbccccddddeeeeffff00001111'
