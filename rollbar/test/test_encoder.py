@@ -1,8 +1,8 @@
 """
 Tests for the ErrorIgnoringJSONEncoder
 """
+import base64
 import json
-import sys
 
 from rollbar import ErrorIgnoringJSONEncoder
 
@@ -23,10 +23,10 @@ class ErrorIgnoringJSONEncoderTest(BaseTest):
         self.assertDictEqual(start, decoded)
 
     def test_encode_dict_with_invalid_utf8(self):
-        if sys.version_info[0] > 2:
-            return
-
-        invalid = "\n\xe5\xf6$\xab\x97\xb8\xb5m'\xa9u\xb3\xb0\xdey"
+        # This base64 encoded string contains bytes that do not
+        # convert to utf-8 data
+        invalid_b64 = 'CuX2JKuXuLVtJ6l1s7DeeQ=='
+        invalid = base64.b64decode(invalid_b64)
 
         start = {
             'invalid': invalid

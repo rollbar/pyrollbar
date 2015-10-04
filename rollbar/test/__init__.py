@@ -3,6 +3,9 @@ import pprint
 import unittest
 
 
+from rollbar import python_major_version
+
+
 # from http://hg.python.org/cpython/file/67ada6ab7fe2/Lib/unittest/util.py
 # for Python 2.6 support
 _MAX_LENGTH = 80

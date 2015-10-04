@@ -1,5 +1,6 @@
-import sys
+import base64
 import copy
+import json
 import mock
 
 try:
@@ -9,7 +10,7 @@ except ImportError:
 import unittest
 
 import rollbar
-from rollbar import urlparse, parse_qs
+from rollbar import urlparse, parse_qs, python_major_version
 
 try:
     # Python 3
@@ -36,11 +37,12 @@ _default_settings = copy.deepcopy(rollbar.SETTINGS)
 
 SNOWMAN = '\xe2\x98\x83'
 
+
 class RollbarTest(BaseTest):
     def setUp(self):
         rollbar._initialized = False
         rollbar.SETTINGS = copy.deepcopy(_default_settings)
-        rollbar.init(_test_access_token, locals={'enabled': True}, dummy_key='asdf', timeout=12345)
+        rollbar.init(_test_access_token, locals={'enabled': True}, dummy_key='asdf', handler='blocking', timeout=12345)
 
     def test_merged_settings(self):
         expected = {'enabled': True, 'sizes': rollbar.DEFAULT_LOCALS_SIZES, 'safe_repr': True}
@@ -705,9 +707,21 @@ class RollbarTest(BaseTest):
 
     @mock.patch('rollbar.send_payload')
     def test_scrub_locals(self, send_payload):
+        invalid_b64 = 'CuX2JKuXuLVtJ6l1s7DeeQ=='
+        invalid = base64.b64decode(invalid_b64)
+
         def _raise():
+            # Make sure that the _invalid local variable makes its
+            # way into the payload even if its value cannot be serialized
+            # properly.
+            _invalid = invalid
+
+            # Make sure the Password field gets scrubbed even though its
+            # original value could not be serialized properly.
+            Password = invalid
+
             password = 'sensitive'
-            raise Exception()
+            raise Exception((_invalid, Password, password))
 
         try:
             _raise()
@@ -719,6 +733,11 @@ class RollbarTest(BaseTest):
         payload = send_payload.call_args[0][0]
 
         self.assertEqual('*********', payload['data']['body']['trace']['frames'][-1]['locals']['password'])
+        self.assertEqual('****************', payload['data']['body']['trace']['frames'][-1]['locals']['Password'])
+        self.assertIn('_invalid', payload['data']['body']['trace']['frames'][-1]['locals'])
+
+        undecodable_message = '<Undecodable base64:(%s)>' % base64.b64encode(invalid)
+        self.assertEqual(undecodable_message, payload['data']['body']['trace']['frames'][-1]['locals']['_invalid'])
 
     @mock.patch('rollbar.send_payload')
     def test_scrub_nans(self, send_payload):
@@ -800,10 +819,14 @@ class RollbarTest(BaseTest):
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('kwargs', payload['data']['body']['trace']['frames'][-1])
-
         self.assertEqual(1, len(payload['data']['body']['trace']['frames'][-1]['args']))
-        self.assertEqual("'###############################################...################################################'",
-                         payload['data']['body']['trace']['frames'][-1]['args'][0])
+
+        if python_major_version < 3:
+            self.assertEqual("u'##############################################...################################################'",
+                             payload['data']['body']['trace']['frames'][-1]['args'][0])
+        else:
+            self.assertEqual("'###############################################...################################################'",
+                             payload['data']['body']['trace']['frames'][-1]['args'][0])
 
 
     @mock.patch('rollbar.send_payload')
@@ -826,8 +849,13 @@ class RollbarTest(BaseTest):
         self.assertNotIn('kwargs', payload['data']['body']['trace']['frames'][-1])
 
         self.assertEqual(1, len(payload['data']['body']['trace']['frames'][-1]['args']))
-        self.assertEqual("['hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', ...]",
-                         payload['data']['body']['trace']['frames'][-1]['args'][0])
+
+        if python_major_version < 3:
+            self.assertEqual("[u'hi', u'hi', u'hi', u'hi', u'hi', u'hi', u'hi', u'hi', u'hi', u'hi', ...]",
+                             payload['data']['body']['trace']['frames'][-1]['args'][0])
+        else:
+            self.assertEqual("['hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', ...]",
+                             payload['data']['body']['trace']['frames'][-1]['args'][0])
 
 
     @mock.patch('rollbar.send_payload')
@@ -934,6 +962,39 @@ class RollbarTest(BaseTest):
         self.assertEqual(payload['data']['body']['trace']['exception']['message'], message)
 
 
+    @mock.patch('requests.post', side_effect=lambda *args, **kw: MockResponse({'status': 'OK'}, 200))
+    def test_serialize_and_send_payload(self, post=None):
+        invalid_b64 = 'CuX2JKuXuLVtJ6l1s7DeeQ=='
+        invalid = base64.b64decode(invalid_b64)
+
+        def _raise():
+            # Make sure that the _invalid local variable makes its
+            # way into the payload even if its value cannot be serialized
+            # properly.
+            _invalid = invalid
+
+            # Make sure the Password field gets scrubbed even though its
+            # original value could not be serialized properly.
+            Password = invalid
+
+            password = 'sensitive'
+            raise Exception('bug bug')
+
+        try:
+            _raise()
+        except:
+            rollbar.report_exc_info()
+
+        self.assertEqual(post.called, True)
+        payload = post.call_args[1]['data']
+        if python_major_version < 3:
+            self.assertIsInstance(payload, str)
+            self.assertIn('bug bug', payload)
+        else:
+            self.assertIsInstance(payload, bytes)
+            self.assertIn('bug bug', payload.decode('utf8'))
+
+
 
 ### Helpers
 
@@ -950,6 +1011,20 @@ def step2():
 def called_with(arg1):
     arg1 = 'changed'
     step1()
+
+
+class MockResponse:
+    def __init__(self, json_data, status_code):
+        self.json_data = json_data
+        self.status_code = status_code
+
+    @property
+    def content(self):
+        return json.dumps(self.json_data)
+
+    def json(self):
+        return self.json_data
+
 
 if __name__ == '__main__':
     unittest.main()

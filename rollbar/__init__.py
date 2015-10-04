@@ -12,7 +12,6 @@ import inspect
 import json
 import logging
 import math
-import numbers
 import os
 import socket
 import sys
@@ -35,6 +34,7 @@ urlparse = urllib.parse.urlparse
 urlunparse = urllib.parse.urlunparse
 parse_qs = urllib.parse.parse_qs
 urlencode = urllib.parse.urlencode
+urljoin = urllib.parse.urljoin
 
 
 log = logging.getLogger(__name__)
@@ -46,19 +46,25 @@ if python_major_version <= 2:
         if isinstance(val, unicode):
             return val
 
-        conversion_options = [unicode, lambda x: unicode(x, encoding='utf8', errors='replace')]
+        conversion_options = [unicode, lambda x: unicode(x, encoding='utf8')]
         for option in conversion_options:
             try:
                 return option(val)
             except UnicodeDecodeError:
                 pass
 
-        return None
+        return unicode('<Undecodable base64:(%s)>' % base64.b64encode(val))
 else:
     def text(val):
-        return str(val)
-
-
+        try:
+            if isinstance(val, bytes):
+                val.decode('utf8')
+                return val
+            else:
+                str(val).encode('utf8')
+                return str(val)
+        except UnicodeDecodeError:
+            return '<Undecodable base64:(%s)>' % base64.b64encode(val)
 
 
 # import request objects from various frameworks, if available
@@ -995,16 +1001,18 @@ def _scrub_obj(obj, replacement_character='*', key=None):
             return '<Circular Reference>'
 
         if k is not None and _in_scrub_fields(k, scrub_fields):
-            if isinstance(obj, six.string_types):
-                return replacement_character * min(50, len(obj))
-            elif isinstance(obj, list):
+            if isinstance(obj, list):
                 memo.add(obj_id)
                 return [_scrub(v, k) for v in obj]
             elif isinstance(obj, dict):
                 memo.add(obj_id)
                 return {replacement_character: replacement_character}
             else:
-                return replacement_character
+                try:
+                    return replacement_character * len(obj)
+                except:
+                    return replacement_character
+
         elif isinstance(obj, dict):
             memo.add(obj_id)
             return dict((_k,  _scrub(v, _k)) for _k, v in obj.items())
@@ -1015,10 +1023,12 @@ def _scrub_obj(obj, replacement_character='*', key=None):
             return 'NaN'
         elif isinstance(obj, float) and math.isinf(obj):
             return 'Infinity'
-        elif isinstance(obj, (numbers.Integral, float)) and text(obj + 0) != text(obj):
-            return text(obj)
-        else:
+        elif isinstance(obj, six.integer_types):
             return obj
+        elif obj is None:
+            return None
+        else:
+            return text(obj)
 
     return _scrub(obj, k=key)
 
@@ -1375,13 +1385,13 @@ def _parse_response(path, access_token, params, resp, endpoint=None):
     try:
         json_data = json.loads(data)
     except (TypeError, ValueError):
-        log.warning('Could not decode Rollbar api response:\n%s', data)
+        log.exception('Could not decode Rollbar api response:\n%s', data)
         raise ApiException('Request to %s returned invalid JSON response', path)
     else:
         if json_data.get('err'):
             raise ApiError(json_data.get('message') or 'Unknown error')
 
-        result = json_data.get('result')
+        result = json_data.get('result', {})
 
         if 'page' in result:
             return PagedResult(access_token, path, result['page'], params, result, endpoint=endpoint)
@@ -1427,9 +1437,6 @@ def dict_merge(a, b):
     return result
 
 
-from json import decoder as jsondecoder
-
-
 class ErrorIgnoringJSONEncoder(json.JSONEncoder):
     def __init__(self, **kw):
         self._orig_ensure_ascii = kw.get('ensure_ascii', True)
@@ -1441,7 +1448,7 @@ class ErrorIgnoringJSONEncoder(json.JSONEncoder):
         try:
             iterator = super(ErrorIgnoringJSONEncoder, self).iterencode(o, _one_shot=False)
         except TypeError as e:
-            if "unexpected keyword argument '_one_shot'" in e.message:
+            if "unexpected keyword argument '_one_shot'" in str(e):
                 iterator = super(ErrorIgnoringJSONEncoder, self).iterencode(o)
             else:
                 raise
@@ -1449,7 +1456,8 @@ class ErrorIgnoringJSONEncoder(json.JSONEncoder):
         while True:
             try:
                 part = next(iterator)
-                if isinstance(part, bytes):
+                if (python_major_version > 2 and isinstance(part, bytes)) or \
+                        (python_major_version < 3 and isinstance(part, str)):
                     part = part.decode('utf8')
 
                 yield part
@@ -1457,9 +1465,15 @@ class ErrorIgnoringJSONEncoder(json.JSONEncoder):
                 message = '"<Undecodable object reason:(%s) base64:(%s)>"' % \
                           (decode_err.reason, base64.b64encode(part))
                 yield message
-            except StopIteration as stop:
+            except StopIteration:
                 break
+            except Exception as other_err:
+                message = '"<Undecodable object reason:(%s) base64:(%s)>"' % \
+                          (str(other_err), base64.b64encode(part))
+                yield message
+
+
 
     def encode(self, o):
         ret = super(ErrorIgnoringJSONEncoder, self).encode(o)
-        return ret
+        return ret.encode('utf8')
