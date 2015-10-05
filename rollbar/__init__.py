@@ -59,7 +59,7 @@ else:
         try:
             if isinstance(val, bytes):
                 val.decode('utf8')
-                return val
+                return repr(val)
             else:
                 str(val).encode('utf8')
                 return str(val)
