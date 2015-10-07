@@ -4,8 +4,6 @@ import sys
 import six
 from six.moves import urllib
 
-import repr
-
 iteritems = six.iteritems
 reprlib = six.moves.reprlib
 
