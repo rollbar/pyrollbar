@@ -55,7 +55,8 @@ setup(
         'mock',
         'webob',
         'Flask',
-        'blinker'
+        'blinker',
+        'django'
         ],
     )
 

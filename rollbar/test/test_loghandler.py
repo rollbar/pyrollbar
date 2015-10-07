@@ -38,7 +38,7 @@ class LogHandlerTest(BaseTest):
         logger = self._create_logger()
         logger.warning("Hello %d %s", 1, 'world')
 
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
 
         self.assertEqual(payload['data']['body']['message']['body'], "Hello %d %s")
         self.assertEqual(payload['data']['body']['message']['args'], (1, 'world'))

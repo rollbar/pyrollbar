@@ -3,7 +3,7 @@ import pprint
 import unittest
 
 
-from rollbar import python_major_version
+SNOWMAN = b'\xe2\x98\x83'
 
 
 # from http://hg.python.org/cpython/file/67ada6ab7fe2/Lib/unittest/util.py

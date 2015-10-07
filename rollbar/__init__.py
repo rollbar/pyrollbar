@@ -6,12 +6,10 @@ from __future__ import unicode_literals
 
 __version__ = '0.11.0-beta.1'
 
-import base64
 import copy
 import inspect
 import json
 import logging
-import math
 import os
 import socket
 import sys
@@ -26,21 +24,23 @@ import wsgiref.util
 import requests
 
 import six
-from six.moves import urllib
-from six.moves import reprlib
 
+from rollbar.lib import parse_qs, text, urljoin, urlparse
 
+"""
+#from six.moves import urllib
+#from six.moves import reprlib
 urlparse = urllib.parse.urlparse
 urlunparse = urllib.parse.urlunparse
 parse_qs = urllib.parse.parse_qs
 urlencode = urllib.parse.urlencode
 urljoin = urllib.parse.urljoin
+"""
 
 
 log = logging.getLogger(__name__)
-python_major_version = sys.version_info[0]
 
-
+"""
 if python_major_version <= 2:
     def text(val):
         if isinstance(val, unicode):
@@ -53,7 +53,7 @@ if python_major_version <= 2:
             except UnicodeDecodeError:
                 pass
 
-        return unicode('<Undecodable base64:(%s)>' % base64.b64encode(val).decode('ascii'))
+        return unicode(_undecodable_object_message(val))
 else:
     def text(val):
         try:
@@ -64,7 +64,10 @@ else:
                 str(val).encode('utf8')
                 return str(val)
         except UnicodeDecodeError as err:
-            return '<Undecodable base64:(%s)>' % base64.b64encode(val).decode('ascii')
+            return _undecodable_object_message(val)
+        except TypeError:
+            return str(type(val))
+            """
 
 
 # import request objects from various frameworks, if available
@@ -274,13 +277,14 @@ DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/'
 DEFAULT_TIMEOUT = 3
 
 DEFAULT_LOCALS_SIZES = {
+    'maxlevel': 5,
     'maxdict': 10,
-    'maxarray': 10,
     'maxlist': 10,
     'maxtuple': 10,
     'maxset': 10,
     'maxfrozenset': 10,
     'maxdeque': 10,
+    'maxarray': 10,
     'maxstring': 100,
     'maxlong': 40,
     'maxother': 100,
@@ -315,12 +319,20 @@ SETTINGS = {
 }
 
 # Set in init()
-_repr = None
+#_repr = None
+_transforms = []
 
 _initialized = False
 
 # Do not call repr() on these types while gathering local variables
 blacklisted_local_types = []
+
+
+from rollbar.lib import transforms
+from rollbar.lib.transforms.scrub import ScrubTransform
+from rollbar.lib.transforms.scruburl import ScrubUrlTransform
+from rollbar.lib.transforms.serializable import SerializableTransform
+from rollbar.lib.transforms.shortener import ShortenerTransform
 
 
 ## public api
@@ -337,7 +349,36 @@ def init(access_token, environment='production', **kw):
                  'staging', 'yourname'
     **kw: provided keyword arguments will override keys in SETTINGS.
     """
-    global SETTINGS, agent_log, _initialized, _repr
+    global SETTINGS, agent_log, _initialized, _transforms
+
+    # We will perform these transforms in order:
+    # 1. Serialize the payload to be all python built-in objects
+    # 2. Scrub the payloads based on the key suffixes in SETTINGS['scrub_fields']
+    # 3. Scrub URLs in the payload for keys that end with 'url'
+    # 4. Optional - If local variable gathering is enabled, transform the
+    #       trace frame values using the ShortReprTransform.
+    _transforms = [
+        SerializableTransform(),
+        ScrubTransform(suffixes=[(field,) for field in SETTINGS['scrub_fields']], redact_char='*'),
+        ScrubUrlTransform(params_to_scrub=SETTINGS['scrub_fields'])
+    ]
+
+    # A list of key prefixes to apply our shortener transform to
+    shortener_keys = [
+        ('body', 'request', 'POST'),
+        ('body', 'request', 'json'),
+    ]
+
+    if SETTINGS['locals']['enabled']:
+        shortener_keys.append(('body', 'trace', 'frames', '*', 'code'))
+        shortener_keys.append(('body', 'trace', 'frames', '*', 'args', '*'))
+        shortener_keys.append(('body', 'trace', 'frames', '*', 'kwargs', '*'))
+        shortener_keys.append(('body', 'trace', 'frames', '*', 'locals', '*'))
+
+    shortener = ShortenerTransform(safe_repr=SETTINGS['locals']['safe_repr'],
+                                   keys=shortener_keys,
+                                   **SETTINGS['locals']['sizes'])
+    _transforms.append(shortener)
 
     if not _initialized:
         _initialized = True
@@ -354,9 +395,11 @@ def init(access_token, environment='production', **kw):
         if SETTINGS.get('handler') == 'agent':
             agent_log = _create_agent_log()
 
+        """
         _repr = reprlib.Repr()
         for name, size in SETTINGS['locals']['sizes'].items():
             setattr(_repr, name, size)
+            """
 
 
 def report_exc_info(exc_info=None, request=None, extra_data=None, payload_data=None, level=None, **kw):
@@ -403,7 +446,7 @@ def report_message(message, level='error', request=None, extra_data=None, payloa
         log.exception("Exception while reporting message to Rollbar. %r", e)
 
 
-def send_payload(payload):
+def send_payload(payload, access_token):
     """
     Sends a payload object, (the result of calling _build_payload()).
     Uses the configured handler from SETTINGS['handler']
@@ -416,28 +459,28 @@ def send_payload(payload):
     """
     handler = SETTINGS.get('handler')
     if handler == 'blocking':
-        _send_payload(payload)
+        _send_payload(payload, access_token)
     elif handler == 'agent':
-        payload = ErrorIgnoringJSONEncoder().encode(payload)
-        agent_log.error(payload)
+        #payload = ErrorIgnoringJSONEncoder().encode(payload)
+        agent_log.error(payload, access_token)
     elif handler == 'tornado':
         if TornadoAsyncHTTPClient is None:
             log.error('Unable to find tornado')
             return
-        _send_payload_tornado(payload)
+        _send_payload_tornado(payload, access_token)
     elif handler == 'gae':
         if AppEngineFetch is None:
             log.error('Unable to find AppEngine URLFetch module')
             return
-        _send_payload_appengine(payload)
+        _send_payload_appengine(payload, access_token)
     elif handler == 'twisted':
         if TwistedHTTPClient is None:
             log.error('Unable to find twisted')
             return
-        _send_payload_twisted(payload)
+        _send_payload_twisted(payload, access_token)
     else:
         # default to 'thread'
-        thread = threading.Thread(target=_send_payload, args=(payload,))
+        thread = threading.Thread(target=_send_payload, args=(payload, access_token))
         thread.start()
 
 
@@ -618,7 +661,8 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     }
 
     if extra_data:
-        extra_data = _scrub_obj(extra_data)
+        #extra_data = _scrub_obj(extra_data)
+        extra_data = extra_data
         if isinstance(extra_data, dict):
             data['custom'] = extra_data
         else:
@@ -633,7 +677,7 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
         data = dict_merge(data, payload_data)
 
     payload = _build_payload(data)
-    send_payload(payload)
+    send_payload(payload, data.get('access_token'))
 
     return data['uuid']
 
@@ -655,7 +699,8 @@ def _report_message(message, level, request, extra_data, payload_data):
     }
 
     if extra_data:
-        extra_data = _scrub_obj(extra_data)
+        #extra_data = _scrub_obj(extra_data)
+        extra_data = extra_data
         data['body']['message'].update(extra_data)
 
     _add_request_data(data, request)
@@ -666,7 +711,7 @@ def _report_message(message, level, request, extra_data, payload_data):
         data = dict_merge(data, payload_data)
 
     payload = _build_payload(data)
-    send_payload(payload)
+    send_payload(payload, data.get('access_token'))
 
     return data['uuid']
 
@@ -846,15 +891,18 @@ def _add_locals_data(data, exc_info):
             # Fill in all of the named args
             for named_arg in named_args:
                 if named_arg in local_vars:
-                    args.append(_local_repr(_scrub_obj(local_vars[named_arg], key=named_arg)))
+                    #args.append(_local_repr(_scrub_obj(local_vars[named_arg], key=named_arg)))
+                    args.append(local_vars[named_arg])
 
             # Add any varargs
             if arginfo.varargs is not None:
-                args.extend(map(lambda x: _local_repr(_scrub_obj(x)), local_vars[arginfo.varargs]))
+                #args.extend(map(lambda x: _local_repr(_scrub_obj(x)), local_vars[arginfo.varargs]))
+                args.extend(local_vars[arginfo.varargs])
 
             # Fill in all of the kwargs
             if arginfo.keywords is not None:
-                kw.update(dict((k, _local_repr(_scrub_obj(v, key=k))) for k, v in local_vars[arginfo.keywords].items()))
+                #kw.update(dict((k, _local_repr(_scrub_obj(v, key=k))) for k, v in local_vars[arginfo.keywords].items()))
+                kw.update(local_vars[arginfo.keywords])
 
             if argspec and argspec.defaults:
                 # Put any of the args that have defaults into kwargs
@@ -867,7 +915,8 @@ def _add_locals_data(data, exc_info):
 
             # Optionally fill in locals for this frame
             if local_vars and _check_add_locals(cur_frame, frame_num, num_frames):
-                _locals.update(dict((k, _local_repr(_scrub_obj(v, key=k))) for k, v in local_vars.items()))
+                #_locals.update(dict((k, _local_repr(_scrub_obj(v, key=k))) for k, v in local_vars.items()))
+                _locals.update(local_vars.items())
 
             args = args
             kw = kw
@@ -892,7 +941,7 @@ def _add_request_data(data, request):
     """
     try:
         request_data = _build_request_data(request)
-        request_data = _scrub_request_data(request_data)
+        #request_data = _scrub_request_data(request_data)
     except Exception as e:
         log.exception("Exception while building request_data for Rollbar payload: %r", e)
     else:
@@ -954,14 +1003,16 @@ def _build_request_data(request):
     return None
 
 
+"""
 def _scrub_request_data(request_data):
-    """
+    ""
     Scrubs out sensitive information out of request data
-    """
+    ""
     if request_data:
         for field in ['POST', 'GET', 'headers', 'json']:
             if request_data.get(field):
-                request_data[field] = _scrub_obj(request_data[field])
+                #request_data[field] = _scrub_obj(request_data[field])
+                request_data[field] = request_data[field]
 
         if request_data.get('url'):
             request_data['url'] = _scrub_request_url(request_data['url'])
@@ -985,12 +1036,12 @@ def _scrub_request_url(url_string):
 
 
 def _scrub_obj(obj, replacement_character='*', key=None):
-    """
+    ""
     Given an object, (e.g. dict/list/string) return the same object with sensitive
     data scrubbed out, (replaced with asterisks.)
 
     Fields to scrub out are defined in SETTINGS['scrub_fields'].
-    """
+    ""
     scrub_fields = set(SETTINGS['scrub_fields'])
     memo = set()
 
@@ -1034,6 +1085,7 @@ def _scrub_obj(obj, replacement_character='*', key=None):
             return text(obj)
 
     return _scrub(obj, k=key)
+    """
 
 
 def _in_scrub_fields(val, scrub_fields):
@@ -1048,6 +1100,7 @@ def _in_scrub_fields(val, scrub_fields):
     return False
 
 
+"""
 def _local_repr(obj):
     if isinstance(obj, tuple(blacklisted_local_types)):
         return text(type(obj))
@@ -1066,6 +1119,7 @@ def _local_repr(obj):
         return text(type(obj))
 
     return _repr.repr(obj)
+"""
 
 
 def _is_builtin_type(obj):
@@ -1140,7 +1194,8 @@ def _build_werkzeug_request_data(request):
 
     try:
         if request.json:
-            request_data['body'] = json.dumps(_scrub_obj(request.json))
+            #request_data['body'] = json.dumps(_scrub_obj(request.json))
+            request_data['body'] = request.json
     except Exception:
         pass
 
@@ -1230,22 +1285,26 @@ def _build_payload(data):
     """
     Returns the full payload as a string.
     """
+
+    transformed_data = transforms.transform(data, *_transforms)
     payload = {
         'access_token': SETTINGS['access_token'],
-        'data': data
+        'data': transformed_data
     }
-    return payload
+
+    return json.dumps(payload)
+    #return payload
 
 
-def _send_payload(payload):
+def _send_payload(payload, access_token):
     try:
-        _post_api('item/', payload, access_token=payload.get('access_token'))
+        _post_api('item/', payload, access_token=access_token)
     except Exception as e:
         log.exception('Exception while posting item %r', e)
 
-def _send_payload_appengine(payload):
+def _send_payload_appengine(payload, access_token):
     try:
-        _post_api_appengine('item/', payload, access_token=payload.get('access_token'))
+        _post_api_appengine('item/', payload, access_token=access_token)
     except Exception as e:
         log.exception('Exception while posting item %r', e)
 
@@ -1256,7 +1315,7 @@ def _post_api_appengine(path, payload, access_token=None):
         headers['X-Rollbar-Access-Token'] = access_token
 
     # Serialize this ourselves so we can handle error cases more gracefully
-    payload = ErrorIgnoringJSONEncoder().encode(payload)
+    #payload = ErrorIgnoringJSONEncoder().encode(payload)
 
     url = urljoin(SETTINGS['endpoint'], path)
     resp = AppEngineFetch(url,
@@ -1276,7 +1335,7 @@ def _post_api(path, payload, access_token=None):
         headers['X-Rollbar-Access-Token'] = access_token
 
     # Serialize this ourselves so we can handle error cases more gracefully
-    payload = ErrorIgnoringJSONEncoder().encode(payload)
+    #payload = ErrorIgnoringJSONEncoder().encode(payload)
 
     url = urljoin(SETTINGS['endpoint'], path)
     resp = requests.post(url,
@@ -1296,9 +1355,9 @@ def _get_api(path, access_token=None, endpoint=None, **params):
     return _parse_response(path, access_token, params, resp, endpoint=endpoint)
 
 
-def _send_payload_tornado(payload):
+def _send_payload_tornado(payload, access_token):
     try:
-        _post_api_tornado('item/', payload, access_token=payload.get('access_token'))
+        _post_api_tornado('item/', payload, access_token=access_token)
     except Exception as e:
         log.exception('Exception while posting item %r', e)
 
@@ -1311,7 +1370,7 @@ def _post_api_tornado(path, payload, access_token=None):
         headers['X-Rollbar-Access-Token'] = access_token
 
     # Serialize this ourselves so we can handle error cases more gracefully
-    payload = ErrorIgnoringJSONEncoder().encode(payload)
+    #payload = ErrorIgnoringJSONEncoder().encode(payload)
 
     url = urljoin(SETTINGS['endpoint'], path)
 
@@ -1328,9 +1387,9 @@ def _post_api_tornado(path, payload, access_token=None):
     _parse_response(path, SETTINGS['access_token'], payload, r)
 
 
-def _send_payload_twisted(payload):
+def _send_payload_twisted(payload, access_token):
     try:
-        _post_api_twisted('item/', payload, access_token=payload.get('access_token'))
+        _post_api_twisted('item/', payload, access_token=access_token)
     except Exception as e:
         log.exception('Exception while posting item %r', e)
 
@@ -1343,7 +1402,7 @@ def _post_api_twisted(path, payload, access_token=None):
         headers['X-Rollbar-Access-Token'] = [access_token]
 
     # Serialize this ourselves so we can handle error cases more gracefully
-    payload = ErrorIgnoringJSONEncoder().encode(payload)
+    #payload = ErrorIgnoringJSONEncoder().encode(payload)
 
     url = urljoin(SETTINGS['endpoint'], path)
 
@@ -1440,6 +1499,7 @@ def dict_merge(a, b):
     return result
 
 
+"""
 class ErrorIgnoringJSONEncoder(json.JSONEncoder):
     def __init__(self, **kw):
         self._orig_ensure_ascii = kw.get('ensure_ascii', True)
@@ -1456,6 +1516,7 @@ class ErrorIgnoringJSONEncoder(json.JSONEncoder):
             else:
                 raise
 
+        part = None
         while True:
             try:
                 part = next(iterator)
@@ -1465,12 +1526,15 @@ class ErrorIgnoringJSONEncoder(json.JSONEncoder):
 
                 yield part
             except (UnicodeDecodeError, TypeError) as err:
-                err_message = str(err)
-                if isinstance(err, TypeError) and err_message.endswith('is not JSON serializable'):
-                    part = err_message[:err_message.find('is not JSON serializable', 0)]
-                message = '"<Undecodable object base64:(%s)>"' % \
-                          base64.b64encode(part).decode('ascii')
-                yield message
+                if part:
+                    err_message = str(err)
+                    if isinstance(err, TypeError) and err_message.endswith('is not JSON serializable'):
+                        part = err_message[:err_message.find('is not JSON serializable', 0)]
+
+                    message = '"%s"' % _undecodable_object_message(part)
+                    yield message
+                else:
+                    raise
             except StopIteration:
                 break
 
@@ -1483,3 +1547,8 @@ class ErrorIgnoringJSONEncoder(json.JSONEncoder):
             return ret.encode('utf8')
 
         return ret
+
+
+def _undecodable_object_message(data):
+    return '<Undecodable base64:(%s)>' % base64.b64encode(data).decode('ascii')
+    """
