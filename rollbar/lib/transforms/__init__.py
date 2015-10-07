@@ -2,9 +2,23 @@ import collections
 
 from rollbar.lib import python_major_version, string_types, text, integer_types, traverse
 
+_ALLOWED_CIRCULAR_REFERENCE_TYPES = [bool, type(None)]
+
+if isinstance(string_types, tuple):
+    _ALLOWED_CIRCULAR_REFERENCE_TYPES.extend(string_types)
+else:
+    _ALLOWED_CIRCULAR_REFERENCE_TYPES.append(string_types)
+
+if isinstance(integer_types, tuple):
+    _ALLOWED_CIRCULAR_REFERENCE_TYPES.extend(integer_types)
+else:
+    _ALLOWED_CIRCULAR_REFERENCE_TYPES.append(integer_types)
+
 
 class Transform(object):
-    _allowed_circular_reference_types = (string_types, integer_types, bool, type(None))
+    @property
+    def _allowed_circular_reference_types(self):
+        return tuple(_ALLOWED_CIRCULAR_REFERENCE_TYPES)
 
     def default(self, o, key=None):
         return o

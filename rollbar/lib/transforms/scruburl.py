@@ -4,24 +4,31 @@ from rollbar.lib import iteritems, urlsplit, urlencode, urlunsplit, parse_qs
 from rollbar.lib.transforms.scrub import ScrubTransform
 
 
-#_starts_with_auth_re = re.compile(r'^[a-zA-Z0-9-_]*(:[^@])?@')
-_starts_with_auth_re = re.compile(r'^[a-zA-Z0-9-_]*(:[^@]+)?@')
+_starts_with_auth_re = re.compile(r'^[a-zA-Z0-9-_]*(:[^@/]+)?@')
 _starts_with_colon_double_slash = re.compile(r'^:?//')
 
 class ScrubUrlTransform(ScrubTransform):
     def __init__(self,
+                 suffixes=None,
                  scrub_username=False,
                  scrub_password=True,
                  params_to_scrub=None,
                  redact_char='-',
                  randomize_len=True):
 
-        suffixes = [(p,) for p in params_to_scrub or []]
         super(ScrubUrlTransform, self).__init__(suffixes=suffixes,
                                                 redact_char=redact_char,
                                                 randomize_len=randomize_len)
         self.scrub_username = scrub_username
         self.scrub_password = scrub_password
+        self.params_to_scrub = set(map(lambda x: x.lower(), params_to_scrub))
+
+    def _in_scrub_fields(self, key):
+        if not key:
+            # This can happen if the transform is applied to a non-object,
+            # like a string.
+            return True
+        return super(ScrubUrlTransform, self)._in_scrub_fields(key)
 
     def _scrub_url(self, url_string, key=None):
         missing_scheme = False
@@ -29,11 +36,11 @@ class ScrubUrlTransform(ScrubTransform):
 
         if _starts_with_colon_double_slash.match(url_string):
             missing_scheme = True
-            url_string = 'remove%s' % url_string
+            url_string = 'remove:%s' % url_string.lstrip(':')
         elif _starts_with_auth_re.match(url_string):
             missing_scheme = True
             missing_colon_double_slash = True
-            url_string = 'remove://%s' % url_string.lstrip(':')
+            url_string = 'remove://%s' % url_string
 
         try:
             url_parts = urlsplit(url_string)
@@ -48,7 +55,7 @@ class ScrubUrlTransform(ScrubTransform):
             return url_string
 
         for qs_param, vals in iteritems(qs_params):
-            if self._in_scrub_fields((qs_param,)):
+            if qs_param.lower() in self.params_to_scrub:
                 vals2 = map(self._redact, vals)
                 qs_params[qs_param] = vals2
 
@@ -81,13 +88,19 @@ class ScrubUrlTransform(ScrubTransform):
         return o
 
     def transform_py2_str(self, o, key=None):
-        return self._scrub_url(o, key=key)
+        if self._in_scrub_fields(key):
+            return self._scrub_url(o, key=key)
+        return super(ScrubUrlTransform, self).transform_py2_str(o, key=key)
 
     def transform_py3_bytes(self, o, key=None):
-        return self._scrub_url(o, key=key)
+        if self._in_scrub_fields(key):
+            return self._scrub_url(o, key=key)
+        return super(ScrubUrlTransform, self).transform_py3_bytes(o, key=key)
 
     def transform_unicode(self, o, key=None):
-        return self._scrub_url(o, key=key)
+        if self._in_scrub_fields(key):
+            return self._scrub_url(o, key=key)
+        return super(ScrubUrlTransform, self).transform_unicode(o, key=key)
 
 
 __all__ = ['ScrubUrlTransform']

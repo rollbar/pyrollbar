@@ -84,7 +84,7 @@ class FlaskTest(BaseTest):
         self.assertEquals(resp.status_code, 500)
 
         self.assertEqual(send_payload.called, True)
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
         data = payload['data']
 
         self.assertIn('body', data)
@@ -107,14 +107,15 @@ class FlaskTest(BaseTest):
         if not ALLOWED_PYTHON_VERSION:
             return
         
-        json_body = json.dumps({"hello": "world"})
-        resp = self.client.post('/cause_error', data=json_body,
+        json_body = {"hello": "world"}
+        json_body_str = json.dumps(json_body)
+        resp = self.client.post('/cause_error', data=json_body_str,
             headers={'Content-Type': 'application/json', 'X-Forwarded-For': '5.6.7.8'})
         
         self.assertEquals(resp.status_code, 500)
 
         self.assertEqual(send_payload.called, True)
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
         data = payload['data']
 
         self.assertIn('body', data)

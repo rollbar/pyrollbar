@@ -17,6 +17,7 @@ urlunsplit = urllib.parse.urlunsplit
 parse_qs = urllib.parse.parse_qs
 urlencode = urllib.parse.urlencode
 urljoin = urllib.parse.urljoin
+quote = urllib.parse.quote
 
 
 _version = sys.version_info
@@ -45,7 +46,7 @@ else:
 
 
 def do_for_python_version(two_fn, three_fn, *args, **kw):
-    if python_major_version() < 2:
+    if python_major_version() < 3:
         return two_fn(*args, **kw)
     return three_fn(*args, **kw)
 

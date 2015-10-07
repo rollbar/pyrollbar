@@ -305,6 +305,7 @@ SETTINGS = {
     'timeout': DEFAULT_TIMEOUT,
     'agent.log_file': 'log.rollbar',
     'scrub_fields': ['passwd', 'password', 'secret', 'confirm_password', 'password_confirmation'],
+    'url_fields': ['url'],
     'notifier': {
         'name': 'pyrollbar',
         'version': VERSION
@@ -360,7 +361,7 @@ def init(access_token, environment='production', **kw):
     _transforms = [
         SerializableTransform(),
         ScrubTransform(suffixes=[(field,) for field in SETTINGS['scrub_fields']], redact_char='*'),
-        ScrubUrlTransform(params_to_scrub=SETTINGS['scrub_fields'])
+        ScrubUrlTransform(suffixes=[(field,) for field in SETTINGS['url_fields']], params_to_scrub=SETTINGS['scrub_fields'])
     ]
 
     # A list of key prefixes to apply our shortener transform to
@@ -1281,15 +1282,18 @@ def _build_server_data():
     return server_data
 
 
+def _transform(obj):
+    return transforms.transform(obj, *_transforms)
+
+
 def _build_payload(data):
     """
     Returns the full payload as a string.
     """
 
-    transformed_data = transforms.transform(data, *_transforms)
     payload = {
         'access_token': SETTINGS['access_token'],
-        'data': transformed_data
+        'data': _transform(data)
     }
 
     return json.dumps(payload)

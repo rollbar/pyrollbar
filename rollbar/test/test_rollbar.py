@@ -10,16 +10,9 @@ except ImportError:
 import unittest
 
 import rollbar
-from rollbar.lib import urlparse, parse_qs, python_major_version
+from rollbar.lib import urlparse, parse_qs, python_major_version, quote
 
-try:
-    # Python 3
-    from urllib.parse import quote
-except ImportError:
-    from urllib import quote
-
-
-from rollbar.test import BaseTest
+from rollbar.test import BaseTest, SNOWMAN
 
 try:
     eval("""
@@ -81,41 +74,6 @@ class RollbarTest(BaseTest):
         self.assertIn('argv', server_data)
         self.assertEqual(server_data['branch'], 'master')
         self.assertEqual(server_data['root'], '/home/test/')
-
-    def test_webob_request_data(self):
-        rollbar.SETTINGS['scrub_fields'].extend(['token', 'secret', 'cookies', 'authorization'])
-
-        import webob
-        request = webob.Request.blank('/the/path?q=hello&password=hunter2',
-            base_url = 'http://example.com',
-            headers = {
-                'X-Real-Ip': '5.6.7.8',
-                'Cookies': 'name=value; password=hash;',
-                'Authorization': 'I am from NSA'
-            },
-            POST = 'foo=bar&confirm_password=hunter3&token=secret')
-        
-        unscrubbed = rollbar._build_webob_request_data(request)
-        self.assertEqual(unscrubbed['url'], 'http://example.com/the/path?q=hello&password=hunter2')
-        self.assertEqual(unscrubbed['user_ip'], '5.6.7.8')
-        self.assertDictEqual(unscrubbed['GET'], {'q': 'hello', 'password': 'hunter2'})
-        self.assertDictEqual(unscrubbed['POST'], {'foo': 'bar', 'confirm_password': 'hunter3', 'token': 'secret'})
-        self.assertEqual('5.6.7.8', unscrubbed['headers']['X-Real-Ip'])
-        self.assertEqual('name=value; password=hash;', unscrubbed['headers']['Cookies'])
-        self.assertEqual('I am from NSA', unscrubbed['headers']['Authorization'])
-
-        scrubbed = rollbar._scrub_request_data(unscrubbed)
-        self.assertTrue(
-            # order might get switched; that's ok
-            scrubbed['url'] == 'http://example.com/the/path?q=hello&password=-------'
-            or
-            scrubbed['url'] == 'http://example.com/the/path?password=-------&q=hello'
-            )
-        self.assertDictEqual(scrubbed['GET'], {'q': 'hello', 'password': '*******'})
-        self.assertDictEqual(scrubbed['POST'], {'foo': 'bar', 'confirm_password': '*******', 'token': '******'})
-        self.assertEqual('5.6.7.8', scrubbed['headers']['X-Real-Ip'])
-        self.assertEqual('**************************', scrubbed['headers']['Cookies'])
-        self.assertEqual('*************', scrubbed['headers']['Authorization'])
 
     def test_wsgi_request_data(self):
         request = {
@@ -226,81 +184,6 @@ class RollbarTest(BaseTest):
         self.assertIn('body', payload['data']['body']['message'])
         self.assertEqual(payload['data']['body']['message']['body'], 'foo')
 
-    def test_url_scrubbing(self):
-        url = 'http://foo.com/?password=password&foo=bar&secret=secret'
-
-        scrubbed_url = urlparse(rollbar._scrub_request_url(url))
-        qs_params = parse_qs(scrubbed_url.query)
-
-        self.assertDictEqual(qs_params, {
-            'password': ['--------'],
-            'foo': ['bar'],
-            'secret': ['------']
-        })
-
-    def test_utf8_url_val_scrubbing(self):
-        url = 'http://foo.com/?password=password&foo=bar&secret=%s' % SNOWMAN
-
-        scrubbed_url = urlparse(rollbar._scrub_request_url(url))
-        qs_params = parse_qs(scrubbed_url.query)
-
-        self.assertDictEqual(qs_params, {
-            'password': ['--------'],
-            'foo': ['bar'],
-            'secret': [''.join(['-'] * len(SNOWMAN))]
-        })
-
-
-    def test_utf8_url_key_scrubbing(self):
-        url = 'http://foo.com/?password=password&foo=bar&%s=secret' % quote(SNOWMAN)
-
-        rollbar.SETTINGS['scrub_fields'].append(SNOWMAN)
-        scrubbed_url = rollbar._scrub_request_url(url)
-
-        qs_params = parse_qs(urlparse(scrubbed_url).query)
-
-        self.assertEqual(['------'], qs_params[SNOWMAN])
-        self.assertEqual(['--------'], qs_params['password'])
-        self.assertEqual(['bar'], qs_params['foo'])
-
-
-    def test_unicode_val_scrubbing(self):
-        s = '%s is a unicode snowman!' % SNOWMAN
-        obj = {
-            'password': s
-        }
-
-        scrubbed = rollbar._scrub_obj(obj)
-
-        self.assertDictEqual(scrubbed, {
-            'password': ''.join(['*'] * len(s))
-        })
-
-    def test_unicode_key_scrubbing(self):
-        s = 'is a unicode snowman!'
-        obj = {
-            SNOWMAN: s
-        }
-
-        rollbar.SETTINGS['scrub_fields'].append(SNOWMAN)
-        scrubbed = rollbar._scrub_obj(obj)
-
-        self.assertDictEqual(scrubbed, {
-            SNOWMAN: ''.join(['*'] * len(s))
-        })
-
-        obj2 = {
-            SNOWMAN: s
-        }
-
-        rollbar.SETTINGS['scrub_fields'].pop()
-        rollbar.SETTINGS['scrub_fields'].append(SNOWMAN)
-        scrubbed = rollbar._scrub_obj(obj2)
-
-        self.assertDictEqual(scrubbed, {
-            SNOWMAN: ''.join(['*'] * len(s))
-        })
-
     @mock.patch('rollbar.send_payload')
     def test_uuid(self, send_payload):
         uuid = rollbar.report_message('foo')
@@ -308,7 +191,6 @@ class RollbarTest(BaseTest):
         payload = json.loads(send_payload.call_args[0][0])
 
         self.assertEqual(payload['data']['uuid'], uuid)
-
 
     @mock.patch('rollbar.send_payload')
     def test_report_exc_info_level(self, send_payload):
@@ -901,6 +783,44 @@ class RollbarTest(BaseTest):
             json.loads(post.call_args[1]['data'])
         except:
             self.assertTrue(False)
+
+    def test_scrub_webob_request_data(self):
+        rollbar.SETTINGS['scrub_fields'].extend(['token', 'secret', 'cookies', 'authorization'])
+        rollbar.init(_test_access_token, locals={'enabled': True}, dummy_key='asdf', handler='blocking', timeout=12345)
+
+        import webob
+        request = webob.Request.blank('/the/path?q=hello&password=hunter2',
+                                      base_url='http://example.com',
+                                      headers={
+                                          'X-Real-Ip': '5.6.7.8',
+                                          'Cookies': 'name=value; password=hash;',
+                                          'Authorization': 'I am from NSA'
+                                      },
+                                      POST='foo=bar&confirm_password=hunter3&token=secret')
+
+        unscrubbed = rollbar._build_webob_request_data(request)
+        self.assertEqual(unscrubbed['url'], 'http://example.com/the/path?q=hello&password=hunter2')
+        self.assertEqual(unscrubbed['user_ip'], '5.6.7.8')
+        self.assertDictEqual(unscrubbed['GET'], {'q': 'hello', 'password': 'hunter2'})
+        self.assertDictEqual(unscrubbed['POST'], {'foo': 'bar', 'confirm_password': 'hunter3', 'token': 'secret'})
+        self.assertEqual('5.6.7.8', unscrubbed['headers']['X-Real-Ip'])
+        self.assertEqual('name=value; password=hash;', unscrubbed['headers']['Cookies'])
+        self.assertEqual('I am from NSA', unscrubbed['headers']['Authorization'])
+
+        scrubbed = rollbar._transform(unscrubbed)
+        self.assertRegexpMatches(scrubbed['url'], r'http://example.com/the/path\?(q=hello&password=-+)|(password=-+&q=hello)')
+
+        self.assertEqual(scrubbed['GET']['q'], 'hello')
+        self.assertRegexpMatches(scrubbed['GET']['password'], r'\*+')
+
+        self.assertEqual(scrubbed['POST']['foo'], 'bar')
+        self.assertRegexpMatches(scrubbed['POST']['confirm_password'], r'\*+')
+        self.assertRegexpMatches(scrubbed['POST']['token'], r'\*+')
+
+        self.assertEqual('5.6.7.8', scrubbed['headers']['X-Real-Ip'])
+
+        self.assertRegexpMatches(scrubbed['headers']['Cookies'], r'\*+')
+        self.assertRegexpMatches(scrubbed['headers']['Authorization'], r'\*+')
 
 
 ### Helpers

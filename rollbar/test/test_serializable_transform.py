@@ -22,9 +22,11 @@ class SerializableTransformTest(BaseTest):
         serializable = SerializableTransform(whitelist_types=whitelist)
         result = transforms.transform(start, serializable)
 
+        """
         #print start
         print result
         print expected
+        """
 
         if not skip_id_check:
             self.assertNotEqual(id(result), id(expected))
@@ -181,7 +183,7 @@ class SerializableTransformTest(BaseTest):
 
         start = {'hello': 'world', 'custom': CustomRepr()}
         expected = copy.deepcopy(start)
-        expected['custom'] = "<class 'test_serializable_transform.CustomRepr'>"
+        expected['custom'] = "<class 'rollbar.test.test_serializable_transform.CustomRepr'>"
         self._assertSerialized(start, expected, whitelist=[CustomRepr])
 
     def test_encode_with_custom_repr_returns_unicode(self):

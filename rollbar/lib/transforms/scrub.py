@@ -13,9 +13,6 @@ class ScrubTransform(Transform):
         self.randomize_len = randomize_len
 
     def _in_scrub_fields(self, key):
-        if not key:
-            return False
-
         return self.suffix_matcher(key)
 
     def _redact(self, val):

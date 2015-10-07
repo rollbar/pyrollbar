@@ -2,6 +2,7 @@
 Tests for the RollbarHandler logging handler
 """
 import copy
+import json
 import logging
 import mock
 import sys
@@ -41,10 +42,8 @@ class LogHandlerTest(BaseTest):
         payload = json.loads(send_payload.call_args[0][0])
 
         self.assertEqual(payload['data']['body']['message']['body'], "Hello %d %s")
-        self.assertEqual(payload['data']['body']['message']['args'], (1, 'world'))
-
+        self.assertEqual(payload['data']['body']['message']['args'], [1, 'world'])
         self.assertEqual(payload['data']['body']['message']['record']['name'], __name__)
-
 
     def test_request_is_get_from_log_record_if_present(self):
         logger = self._create_logger()

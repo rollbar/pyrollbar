@@ -1,6 +1,4 @@
-import collections
-import copy
-
+import rollbar
 from rollbar.lib import iteritems, transforms, string_types, urlparse, parse_qs
 from rollbar.lib.transforms.scruburl import ScrubUrlTransform
 
@@ -16,21 +14,24 @@ class ScrubUrlTransformTest(BaseTest):
                         scrub_password=True,
                         redact_char='-',
                         skip_id_check=False):
-        scrubber = ScrubUrlTransform(params_to_scrub=params_to_scrub,
+        scrubber = ScrubUrlTransform(suffixes=[['*']],
+                                     params_to_scrub=params_to_scrub,
                                      scrub_username=scrub_username,
                                      scrub_password=scrub_password,
                                      redact_char=redact_char,
                                      randomize_len=False)
         result = transforms.transform(start, scrubber)
 
+        """
         print start
         print result
         print expected
+        """
 
         if not skip_id_check:
             self.assertNotEqual(id(result), id(expected))
 
-        self.assertEqual(type(result), type(expected))
+        self.assertEqual(type(expected), type(result))
         self.assertIsInstance(result, string_types)
         self._compare_urls(expected, result)
 
@@ -51,7 +52,7 @@ class ScrubUrlTransformTest(BaseTest):
     def test_no_scrub(self):
         obj = 'http://hello.com/?foo=bar'
         expected = obj
-        self._assertScrubbed(['password'], obj, expected)
+        self._assertScrubbed(['password'], obj, expected, skip_id_check=True)
 
     def test_not_url(self):
         obj = 'I am a plain\'ol string'
@@ -62,6 +63,16 @@ class ScrubUrlTransformTest(BaseTest):
         obj = 'http://foo.com/asdf?password=secret'
         expected = obj.replace('secret', '------')
         self._assertScrubbed(['password'], obj, expected)
+
+    def test_scrub_utf8_url_params(self):
+        obj = 'http://foo.com/asdf?password=%s' % SNOWMAN
+        expected = obj.replace(SNOWMAN, '---')
+        self._assertScrubbed(['password'], obj, expected)
+
+    def test_scrub_utf8_url_keys(self):
+        obj = 'http://foo.com/asdf?%s=secret' % SNOWMAN
+        expected = obj.replace('secret', '------')
+        self._assertScrubbed([SNOWMAN], obj, expected)
 
     def test_scrub_multi_url_params(self):
         obj = 'http://foo.com/asdf?password=secret&password=secret2&token=TOK&clear=text'

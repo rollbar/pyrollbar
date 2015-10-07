@@ -1,6 +1,7 @@
 import collections
 import copy
 
+import rollbar
 from rollbar.lib import transforms
 from rollbar.lib.transforms.scrub import ScrubTransform
 
@@ -12,9 +13,11 @@ class ScrubTransformTest(BaseTest):
         scrubber = ScrubTransform(suffixes=suffixes, redact_char=redact_char, randomize_len=False)
         result = transforms.transform(start, scrubber)
 
+        """
         print start
         print result
         print expected
+        """
 
         if not skip_id_check:
             self.assertNotEqual(id(result), id(expected))
@@ -174,3 +177,4 @@ class ScrubTransformTest(BaseTest):
             'password': '***'
         }
         self._assertScrubbed([['password']], obj, expected)
+
