@@ -54,10 +54,7 @@ setup(
     tests_require=[
         'mock',
         'webob',
-        'blinker',
-        'Flask',
-        'Django',
-        'Twisted'
+        'blinker'
         ],
     )
 
