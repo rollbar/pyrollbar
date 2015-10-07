@@ -1,7 +1,10 @@
 import difflib
 import pprint
+import re
 import unittest
 
+
+from rollbar.lib import string_types
 
 SNOWMAN = b'\xe2\x98\x83'
 
@@ -78,3 +81,12 @@ class BaseTest(unittest.TestCase):
             standardMsg = '%s unexpectedly found in %s' % (safe_repr(member),
                                                         safe_repr(container))
             self.fail(self._formatMessage(msg, standardMsg))
+
+    def assertRegexpMatches(self, text, expected_regexp, msg=None):
+        """Fail the test unless the text matches the regular expression."""
+        if isinstance(expected_regexp, string_types):
+            expected_regexp = re.compile(expected_regexp)
+        if not expected_regexp.search(text):
+            msg = msg or "Regexp didn't match"
+            msg = '%s: %r not found in %r' % (msg, expected_regexp.pattern, text)
+            raise self.failureException(msg)

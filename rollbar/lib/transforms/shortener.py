@@ -8,7 +8,7 @@ from rollbar.lib.transforms import Transform
 
 _type_name_mapping = {
     'string': string_types,
-    'long': long,
+    'long': integer_types,
     'mapping': collections.Mapping,
     'list': list,
     'tuple': tuple,
