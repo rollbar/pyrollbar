@@ -24,7 +24,7 @@ import requests
 
 import six
 
-from rollbar.lib import parse_qs, text, urljoin, urlparse
+from rollbar.lib import dict_merge, parse_qs, text, urljoin, urlparse
 
 
 log = logging.getLogger(__name__)
@@ -356,7 +356,6 @@ def init(access_token, environment='production', **kw):
             agent_log = _create_agent_log()
 
 
-
 def report_exc_info(exc_info=None, request=None, extra_data=None, payload_data=None, level=None, **kw):
     """
     Reports an exception to Rollbar, using exc_info (from calling sys.exc_info())
@@ -615,7 +614,6 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     }
 
     if extra_data:
-        #extra_data = _scrub_obj(extra_data)
         extra_data = extra_data
         if isinstance(extra_data, dict):
             data['custom'] = extra_data
@@ -891,7 +889,6 @@ def _add_request_data(data, request):
     """
     try:
         request_data = _build_request_data(request)
-        #request_data = _scrub_request_data(request_data)
     except Exception as e:
         log.exception("Exception while building request_data for Rollbar payload: %r", e)
     else:
@@ -953,129 +950,6 @@ def _build_request_data(request):
     return None
 
 
-"""
-def _scrub_request_data(request_data):
-    ""
-    Scrubs out sensitive information out of request data
-    ""
-    if request_data:
-        for field in ['POST', 'GET', 'headers', 'json']:
-            if request_data.get(field):
-                #request_data[field] = _scrub_obj(request_data[field])
-                request_data[field] = request_data[field]
-
-        if request_data.get('url'):
-            request_data['url'] = _scrub_request_url(request_data['url'])
-
-    return request_data
-
-
-def _scrub_request_url(url_string):
-    url = urlparse(url_string)
-    qs_params = parse_qs(url.query)
-
-    # use dash for replacement character so it looks better since it wont be url escaped
-    scrubbed_qs_params = _scrub_obj(qs_params, replacement_character='-')
-
-    scrubbed_qs = urlencode(scrubbed_qs_params, doseq=True)
-
-    scrubbed_url = (url.scheme, url.netloc, url.path, url.params, scrubbed_qs, url.fragment)
-    scrubbed_url_string = urlunparse(scrubbed_url)
-
-    return scrubbed_url_string
-
-
-def _scrub_obj(obj, replacement_character='*', key=None):
-    ""
-    Given an object, (e.g. dict/list/string) return the same object with sensitive
-    data scrubbed out, (replaced with asterisks.)
-
-    Fields to scrub out are defined in SETTINGS['scrub_fields'].
-    ""
-    scrub_fields = set(SETTINGS['scrub_fields'])
-    memo = set()
-
-    def _scrub(obj, k=None):
-        # Do circular reference checks only for containers
-        obj_id = id(obj)
-        if obj_id in memo:
-            return '<Circular Reference>'
-
-        if k is not None and _in_scrub_fields(k, scrub_fields):
-            if isinstance(obj, list):
-                memo.add(obj_id)
-                return [_scrub(v, k) for v in obj]
-            elif isinstance(obj, dict):
-                memo.add(obj_id)
-                return {replacement_character: replacement_character}
-            else:
-                try:
-                    return replacement_character * len(obj)
-                except:
-                    return replacement_character
-
-        elif isinstance(obj, dict):
-            memo.add(obj_id)
-            return dict((_k,  _scrub(v, _k)) for _k, v in obj.items())
-        elif isinstance(obj, list):
-            memo.add(obj_id)
-            return [_scrub(x, k) for x in obj]
-        elif isinstance(obj, tuple):
-            memo.add(obj_id)
-            return tuple([_scrub(x, k) for x in obj])
-        elif isinstance(obj, float) and math.isnan(obj):
-            return 'NaN'
-        elif isinstance(obj, float) and math.isinf(obj):
-            return 'Infinity'
-        elif isinstance(obj, six.integer_types + (float,)):
-            return obj
-        elif obj is None:
-            return None
-        else:
-            return text(obj)
-
-    return _scrub(obj, k=key)
-    """
-
-
-def _in_scrub_fields(val, scrub_fields):
-    if isinstance(val, six.string_types):
-        val = text(val)
-        if val:
-            val = val.lower()
-            for field in set(scrub_fields):
-                if text(field) == val:
-                    return True
-
-    return False
-
-
-"""
-def _local_repr(obj):
-    if isinstance(obj, tuple(blacklisted_local_types)):
-        return text(type(obj))
-
-    is_builtin = _is_builtin_type(obj)
-
-    if is_builtin:
-        orig_reprd = repr(obj)
-        _reprd = _repr.repr(obj)
-        if orig_reprd == _reprd:
-            return obj
-
-        return _reprd
-
-    if SETTINGS.get('locals', {}).get('safe_repr'):
-        return text(type(obj))
-
-    return _repr.repr(obj)
-"""
-
-
-def _is_builtin_type(obj):
-    return obj.__class__.__module__ in ('__builtin__', 'builtins')
-
-
 def _build_webob_request_data(request):
     request_data = {
         'url': request.url,
@@ -1111,6 +985,7 @@ def _extract_wsgi_headers(items):
             header_name = '-'.join(k[len('HTTP_'):].replace('_', ' ').title().split(' '))
             headers[header_name] = v
     return headers
+
 
 def _build_django_request_data(request):
     request_data = {
@@ -1246,7 +1121,6 @@ def _build_payload(data):
     }
 
     return json.dumps(payload)
-    #return payload
 
 
 def _send_payload(payload, access_token):
@@ -1255,20 +1129,19 @@ def _send_payload(payload, access_token):
     except Exception as e:
         log.exception('Exception while posting item %r', e)
 
+
 def _send_payload_appengine(payload, access_token):
     try:
         _post_api_appengine('item/', payload, access_token=access_token)
     except Exception as e:
         log.exception('Exception while posting item %r', e)
 
+
 def _post_api_appengine(path, payload, access_token=None):
     headers = {'Content-Type': 'application/json'}
 
     if access_token is not None:
         headers['X-Rollbar-Access-Token'] = access_token
-
-    # Serialize this ourselves so we can handle error cases more gracefully
-    #payload = ErrorIgnoringJSONEncoder().encode(payload)
 
     url = urljoin(SETTINGS['endpoint'], path)
     resp = AppEngineFetch(url,
@@ -1281,14 +1154,12 @@ def _post_api_appengine(path, payload, access_token=None):
 
     return _parse_response(path, SETTINGS['access_token'], payload, resp)
 
+
 def _post_api(path, payload, access_token=None):
     headers = {'Content-Type': 'application/json'}
 
     if access_token is not None:
         headers['X-Rollbar-Access-Token'] = access_token
-
-    # Serialize this ourselves so we can handle error cases more gracefully
-    #payload = ErrorIgnoringJSONEncoder().encode(payload)
 
     url = urljoin(SETTINGS['endpoint'], path)
     resp = requests.post(url,
@@ -1322,9 +1193,6 @@ def _post_api_tornado(path, payload, access_token=None):
     if access_token is not None:
         headers['X-Rollbar-Access-Token'] = access_token
 
-    # Serialize this ourselves so we can handle error cases more gracefully
-    #payload = ErrorIgnoringJSONEncoder().encode(payload)
-
     url = urljoin(SETTINGS['endpoint'], path)
 
     resp = yield TornadoAsyncHTTPClient().fetch(
@@ -1353,9 +1221,6 @@ def _post_api_twisted(path, payload, access_token=None):
 
     if access_token is not None:
         headers['X-Rollbar-Access-Token'] = [access_token]
-
-    # Serialize this ourselves so we can handle error cases more gracefully
-    #payload = ErrorIgnoringJSONEncoder().encode(payload)
 
     url = urljoin(SETTINGS['endpoint'], path)
 
@@ -1433,75 +1298,3 @@ def _wsgi_extract_user_ip(environ):
     if real_ip:
         return real_ip
     return environ['REMOTE_ADDR']
-
-
-# http://www.xormedia.com/recursively-merge-dictionaries-in-python.html
-def dict_merge(a, b):
-    '''recursively merges dict's. not just simple a['key'] = b['key'], if
-    both a and bhave a key who's value is a dict then dict_merge is called
-    on both values and the result stored in the returned dictionary.'''
-    if not isinstance(b, dict):
-        return b
-
-    result = a
-    for k, v in b.items():
-        if k in result and isinstance(result[k], dict):
-            result[k] = dict_merge(result[k], v)
-        else:
-            result[k] = copy.deepcopy(v)
-    return result
-
-
-"""
-class ErrorIgnoringJSONEncoder(json.JSONEncoder):
-    def __init__(self, **kw):
-        self._orig_ensure_ascii = kw.get('ensure_ascii', True)
-        kw.setdefault('skipkeys', True)
-        kw['ensure_ascii'] = False
-        super(ErrorIgnoringJSONEncoder, self).__init__(**kw)
-
-    def iterencode(self, o, _one_shot=False):
-        try:
-            iterator = super(ErrorIgnoringJSONEncoder, self).iterencode(o, _one_shot=False)
-        except TypeError as e:
-            if "unexpected keyword argument '_one_shot'" in str(e):
-                iterator = super(ErrorIgnoringJSONEncoder, self).iterencode(o)
-            else:
-                raise
-
-        part = None
-        while True:
-            try:
-                part = next(iterator)
-                if (python_major_version > 2 and isinstance(part, bytes)) or \
-                        (python_major_version < 3 and isinstance(part, str)):
-                    part = part.decode('utf8')
-
-                yield part
-            except (UnicodeDecodeError, TypeError) as err:
-                if part:
-                    err_message = str(err)
-                    if isinstance(err, TypeError) and err_message.endswith('is not JSON serializable'):
-                        part = err_message[:err_message.find('is not JSON serializable', 0)]
-
-                    message = '"%s"' % _undecodable_object_message(part)
-                    yield message
-                else:
-                    raise
-            except StopIteration:
-                break
-
-    def default(self, o):
-        return text(o)
-
-    def encode(self, o):
-        ret = super(ErrorIgnoringJSONEncoder, self).encode(o)
-        if python_major_version < 3:
-            return ret.encode('utf8')
-
-        return ret
-
-
-def _undecodable_object_message(data):
-    return '<Undecodable base64:(%s)>' % base64.b64encode(data).decode('ascii')
-    """

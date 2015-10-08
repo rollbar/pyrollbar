@@ -1,3 +1,4 @@
+import copy
 import os
 import sys
 
@@ -151,3 +152,24 @@ def build_key_matcher(prefixes_or_suffixes, type='prefix', case_sensitive=False)
 
 def is_builtin_type(obj):
     return obj.__class__.__module__ in ('__builtin__', 'builtins')
+
+
+# http://www.xormedia.com/recursively-merge-dictionaries-in-python.html
+def dict_merge(a, b):
+    """
+    Recursively merges dict's. not just simple a['key'] = b['key'], if
+    both a and bhave a key who's value is a dict then dict_merge is called
+    on both values and the result stored in the returned dictionary.
+    """
+
+    if not isinstance(b, dict):
+        return b
+
+    result = a
+    for k, v in b.items():
+        if k in result and isinstance(result[k], dict):
+            result[k] = dict_merge(result[k], v)
+        else:
+            result[k] = copy.deepcopy(v)
+
+    return result
