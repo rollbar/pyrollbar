@@ -54,7 +54,8 @@ setup(
     tests_require=[
         'mock',
         'webob',
-        'blinker'
+        'blinker',
+        'unittest2'
         ],
     )
 
