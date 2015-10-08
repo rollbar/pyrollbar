@@ -563,7 +563,15 @@ class RollbarTest(BaseTest):
 
         payload = json.loads(send_payload.call_args[0][0])
 
-        self.assertTrue(payload['data']['body']['trace']['frames'][-1]['locals']['obj'].startswith('<Circular reference'))
+        self.assertTrue(
+            (isinstance(payload['data']['body']['trace']['frames'][-1]['locals']['obj'], dict) and
+             'child' in payload['data']['body']['trace']['frames'][-1]['locals']['obj'])
+
+             or
+
+            (isinstance(payload['data']['body']['trace']['frames'][-1]['locals']['obj'], str) and
+             payload['data']['body']['trace']['frames'][-1]['locals']['obj'].startswith('<Circular reference'))
+        )
 
     @mock.patch('rollbar.send_payload')
     def test_scrub_local_ref(self, send_payload):

@@ -198,7 +198,12 @@ class SerializableTransformTest(BaseTest):
 
         start = {'hello': 'world', 'custom': CustomRepr()}
         expected = copy.deepcopy(start)
-        expected['custom'] = "<class 'test_serializable_transform.SerializableTransformTest.test_encode_with_custom_repr_returns_object.<locals>.CustomRepr'>"
+
+        if python_major_version() < 3:
+            expected['custom'] = "<class 'rollbar.test.test_serializable_transform.CustomRepr'>"
+        else:
+            expected['custom'] = "<class 'test_serializable_transform.SerializableTransformTest.test_encode_with_custom_repr_returns_object.<locals>.CustomRepr'>"
+
         self._assertSerialized(start, expected, whitelist=[CustomRepr])
 
     def test_encode_with_custom_repr_returns_unicode(self):
