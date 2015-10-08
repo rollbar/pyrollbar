@@ -1,5 +1,8 @@
 # Change Log
 
+**0.10.1**
+- Added a warning message if `init()` is called more than once.
+
 **0.10.0**
 - Added support for Twisted framework. See [#69](https://github.com/rollbar/pyrollbar/pull/69)
 - Fix a bug that was causing max recursion errors while collecting local variables. See [#77](https://github.com/rollbar/pyrollbar/pull/77)

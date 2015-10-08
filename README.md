@@ -1,4 +1,4 @@
-# Rollbar notifier for Python [![Build Status](https://travis-ci.org/rollbar/pyrollbar.png?branch=v0.10.0)](https://travis-ci.org/rollbar/pyrollbar)
+# Rollbar notifier for Python [![Build Status](https://travis-ci.org/rollbar/pyrollbar.png?branch=v0.10.1)](https://travis-ci.org/rollbar/pyrollbar)
 
 <!-- RemoveNext -->
 Python notifier for reporting exceptions, errors, and log messages to [Rollbar](https://rollbar.com).
@@ -58,6 +58,8 @@ ROLLBAR = {
 
 <!-- RemoveNextIfProject -->
 Be sure to replace ```POST_SERVER_ITEM_ACCESS_TOKEN``` with your project's ```post_server_item``` access token, which you can find in the Rollbar.com interface.
+
+Check out the [Django example](https://github.com/rollbar/pyrollbar/tree/master/rollbar/examples/django).
 
 ### Pyramid
 
