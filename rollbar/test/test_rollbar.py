@@ -10,7 +10,7 @@ except ImportError:
 import unittest
 
 import rollbar
-from rollbar.lib import python_major_version
+from rollbar.lib import python_major_version, string_types
 
 from rollbar.test import BaseTest
 
@@ -569,7 +569,7 @@ class RollbarTest(BaseTest):
 
              or
 
-            (isinstance(payload['data']['body']['trace']['frames'][-1]['locals']['obj'], str) and
+            (isinstance(payload['data']['body']['trace']['frames'][-1]['locals']['obj'], string_types) and
              payload['data']['body']['trace']['frames'][-1]['locals']['obj'].startswith('<Circular reference'))
         )
 
