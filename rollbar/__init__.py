@@ -1,7 +1,7 @@
 """
 Plugin for Pyramid apps to submit errors to Rollbar
 """
-__version__ = '0.10.0'
+__version__ = '0.10.1'
 
 import copy
 import inspect
