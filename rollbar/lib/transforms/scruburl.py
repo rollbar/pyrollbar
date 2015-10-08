@@ -1,6 +1,6 @@
 import re
 
-from rollbar.lib import iteritems, urlsplit, urlencode, urlunsplit, parse_qs
+from rollbar.lib import iteritems, map, urlsplit, urlencode, urlunsplit, parse_qs
 from rollbar.lib.transforms.scrub import ScrubTransform
 
 

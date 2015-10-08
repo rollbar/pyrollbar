@@ -1,6 +1,6 @@
 import collections
 
-from rollbar.lib import integer_types, iteritems, string_types, text
+from rollbar.lib import binary_type, iteritems, string_types, text
 
 
 CIRCULAR = -1
@@ -55,7 +55,7 @@ _default_handlers = {
 
 
 def get_type(obj):
-    if isinstance(obj, string_types):
+    if isinstance(obj, (string_types, binary_type)):
         return STRING
 
     if isinstance(obj, collections.Mapping):

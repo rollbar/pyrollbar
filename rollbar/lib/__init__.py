@@ -7,6 +7,7 @@ from six.moves import urllib
 iteritems = six.iteritems
 reprlib = six.moves.reprlib
 
+binary_type = six.binary_type
 integer_types = six.integer_types
 string_types = six.string_types
 
@@ -40,9 +41,31 @@ if python_major_version() <= 2:
                 pass
 
         return repr(val)
+
+
+    _map = map
+    def map(*args):
+        return _map(*args)
+
+
+    def force_lower(val):
+        return str(val).lower()
+
 else:
     def text(val):
         return str(val)
+
+
+    _map = map
+    def map(*args):
+        return list(_map(*args))
+
+
+    def force_lower(val):
+        try:
+            return val.lower()
+        except:
+            return str(val).lower()
 
 
 def do_for_python_version(two_fn, three_fn, *args, **kw):
@@ -111,7 +134,7 @@ def build_key_matcher(prefixes_or_suffixes, type='prefix', case_sensitive=False)
             _prefix = list(_iter(prefix))
         else:
             # Lowercase all of the elements
-            _prefix = [x.lower() for x in _iter(prefix)]
+            _prefix = [force_lower(x) for x in _iter(prefix)]
 
         _prefixes.append(_prefix)
 
@@ -119,7 +142,7 @@ def build_key_matcher(prefixes_or_suffixes, type='prefix', case_sensitive=False)
         if case_sensitive:
             prefix = list(_iter(prefix_or_suffix))
         else:
-            prefix = map(lambda x: str(x).lower(), _iter(prefix_or_suffix))
+            prefix = [force_lower(x) for x in _iter(prefix_or_suffix)]
 
         return prefix_match(prefix, _prefixes)
 

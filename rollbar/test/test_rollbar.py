@@ -10,9 +10,9 @@ except ImportError:
 import unittest
 
 import rollbar
-from rollbar.lib import urlparse, parse_qs, python_major_version, quote
+from rollbar.lib import python_major_version
 
-from rollbar.test import BaseTest, SNOWMAN
+from rollbar.test import BaseTest
 
 try:
     eval("""
@@ -485,7 +485,7 @@ class RollbarTest(BaseTest):
         self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
 
         self.assertEqual(2, len(payload['data']['body']['trace']['frames'][-1]['kwargs']))
-        self.assertRegexpMatches(payload['data']['body']['trace']['frames'][-1]['kwargs']['password'], '\*+')
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['kwargs']['password'], '\*+')
         self.assertEqual('text', payload['data']['body']['trace']['frames'][-1]['kwargs']['clear'])
 
     @mock.patch('rollbar.send_payload')
@@ -515,8 +515,8 @@ class RollbarTest(BaseTest):
 
         payload = json.loads(send_payload.call_args[0][0])
 
-        self.assertRegexpMatches(payload['data']['body']['trace']['frames'][-1]['locals']['password'], '\*+')
-        self.assertRegexpMatches(payload['data']['body']['trace']['frames'][-1]['locals']['Password'], '\*+')
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['password'], '\*+')
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['Password'], '\*+')
         self.assertIn('_invalid', payload['data']['body']['trace']['frames'][-1]['locals'])
 
         undecodable_message = '<Undecodable type:(str) base64:(%s)>' % base64.b64encode(invalid).decode('ascii')
@@ -607,12 +607,8 @@ class RollbarTest(BaseTest):
         self.assertNotIn('kwargs', payload['data']['body']['trace']['frames'][-1])
         self.assertEqual(1, len(payload['data']['body']['trace']['frames'][-1]['args']))
 
-        if python_major_version < 3:
-            self.assertEqual("u'##############################################...################################################'",
-                             payload['data']['body']['trace']['frames'][-1]['args'][0])
-        else:
-            self.assertEqual("'###############################################...################################################'",
-                             payload['data']['body']['trace']['frames'][-1]['args'][0])
+        self.assertEqual("'###############################################...################################################'",
+                         payload['data']['body']['trace']['frames'][-1]['args'][0])
 
 
     @mock.patch('rollbar.send_payload')
@@ -640,12 +636,8 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(1, len(payload['data']['body']['trace']['frames'][-1]['args']))
 
-        if python_major_version < 3:
-            self.assertEqual("[u'hi', u'hi', u'hi', u'hi', u'hi', u'hi', u'hi', u'hi', u'hi', u'hi', ...]",
-                             payload['data']['body']['trace']['frames'][-1]['args'][0])
-        else:
-            self.assertEqual("['hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', ...]",
-                             payload['data']['body']['trace']['frames'][-1]['args'][0])
+        self.assertEqual("['hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', ...]",
+                         payload['data']['body']['trace']['frames'][-1]['args'][0])
 
 
     @mock.patch('rollbar.send_payload')
@@ -808,19 +800,19 @@ class RollbarTest(BaseTest):
         self.assertEqual('I am from NSA', unscrubbed['headers']['Authorization'])
 
         scrubbed = rollbar._transform(unscrubbed)
-        self.assertRegexpMatches(scrubbed['url'], r'http://example.com/the/path\?(q=hello&password=-+)|(password=-+&q=hello)')
+        self.assertRegex(scrubbed['url'], r'http://example.com/the/path\?(q=hello&password=-+)|(password=-+&q=hello)')
 
         self.assertEqual(scrubbed['GET']['q'], 'hello')
-        self.assertRegexpMatches(scrubbed['GET']['password'], r'\*+')
+        self.assertRegex(scrubbed['GET']['password'], r'\*+')
 
         self.assertEqual(scrubbed['POST']['foo'], 'bar')
-        self.assertRegexpMatches(scrubbed['POST']['confirm_password'], r'\*+')
-        self.assertRegexpMatches(scrubbed['POST']['token'], r'\*+')
+        self.assertRegex(scrubbed['POST']['confirm_password'], r'\*+')
+        self.assertRegex(scrubbed['POST']['token'], r'\*+')
 
         self.assertEqual('5.6.7.8', scrubbed['headers']['X-Real-Ip'])
 
-        self.assertRegexpMatches(scrubbed['headers']['Cookies'], r'\*+')
-        self.assertRegexpMatches(scrubbed['headers']['Authorization'], r'\*+')
+        self.assertRegex(scrubbed['headers']['Cookies'], r'\*+')
+        self.assertRegex(scrubbed['headers']['Authorization'], r'\*+')
 
 
 ### Helpers

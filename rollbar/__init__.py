@@ -18,56 +18,16 @@ import time
 import traceback
 import types
 import uuid
+
 import wsgiref.util
-
-
 import requests
 
 import six
 
 from rollbar.lib import parse_qs, text, urljoin, urlparse
 
-"""
-#from six.moves import urllib
-#from six.moves import reprlib
-urlparse = urllib.parse.urlparse
-urlunparse = urllib.parse.urlunparse
-parse_qs = urllib.parse.parse_qs
-urlencode = urllib.parse.urlencode
-urljoin = urllib.parse.urljoin
-"""
-
 
 log = logging.getLogger(__name__)
-
-"""
-if python_major_version <= 2:
-    def text(val):
-        if isinstance(val, unicode):
-            return val
-
-        conversion_options = [unicode, lambda x: unicode(x, encoding='utf8')]
-        for option in conversion_options:
-            try:
-                return option(val)
-            except UnicodeDecodeError:
-                pass
-
-        return unicode(_undecodable_object_message(val))
-else:
-    def text(val):
-        try:
-            if isinstance(val, bytes):
-                val.decode('utf8')
-                return repr(val)
-            else:
-                str(val).encode('utf8')
-                return str(val)
-        except UnicodeDecodeError as err:
-            return _undecodable_object_message(val)
-        except TypeError:
-            return str(type(val))
-            """
 
 
 # import request objects from various frameworks, if available
@@ -320,7 +280,6 @@ SETTINGS = {
 }
 
 # Set in init()
-#_repr = None
 _transforms = []
 
 _initialized = False
@@ -396,11 +355,6 @@ def init(access_token, environment='production', **kw):
         if SETTINGS.get('handler') == 'agent':
             agent_log = _create_agent_log()
 
-        """
-        _repr = reprlib.Repr()
-        for name, size in SETTINGS['locals']['sizes'].items():
-            setattr(_repr, name, size)
-            """
 
 
 def report_exc_info(exc_info=None, request=None, extra_data=None, payload_data=None, level=None, **kw):
@@ -462,7 +416,6 @@ def send_payload(payload, access_token):
     if handler == 'blocking':
         _send_payload(payload, access_token)
     elif handler == 'agent':
-        #payload = ErrorIgnoringJSONEncoder().encode(payload)
         agent_log.error(payload, access_token)
     elif handler == 'tornado':
         if TornadoAsyncHTTPClient is None:
@@ -892,17 +845,14 @@ def _add_locals_data(data, exc_info):
             # Fill in all of the named args
             for named_arg in named_args:
                 if named_arg in local_vars:
-                    #args.append(_local_repr(_scrub_obj(local_vars[named_arg], key=named_arg)))
                     args.append(local_vars[named_arg])
 
             # Add any varargs
             if arginfo.varargs is not None:
-                #args.extend(map(lambda x: _local_repr(_scrub_obj(x)), local_vars[arginfo.varargs]))
                 args.extend(local_vars[arginfo.varargs])
 
             # Fill in all of the kwargs
             if arginfo.keywords is not None:
-                #kw.update(dict((k, _local_repr(_scrub_obj(v, key=k))) for k, v in local_vars[arginfo.keywords].items()))
                 kw.update(local_vars[arginfo.keywords])
 
             if argspec and argspec.defaults:
@@ -916,7 +866,6 @@ def _add_locals_data(data, exc_info):
 
             # Optionally fill in locals for this frame
             if local_vars and _check_add_locals(cur_frame, frame_num, num_frames):
-                #_locals.update(dict((k, _local_repr(_scrub_obj(v, key=k))) for k, v in local_vars.items()))
                 _locals.update(local_vars.items())
 
             args = args

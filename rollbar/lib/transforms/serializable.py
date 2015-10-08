@@ -1,6 +1,6 @@
 import base64
 
-from rollbar.lib import do_for_python_version, iteritems, text, string_types, python_major_version
+from rollbar.lib import do_for_python_version, iteritems, map, text, string_types, python_major_version
 from rollbar.lib.transforms import Transform
 
 

@@ -79,7 +79,7 @@ if ALLOWED_PYTHON_VERSION and FLASK_INSTALLED:
         def test_uncaught(self, send_payload):
             resp = self.client.get('/cause_error?foo=bar',
                 headers={'X-Real-Ip': '1.2.3.4', 'User-Agent': 'Flask Test'})
-            self.assertEquals(resp.status_code, 500)
+            self.assertEqual(resp.status_code, 500)
 
             self.assertEqual(send_payload.called, True)
             payload = json.loads(send_payload.call_args[0][0])
@@ -107,7 +107,7 @@ if ALLOWED_PYTHON_VERSION and FLASK_INSTALLED:
             resp = self.client.post('/cause_error', data=json_body_str,
                 headers={'Content-Type': 'application/json', 'X-Forwarded-For': '5.6.7.8'})
 
-            self.assertEquals(resp.status_code, 500)
+            self.assertEqual(resp.status_code, 500)
 
             self.assertEqual(send_payload.called, True)
             payload = json.loads(send_payload.call_args[0][0])

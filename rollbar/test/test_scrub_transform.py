@@ -1,7 +1,6 @@
 import collections
 import copy
 
-import rollbar
 from rollbar.lib import transforms
 from rollbar.lib.transforms.scrub import ScrubTransform
 
@@ -100,26 +99,26 @@ class ScrubTransformTest(BaseTest):
     def test_scrub_full_dict(self):
         obj = {'hello': 'world', 'password': {'nested': 'secrets'}}
         expected = copy.deepcopy(obj)
-        expected['password'] = '*********************'
+        expected['password'] = '*'
         self._assertScrubbed([['password']], obj, expected)
 
     def test_scrub_full_list(self):
         obj = {'hello': 'world', 'password': [1, 2, 3, 4]}
         expected = copy.deepcopy(obj)
-        expected['password'] = '************'
+        expected['password'] = '****'
         self._assertScrubbed([['password']], obj, expected)
 
     def test_scrub_full_dict_with_nested_secret(self):
         obj = {'hello': 'world', 'password': [{'password': 'secret', 'nested': {'password': 'secret!!!'}}]}
         expected = copy.deepcopy(obj)
-        expected['password'] = '*************************************************************'
+        expected['password'] = '*'
         self._assertScrubbed([['password']], obj, expected)
 
     def test_scrub_one_secret_and_one_clear_reference(self):
         ref = {'scrub': 'me', 'some': 'times'}
         obj = {'hello': 'world', 'password': ref, 'should be clear': ref}
         expected = copy.deepcopy(obj)
-        expected['password'] = '********************************'
+        expected['password'] = '**'
         self._assertScrubbed([['password']], obj, expected)
 
     def test_scrub_circular(self):
@@ -136,7 +135,7 @@ class ScrubTransformTest(BaseTest):
         }
         """
         expected = copy.deepcopy(obj)
-        expected['password'] = '*******************************************************************************************************************************************************************'
+        expected['password'] = '***'
 
         self._assertScrubbed([['password']], obj, expected)
 

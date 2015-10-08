@@ -19,7 +19,10 @@ class ScrubTransform(Transform):
         if self.randomize_len:
             _len = random.randint(3, 20)
         else:
-            _len = len(text(val))
+            try:
+                _len = len(val)
+            except:
+                _len = len(text(val))
 
         return self.redact_char * _len
 
