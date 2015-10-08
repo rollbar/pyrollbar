@@ -624,7 +624,7 @@ class RollbarTest(BaseTest):
             # this frame are not referenced directly by the frame from _raise()
             # call above. If we didn't copy this list, Rollbar would report a
             # circular reference for the args on _raise().
-            _raise(list(xlarge))
+            _raise([str(x) for x in xlarge])
         except:
             rollbar.report_exc_info()
 
@@ -637,8 +637,14 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(1, len(payload['data']['body']['trace']['frames'][-1]['args']))
 
-        self.assertEqual("['hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', ...]",
-                         payload['data']['body']['trace']['frames'][-1]['args'][0])
+        self.assertTrue(
+            ("['hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', ...]" ==
+                payload['data']['body']['trace']['frames'][-1]['args'][0])
+
+            or
+
+            ("['hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', ...]" ==
+                    payload['data']['body']['trace']['frames'][0]['locals']['xlarge']))
 
 
     @mock.patch('rollbar.send_payload')

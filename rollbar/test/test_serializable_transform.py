@@ -6,7 +6,12 @@ import math
 from rollbar.lib import transforms, python_major_version
 from rollbar.lib.transforms.serializable import SerializableTransform
 
-from rollbar.test import BaseTest, SNOWMAN
+from rollbar.test import BaseTest, SNOWMAN, SNOWMAN_UNICODE
+
+if python_major_version() >= 3:
+    SNOWMAN = SNOWMAN_UNICODE
+
+SNOWMAN_LEN = len(SNOWMAN)
 
 
 # This base64 encoded string contains bytes that do not
@@ -115,7 +120,11 @@ class SerializableTransformTest(BaseTest):
         nt = MyType(field_1='this is field 1', field_2=invalid)
 
         start = nt
-        expected = "<MyType(field_1='this is field 1', field_2=u'%s')>" % undecodable_repr
+        if python_major_version() < 3:
+            expected = "<MyType(field_1='this is field 1', field_2=u'%s')>" % undecodable_repr
+        else:
+            expected = "<MyType(field_1='this is field 1', field_2='%s')>" % undecodable_repr
+
         self._assertSerialized(start, expected)
 
     def test_encode_tuple_with_bytes(self):
@@ -174,7 +183,12 @@ class SerializableTransformTest(BaseTest):
 
         start = {'hello': 'world', 'custom': CustomRepr()}
         expected = copy.deepcopy(start)
-        expected['custom'] = b'hello'
+
+        if python_major_version() < 3:
+            expected['custom'] = b'hello'
+        else:
+            expected['custom'] = "<class 'test_serializable_transform.SerializableTransformTest.test_encode_with_custom_repr_returns_bytes.<locals>.CustomRepr'>"
+
         self._assertSerialized(start, expected, whitelist=[CustomRepr])
 
     def test_encode_with_custom_repr_returns_object(self):
@@ -184,7 +198,7 @@ class SerializableTransformTest(BaseTest):
 
         start = {'hello': 'world', 'custom': CustomRepr()}
         expected = copy.deepcopy(start)
-        expected['custom'] = "<class 'rollbar.test.test_serializable_transform.CustomRepr'>"
+        expected['custom'] = "<class 'test_serializable_transform.SerializableTransformTest.test_encode_with_custom_repr_returns_object.<locals>.CustomRepr'>"
         self._assertSerialized(start, expected, whitelist=[CustomRepr])
 
     def test_encode_with_custom_repr_returns_unicode(self):

@@ -73,7 +73,7 @@ class SerializableTransform(Transform):
     def transform_dict(self, o, key=None):
         ret = {}
         for k, v in iteritems(o):
-            if isinstance(k, string_types):
+            if isinstance(k, string_types) or isinstance(k, binary_type):
                 if python_major_version() < 3:
                     if isinstance(k, unicode):
                         new_k = self.transform_unicode(k)
