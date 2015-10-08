@@ -23,7 +23,7 @@ matrix:
     - python: "3.3"
       env: DJANGO_VERSION=1.8
     - python: "3.4"
-      env: DJANGO_VERSION=1.9
+      env: DJANGO_VERSION=~1.9
 
 install:
   - if [ -v FLASK_VERSION ]; then pip install Flask==$FLASK_VERSION; fi

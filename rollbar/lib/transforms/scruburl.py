@@ -5,7 +5,7 @@ from rollbar.lib.transforms.scrub import ScrubTransform
 
 
 _starts_with_auth_re = re.compile(r'^[a-zA-Z0-9-_]*(:[^@/]+)?@')
-_starts_with_colon_double_slash = re.compile(r'^:?//')
+
 
 class ScrubUrlTransform(ScrubTransform):
     def __init__(self,
@@ -31,16 +31,11 @@ class ScrubUrlTransform(ScrubTransform):
         return super(ScrubUrlTransform, self)._in_scrub_fields(key)
 
     def _scrub_url(self, url_string, key=None):
-        missing_scheme = False
         missing_colon_double_slash = False
 
-        if _starts_with_colon_double_slash.match(url_string):
-            missing_scheme = True
-            url_string = 'remove:%s' % url_string.lstrip(':')
-        elif _starts_with_auth_re.match(url_string):
-            missing_scheme = True
+        if _starts_with_auth_re.match(url_string):
             missing_colon_double_slash = True
-            url_string = 'remove://%s' % url_string
+            url_string = '//%s' % url_string
 
         try:
             url_parts = urlsplit(url_string)
@@ -69,7 +64,7 @@ class ScrubUrlTransform(ScrubTransform):
             redacted_pw = self._redact(url_parts.password)
             netloc = netloc.replace(url_parts.password, redacted_pw)
 
-        scrubbed_url = (url_parts.scheme if not missing_scheme else '',
+        scrubbed_url = (url_parts.scheme,
                         netloc,
                         url_parts.path,
                         scrubbed_qs,

@@ -62,7 +62,7 @@ def get_type(obj):
         return MAPPING
 
     if isinstance(obj, tuple):
-        if isinstance(getattr(obj, '__dict__', None), collections.Mapping):
+        if hasattr(obj, '_fields'):
             return NAMEDTUPLE
 
         return TUPLE

@@ -1,6 +1,5 @@
-import rollbar
-from rollbar.lib import iteritems, transforms, string_types, urlparse, parse_qs
-from rollbar.lib.transforms.scruburl import ScrubUrlTransform
+from rollbar.lib import transforms, string_types, urlparse, parse_qs
+from rollbar.lib.transforms.scruburl import ScrubUrlTransform, _starts_with_auth_re
 
 from rollbar.test import BaseTest, SNOWMAN
 
@@ -14,7 +13,7 @@ class ScrubUrlTransformTest(BaseTest):
                         scrub_password=True,
                         redact_char='-',
                         skip_id_check=False):
-        scrubber = ScrubUrlTransform(suffixes=[['*']],
+        scrubber = ScrubUrlTransform(suffixes=[],
                                      params_to_scrub=params_to_scrub,
                                      scrub_username=scrub_username,
                                      scrub_password=scrub_password,
@@ -36,6 +35,12 @@ class ScrubUrlTransformTest(BaseTest):
         self._compare_urls(expected, result)
 
     def _compare_urls(self, url1, url2):
+        if _starts_with_auth_re.match(url1):
+            url1 = '//%s' % url1
+
+        if _starts_with_auth_re.match(url2):
+            url2 = '//%s' % url2
+
         parsed_urls = map(urlparse, (url1, url2))
         qs_params = map(lambda x: parse_qs(x.query), parsed_urls)
         num_params = map(len, qs_params)
