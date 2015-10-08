@@ -310,7 +310,12 @@ def init(access_token, environment='production', **kw):
     """
     global SETTINGS, agent_log, _initialized, _repr
 
-    if not _initialized:
+    if _initialized:
+        # NOTE: Temp solution to not being able to re-init.
+        # New versions of pyrollbar will support re-initialization
+        # via the (not-yet-implemented) configure() method.
+        log.warn('Rollbar already initialized. Ignoring re-init.')
+    else:
         _initialized = True
 
         SETTINGS['access_token'] = access_token
