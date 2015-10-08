@@ -570,7 +570,7 @@ class RollbarTest(BaseTest):
              or
 
             (isinstance(payload['data']['body']['trace']['frames'][-1]['locals']['obj'], string_types) and
-             payload['data']['body']['trace']['frames'][-1]['locals']['obj'].startswith('<Circular reference'))
+             payload['data']['body']['trace']['frames'][-1]['locals']['obj'].startswith('<CircularReference'))
         )
 
     @mock.patch('rollbar.send_payload')

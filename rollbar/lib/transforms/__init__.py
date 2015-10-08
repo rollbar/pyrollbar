@@ -14,12 +14,10 @@ if isinstance(integer_types, tuple):
 else:
     _ALLOWED_CIRCULAR_REFERENCE_TYPES.append(integer_types)
 
+_ALLOWED_CIRCULAR_REFERENCE_TYPES = tuple(_ALLOWED_CIRCULAR_REFERENCE_TYPES)
+
 
 class Transform(object):
-    @property
-    def _allowed_circular_reference_types(self):
-        return tuple(_ALLOWED_CIRCULAR_REFERENCE_TYPES)
-
     def default(self, o, key=None):
         return o
 
@@ -101,7 +99,8 @@ def transform(obj, *transforms):
         'mapping_handler': lambda o, key=None: do_transforms('dict', o, key=key),
         'circular_reference_handler': lambda o, key=None, ref_key=None: \
             do_transforms('circular_reference', o, key=key, ref_key=ref_key),
-        'default_handler': default_handler
+        'default_handler': default_handler,
+        'allowed_circular_reference_types': _ALLOWED_CIRCULAR_REFERENCE_TYPES
     }
 
     return traverse.traverse(obj, **handlers)

@@ -1,6 +1,9 @@
 import base64
 
-from rollbar.lib import binary_type, do_for_python_version, iteritems, map, text, string_types, python_major_version
+from rollbar.lib import binary_type, string_types
+from rollbar.lib import circular_reference_label, undecodable_object_label, unencodable_object_label
+from rollbar.lib import iteritems, python_major_version, text
+
 from rollbar.lib.transforms import Transform
 
 
@@ -9,33 +12,8 @@ class SerializableTransform(Transform):
         super(SerializableTransform, self).__init__()
         self.whitelist = set(whitelist_types or [])
 
-    def _unencodable_object_message(self, data):
-        return '<Unencodable type:(%s) base64:(%s)>' % (type(data).__name__,
-                                                        base64.b64encode(data).decode('ascii'))
-
-    def _undecodable_object_message(self, data):
-        return '<Undecodable type:(%s) base64:(%s)>' % (type(data).__name__,
-                                                        base64.b64encode(data).decode('ascii'))
-
     def transform_circular_reference(self, o, key=None, ref_key=None):
-        if isinstance(o, self._allowed_circular_reference_types):
-            # NOTE(cory): hack to perform the correct UTF8 checks for serialization of
-            # circular references.
-            if isinstance(o, string_types):
-                return do_for_python_version(self.transform_py2_str,
-                                             self.transform_unicode,
-                                             o,
-                                             key=key)
-            elif isinstance(o, binary_type):
-                return do_for_python_version(self.transform_py2_str,
-                                             self.transform_py3_bytes,
-                                             o,
-                                             key=key)
-
-            return self.default(o, key=key)
-
-        ref = '.'.join(map(text, ref_key or []))
-        return '<Circular reference type:(%s) ref:(%s)>' % (type(o).__name__, ref)
+        return circular_reference_label(o, ref_key)
 
     def transform_namedtuple(self, o, key=None):
         tuple_dict = o._asdict()
@@ -50,7 +28,7 @@ class SerializableTransform(Transform):
         try:
             o.decode('utf8')
         except UnicodeDecodeError:
-            return self._undecodable_object_message(o)
+            return undecodable_object_label(o)
         else:
             return o
 
@@ -58,7 +36,7 @@ class SerializableTransform(Transform):
         try:
             o.decode('utf8')
         except UnicodeDecodeError:
-            return self._undecodable_object_message(o)
+            return undecodable_object_label(o)
         else:
             return repr(o)
 
@@ -66,7 +44,7 @@ class SerializableTransform(Transform):
         try:
             o.encode('utf8')
         except UnicodeEncodeError:
-            return self._unencodable_object_message(o)
+            return unencodable_object_label(o)
         else:
             return o
 

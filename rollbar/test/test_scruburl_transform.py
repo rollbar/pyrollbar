@@ -1,3 +1,5 @@
+import copy
+
 from rollbar.lib import map, transforms, string_types, urlparse, parse_qs, python_major_version
 from rollbar.lib.transforms.scruburl import ScrubUrlTransform, _starts_with_auth_re
 
@@ -27,9 +29,9 @@ class ScrubUrlTransformTest(BaseTest):
         result = transforms.transform(start, scrubber)
 
         """
-        print start
-        print result
-        print expected
+        print(start)
+        print(result)
+        print(expected)
         """
 
         if not skip_id_check:
@@ -113,3 +115,35 @@ class ScrubUrlTransformTest(BaseTest):
         obj = 'cory:secr3t@foo.com/asdf?password=secret&clear=text'
         expected = obj.replace('secr3t', '------').replace('secret', '------')
         self._assertScrubbed(['password'], obj, expected)
+
+    def test_scrub_dict_val_isnt_string(self):
+
+        # This link will *not* be scrubbed because the value isn't a string or bytes
+        obj = {
+            'url': ['cory:secr3t@foo.com/asdf?password=secret&clear=text']
+        }
+
+        scrubber = ScrubUrlTransform(suffixes=[('url',)], params_to_scrub=['password'], randomize_len=False)
+        result = transforms.transform(obj, scrubber)
+
+        expected = copy.deepcopy(obj)
+        self.assertDictEqual(expected, result)
+
+    def test_scrub_dict_nested_key_match_with_circular_ref(self):
+        # If a URL is a circular reference then let's make sure to
+        # show the scrubbed, original URL
+        url = 'cory:secr3t@foo.com/asdf?password=secret&clear=text'
+        obj = {
+            'url': [{'link': url}],
+            'link': [{'url': url}]
+        }
+
+        scrubber = ScrubUrlTransform(suffixes=[('url',), ('link',)], params_to_scrub=['password'], randomize_len=False)
+        result = transforms.transform(obj, scrubber)
+
+        self.assertNotIn('secr3t', result['url'][0]['link'])
+        self.assertNotIn('secret', result['url'][0]['link'])
+        self.assertNotIn('secr3t', result['link'][0]['url'])
+        self.assertNotIn('secret', result['link'][0]['url'])
+        self.assertNotRegex(result['url'][0]['link'], r'^-+$')
+        self.assertNotRegex(result['link'][0]['url'], r'^-+$')

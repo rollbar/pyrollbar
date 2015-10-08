@@ -1,3 +1,4 @@
+import base64
 import copy
 import os
 import sys
@@ -173,3 +174,19 @@ def dict_merge(a, b):
             result[k] = copy.deepcopy(v)
 
     return result
+
+
+def circular_reference_label(data, ref_key=None):
+    ref = '.'.join(map(text, ref_key))
+    return '<CircularReference type:(%s) ref:(%s)>' % (type(data).__name__, ref)
+
+
+def unencodable_object_label(data):
+    return '<Unencodable type:(%s) base64:(%s)>' % (type(data).__name__,
+                                                    base64.b64encode(data).decode('ascii'))
+
+
+def undecodable_object_label(data):
+    return '<Undecodable type:(%s) base64:(%s)>' % (type(data).__name__,
+                                                    base64.b64encode(data).decode('ascii'))
+

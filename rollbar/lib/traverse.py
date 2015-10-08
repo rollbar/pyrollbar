@@ -1,6 +1,6 @@
 import collections
 
-from rollbar.lib import binary_type, iteritems, string_types, text
+from rollbar.lib import binary_type, iteritems, string_types, circular_reference_label
 
 
 CIRCULAR = -1
@@ -14,8 +14,7 @@ STRING = 6
 
 
 def _noop_circular(a, **kw):
-    ref = '.'.join(map(text, kw.get('ref_key', [])))
-    return '<Circular reference type:(%s) ref:(%s)>' % (type(a).__name__, ref)
+    return circular_reference_label(a, ref_key=kw.get('ref_key'))
 
 
 def _noop(a, **_):
@@ -86,6 +85,7 @@ def traverse(obj,
              mapping_handler=_default_handlers[MAPPING],
              default_handler=_default_handlers[DEFAULT],
              circular_reference_handler=_default_handlers[CIRCULAR],
+             allowed_circular_reference_types=None,
              memo=None,
              **custom_handlers):
 
@@ -95,7 +95,8 @@ def traverse(obj,
 
     ref_key = memo.get(obj_id)
     if ref_key:
-        return circular_reference_handler(obj, key=key, ref_key=ref_key)
+        if not allowed_circular_reference_types or not isinstance(obj, allowed_circular_reference_types):
+            return circular_reference_handler(obj, key=key, ref_key=ref_key)
 
     memo[obj_id] = key
 
@@ -108,6 +109,7 @@ def traverse(obj,
         'mapping_handler': mapping_handler,
         'default_handler': default_handler,
         'circular_reference_handler': circular_reference_handler,
+        'allowed_circular_reference_types': allowed_circular_reference_types,
         'memo': memo
     }
     kw.update(custom_handlers)

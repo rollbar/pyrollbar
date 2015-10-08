@@ -264,8 +264,21 @@ SETTINGS = {
     'endpoint': DEFAULT_ENDPOINT,
     'timeout': DEFAULT_TIMEOUT,
     'agent.log_file': 'log.rollbar',
-    'scrub_fields': ['passwd', 'password', 'secret', 'confirm_password', 'password_confirmation'],
-    'url_fields': ['url'],
+    'scrub_fields': [
+        'pw',
+        'passwd',
+        'password',
+        'secret',
+        'confirm_password',
+        'confirmPassword',
+        'password_confirmation',
+        'passwordConfirmation',
+        'access_token',
+        'accessToken',
+        'auth',
+        'authentication',
+    ],
+    'url_fields': ['url', 'link', 'href'],
     'notifier': {
         'name': 'pyrollbar',
         'version': VERSION

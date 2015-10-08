@@ -12,10 +12,10 @@ class ScrubTransform(Transform):
         self.redact_char = redact_char
         self.randomize_len = randomize_len
 
-    def _in_scrub_fields(self, key):
+    def in_scrub_fields(self, key):
         return self.suffix_matcher(key)
 
-    def _redact(self, val):
+    def redact(self, val):
         if self.randomize_len:
             _len = random.randint(3, 20)
         else:
@@ -26,20 +26,11 @@ class ScrubTransform(Transform):
 
         return self.redact_char * _len
 
-    def _scrub(self, val, key=None):
-        if self._in_scrub_fields(key):
-            return self._redact(val)
-
-        return val
-
     def default(self, o, key=None):
-        return self._scrub(o, key=key)
+        if self.in_scrub_fields(key):
+            return self.redact(o)
 
-    def transform_circular_reference(self, o, key=None, ref_key=None):
-        if self._in_scrub_fields(key):
-            return self._redact(o)
-
-        return super(ScrubTransform, self).transform_circular_reference(o, key=key, ref_key=ref_key)
+        return o
 
 
 __all__ = ['ScrubTransform']
