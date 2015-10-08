@@ -182,14 +182,14 @@ class SerializableTransformTest(BaseTest):
                 return b'hello'
 
         start = {'hello': 'world', 'custom': CustomRepr()}
-        expected = copy.deepcopy(start)
+
+        serializable = SerializableTransform(whitelist_types=[CustomRepr])
+        result = transforms.transform(start, serializable)
 
         if python_major_version() < 3:
-            expected['custom'] = b'hello'
+            self.assertEqual(result['custom'], b'hello')
         else:
-            expected['custom'] = "<class 'test_serializable_transform.SerializableTransformTest.test_encode_with_custom_repr_returns_bytes.<locals>.CustomRepr'>"
-
-        self._assertSerialized(start, expected, whitelist=[CustomRepr])
+            self.assertRegex(result['custom'], "<class '.*CustomRepr'>")
 
     def test_encode_with_custom_repr_returns_object(self):
         class CustomRepr(object):
@@ -197,14 +197,10 @@ class SerializableTransformTest(BaseTest):
                 return {'hi': 'there'}
 
         start = {'hello': 'world', 'custom': CustomRepr()}
-        expected = copy.deepcopy(start)
 
-        if python_major_version() < 3:
-            expected['custom'] = "<class 'rollbar.test.test_serializable_transform.CustomRepr'>"
-        else:
-            expected['custom'] = "<class 'test_serializable_transform.SerializableTransformTest.test_encode_with_custom_repr_returns_object.<locals>.CustomRepr'>"
-
-        self._assertSerialized(start, expected, whitelist=[CustomRepr])
+        serializable = SerializableTransform(whitelist_types=[CustomRepr])
+        result = transforms.transform(start, serializable)
+        self.assertRegex(result['custom'], "<class '.*CustomRepr'>")
 
     def test_encode_with_custom_repr_returns_unicode(self):
         class CustomRepr(object):
