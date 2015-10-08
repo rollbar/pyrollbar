@@ -1,8 +1,8 @@
 import collections
 
-from rollbar.lib import python_major_version, string_types, text, integer_types, traverse
+from rollbar.lib import python_major_version, binary_type, string_types, integer_types, traverse
 
-_ALLOWED_CIRCULAR_REFERENCE_TYPES = [bool, type(None)]
+_ALLOWED_CIRCULAR_REFERENCE_TYPES = [binary_type, bool, type(None)]
 
 if isinstance(string_types, tuple):
     _ALLOWED_CIRCULAR_REFERENCE_TYPES.extend(string_types)

@@ -60,11 +60,12 @@ class ShortenerTransform(Transform):
         if obj is None:
             return None
 
-        if math.isinf(obj):
-            return 'Infinity'
+        if isinstance(obj, float):
+            if math.isinf(obj):
+                return 'Infinity'
 
-        if math.isnan(obj):
-            return 'NaN'
+            if math.isnan(obj):
+                return 'NaN'
 
         if self.safe_repr:
             obj = text(obj)

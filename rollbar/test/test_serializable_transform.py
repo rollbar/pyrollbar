@@ -3,7 +3,7 @@ import base64
 import copy
 import math
 
-from rollbar.lib import transforms, text
+from rollbar.lib import transforms, python_major_version
 from rollbar.lib.transforms.serializable import SerializableTransform
 
 from rollbar.test import BaseTest, SNOWMAN
@@ -14,7 +14,8 @@ from rollbar.test import BaseTest, SNOWMAN
 invalid_b64 = b'CuX2JKuXuLVtJ6l1s7DeeQ=='
 
 invalid = base64.b64decode(invalid_b64)
-undecodable_repr = '<Undecodable type:(str) base64:(%s)>' % invalid_b64.decode('ascii')
+binary_type_name = 'str' if python_major_version() < 3 else 'bytes'
+undecodable_repr = '<Undecodable type:(%s) base64:(%s)>' % (binary_type_name, invalid_b64.decode('ascii'))
 
 
 class SerializableTransformTest(BaseTest):

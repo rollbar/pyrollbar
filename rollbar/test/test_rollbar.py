@@ -519,7 +519,8 @@ class RollbarTest(BaseTest):
         self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['Password'], '\*+')
         self.assertIn('_invalid', payload['data']['body']['trace']['frames'][-1]['locals'])
 
-        undecodable_message = '<Undecodable type:(str) base64:(%s)>' % base64.b64encode(invalid).decode('ascii')
+        binary_type_name = 'str' if python_major_version() < 3 else 'bytes'
+        undecodable_message = '<Undecodable type:(%s) base64:(%s)>' % (binary_type_name, base64.b64encode(invalid).decode('ascii'))
         self.assertEqual(undecodable_message, payload['data']['body']['trace']['frames'][-1]['locals']['_invalid'])
 
     @mock.patch('rollbar.send_payload')

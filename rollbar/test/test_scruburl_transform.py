@@ -1,7 +1,12 @@
-from rollbar.lib import transforms, string_types, urlparse, parse_qs
+from rollbar.lib import map, transforms, string_types, urlparse, parse_qs, python_major_version
 from rollbar.lib.transforms.scruburl import ScrubUrlTransform, _starts_with_auth_re
 
-from rollbar.test import BaseTest, SNOWMAN
+from rollbar.test import BaseTest, SNOWMAN, SNOWMAN_UNICODE
+
+if python_major_version() >= 3:
+    SNOWMAN = SNOWMAN_UNICODE
+
+SNOWMAN_LEN = len(SNOWMAN)
 
 
 class ScrubUrlTransformTest(BaseTest):
@@ -71,13 +76,13 @@ class ScrubUrlTransformTest(BaseTest):
 
     def test_scrub_utf8_url_params(self):
         obj = 'http://foo.com/asdf?password=%s' % SNOWMAN
-        expected = obj.replace(SNOWMAN, '---')
+        expected = obj.replace(SNOWMAN, '-' * SNOWMAN_LEN)
         self._assertScrubbed(['password'], obj, expected)
 
     def test_scrub_utf8_url_keys(self):
         obj = 'http://foo.com/asdf?%s=secret' % SNOWMAN
         expected = obj.replace('secret', '------')
-        self._assertScrubbed([SNOWMAN], obj, expected)
+        self._assertScrubbed([str(SNOWMAN)], obj, expected)
 
     def test_scrub_multi_url_params(self):
         obj = 'http://foo.com/asdf?password=secret&password=secret2&token=TOK&clear=text'

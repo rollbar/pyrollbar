@@ -1,6 +1,6 @@
 import base64
 
-from rollbar.lib import do_for_python_version, iteritems, map, text, string_types, python_major_version
+from rollbar.lib import binary_type, do_for_python_version, iteritems, map, text, string_types, python_major_version
 from rollbar.lib.transforms import Transform
 
 
@@ -24,6 +24,11 @@ class SerializableTransform(Transform):
             if isinstance(o, string_types):
                 return do_for_python_version(self.transform_py2_str,
                                              self.transform_unicode,
+                                             o,
+                                             key=key)
+            elif isinstance(o, binary_type):
+                return do_for_python_version(self.transform_py2_str,
+                                             self.transform_py3_bytes,
                                              o,
                                              key=key)
 
@@ -50,7 +55,12 @@ class SerializableTransform(Transform):
             return o
 
     def transform_py3_bytes(self, o, key=None):
-        return repr(o)
+        try:
+            o.decode('utf8')
+        except UnicodeDecodeError:
+            return self._undecodable_object_message(o)
+        else:
+            return repr(o)
 
     def transform_unicode(self, o, key=None):
         try:
