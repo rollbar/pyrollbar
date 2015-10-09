@@ -59,7 +59,8 @@ class Transform(object):
 
 
 
-def transform(obj, *transforms):
+def transform(obj, transforms, key=None):
+    key = key or ()
 
     def do_transforms(type_name, val, key=None, **kw):
         for transform in transforms:
@@ -103,7 +104,7 @@ def transform(obj, *transforms):
         'allowed_circular_reference_types': _ALLOWED_CIRCULAR_REFERENCE_TYPES
     }
 
-    return traverse.traverse(obj, **handlers)
+    return traverse.traverse(obj, key=key, **handlers)
 
 
 __all__ = ['transform', 'Transform']
