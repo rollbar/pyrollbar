@@ -30,7 +30,7 @@ def python_major_version():
     return _version[0]
 
 
-if python_major_version() <= 2:
+if python_major_version() < 3:
     def text(val):
         if isinstance(val, (str, unicode)):
             return val
