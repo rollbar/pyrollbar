@@ -1,5 +1,6 @@
-import sys
+import base64
 import copy
+import json
 import mock
 
 try:
@@ -7,23 +8,11 @@ try:
 except ImportError:
     from io import StringIO
 import unittest
-import urllib
 
 import rollbar
+from rollbar.lib import python_major_version, string_types
 
 from rollbar.test import BaseTest
-
-try:
-    # Python 3
-    import urllib.parse as urlparse
-    urllibquote = urlparse.quote
-    unicode = str
-except ImportError:
-    # Python 2
-    import urlparse
-    import urllib
-    urllibquote = urllib.quote
-
 
 try:
     eval("""
@@ -39,13 +28,12 @@ except SyntaxError:
 _test_access_token = 'aaaabbbbccccddddeeeeffff00001111'
 _default_settings = copy.deepcopy(rollbar.SETTINGS)
 
-SNOWMAN = '\xe2\x98\x83'
 
 class RollbarTest(BaseTest):
     def setUp(self):
         rollbar._initialized = False
         rollbar.SETTINGS = copy.deepcopy(_default_settings)
-        rollbar.init(_test_access_token, locals={'enabled': True}, dummy_key='asdf', timeout=12345)
+        rollbar.init(_test_access_token, locals={'enabled': True}, dummy_key='asdf', handler='blocking', timeout=12345)
 
     def test_merged_settings(self):
         expected = {'enabled': True, 'sizes': rollbar.DEFAULT_LOCALS_SIZES, 'safe_repr': True}
@@ -86,41 +74,6 @@ class RollbarTest(BaseTest):
         self.assertIn('argv', server_data)
         self.assertEqual(server_data['branch'], 'master')
         self.assertEqual(server_data['root'], '/home/test/')
-
-    def test_webob_request_data(self):
-        rollbar.SETTINGS['scrub_fields'].extend(['token', 'secret', 'cookies', 'authorization'])
-
-        import webob
-        request = webob.Request.blank('/the/path?q=hello&password=hunter2',
-            base_url = 'http://example.com',
-            headers = {
-                'X-Real-Ip': '5.6.7.8',
-                'Cookies': 'name=value; password=hash;',
-                'Authorization': 'I am from NSA'
-            },
-            POST = 'foo=bar&confirm_password=hunter3&token=secret')
-        
-        unscrubbed = rollbar._build_webob_request_data(request)
-        self.assertEqual(unscrubbed['url'], 'http://example.com/the/path?q=hello&password=hunter2')
-        self.assertEqual(unscrubbed['user_ip'], '5.6.7.8')
-        self.assertDictEqual(unscrubbed['GET'], {'q': 'hello', 'password': 'hunter2'})
-        self.assertDictEqual(unscrubbed['POST'], {'foo': 'bar', 'confirm_password': 'hunter3', 'token': 'secret'})
-        self.assertEqual('5.6.7.8', unscrubbed['headers']['X-Real-Ip'])
-        self.assertEqual('name=value; password=hash;', unscrubbed['headers']['Cookies'])
-        self.assertEqual('I am from NSA', unscrubbed['headers']['Authorization'])
-
-        scrubbed = rollbar._scrub_request_data(unscrubbed)
-        self.assertTrue(
-            # order might get switched; that's ok
-            scrubbed['url'] == 'http://example.com/the/path?q=hello&password=-------'
-            or
-            scrubbed['url'] == 'http://example.com/the/path?password=-------&q=hello'
-            )
-        self.assertDictEqual(scrubbed['GET'], {'q': 'hello', 'password': '*******'})
-        self.assertDictEqual(scrubbed['POST'], {'foo': 'bar', 'confirm_password': '*******', 'token': '******'})
-        self.assertEqual('5.6.7.8', scrubbed['headers']['X-Real-Ip'])
-        self.assertEqual('**************************', scrubbed['headers']['Cookies'])
-        self.assertEqual('*************', scrubbed['headers']['Authorization'])
 
     def test_wsgi_request_data(self):
         request = {
@@ -168,13 +121,13 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
 
         self.assertEqual(payload['access_token'], _test_access_token)
         self.assertIn('body', payload['data'])
         self.assertIn('trace', payload['data']['body'])
         self.assertIn('exception', payload['data']['body']['trace'])
-        self.assertEqual(payload['data']['body']['trace']['exception']['message'], 'foo'.encode('utf-8'))
+        self.assertEqual(payload['data']['body']['trace']['exception']['message'], 'foo')
         self.assertEqual(payload['data']['body']['trace']['exception']['class'], 'Exception')
 
         self.assertNotIn('args', payload['data']['body']['trace']['frames'][-1])
@@ -223,7 +176,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
 
         self.assertEqual(payload['access_token'], _test_access_token)
         self.assertIn('body', payload['data'])
@@ -231,186 +184,13 @@ class RollbarTest(BaseTest):
         self.assertIn('body', payload['data']['body']['message'])
         self.assertEqual(payload['data']['body']['message']['body'], 'foo')
 
-    def test_param_scrubbing(self):
-        params = {
-            'foo': 'bar',
-            'bar': 'foo',
-            'passwd': 'passwd',
-            'password': 'password',
-            'secret': 'secret',
-            'confirm_password': 'confirm_password',
-            'password_confirmation': 'password_confirmation'
-        }
-
-        scrubbed = rollbar._scrub_obj(params)
-
-        self.assertDictEqual(scrubbed, {
-            'foo': 'bar',
-            'bar': 'foo',
-            'passwd': '******',
-            'password': '********',
-            'secret': '******',
-            'confirm_password': '****************',
-            'password_confirmation': '*********************'
-        })
-
-        rollbar.SETTINGS['scrub_fields'] = ['foo', 'password']
-
-        scrubbed = rollbar._scrub_obj(params)
-
-        self.assertDictEqual(scrubbed, {
-            'foo': '***',
-            'bar': 'foo',
-            'passwd': 'passwd',
-            'password': '********',
-            'secret': 'secret',
-            'confirm_password': 'confirm_password',
-            'password_confirmation': 'password_confirmation'
-        })
-
-    def test_json_scrubbing(self):
-        params = {
-            'foo': 'bar',
-            'bar': {
-                'foo': {
-                    'password': 'password',
-                    'clear': 'text'
-                },
-                'secret': ['1234']
-            },
-            'passwd': [
-                {'bar': None},
-                {'password': 'passwd'}
-            ],
-            'secret': {
-                'password': {
-                    'confirm_password': 'confirm_password',
-                    'foo': 'bar'
-                }
-            },
-            'password_confirmation': None,
-            'confirm_password': 341254213,
-            333: 444
-        }
-
-        scrubbed = rollbar._scrub_obj(params, replacement_character='-')
-
-        self.assertDictEqual(scrubbed, {
-            'foo': 'bar',
-            'bar': {
-                'foo': {
-                    'password': '--------',
-                    'clear': 'text'
-                },
-                'secret': ['----']
-            },
-            'passwd': [{'-': '-'}, {'-': '-'}],
-            'secret': {'-': '-'},
-            'password_confirmation': '-',
-            'confirm_password': '-',
-            333: 444
-        })
-
-    def test_non_dict_scrubbing(self):
-        params = "string"
-        scrubbed = rollbar._scrub_obj(params)
-        self.assertEqual(scrubbed, params)
-
-        params = 1234
-        scrubbed = rollbar._scrub_obj(params)
-        self.assertEqual(scrubbed, params)
-
-        params = None
-        scrubbed = rollbar._scrub_obj(params)
-        self.assertEqual(scrubbed, params)
-
-        params = [{'password': 'password', 'foo': 'bar'}]
-        scrubbed = rollbar._scrub_obj(params)
-        self.assertEqual([{'password': '********', 'foo': 'bar'}], scrubbed)
-
-    def test_url_scrubbing(self):
-        url = 'http://foo.com/?password=password&foo=bar&secret=secret'
-
-        scrubbed_url = urlparse.urlparse(rollbar._scrub_request_url(url))
-        qs_params = urlparse.parse_qs(scrubbed_url.query)
-
-        self.assertDictEqual(qs_params, {
-            'password': ['--------'],
-            'foo': ['bar'],
-            'secret': ['------']
-        })
-
-    def test_utf8_url_val_scrubbing(self):
-        url = 'http://foo.com/?password=password&foo=bar&secret=%s' % SNOWMAN
-
-        scrubbed_url = urlparse.urlparse(rollbar._scrub_request_url(url))
-        qs_params = urlparse.parse_qs(scrubbed_url.query)
-
-        self.assertDictEqual(qs_params, {
-            'password': ['--------'],
-            'foo': ['bar'],
-            'secret': [''.join(['-'] * len(SNOWMAN))]
-        })
-
-
-    def test_utf8_url_key_scrubbing(self):
-        url = 'http://foo.com/?password=password&foo=bar&%s=secret' % urllibquote(SNOWMAN)
-
-        rollbar.SETTINGS['scrub_fields'].append(SNOWMAN)
-        scrubbed_url = rollbar._scrub_request_url(url)
-
-        qs_params = urlparse.parse_qs(urlparse.urlparse(scrubbed_url).query)
-
-        self.assertEqual(['------'], qs_params[SNOWMAN])
-        self.assertEqual(['--------'], qs_params['password'])
-        self.assertEqual(['bar'], qs_params['foo'])
-
-
-    def test_unicode_val_scrubbing(self):
-        s = '%s is a unicode snowman!' % SNOWMAN
-        obj = {
-            'password': s
-        }
-
-        scrubbed = rollbar._scrub_obj(obj)
-
-        self.assertDictEqual(scrubbed, {
-            'password': ''.join(['*'] * len(s))
-        })
-
-    def test_unicode_key_scrubbing(self):
-        s = 'is a unicode snowman!'
-        obj = {
-            SNOWMAN: s
-        }
-
-        rollbar.SETTINGS['scrub_fields'].append(SNOWMAN)
-        scrubbed = rollbar._scrub_obj(obj)
-
-        self.assertDictEqual(scrubbed, {
-            SNOWMAN: ''.join(['*'] * len(s))
-        })
-
-        obj2 = {
-            SNOWMAN: s
-        }
-
-        rollbar.SETTINGS['scrub_fields'].pop()
-        rollbar.SETTINGS['scrub_fields'].append(SNOWMAN)
-        scrubbed = rollbar._scrub_obj(obj2)
-
-        self.assertDictEqual(scrubbed, {
-            SNOWMAN: ''.join(['*'] * len(s))
-        })
-
     @mock.patch('rollbar.send_payload')
     def test_uuid(self, send_payload):
         uuid = rollbar.report_message('foo')
 
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
 
         self.assertEqual(payload['data']['uuid'], uuid)
-
 
     @mock.patch('rollbar.send_payload')
     def test_report_exc_info_level(self, send_payload):
@@ -421,7 +201,7 @@ class RollbarTest(BaseTest):
             rollbar.report_exc_info()
 
         self.assertEqual(send_payload.called, True)
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
         self.assertEqual(payload['data']['level'], 'error')
 
         try:
@@ -430,7 +210,7 @@ class RollbarTest(BaseTest):
             rollbar.report_exc_info(level='info')
 
         self.assertEqual(send_payload.called, True)
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
         self.assertEqual(payload['data']['level'], 'info')
 
         # payload takes precendence over 'level'
@@ -440,7 +220,7 @@ class RollbarTest(BaseTest):
             rollbar.report_exc_info(level='info', payload_data={'level': 'warn'})
 
         self.assertEqual(send_payload.called, True)
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
         self.assertEqual(payload['data']['level'], 'warn')
 
     @mock.patch('rollbar.send_payload')
@@ -458,7 +238,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertEqual(33, payload['data']['body']['trace']['frames'][-1]['args'][1])
@@ -475,7 +255,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
 
         self.assertNotIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('kwargs', payload['data']['body']['trace']['frames'][-1])
@@ -492,7 +272,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('kwargs', payload['data']['body']['trace']['frames'][-1])
@@ -512,7 +292,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('kwargs', payload['data']['body']['trace']['frames'][-1])
@@ -534,7 +314,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('kwargs', payload['data']['body']['trace']['frames'][-1])
@@ -554,7 +334,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('kwargs', payload['data']['body']['trace']['frames'][-1])
@@ -576,7 +356,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
 
         self.assertNotIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
@@ -597,7 +377,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
@@ -621,7 +401,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
@@ -652,7 +432,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('kwargs', payload['data']['body']['trace']['frames'][-1])
@@ -674,7 +454,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('kwargs', payload['data']['body']['trace']['frames'][-1])
@@ -699,20 +479,32 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
 
         self.assertNotIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertIn('kwargs', payload['data']['body']['trace']['frames'][-1])
 
         self.assertEqual(2, len(payload['data']['body']['trace']['frames'][-1]['kwargs']))
-        self.assertEqual('*********', payload['data']['body']['trace']['frames'][-1]['kwargs']['password'])
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['kwargs']['password'], '\*+')
         self.assertEqual('text', payload['data']['body']['trace']['frames'][-1]['kwargs']['clear'])
 
     @mock.patch('rollbar.send_payload')
     def test_scrub_locals(self, send_payload):
+        invalid_b64 = b'CuX2JKuXuLVtJ6l1s7DeeQ=='
+        invalid = base64.b64decode(invalid_b64)
+
         def _raise():
+            # Make sure that the _invalid local variable makes its
+            # way into the payload even if its value cannot be serialized
+            # properly.
+            _invalid = invalid
+
+            # Make sure the Password field gets scrubbed even though its
+            # original value could not be serialized properly.
+            Password = invalid
+
             password = 'sensitive'
-            raise Exception()
+            raise Exception((_invalid, Password, password))
 
         try:
             _raise()
@@ -721,9 +513,15 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
 
-        self.assertEqual('*********', payload['data']['body']['trace']['frames'][-1]['locals']['password'])
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['password'], '\*+')
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['Password'], '\*+')
+        self.assertIn('_invalid', payload['data']['body']['trace']['frames'][-1]['locals'])
+
+        binary_type_name = 'str' if python_major_version() < 3 else 'bytes'
+        undecodable_message = '<Undecodable type:(%s) base64:(%s)>' % (binary_type_name, base64.b64encode(invalid).decode('ascii'))
+        self.assertEqual(undecodable_message, payload['data']['body']['trace']['frames'][-1]['locals']['_invalid'])
 
     @mock.patch('rollbar.send_payload')
     def test_scrub_nans(self, send_payload):
@@ -739,7 +537,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
 
         self.assertEqual('Infinity', payload['data']['body']['trace']['frames'][-1]['locals']['infinity'])
         self.assertEqual('NaN', payload['data']['body']['trace']['frames'][-1]['locals']['not_a_number'])
@@ -754,15 +552,26 @@ class RollbarTest(BaseTest):
             obj['child'] = {
                 'parent': obj
             }
-            _raise(obj)
+
+            # NOTE(cory): We copy the dict here so that we don't produce a circular reference
+            # from the _rase() args.
+            _raise(dict(obj))
         except:
             rollbar.report_exc_info()
 
         self.assertEqual(send_payload.called, True)
 
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
 
-        self.assertEqual('<Circular Reference>', payload['data']['body']['trace']['frames'][-1]['locals']['obj']['child']['parent'])
+        self.assertTrue(
+            (isinstance(payload['data']['body']['trace']['frames'][-1]['locals']['obj'], dict) and
+             'child' in payload['data']['body']['trace']['frames'][-1]['locals']['obj'])
+
+             or
+
+            (isinstance(payload['data']['body']['trace']['frames'][-1]['locals']['obj'], string_types) and
+             payload['data']['body']['trace']['frames'][-1]['locals']['obj'].startswith('<CircularReference'))
+        )
 
     @mock.patch('rollbar.send_payload')
     def test_scrub_local_ref(self, send_payload):
@@ -783,7 +592,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
 
         self.assertEqual('sensitive', payload['data']['body']['trace']['frames'][-1]['locals']['copy'])
 
@@ -801,12 +610,12 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('kwargs', payload['data']['body']['trace']['frames'][-1])
-
         self.assertEqual(1, len(payload['data']['body']['trace']['frames'][-1]['args']))
+
         self.assertEqual("'###############################################...################################################'",
                          payload['data']['body']['trace']['frames'][-1]['args'][0])
 
@@ -818,21 +627,32 @@ class RollbarTest(BaseTest):
             raise Exception()
 
         try:
-            large = ['hi' for _ in range(30)]
-            _raise(large)
+            xlarge = ['hi' for _ in range(30)]
+            # NOTE(cory): We copy the list here so that the local variables from
+            # this frame are not referenced directly by the frame from _raise()
+            # call above. If we didn't copy this list, Rollbar would report a
+            # circular reference for the args on _raise().
+            _raise([str(x) for x in xlarge])
         except:
             rollbar.report_exc_info()
 
         self.assertEqual(send_payload.called, True)
 
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
 
         self.assertIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('kwargs', payload['data']['body']['trace']['frames'][-1])
 
         self.assertEqual(1, len(payload['data']['body']['trace']['frames'][-1]['args']))
-        self.assertEqual("['hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', ...]",
-                         payload['data']['body']['trace']['frames'][-1]['args'][0])
+
+        self.assertTrue(
+            ("['hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', ...]" ==
+                payload['data']['body']['trace']['frames'][-1]['args'][0])
+
+            or
+
+            ("['hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', ...]" ==
+                    payload['data']['body']['trace']['frames'][0]['locals']['xlarge']))
 
 
     @mock.patch('rollbar.send_payload')
@@ -849,7 +669,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
 
         self.assertNotIn('args', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('kwargs', payload['data']['body']['trace']['frames'][-1])
@@ -874,8 +694,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = send_payload.call_args[0][0]
-
+        payload = json.loads(send_payload.call_args[0][0])
         for frame in payload['data']['body']['trace']['frames']:
             self.assertIn('locals', frame)
 
@@ -894,7 +713,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
 
         num_frames = len(payload['data']['body']['trace']['frames'])
         for i, frame in enumerate(payload['data']['body']['trace']['frames']):
@@ -918,7 +737,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = send_payload.call_args[0][0]
+        payload = json.loads(send_payload.call_args[0][0])
 
         frames = payload['data']['body']['trace']['frames']
         called_with_frame = frames[1]
@@ -927,14 +746,7 @@ class RollbarTest(BaseTest):
 
     @mock.patch('rollbar.send_payload')
     def test_unicode_exc_info(self, send_payload):
-        unicode_char = '\u221a'
-
-        if sys.version_info[0] < 3:
-            message = unicode_char.decode('unicode-escape')
-            expected = '\xe2\x88\x9a'
-        else:
-            message = unicode_char
-            expected = message.encode('utf-8')
+        message = '\u221a'
 
         try:
             raise Exception(message)
@@ -942,9 +754,80 @@ class RollbarTest(BaseTest):
             rollbar.report_exc_info()
 
         self.assertEqual(send_payload.called, True)
-        payload = send_payload.call_args[0][0]
-        self.assertEqual(payload['data']['body']['trace']['exception']['message'], expected)
+        payload = json.loads(send_payload.call_args[0][0])
+        self.assertEqual(payload['data']['body']['trace']['exception']['message'], message)
 
+
+    @mock.patch('requests.post', side_effect=lambda *args, **kw: MockResponse({'status': 'OK'}, 200))
+    def test_serialize_and_send_payload(self, post=None):
+        invalid_b64 = b'CuX2JKuXuLVtJ6l1s7DeeQ=='
+        invalid = base64.b64decode(invalid_b64)
+
+        def _raise():
+            # Make sure that the _invalid local variable makes its
+            # way into the payload even if its value cannot be serialized
+            # properly.
+            _invalid = invalid
+
+            # Make sure the Password field gets scrubbed even though its
+            # original value could not be serialized properly.
+            Password = invalid
+
+            password = 'sensitive'
+            raise Exception('bug bug')
+
+        try:
+            _raise()
+        except:
+            rollbar.report_exc_info()
+
+        self.assertEqual(post.called, True)
+        payload_data = post.call_args[1]['data']
+        self.assertIsInstance(payload_data, str)
+        self.assertIn('bug bug', payload_data)
+
+        try:
+            json.loads(post.call_args[1]['data'])
+        except:
+            self.assertTrue(False)
+
+    def test_scrub_webob_request_data(self):
+        rollbar.SETTINGS['scrub_fields'].extend(['token', 'secret', 'cookies', 'authorization'])
+        rollbar.init(_test_access_token, locals={'enabled': True}, dummy_key='asdf', handler='blocking', timeout=12345)
+
+        import webob
+        request = webob.Request.blank('/the/path?q=hello&password=hunter2',
+                                      base_url='http://example.com',
+                                      headers={
+                                          'X-Real-Ip': '5.6.7.8',
+                                          'Cookies': 'name=value; password=hash;',
+                                          'Authorization': 'I am from NSA'
+                                      },
+                                      POST='foo=bar&confirm_password=hunter3&token=secret')
+
+        unscrubbed = rollbar._build_webob_request_data(request)
+        self.assertEqual(unscrubbed['url'], 'http://example.com/the/path?q=hello&password=hunter2')
+        self.assertEqual(unscrubbed['user_ip'], '5.6.7.8')
+        self.assertDictEqual(unscrubbed['GET'], {'q': 'hello', 'password': 'hunter2'})
+        self.assertDictEqual(unscrubbed['POST'], {'foo': 'bar', 'confirm_password': 'hunter3', 'token': 'secret'})
+        self.assertEqual('5.6.7.8', unscrubbed['headers']['X-Real-Ip'])
+        self.assertEqual('name=value; password=hash;', unscrubbed['headers']['Cookies'])
+        self.assertEqual('I am from NSA', unscrubbed['headers']['Authorization'])
+
+        scrubbed = rollbar._transform(unscrubbed)
+        self.assertRegex(scrubbed['url'], r'http://example.com/the/path\?(q=hello&password=-+)|(password=-+&q=hello)')
+
+        self.assertEqual(scrubbed['GET']['q'], 'hello')
+        self.assertRegex(scrubbed['GET']['password'], r'\*+')
+
+        self.assertEqual(scrubbed['POST']['foo'], 'bar')
+        self.assertRegex(scrubbed['POST']['confirm_password'], r'\*+')
+        self.assertRegex(scrubbed['POST']['token'], r'\*+')
+
+        self.assertEqual('5.6.7.8', scrubbed['headers']['X-Real-Ip'])
+
+        self.assertRegex(scrubbed['headers']['Cookies'], r'\*+')
+        self.assertRegex(scrubbed['headers']['Authorization'], r'\*+')
 
 
 ### Helpers
@@ -962,6 +845,20 @@ def step2():
 def called_with(arg1):
     arg1 = 'changed'
     step1()
+
+
+class MockResponse:
+    def __init__(self, json_data, status_code):
+        self.json_data = json_data
+        self.status_code = status_code
+
+    @property
+    def content(self):
+        return json.dumps(self.json_data)
+
+    def json(self):
+        return self.json_data
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -49,12 +49,13 @@ setup(
         ],
     install_requires=[
         'requests',
+        'six',
         ],
     tests_require=[
         'mock',
         'webob',
-        'Flask',
-        'blinker'
+        'blinker',
+        'unittest2'
         ],
     )
 

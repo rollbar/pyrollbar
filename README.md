@@ -59,6 +59,8 @@ ROLLBAR = {
 <!-- RemoveNextIfProject -->
 Be sure to replace ```POST_SERVER_ITEM_ACCESS_TOKEN``` with your project's ```post_server_item``` access token, which you can find in the Rollbar.com interface.
 
+Check out the [Django example](https://github.com/rollbar/pyrollbar/tree/master/rollbar/examples/django).
+
 ### Pyramid
 
 In your ``ini`` file (e.g. ``production.ini``), add ``rollbar.contrib.pyramid`` to the end of your ``pyramid.includes``:
