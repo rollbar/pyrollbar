@@ -26,7 +26,7 @@ class ScrubUrlTransformTest(BaseTest):
                                      scrub_password=scrub_password,
                                      redact_char=redact_char,
                                      randomize_len=False)
-        result = transforms.transform(start, scrubber)
+        result = transforms.transform(start, [scrubber])
 
         """
         print(start)
@@ -124,7 +124,7 @@ class ScrubUrlTransformTest(BaseTest):
         }
 
         scrubber = ScrubUrlTransform(suffixes=[('url',)], params_to_scrub=['password'], randomize_len=False)
-        result = transforms.transform(obj, scrubber)
+        result = transforms.transform(obj, [scrubber])
 
         expected = copy.deepcopy(obj)
         self.assertDictEqual(expected, result)
@@ -139,7 +139,7 @@ class ScrubUrlTransformTest(BaseTest):
         }
 
         scrubber = ScrubUrlTransform(suffixes=[('url',), ('link',)], params_to_scrub=['password'], randomize_len=False)
-        result = transforms.transform(obj, scrubber)
+        result = transforms.transform(obj, [scrubber])
 
         self.assertNotIn('secr3t', result['url'][0]['link'])
         self.assertNotIn('secret', result['url'][0]['link'])

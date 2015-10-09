@@ -669,7 +669,6 @@ def _report_message(message, level, request, extra_data, payload_data):
     }
 
     if extra_data:
-        #extra_data = _scrub_obj(extra_data)
         extra_data = extra_data
         data['body']['message'].update(extra_data)
 
@@ -1037,7 +1036,6 @@ def _build_werkzeug_request_data(request):
 
     try:
         if request.json:
-            #request_data['body'] = json.dumps(_scrub_obj(request.json))
             request_data['body'] = request.json
     except Exception:
         pass
@@ -1124,8 +1122,8 @@ def _build_server_data():
     return server_data
 
 
-def _transform(obj):
-    return transforms.transform(obj, *_transforms)
+def _transform(obj, key=None):
+    return transforms.transform(obj, _transforms, key=key)
 
 
 def _build_payload(data):
@@ -1133,9 +1131,15 @@ def _build_payload(data):
     Returns the full payload as a string.
     """
 
+    data['body'] = _transform(data['body'], key=('body',))
+    data['server'] = _transform(data['server'], key=('server',))
+
+    if 'request' in data:
+        data['request'] = _transform(data['request'], key=('request',))
+
     payload = {
         'access_token': SETTINGS['access_token'],
-        'data': _transform(data)
+        'data': data
     }
 
     return json.dumps(payload)
