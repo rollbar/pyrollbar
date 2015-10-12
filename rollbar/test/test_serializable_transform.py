@@ -152,20 +152,6 @@ class SerializableTransformTest(BaseTest):
         del expected[invalid]
         self._assertSerialized(start, expected)
 
-        """
-        if python_major_version < 3:
-            # Python 2 allows bytes as dict keys, however if those bytes
-            # contain unicode that cannot be converted to utf8, we will
-            # generate a custom key: <Undecodable base64:(%s)> for it.
-            self.assertEqual(2, len(decoded))
-            self.assertIn(quoted_undecodable_repr, decoded)
-            self.assertEqual('works?', decoded[quoted_undecodable_repr])
-        else:
-            self.assertEqual(1, len(decoded))
-
-        self.assertEqual('world', decoded['hello'])
-        """
-
     def test_encode_with_custom_repr(self):
         class CustomRepr(object):
             def __repr__(self):
