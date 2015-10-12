@@ -24,7 +24,7 @@ import requests
 
 import six
 
-from rollbar.lib import dict_merge, parse_qs, text, urljoin, urlparse
+from rollbar.lib import dict_merge, map, parse_qs, text, urljoin, urlparse, iteritems
 
 
 log = logging.getLogger(__name__)
@@ -294,6 +294,7 @@ SETTINGS = {
 
 # Set in init()
 _transforms = []
+_serialize_transform = None
 
 _initialized = False
 
@@ -322,7 +323,7 @@ def init(access_token, environment='production', **kw):
                  'staging', 'yourname'
     **kw: provided keyword arguments will override keys in SETTINGS.
     """
-    global SETTINGS, agent_log, _initialized, _transforms
+    global SETTINGS, agent_log, _initialized, _transforms, _serialize_transform
 
     # We will perform these transforms in order:
     # 1. Serialize the payload to be all python built-in objects
@@ -330,8 +331,9 @@ def init(access_token, environment='production', **kw):
     # 3. Scrub URLs in the payload for keys that end with 'url'
     # 4. Optional - If local variable gathering is enabled, transform the
     #       trace frame values using the ShortReprTransform.
+    _serialize_transform = SerializableTransform()
     _transforms = [
-        SerializableTransform(),
+        _serialize_transform,
         ScrubTransform(suffixes=[(field,) for field in SETTINGS['scrub_fields']], redact_char='*'),
         ScrubUrlTransform(suffixes=[(field,) for field in SETTINGS['url_fields']], params_to_scrub=SETTINGS['scrub_fields'])
     ]
@@ -890,14 +892,21 @@ def _add_locals_data(data, exc_info):
         except Exception as e:
             log.exception('Error while extracting arguments from frame. Ignoring.')
 
+        # Finally, serialize each arg/kwarg/local separately so that we only report
+        # CircularReferences for each variable, instead of for the entire payload
+        # as would be the case if we serialized that payload in one-shot.
         if args:
-            cur_frame['args'] = args
+            cur_frame['args'] = map(_serialize_frame_data, args)
         if kw:
-            cur_frame['kwargs'] = kw
+            cur_frame['kwargs'] = dict((k, _serialize_frame_data(v)) for k, v in iteritems(kw))
         if _locals:
-            cur_frame['locals'] = _locals
+            cur_frame['locals'] = dict((k, _serialize_frame_data(v)) for k, v in iteritems(_locals))
 
         frame_num += 1
+
+
+def _serialize_frame_data(data):
+    return transforms.transform(data, (_serialize_transform,))
 
 
 def _add_request_data(data, request):
@@ -1131,11 +1140,8 @@ def _build_payload(data):
     Returns the full payload as a string.
     """
 
-    data['body'] = _transform(data['body'], key=('body',))
-    data['server'] = _transform(data['server'], key=('server',))
-
-    if 'request' in data:
-        data['request'] = _transform(data['request'], key=('request',))
+    for k, v in iteritems(data):
+        data[k] = _transform(v, key=(k,))
 
     payload = {
         'access_token': SETTINGS['access_token'],
