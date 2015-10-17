@@ -1,4 +1,4 @@
-# Rollbar notifier for Python [![Build Status](https://travis-ci.org/rollbar/pyrollbar.png?branch=v0.10.1)](https://travis-ci.org/rollbar/pyrollbar)
+# Rollbar notifier for Python [![Build Status](https://travis-ci.org/rollbar/pyrollbar.png?branch=v0.11.0)](https://travis-ci.org/rollbar/pyrollbar)
 
 <!-- RemoveNext -->
 Python notifier for reporting exceptions, errors, and log messages to [Rollbar](https://rollbar.com).
@@ -404,7 +404,7 @@ Default: ```thread```
   <dt>scrub_fields</dt>
   <dd>List of sensitive field names to scrub out of request params and locals. Values will be replaced with asterisks. If overriding, make sure to list all fields you want to scrub, not just fields you want to add to the default. Param names are converted to lowercase before comparing against the scrub list.
 
-Default: ```['passwd', 'password', 'secret', 'confirm_password', 'password_confirmation']```
+Default: ```['pw', 'passwd', 'password', 'secret', 'confirm_password', 'confirmPassword', 'password_confirmation', 'passwordConfirmation', 'access_token', 'auth', 'authentication']```
 
   </dd>
   <dt>timeout</dt>

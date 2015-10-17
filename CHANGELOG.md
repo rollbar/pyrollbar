@@ -1,5 +1,16 @@
 # Change Log
 
+**0.11.0**
+- Overhauled the scrubbing and serialization mechanisms to provide deep object scrubbing and better handling of UTF-8 data from local variables. See [#75](https://github.com/rollbar/pyrollbar/pull/75)
+  - This fixes a bunch of problems with reporting local variables, including `UnicodeEncodeError`s and attempting to read variables after the thread they were in has died.
+- Local variables and payload data is now sent over in their original structure.
+  - If a variable was a `dict`, it will be transmitted as a `dict` instead of turned into a string representation of the variable.
+- The entire payload is now scrubbed and URL password fields are scrubbed as well.  
+- Added a Django example.
+- Wrote many, many more tests :)
+- Integrated the `six` library to provide cleaner support for Python3.
+- Added some additional scrub fields.
+
 **0.10.1**
 - Added a warning message if `init()` is called more than once.
 
