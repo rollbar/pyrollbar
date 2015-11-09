@@ -174,7 +174,7 @@ except ImportError:
     TwistedHTTPClient = None
     inlineCallbacks = passthrough_decorator
     StringProducer = None
-    
+
 
 def get_request():
     """
@@ -1044,8 +1044,7 @@ def _build_werkzeug_request_data(request):
     }
 
     try:
-        if request.json:
-            request_data['body'] = request.json
+        request_data['body'] = request.body
     except Exception:
         pass
 
@@ -1077,7 +1076,7 @@ def _build_bottle_request_data(request):
 
     if request.json:
         try:
-            request_data['body'] = request.body.getvalue()
+            request_data['body'] = request.body.read()
         except:
             pass
     else:
