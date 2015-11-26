@@ -10,6 +10,8 @@ matrix:
       env: FLASK_VERSION=0.10.1
     - python: "3.4"
       env: FLASK_VERSION=0.10.1
+    - python: "3.5"
+      env: FLASK_VERSION=0.10.1
 
     - python: "2.7"
       env: TWISTED_VERSION=15.4
@@ -23,6 +25,8 @@ matrix:
     - python: "3.3"
       env: DJANGO_VERSION=1.8
     - python: "3.4"
+      env: DJANGO_VERSION=1.8
+    - python: "3.5"
       env: DJANGO_VERSION=1.8
 
 install:
