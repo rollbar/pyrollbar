@@ -396,6 +396,9 @@ Default: ```thread```
           <dd>Default 100</dd>
         </dl>
       </dd>
+      <dt>whitelisted_types</dt>
+      <dd>A list of `type` objects, (e.g. `type(my_class_instance)` or `MyClass`) that will be serialized using
+      `repr()`. Default `[]`</dd>
     </dl>
   </dd>
   <dt>root</dt>
