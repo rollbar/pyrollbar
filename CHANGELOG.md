@@ -1,5 +1,10 @@
 # Change Log
 
+**0.11.1**
+- Added a new configuration option to expose the serializer's `whitelisted_types` param
+  - Allows users to whitelist types to be serialized using `repr(obj)` instead of `str(type(obj))`
+- Fixed a bug that was not taking the `safe_repr` option into account. See [#87](https://github.com/rollbar/pyrollbar/pull/87)
+
 **0.11.0**
 - Overhauled the scrubbing and serialization mechanisms to provide deep object scrubbing and better handling of UTF-8 data from local variables. See [#75](https://github.com/rollbar/pyrollbar/pull/75)
   - This fixes a bunch of problems with reporting local variables, including `UnicodeEncodeError`s and attempting to read variables after the thread they were in has died.
