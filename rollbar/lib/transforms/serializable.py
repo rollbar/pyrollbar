@@ -8,8 +8,9 @@ from rollbar.lib.transforms import Transform
 
 
 class SerializableTransform(Transform):
-    def __init__(self, whitelist_types=None):
+    def __init__(self, safe_repr=True, whitelist_types=None):
         super(SerializableTransform, self).__init__()
+        self.safe_repr = safe_repr
         self.whitelist = set(whitelist_types or [])
 
     def transform_circular_reference(self, o, key=None, ref_key=None):
@@ -80,6 +81,14 @@ class SerializableTransform(Transform):
             except TypeError:
                 pass
 
+        # If self.safe_repr is False, use repr() to serialize the object
+        if not self.safe_repr:
+            try:
+                return repr(o)
+            except TypeError:
+                pass
+
+        # Otherwise, just use the type name
         return str(type(o))
 
 

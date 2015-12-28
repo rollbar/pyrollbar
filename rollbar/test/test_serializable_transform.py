@@ -24,8 +24,8 @@ undecodable_repr = '<Undecodable type:(%s) base64:(%s)>' % (binary_type_name, in
 
 
 class SerializableTransformTest(BaseTest):
-    def _assertSerialized(self, start, expected, whitelist=None, skip_id_check=False):
-        serializable = SerializableTransform(whitelist_types=whitelist)
+    def _assertSerialized(self, start, expected, safe_repr=True, whitelist=None, skip_id_check=False):
+        serializable = SerializableTransform(safe_repr=safe_repr, whitelist_types=whitelist)
         result = transforms.transform(start, [serializable])
 
         """
@@ -152,7 +152,27 @@ class SerializableTransformTest(BaseTest):
         del expected[invalid]
         self._assertSerialized(start, expected)
 
-    def test_encode_with_custom_repr(self):
+    def test_encode_with_custom_repr_no_whitelist(self):
+        class CustomRepr(object):
+            def __repr__(self):
+                return 'hello'
+
+        start = {'hello': 'world', 'custom': CustomRepr()}
+        expected = copy.deepcopy(start)
+        expected['custom'] = str(CustomRepr)
+        self._assertSerialized(start, expected)
+
+    def test_encode_with_custom_repr_no_whitelist_no_safe_repr(self):
+        class CustomRepr(object):
+            def __repr__(self):
+                return 'hello'
+
+        start = {'hello': 'world', 'custom': CustomRepr()}
+        expected = copy.deepcopy(start)
+        expected['custom'] = 'hello'
+        self._assertSerialized(start, expected, safe_repr=False)
+
+    def test_encode_with_custom_repr_whitelist(self):
         class CustomRepr(object):
             def __repr__(self):
                 return 'hello'

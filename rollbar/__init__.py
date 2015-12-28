@@ -287,7 +287,8 @@ SETTINGS = {
     'locals': {
         'enabled': True,
         'safe_repr': True,
-        'sizes': DEFAULT_LOCALS_SIZES
+        'sizes': DEFAULT_LOCALS_SIZES,
+        'whitelisted_types': []
     },
     'verify_https': True
 }
@@ -331,7 +332,8 @@ def init(access_token, environment='production', **kw):
     # 3. Scrub URLs in the payload for keys that end with 'url'
     # 4. Optional - If local variable gathering is enabled, transform the
     #       trace frame values using the ShortReprTransform.
-    _serialize_transform = SerializableTransform()
+    _serialize_transform = SerializableTransform(safe_repr=SETTINGS['locals']['safe_repr'],
+                                                 whitelist_types=SETTINGS['locals']['whitelisted_types'])
     _transforms = [
         _serialize_transform,
         ScrubTransform(suffixes=[(field,) for field in SETTINGS['scrub_fields']], redact_char='*'),
