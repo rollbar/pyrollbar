@@ -317,7 +317,7 @@ class Rollbar(object):
     settings = {
         'access_token': None,
         'enabled': True,
-        'environment': 'production',
+        'environment': None,
         'exception_level_filters': [],
         'root': None,  # root path to your code
         'branch': None,  # git branch name
@@ -387,45 +387,28 @@ class Rollbar(object):
         # 3. Scrub URLs in the payload for keys that end with 'url'
         # 4. Optional - If local variable gathering is enabled, transform the
         #       trace frame values using the ShortReprTransform.
-        self._serialize_transform = SerializableTransform(safe_repr=SETTINGS['locals']['safe_repr'],
-                                                     whitelist_types=SETTINGS['locals']['whitelisted_types'])
-        self._transforms = [
-            self._serialize_transform,
-            ScrubTransform(suffixes=[(field,) for field in SETTINGS['scrub_fields']], redact_char='*'),
-            ScrubUrlTransform(suffixes=[(field,) for field in SETTINGS['url_fields']], params_to_scrub=SETTINGS['scrub_fields'])
-        ]
+        self._serialize_transform = SerializableTransform(safe_repr=self.settings['locals']['safe_repr'],
+                                                          whitelist_types=self.settings['locals']['whitelisted_types'])
 
         self.settings = copy.deepcopy(self.settings)
-
-        # A list of key prefixes to apply our shortener transform to
-        shortener_keys = [
-            ('body', 'request', 'POST'),
-            ('body', 'request', 'json'),
-        ]
-
-        if SETTINGS['locals']['enabled']:
-            shortener_keys.append(('body', 'trace', 'frames', '*', 'code'))
-            shortener_keys.append(('body', 'trace', 'frames', '*', 'args', '*'))
-            shortener_keys.append(('body', 'trace', 'frames', '*', 'kwargs', '*'))
-            shortener_keys.append(('body', 'trace', 'frames', '*', 'locals', '*'))
-
-        shortener = ShortenerTransform(safe_repr=self.settings['locals']['safe_repr'],
-                                       keys=shortener_keys,
-                                       **self.settings['locals']['sizes'])
-        self._transforms.append(shortener)
+        self._update_transforms()
 
         self.settings['access_token'] = access_token
-        self.settings['environment'] = environment
+        if not environment:
+            # Allow settings via environment variable
+            environment = os.environ.get('ROLLBAR_ENV', 'produciton')
+            self.settings['environment'] = environment
 
-        # Merge the extra config settings into SETTINGS
-        self.settings = dict_merge(SETTINGS, kw)
+        # Merge the extra config settings into self.settings
+        self.settings = dict_merge(self.settings, kw)
 
         # TODO - (bchapman)
         if self.settings.get('allow_logging_basic_config'):
             logging.basicConfig()
 
         if self.settings.get('handler') == 'agent':
-            agent_log = self._create_agent_log()
+            self.agent_log = self._create_agent_log()
+
 
     def report_exc_info(self, exc_info=None, request=None, extra_data=None, payload_data=None, level=None, **kw):
         """
@@ -480,7 +463,7 @@ class Rollbar(object):
         - 'agent': writes to a log file to be processed by rollbar-agent
         - 'tornado': calls _send_payload_tornado() (which makes an async HTTP request using tornado's AsyncHTTPClient)
         """
-        handler = self.setting.get('handler')
+        handler = self.settings.get('handler')
         if handler == 'blocking':
             self._send_payload(payload, access_token)
         elif handler == 'agent':
@@ -554,6 +537,30 @@ class Rollbar(object):
 
     def _is_ignored(self, exception):
         return self._filtered_level(exception) == 'ignored'
+
+    def _update_transforms(self):
+        self._transforms = [
+            self._serialize_transform,
+            ScrubTransform(suffixes=[(field,) for field in self.settings['scrub_fields']], redact_char='*'),
+            ScrubUrlTransform(suffixes=[(field,) for field in self.settings['url_fields']], params_to_scrub=self.settings['scrub_fields'])
+        ]
+
+        # A list of key prefixes to apply our shortener transform to
+        shortener_keys = [
+            ('body', 'request', 'POST'),
+            ('body', 'request', 'json'),
+        ]
+
+        if self.settings['locals']['enabled']:
+            shortener_keys.append(('body', 'trace', 'frames', '*', 'code'))
+            shortener_keys.append(('body', 'trace', 'frames', '*', 'args', '*'))
+            shortener_keys.append(('body', 'trace', 'frames', '*', 'kwargs', '*'))
+            shortener_keys.append(('body', 'trace', 'frames', '*', 'locals', '*'))
+
+        shortener = ShortenerTransform(safe_repr=self.settings['locals']['safe_repr'],
+                                       keys=shortener_keys,
+                                       **self.settings['locals']['sizes'])
+        self._transforms.append(shortener)
 
     def _create_agent_log(self):
         """
@@ -877,7 +884,6 @@ class Rollbar(object):
     def _serialize_frame_data(self, data):
         return transforms.transform(data, (self._serialize_transform,))
 
-
     def _add_request_data(self, data, request):
         """
         Attempts to build request data; if successful, sets the 'request' key on `data`.
@@ -899,7 +905,7 @@ class Rollbar(object):
         return any(((frame_num == total_frames - 1),
                     ('root' in self.settings and (frame.get('filename') or '').lower().startswith((self.settings['root'] or '').lower()))))
 
-    def _build_request_data(request):
+    def _build_request_data(self, request):
         """
         Returns a dictionary containing data from the request.
         Can handle webob or werkzeug-based request objects.
@@ -991,7 +997,7 @@ class Rollbar(object):
         except:
             pass
 
-        request_data['headers'] = _extract_wsgi_headers(request.environ.items())
+        request_data['headers'] = self._extract_wsgi_headers(request.environ.items())
 
         return request_data
 
@@ -1000,7 +1006,7 @@ class Rollbar(object):
             'url': request.url,
             'GET': dict(request.args),
             'POST': dict(request.form),
-            'user_ip': _extract_user_ip(request),
+            'user_ip': self._extract_user_ip(request),
             'headers': dict(request.headers),
             'method': request.method,
             'files_keys': request.files.keys(),
@@ -1053,7 +1059,7 @@ class Rollbar(object):
             'method': request.get('REQUEST_METHOD'),
         }
         if 'QUERY_STRING' in request:
-            request_data['GET'] = self.parse_qs(request['QUERY_STRING'], keep_blank_values=True)
+            request_data['GET'] = parse_qs(request['QUERY_STRING'], keep_blank_values=True)
             # Collapse single item arrays
             request_data['GET'] = dict((k, v[0] if len(v) == 1 else v) for k, v in request_data['GET'].items())
 
@@ -1092,7 +1098,7 @@ class Rollbar(object):
     def _transform(self, obj, key=None):
         return transforms.transform(obj, self._transforms, key=key)
 
-    def _build_payload(data):
+    def _build_payload(self, data):
         """
         Returns the full payload as a string.
         """
@@ -1106,6 +1112,12 @@ class Rollbar(object):
         }
 
         return json.dumps(payload)
+
+    def _send_payload(self, payload, access_token):
+        try:
+            self._post_api('item/', payload, access_token=access_token)
+        except Exception as e:
+            log.exception('Exception while posting item %r', e)
 
     def _post_api_appengine(self, path, payload, access_token=None):
         headers = {'Content-Type': 'application/json'}
@@ -1190,10 +1202,10 @@ class Rollbar(object):
 
         agent = TwistedHTTPClient(reactor, connectTimeout=self.settings.get('timeout', self.default_timeout))
         resp = yield agent.request(
-               'POST',
-               url,
-               TwistedHeaders(headers),
-               StringProducer(payload))
+            'POST',
+            url,
+            TwistedHeaders(headers),
+            StringProducer(payload))
 
         r = requests.Response()
         r.status_code = resp.code
@@ -1261,9 +1273,9 @@ class Rollbar(object):
         return environ['REMOTE_ADDR']
 
 
-
 # Keep consistent base public API by having a default rollbar instance
 DEFAULT_ROLLBAR = None
+
 
 def init(access_token, environment=None, **kw):
     """

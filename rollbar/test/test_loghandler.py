@@ -1,7 +1,6 @@
 """
 Tests for the RollbarHandler logging handler
 """
-import copy
 import json
 import logging
 import mock
@@ -15,13 +14,11 @@ from rollbar.test import BaseTest
 
 _test_access_token = 'aaaabbbbccccddddeeeeffff00001111'
 _test_environment = 'test'
-_default_settings = copy.deepcopy(rollbar.SETTINGS)
 
 
 class LogHandlerTest(BaseTest):
     def setUp(self):
-        rollbar._initialized = False
-        rollbar.SETTINGS = copy.deepcopy(_default_settings)
+        rollbar.DEFAULT_ROLLBAR = None
 
     def _create_logger(self):
         logger = logging.getLogger(__name__)
@@ -34,7 +31,7 @@ class LogHandlerTest(BaseTest):
 
         return logger
 
-    @mock.patch('rollbar.send_payload')
+    @mock.patch('rollbar.Rollbar.send_payload')
     def test_message_stays_unformatted(self, send_payload):
         logger = self._create_logger()
         logger.warning("Hello %d %s", 1, 'world')
@@ -54,12 +51,12 @@ class LogHandlerTest(BaseTest):
         # No need to test request parsing and payload sent,
         # just need to be sure that proper rollbar function is called
         # with passed request as argument.
-        with mock.patch("rollbar.report_message") as report_message_mock:
+        with mock.patch("rollbar.Rollbar.report_message") as report_message_mock:
             logger.warning("Warning message", extra={"request": request})
-            self.assertEqual(report_message_mock.call_args[1]["request"], request)
+            self.assertEqual(report_message_mock.call_args[0][2], request)
 
         # Python 2.6 doesnt support extra param in logger.exception.
         if not sys.version_info[:2] == (2, 6):
-            with mock.patch("rollbar.report_exc_info") as report_exc_info:
+            with mock.patch("rollbar.Rollbar.report_exc_info") as report_exc_info:
                 logger.exception("Exception message", extra={"request": request})
-                self.assertEqual(report_exc_info.call_args[1]["request"], request)
+                self.assertEqual(report_exc_info.call_args[0][1], request)
