@@ -1,5 +1,5 @@
 """
-Plugin for Pyramid apps to submit errors to Rollbar
+Plugin to submit errors to Rollbar
 """
 from __future__ import absolute_import
 from __future__ import unicode_literals
@@ -161,6 +161,7 @@ try:
             if issubclass(err.type, ApiException):
                 log.error('Rollbar internal error: %s', err.value)
             else:
+                # TODO - Need instance
                 report_exc_info((err.type, err.value, err.getTracebackObject()))
         except:
             log.exception('Error while reporting to Rollbar')
@@ -174,7 +175,7 @@ except ImportError:
     TwistedHTTPClient = None
     inlineCallbacks = passthrough_decorator
     StringProducer = None
-    
+
 
 def get_request():
     """
@@ -228,262 +229,13 @@ def _get_pylons_request():
     return request
 
 
-BASE_DATA_HOOK = None
-
-agent_log = None
-
 VERSION = __version__
-DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/'
-DEFAULT_TIMEOUT = 3
-
-DEFAULT_LOCALS_SIZES = {
-    'maxlevel': 5,
-    'maxdict': 10,
-    'maxlist': 10,
-    'maxtuple': 10,
-    'maxset': 10,
-    'maxfrozenset': 10,
-    'maxdeque': 10,
-    'maxarray': 10,
-    'maxstring': 100,
-    'maxlong': 40,
-    'maxother': 100,
-}
-
-# configuration settings
-# configure by calling init() or overriding directly
-SETTINGS = {
-    'access_token': None,
-    'enabled': True,
-    'environment': 'production',
-    'exception_level_filters': [],
-    'root': None,  # root path to your code
-    'branch': None,  # git branch name
-    'code_version': None,
-    'handler': 'thread',  # 'blocking', 'thread', 'agent', 'tornado', 'gae' or 'twisted'
-    'endpoint': DEFAULT_ENDPOINT,
-    'timeout': DEFAULT_TIMEOUT,
-    'agent.log_file': 'log.rollbar',
-    'scrub_fields': [
-        'pw',
-        'passwd',
-        'password',
-        'secret',
-        'confirm_password',
-        'confirmPassword',
-        'password_confirmation',
-        'passwordConfirmation',
-        'access_token',
-        'accessToken',
-        'auth',
-        'authentication',
-    ],
-    'url_fields': ['url', 'link', 'href'],
-    'notifier': {
-        'name': 'pyrollbar',
-        'version': VERSION
-    },
-    'allow_logging_basic_config': True,  # set to False to avoid a call to logging.basicConfig()
-    'locals': {
-        'enabled': True,
-        'safe_repr': True,
-        'sizes': DEFAULT_LOCALS_SIZES,
-        'whitelisted_types': []
-    },
-    'verify_https': True
-}
-
-# Set in init()
-_transforms = []
-_serialize_transform = None
-
-_initialized = False
-
-# Do not call repr() on these types while gathering local variables
-blacklisted_local_types = []
-
 
 from rollbar.lib import transforms
 from rollbar.lib.transforms.scrub import ScrubTransform
 from rollbar.lib.transforms.scruburl import ScrubUrlTransform
 from rollbar.lib.transforms.serializable import SerializableTransform
 from rollbar.lib.transforms.shortener import ShortenerTransform
-
-
-## public api
-
-def init(access_token, environment='production', **kw):
-    """
-    Saves configuration variables in this module's SETTINGS.
-
-    access_token: project access token. Get this from the Rollbar UI:
-                  - click "Settings" in the top nav
-                  - click "Projects" in the left nav
-                  - copy-paste the appropriate token.
-    environment: environment name. Can be any string; suggestions: 'production', 'development',
-                 'staging', 'yourname'
-    **kw: provided keyword arguments will override keys in SETTINGS.
-    """
-    global SETTINGS, agent_log, _initialized, _transforms, _serialize_transform
-
-    # We will perform these transforms in order:
-    # 1. Serialize the payload to be all python built-in objects
-    # 2. Scrub the payloads based on the key suffixes in SETTINGS['scrub_fields']
-    # 3. Scrub URLs in the payload for keys that end with 'url'
-    # 4. Optional - If local variable gathering is enabled, transform the
-    #       trace frame values using the ShortReprTransform.
-    _serialize_transform = SerializableTransform(safe_repr=SETTINGS['locals']['safe_repr'],
-                                                 whitelist_types=SETTINGS['locals']['whitelisted_types'])
-    _transforms = [
-        _serialize_transform,
-        ScrubTransform(suffixes=[(field,) for field in SETTINGS['scrub_fields']], redact_char='*'),
-        ScrubUrlTransform(suffixes=[(field,) for field in SETTINGS['url_fields']], params_to_scrub=SETTINGS['scrub_fields'])
-    ]
-
-    # A list of key prefixes to apply our shortener transform to
-    shortener_keys = [
-        ('body', 'request', 'POST'),
-        ('body', 'request', 'json'),
-    ]
-
-    if SETTINGS['locals']['enabled']:
-        shortener_keys.append(('body', 'trace', 'frames', '*', 'code'))
-        shortener_keys.append(('body', 'trace', 'frames', '*', 'args', '*'))
-        shortener_keys.append(('body', 'trace', 'frames', '*', 'kwargs', '*'))
-        shortener_keys.append(('body', 'trace', 'frames', '*', 'locals', '*'))
-
-    shortener = ShortenerTransform(safe_repr=SETTINGS['locals']['safe_repr'],
-                                   keys=shortener_keys,
-                                   **SETTINGS['locals']['sizes'])
-    _transforms.append(shortener)
-
-    if _initialized:
-        # NOTE: Temp solution to not being able to re-init.
-        # New versions of pyrollbar will support re-initialization
-        # via the (not-yet-implemented) configure() method.
-        log.warn('Rollbar already initialized. Ignoring re-init.')
-    else:
-        _initialized = True
-
-        SETTINGS['access_token'] = access_token
-        SETTINGS['environment'] = environment
-
-        # Merge the extra config settings into SETTINGS
-        SETTINGS = dict_merge(SETTINGS, kw)
-
-        if SETTINGS.get('allow_logging_basic_config'):
-            logging.basicConfig()
-
-        if SETTINGS.get('handler') == 'agent':
-            agent_log = _create_agent_log()
-
-
-def report_exc_info(exc_info=None, request=None, extra_data=None, payload_data=None, level=None, **kw):
-    """
-    Reports an exception to Rollbar, using exc_info (from calling sys.exc_info())
-
-    exc_info: optional, should be the result of calling sys.exc_info(). If omitted, sys.exc_info() will be called here.
-    request: optional, a WebOb or Werkzeug-based request object.
-    extra_data: optional, will be included in the 'custom' section of the payload
-    payload_data: optional, dict that will override values in the final payload
-                  (e.g. 'level' or 'fingerprint')
-    kw: provided for legacy purposes; unused.
-
-    Example usage:
-
-    rollbar.init(access_token='YOUR_PROJECT_ACCESS_TOKEN')
-    try:
-        do_something()
-    except:
-        rollbar.report_exc_info(sys.exc_info(), request, {'foo': 'bar'}, {'level': 'warning'})
-    """
-    if exc_info is None:
-        exc_info = sys.exc_info()
-
-    try:
-        return _report_exc_info(exc_info, request, extra_data, payload_data, level=level)
-    except Exception as e:
-        log.exception("Exception while reporting exc_info to Rollbar. %r", e)
-
-
-def report_message(message, level='error', request=None, extra_data=None, payload_data=None):
-    """
-    Reports an arbitrary string message to Rollbar.
-
-    message: the string body of the message
-    level: level to report at. One of: 'critical', 'error', 'warning', 'info', 'debug'
-    request: the request object for the context of the message
-    extra_data: dictionary of params to include with the message. 'body' is reserved.
-    payload_data: param names to pass in the 'data' level of the payload; overrides defaults.
-    """
-    try:
-        return _report_message(message, level, request, extra_data, payload_data)
-    except Exception as e:
-        log.exception("Exception while reporting message to Rollbar. %r", e)
-
-
-def send_payload(payload, access_token):
-    """
-    Sends a payload object, (the result of calling _build_payload()).
-    Uses the configured handler from SETTINGS['handler']
-
-    Available handlers:
-    - 'blocking': calls _send_payload() (which makes an HTTP request) immediately, blocks on it
-    - 'thread': starts a single-use thread that will call _send_payload(). returns immediately.
-    - 'agent': writes to a log file to be processed by rollbar-agent
-    - 'tornado': calls _send_payload_tornado() (which makes an async HTTP request using tornado's AsyncHTTPClient)
-    """
-    handler = SETTINGS.get('handler')
-    if handler == 'blocking':
-        _send_payload(payload, access_token)
-    elif handler == 'agent':
-        agent_log.error(payload, access_token)
-    elif handler == 'tornado':
-        if TornadoAsyncHTTPClient is None:
-            log.error('Unable to find tornado')
-            return
-        _send_payload_tornado(payload, access_token)
-    elif handler == 'gae':
-        if AppEngineFetch is None:
-            log.error('Unable to find AppEngine URLFetch module')
-            return
-        _send_payload_appengine(payload, access_token)
-    elif handler == 'twisted':
-        if TwistedHTTPClient is None:
-            log.error('Unable to find twisted')
-            return
-        _send_payload_twisted(payload, access_token)
-    else:
-        # default to 'thread'
-        thread = threading.Thread(target=_send_payload, args=(payload, access_token))
-        thread.start()
-
-
-def search_items(title, return_fields=None, access_token=None, endpoint=None, **search_fields):
-    """
-    Searches a project for items that match the input criteria.
-
-    title: all or part of the item's title to search for.
-    return_fields: the fields that should be returned for each item.
-            e.g. ['id', 'project_id', 'status'] will return a dict containing
-                 only those fields for each item.
-    access_token: a project access token. If this is not provided,
-                  the one provided to init() will be used instead.
-    search_fields: additional fields to include in the search.
-            currently supported: status, level, environment
-    """
-    if not title:
-        return []
-
-    if return_fields is not None:
-        return_fields = ','.join(return_fields)
-
-    return _get_api('search/',
-                    title=title,
-                    fields=return_fields,
-                    access_token=access_token,
-                    endpoint=endpoint,
-                    **search_fields)
 
 
 class ApiException(Exception):
@@ -532,799 +284,1095 @@ class PagedResult(Result):
         result = result.next_page()
         print 'Second page: %d, data: %s' % (result.page, result.data)
     """
-    def __init__(self, access_token, path, page_num, params, data, endpoint=None):
+    def __init__(self, rollbar, access_token, path, page_num, params, data, endpoint=None):
         super(PagedResult, self).__init__(access_token, path, params, data)
+        self.rollbar = rollbar
         self.page = page_num
         self.endpoint = endpoint
 
     def next_page(self):
         params = copy.copy(self.params)
         params['page'] = self.page + 1
-        return _get_api(self.path, endpoint=self.endpoint, **params)
+        return self.rollbar._get_api(self.path, endpoint=self.endpoint, **params)
 
     def prev_page(self):
         if self.page <= 1:
             return self
         params = copy.copy(self.params)
         params['page'] = self.page - 1
-        return _get_api(self.path, endpoint=self.endpoint, **params)
+        return self.rollbar._get_api(self.path, endpoint=self.endpoint, **params)
 
 
-## internal functions
+class Rollbar(object):
+    default_endpoint = 'https://api.rollbar.com/api/1/'
+    default_timeout = 3
 
+    base_data_hook = None
+    agent_log = None
 
-def _resolve_exception_class(idx, filter):
-    cls, level = filter
-    if isinstance(cls, six.string_types):
-        # Lazily resolve class name
-        parts = cls.split('.')
-        module = '.'.join(parts[:-1])
-        if module in sys.modules and hasattr(sys.modules[module], parts[-1]):
-            cls = getattr(sys.modules[module], parts[-1])
-            SETTINGS['exception_level_filters'][idx] = (cls, level)
+    # Do not call repr() on these types while gathering local variables
+    blacklisted_local_types = []
+
+    # configuration settings
+    settings = {
+        'access_token': None,
+        'enabled': True,
+        'environment': 'production',
+        'exception_level_filters': [],
+        'root': None,  # root path to your code
+        'branch': None,  # git branch name
+        'code_version': None,
+        'handler': 'thread',  # 'blocking', 'thread', 'agent', 'tornado', 'gae' or 'twisted'
+        'endpoint': default_endpoint,
+        'timeout': default_timeout,
+        'agent.log_file': 'log.rollbar',
+        'scrub_fields': [
+            'pw',
+            'passwd',
+            'password',
+            'secret',
+            'confirm_password',
+            'confirmPassword',
+            'password_confirmation',
+            'passwordConfirmation',
+            'access_token',
+            'accessToken',
+            'auth',
+            'authentication',
+        ],
+        'url_fields': ['url', 'link', 'href'],
+        'notifier': {
+            'name': 'pyrollbar',
+            'version': VERSION
+        },
+        'allow_logging_basic_config': True,  # set to False to avoid a call to logging.basicConfig()
+        'locals': {
+            'enabled': True,
+            'safe_repr': True,
+            'sizes': {
+                'maxlevel': 5,
+                'maxdict': 10,
+                'maxlist': 10,
+                'maxtuple': 10,
+                'maxset': 10,
+                'maxfrozenset': 10,
+                'maxdeque': 10,
+                'maxarray': 10,
+                'maxstring': 100,
+                'maxlong': 40,
+                'maxother': 100,
+            },
+            'whitelisted_types': []
+        },
+        'verify_https': True
+    }
+
+    def __init__(self, access_token, environment=None, **kw):
+        """
+        Creates a standalone Rollbar instance.
+        Allows for more flexibility in multiple tools reporting to rollbar
+        in the same runtime.
+
+        access_token: project access token. Get this from the Rollbar UI:
+                      - click "Settings" in the top nav
+                      - click "Projects" in the left nav
+                      - copy-paste the appropriate token.
+        environment: environment name. Can be any string; suggestions: 'production', 'development',
+                     'staging', 'yourname'
+        **kw: provided keyword arguments will override keys in SETTINGS.
+        """
+        # We will perform these transforms in order:
+        # 1. Serialize the payload to be all python built-in objects
+        # 2. Scrub the payloads based on the key suffixes in SETTINGS['scrub_fields']
+        # 3. Scrub URLs in the payload for keys that end with 'url'
+        # 4. Optional - If local variable gathering is enabled, transform the
+        #       trace frame values using the ShortReprTransform.
+        self._serialize_transform = SerializableTransform(safe_repr=SETTINGS['locals']['safe_repr'],
+                                                     whitelist_types=SETTINGS['locals']['whitelisted_types'])
+        self._transforms = [
+            self._serialize_transform,
+            ScrubTransform(suffixes=[(field,) for field in SETTINGS['scrub_fields']], redact_char='*'),
+            ScrubUrlTransform(suffixes=[(field,) for field in SETTINGS['url_fields']], params_to_scrub=SETTINGS['scrub_fields'])
+        ]
+
+        self.settings = copy.deepcopy(self.settings)
+
+        # A list of key prefixes to apply our shortener transform to
+        shortener_keys = [
+            ('body', 'request', 'POST'),
+            ('body', 'request', 'json'),
+        ]
+
+        if SETTINGS['locals']['enabled']:
+            shortener_keys.append(('body', 'trace', 'frames', '*', 'code'))
+            shortener_keys.append(('body', 'trace', 'frames', '*', 'args', '*'))
+            shortener_keys.append(('body', 'trace', 'frames', '*', 'kwargs', '*'))
+            shortener_keys.append(('body', 'trace', 'frames', '*', 'locals', '*'))
+
+        shortener = ShortenerTransform(safe_repr=self.settings['locals']['safe_repr'],
+                                       keys=shortener_keys,
+                                       **self.settings['locals']['sizes'])
+        self._transforms.append(shortener)
+
+        self.settings['access_token'] = access_token
+        self.settings['environment'] = environment
+
+        # Merge the extra config settings into SETTINGS
+        self.settings = dict_merge(SETTINGS, kw)
+
+        # TODO - (bchapman)
+        if self.settings.get('allow_logging_basic_config'):
+            logging.basicConfig()
+
+        if self.settings.get('handler') == 'agent':
+            agent_log = self._create_agent_log()
+
+    def report_exc_info(self, exc_info=None, request=None, extra_data=None, payload_data=None, level=None, **kw):
+        """
+        Reports an exception to Rollbar, using exc_info (from calling sys.exc_info())
+
+        exc_info: optional, should be the result of calling sys.exc_info(). If omitted, sys.exc_info() will be called here.
+        request: optional, a WebOb or Werkzeug-based request object.
+        extra_data: optional, will be included in the 'custom' section of the payload
+        payload_data: optional, dict that will override values in the final payload
+                      (e.g. 'level' or 'fingerprint')
+        kw: provided for legacy purposes; unused.
+
+        Example usage:
+
+        rollbar.init(access_token='YOUR_PROJECT_ACCESS_TOKEN')
+        try:
+            do_something()
+        except:
+            rollbar.report_exc_info(sys.exc_info(), request, {'foo': 'bar'}, {'level': 'warning'})
+        """
+        if exc_info is None:
+            exc_info = sys.exc_info()
+
+        try:
+            return self._report_exc_info(exc_info, request, extra_data, payload_data, level=level)
+        except Exception as e:
+            log.exception("Exception while reporting exc_info to Rollbar. %r", e)
+
+    def report_message(self, message, level='error', request=None, extra_data=None, payload_data=None):
+        """
+        Reports an arbitrary string message to Rollbar.
+
+        message: the string body of the message
+        level: level to report at. One of: 'critical', 'error', 'warning', 'info', 'debug'
+        request: the request object for the context of the message
+        extra_data: dictionary of params to include with the message. 'body' is reserved.
+        payload_data: param names to pass in the 'data' level of the payload; overrides defaults.
+        """
+        try:
+            return self._report_message(message, level, request, extra_data, payload_data)
+        except Exception as e:
+            log.exception("Exception while reporting message to Rollbar. %r", e)
+
+    def send_payload(self, payload, access_token):
+        """
+        Sends a payload object, (the result of calling _build_payload()).
+        Uses the configured handler from SETTINGS['handler']
+
+        Available handlers:
+        - 'blocking': calls _send_payload() (which makes an HTTP request) immediately, blocks on it
+        - 'thread': starts a single-use thread that will call _send_payload(). returns immediately.
+        - 'agent': writes to a log file to be processed by rollbar-agent
+        - 'tornado': calls _send_payload_tornado() (which makes an async HTTP request using tornado's AsyncHTTPClient)
+        """
+        handler = self.setting.get('handler')
+        if handler == 'blocking':
+            self._send_payload(payload, access_token)
+        elif handler == 'agent':
+            self.agent_log.error(payload, access_token)
+        elif handler == 'tornado':
+            if TornadoAsyncHTTPClient is None:
+                log.error('Unable to find tornado')
+                return
+            self._send_payload_tornado(payload, access_token)
+        elif handler == 'gae':
+            if AppEngineFetch is None:
+                log.error('Unable to find AppEngine URLFetch module')
+                return
+            self._send_payload_appengine(payload, access_token)
+        elif handler == 'twisted':
+            if TwistedHTTPClient is None:
+                log.error('Unable to find twisted')
+                return
+            self._send_payload_twisted(payload, access_token)
         else:
-            cls = None
-    return cls, level
+            # default to 'thread'
+            thread = threading.Thread(target=self._send_payload, args=(payload, access_token))
+            thread.start()
 
-def _filtered_level(exception):
-    for i, filter in enumerate(SETTINGS['exception_level_filters']):
-        cls, level = _resolve_exception_class(i, filter)
-        if cls and isinstance(exception, cls):
-            return level
+    def search_items(self, title, return_fields=None, access_token=None, endpoint=None, **search_fields):
+        """
+        Searches a project for items that match the input criteria.
 
-    return None
+        title: all or part of the item's title to search for.
+        return_fields: the fields that should be returned for each item.
+                e.g. ['id', 'project_id', 'status'] will return a dict containing
+                     only those fields for each item.
+        access_token: a project access token. If this is not provided,
+                      the one provided to init() will be used instead.
+        search_fields: additional fields to include in the search.
+                currently supported: status, level, environment
+        """
+        if not title:
+            return []
 
+        if return_fields is not None:
+            return_fields = ','.join(return_fields)
 
-def _is_ignored(exception):
-    return _filtered_level(exception) == 'ignored'
+        return self._get_api('search/',
+                        title=title,
+                        fields=return_fields,
+                        access_token=access_token,
+                        endpoint=endpoint,
+                        **search_fields)
 
+    def _resolve_exception_class(self, idx, filter):
+        cls, level = filter
+        if isinstance(cls, six.string_types):
+            # Lazily resolve class name
+            parts = cls.split('.')
+            module = '.'.join(parts[:-1])
+            if module in sys.modules and hasattr(sys.modules[module], parts[-1]):
+                cls = getattr(sys.modules[module], parts[-1])
+                self.settings['exception_level_filters'][idx] = (cls, level)
+            else:
+                cls = None
+        return cls, level
 
-def _create_agent_log():
-    """
-    Creates .rollbar log file for use with rollbar-agent
-    """
-    log_file = SETTINGS['agent.log_file']
-    if not log_file.endswith('.rollbar'):
-        log.error("Provided agent log file does not end with .rollbar, which it must. "
-            "Using default instead.")
-        log_file = DEFAULTS['agent.log_file']
+    def _filtered_level(self, exception):
+        for i, filter in enumerate(self.settings['exception_level_filters']):
+            cls, level = self._resolve_exception_class(i, filter)
+            if cls and isinstance(exception, cls):
+                return level
 
-    retval = logging.getLogger('rollbar_agent')
-    handler = logging.FileHandler(log_file, 'a', 'utf-8')
-    formatter = logging.Formatter('%(message)s')
-    handler.setFormatter(formatter)
-    retval.addHandler(handler)
-    retval.setLevel(logging.WARNING)
-    return retval
+        return None
 
+    def _is_ignored(self, exception):
+        return self._filtered_level(exception) == 'ignored'
 
-def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
-    """
-    Called by report_exc_info() wrapper
-    """
-    # check if exception is marked ignored
-    cls, exc, trace = exc_info
-    if getattr(exc, '_rollbar_ignore', False) or _is_ignored(exc):
-        return
+    def _create_agent_log(self):
+        """
+        Creates .rollbar log file for use with rollbar-agent
+        """
+        log_file = self.settings['agent.log_file']
+        if not log_file.endswith('.rollbar'):
+            log.error("Provided agent log file does not end with .rollbar, which it must. "
+                "Using default instead.")
+            # TODO - defaults doesn't exist
+            log_file = self.defaults['agent.log_file']
 
-    if not _check_config():
-        return
+        retval = logging.getLogger('rollbar_agent')
+        handler = logging.FileHandler(log_file, 'a', 'utf-8')
+        formatter = logging.Formatter('%(message)s')
+        handler.setFormatter(formatter)
+        retval.addHandler(handler)
+        retval.setLevel(logging.WARNING)
+        return retval
 
-    data = _build_base_data(request)
+    def _report_exc_info(self, exc_info, request, extra_data, payload_data, level=None):
+        """
+        Called by report_exc_info() wrapper
+        """
+        # check if exception is marked ignored
+        cls, exc, trace = exc_info
+        if getattr(exc, '_rollbar_ignore', False) or self._is_ignored(exc):
+            return
 
-    filtered_level = _filtered_level(exc)
-    if filtered_level:
-        data['level'] = filtered_level
+        if not self._check_config():
+            return
 
-    # explicitly override the level with provided level
-    if level:
-        data['level'] = level
+        data = self._build_base_data(request)
 
-    # exception info
-    # most recent call last
-    raw_frames = traceback.extract_tb(trace)
-    frames = [{'filename': f[0], 'lineno': f[1], 'method': f[2], 'code': f[3]} for f in raw_frames]
+        filtered_level = self._filtered_level(exc)
+        if filtered_level:
+            data['level'] = filtered_level
 
-    data['body'] = {
-        'trace': {
-            'frames': frames,
-            'exception': {
-                'class': cls.__name__,
-                'message': text(exc),
+        # explicitly override the level with provided level
+        if level:
+            data['level'] = level
+
+        # exception info
+        # most recent call last
+        raw_frames = traceback.extract_tb(trace)
+        frames = [{'filename': f[0], 'lineno': f[1], 'method': f[2], 'code': f[3]} for f in raw_frames]
+
+        data['body'] = {
+            'trace': {
+                'frames': frames,
+                'exception': {
+                    'class': cls.__name__,
+                    'message': text(exc),
+                }
             }
         }
-    }
 
-    if extra_data:
-        extra_data = extra_data
-        if isinstance(extra_data, dict):
-            data['custom'] = extra_data
-        else:
-            data['custom'] = {'value': extra_data}
+        if extra_data:
+            extra_data = extra_data
+            if isinstance(extra_data, dict):
+                data['custom'] = extra_data
+            else:
+                data['custom'] = {'value': extra_data}
 
-    _add_locals_data(data, exc_info)
-    _add_request_data(data, request)
-    _add_person_data(data, request)
-    data['server'] = _build_server_data()
+        self._add_locals_data(data, exc_info)
+        self._add_request_data(data, request)
+        self._add_person_data(data, request)
+        data['server'] = self._build_server_data()
 
-    if payload_data:
-        data = dict_merge(data, payload_data)
+        if payload_data:
+            data = dict_merge(data, payload_data)
 
-    payload = _build_payload(data)
-    send_payload(payload, data.get('access_token'))
+        payload = self._build_payload(data)
+        self.send_payload(payload, data.get('access_token'))
 
-    return data['uuid']
+        return data['uuid']
 
+    def _report_message(self, message, level, request, extra_data, payload_data):
+        """
+        Called by report_message() wrapper
+        """
+        if not self._check_config():
+            return
 
-def _report_message(message, level, request, extra_data, payload_data):
-    """
-    Called by report_message() wrapper
-    """
-    if not _check_config():
-        return
+        data = self._build_base_data(request, level=level)
 
-    data = _build_base_data(request, level=level)
-
-    # message
-    data['body'] = {
-        'message': {
-            'body': message
+        # message
+        data['body'] = {
+            'message': {
+                'body': message
+            }
         }
-    }
 
-    if extra_data:
-        extra_data = extra_data
-        data['body']['message'].update(extra_data)
+        if extra_data:
+            extra_data = extra_data
+            data['body']['message'].update(extra_data)
 
-    _add_request_data(data, request)
-    _add_person_data(data, request)
-    data['server'] = _build_server_data()
+        self._add_request_data(data, request)
+        self._add_person_data(data, request)
+        data['server'] = self._build_server_data()
 
-    if payload_data:
-        data = dict_merge(data, payload_data)
+        if payload_data:
+            data = dict_merge(data, payload_data)
 
-    payload = _build_payload(data)
-    send_payload(payload, data.get('access_token'))
+        payload = self._build_payload(data)
+        self.send_payload(payload, data.get('access_token'))
 
-    return data['uuid']
+        return data['uuid']
 
+    def _check_config(self):
+        if not self.settings.get('enabled'):
+            log.info("pyrollbar: Not reporting because rollbar is disabled.")
+            return False
 
-def _check_config():
-    if not SETTINGS.get('enabled'):
-        log.info("pyrollbar: Not reporting because rollbar is disabled.")
-        return False
+        # make sure we have an access_token
+        if not self.settings.get('access_token'):
+            log.warning("pyrollbar: No access_token provided. Please configure by calling rollbar.init() with your access token.")
+            return False
 
-    # make sure we have an access_token
-    if not SETTINGS.get('access_token'):
-        log.warning("pyrollbar: No access_token provided. Please configure by calling rollbar.init() with your access token.")
-        return False
+        return True
 
-    return True
+    def _build_base_data(self, request, level='error'):
+        data = {
+            'timestamp': int(time.time()),
+            'environment': self.settings['environment'],
+            'level': level,
+            'language': 'python %s' % '.'.join(str(x) for x in sys.version_info[:3]),
+            'notifier': self.settings['notifier'],
+            'uuid': text(uuid.uuid4()),
+        }
 
+        if self.settings.get('code_version'):
+            data['code_version'] = self.settings['code_version']
 
-def _build_base_data(request, level='error'):
-    data = {
-        'timestamp': int(time.time()),
-        'environment': SETTINGS['environment'],
-        'level': level,
-        'language': 'python %s' % '.'.join(str(x) for x in sys.version_info[:3]),
-        'notifier': SETTINGS['notifier'],
-        'uuid': text(uuid.uuid4()),
-    }
+        if self.base_data_hook:
+            self.base_data_hook(request, data)
 
-    if SETTINGS.get('code_version'):
-        data['code_version'] = SETTINGS['code_version']
+        return data
 
-    if BASE_DATA_HOOK:
-        BASE_DATA_HOOK(request, data)
-
-    return data
-
-
-def _add_person_data(data, request):
-    try:
-        person_data = _build_person_data(request)
-    except Exception as e:
-        log.exception("Exception while building person data for Rollbar paylooad: %r", e)
-    else:
-        if person_data:
-            data['person'] = person_data
-
-
-def _build_person_data(request):
-    """
-    Returns a dictionary describing the logged-in user using data from `request.
-
-    Try request.rollbar_person first, then 'user', then 'user_id'
-    """
-    if hasattr(request, 'rollbar_person'):
-        rollbar_person_prop = request.rollbar_person
+    def _add_person_data(self, data, request):
         try:
-            person = rollbar_person_prop()
-        except TypeError:
-            person = rollbar_person_prop
-
-        if person and isinstance(person, dict):
-            return person
-        else:
-            return None
-
-    if hasattr(request, 'user'):
-        user_prop = request.user
-        try:
-            user = user_prop()
-        except TypeError:
-            user = user_prop
-
-        if not user:
-            return None
-        elif isinstance(user, dict):
-            return user
-        else:
-            retval = {}
-            if getattr(user, 'id', None):
-                retval['id'] = text(user.id)
-            elif getattr(user, 'user_id', None):
-                retval['id'] = text(user.user_id)
-
-            # id is required, so only include username/email if we have an id
-            if retval.get('id'):
-                retval.update({
-                    'username': getattr(user, 'username', None),
-                    'email': getattr(user, 'email', None)
-                })
-            return retval
-
-    if hasattr(request, 'user_id'):
-        user_id_prop = request.user_id
-        try:
-            user_id = user_id_prop()
-        except TypeError:
-            user_id = user_id_prop
-
-        if not user_id:
-            return None
-        return {'id': text(user_id)}
-
-
-def _get_func_from_frame(frame):
-    func_name = inspect.getframeinfo(frame).function
-    caller = frame.f_back
-    if caller:
-        func = caller.f_locals.get(func_name,
-                                   caller.f_globals.get(func_name))
-    else:
-        func = None
-
-    return func
-
-
-def _flatten_nested_lists(l):
-    ret = []
-    for x in l:
-        if isinstance(x, list):
-            ret.extend(_flatten_nested_lists(x))
-        else:
-            ret.append(x)
-    return ret
-
-
-def _add_locals_data(data, exc_info):
-    if not SETTINGS['locals']['enabled']:
-        return
-
-    frames = data['body']['trace']['frames']
-
-    cur_tb = exc_info[2]
-    frame_num = 0
-    num_frames = len(frames)
-    while cur_tb:
-        cur_frame = frames[frame_num]
-        tb_frame = cur_tb.tb_frame
-        cur_tb = cur_tb.tb_next
-
-        if not isinstance(tb_frame, types.FrameType):
-            # this can happen if the traceback or frame is wrapped in some way,
-            # for example by `ExceptionInfo` in
-            # https://github.com/celery/billiard/blob/master/billiard/einfo.py
-            log.warning('Traceback frame not a types.FrameType. Ignoring.')
-            frame_num += 1
-            continue
-
-        # Create placeholders for args/kwargs/locals
-        args = []
-        kw = {}
-        _locals = {}
-
-        try:
-            arginfo = inspect.getargvalues(tb_frame)
-            local_vars = arginfo.locals
-            argspec = None
-
-            func = _get_func_from_frame(tb_frame)
-            if func:
-                if inspect.isfunction(func) or inspect.ismethod(func):
-                    argspec = inspect.getargspec(func)
-                elif inspect.isclass(func):
-                    init_func = getattr(func, '__init__', None)
-                    if init_func:
-                        argspec = inspect.getargspec(init_func)
-
-            # Get all of the named args
-            #
-            # args can be a nested list of args in the case where there
-            # are anonymous tuple args provided.
-            # e.g. in Python 2 you can:
-            #   def func((x, (a, b), z)):
-            #       return x + a + b + z
-            #
-            #   func((1, (1, 2), 3))
-            named_args = _flatten_nested_lists(arginfo.args)
-
-            # Fill in all of the named args
-            for named_arg in named_args:
-                if named_arg in local_vars:
-                    args.append(local_vars[named_arg])
-
-            # Add any varargs
-            if arginfo.varargs is not None:
-                args.extend(local_vars[arginfo.varargs])
-
-            # Fill in all of the kwargs
-            if arginfo.keywords is not None:
-                kw.update(local_vars[arginfo.keywords])
-
-            if argspec and argspec.defaults:
-                # Put any of the args that have defaults into kwargs
-                num_defaults = len(argspec.defaults)
-                if num_defaults:
-                    # The last len(argspec.defaults) args in arginfo.args should be added
-                    # to kwargs and removed from args
-                    kw.update(dict(zip(arginfo.args[-num_defaults:], args[-num_defaults:])))
-                    args = args[:-num_defaults]
-
-            # Optionally fill in locals for this frame
-            if local_vars and _check_add_locals(cur_frame, frame_num, num_frames):
-                _locals.update(local_vars.items())
-
-            args = args
-            kw = kw
-            _locals = _locals
-
+            person_data = self._build_person_data(request)
         except Exception as e:
-            log.exception('Error while extracting arguments from frame. Ignoring.')
+            log.exception("Exception while building person data for Rollbar paylooad: %r", e)
+        else:
+            if person_data:
+                data['person'] = person_data
 
-        # Finally, serialize each arg/kwarg/local separately so that we only report
-        # CircularReferences for each variable, instead of for the entire payload
-        # as would be the case if we serialized that payload in one-shot.
-        if args:
-            cur_frame['args'] = map(_serialize_frame_data, args)
-        if kw:
-            cur_frame['kwargs'] = dict((k, _serialize_frame_data(v)) for k, v in iteritems(kw))
-        if _locals:
-            cur_frame['locals'] = dict((k, _serialize_frame_data(v)) for k, v in iteritems(_locals))
+    def _build_person_data(self, request):
+        """
+        Returns a dictionary describing the logged-in user using data from `request.
 
-        frame_num += 1
+        Try request.rollbar_person first, then 'user', then 'user_id'
+        """
+        if hasattr(request, 'rollbar_person'):
+            rollbar_person_prop = request.rollbar_person
+            try:
+                person = rollbar_person_prop()
+            except TypeError:
+                person = rollbar_person_prop
+
+            if person and isinstance(person, dict):
+                return person
+            else:
+                return None
+
+        if hasattr(request, 'user'):
+            user_prop = request.user
+            try:
+                user = user_prop()
+            except TypeError:
+                user = user_prop
+
+            if not user:
+                return None
+            elif isinstance(user, dict):
+                return user
+            else:
+                retval = {}
+                if getattr(user, 'id', None):
+                    retval['id'] = text(user.id)
+                elif getattr(user, 'user_id', None):
+                    retval['id'] = text(user.user_id)
+
+                # id is required, so only include username/email if we have an id
+                if retval.get('id'):
+                    retval.update({
+                        'username': getattr(user, 'username', None),
+                        'email': getattr(user, 'email', None)
+                    })
+                return retval
+
+        if hasattr(request, 'user_id'):
+            user_id_prop = request.user_id
+            try:
+                user_id = user_id_prop()
+            except TypeError:
+                user_id = user_id_prop
+
+            if not user_id:
+                return None
+            return {'id': text(user_id)}
+
+    def _get_func_from_frame(self, frame):
+        func_name = inspect.getframeinfo(frame).function
+        caller = frame.f_back
+        if caller:
+            func = caller.f_locals.get(func_name,
+                                       caller.f_globals.get(func_name))
+        else:
+            func = None
+
+        return func
+
+    def _flatten_nested_lists(self, l):
+        ret = []
+        for x in l:
+            if isinstance(x, list):
+                ret.extend(self._flatten_nested_lists(x))
+            else:
+                ret.append(x)
+        return ret
+
+    def _add_locals_data(self, data, exc_info):
+        if not self.settings['locals']['enabled']:
+            return
+
+        frames = data['body']['trace']['frames']
+
+        cur_tb = exc_info[2]
+        frame_num = 0
+        num_frames = len(frames)
+        while cur_tb:
+            cur_frame = frames[frame_num]
+            tb_frame = cur_tb.tb_frame
+            cur_tb = cur_tb.tb_next
+
+            if not isinstance(tb_frame, types.FrameType):
+                # this can happen if the traceback or frame is wrapped in some way,
+                # for example by `ExceptionInfo` in
+                # https://github.com/celery/billiard/blob/master/billiard/einfo.py
+                log.warning('Traceback frame not a types.FrameType. Ignoring.')
+                frame_num += 1
+                continue
+
+            # Create placeholders for args/kwargs/locals
+            args = []
+            kw = {}
+            _locals = {}
+
+            try:
+                arginfo = inspect.getargvalues(tb_frame)
+                local_vars = arginfo.locals
+                argspec = None
+
+                func = self._get_func_from_frame(tb_frame)
+                if func:
+                    if inspect.isfunction(func) or inspect.ismethod(func):
+                        argspec = inspect.getargspec(func)
+                    elif inspect.isclass(func):
+                        init_func = getattr(func, '__init__', None)
+                        if init_func:
+                            argspec = inspect.getargspec(init_func)
+
+                # Get all of the named args
+                #
+                # args can be a nested list of args in the case where there
+                # are anonymous tuple args provided.
+                # e.g. in Python 2 you can:
+                #   def func((x, (a, b), z)):
+                #       return x + a + b + z
+                #
+                #   func((1, (1, 2), 3))
+                named_args = self._flatten_nested_lists(arginfo.args)
+
+                # Fill in all of the named args
+                for named_arg in named_args:
+                    if named_arg in local_vars:
+                        args.append(local_vars[named_arg])
+
+                # Add any varargs
+                if arginfo.varargs is not None:
+                    args.extend(local_vars[arginfo.varargs])
+
+                # Fill in all of the kwargs
+                if arginfo.keywords is not None:
+                    kw.update(local_vars[arginfo.keywords])
+
+                if argspec and argspec.defaults:
+                    # Put any of the args that have defaults into kwargs
+                    num_defaults = len(argspec.defaults)
+                    if num_defaults:
+                        # The last len(argspec.defaults) args in arginfo.args should be added
+                        # to kwargs and removed from args
+                        kw.update(dict(zip(arginfo.args[-num_defaults:], args[-num_defaults:])))
+                        args = args[:-num_defaults]
+
+                # Optionally fill in locals for this frame
+                if local_vars and self._check_add_locals(cur_frame, frame_num, num_frames):
+                    _locals.update(local_vars.items())
+
+                args = args
+                kw = kw
+                _locals = _locals
+
+            except Exception as e:
+                log.exception('Error while extracting arguments from frame. Ignoring.')
+
+            # Finally, serialize each arg/kwarg/local separately so that we only report
+            # CircularReferences for each variable, instead of for the entire payload
+            # as would be the case if we serialized that payload in one-shot.
+            if args:
+                cur_frame['args'] = map(self._serialize_frame_data, args)
+            if kw:
+                cur_frame['kwargs'] = dict((k, self._serialize_frame_data(v)) for k, v in iteritems(kw))
+            if _locals:
+                cur_frame['locals'] = dict((k, self._serialize_frame_data(v)) for k, v in iteritems(_locals))
+
+            frame_num += 1
+
+    def _serialize_frame_data(self, data):
+        return transforms.transform(data, (self._serialize_transform,))
 
 
-def _serialize_frame_data(data):
-    return transforms.transform(data, (_serialize_transform,))
-
-
-def _add_request_data(data, request):
-    """
-    Attempts to build request data; if successful, sets the 'request' key on `data`.
-    """
-    try:
-        request_data = _build_request_data(request)
-    except Exception as e:
-        log.exception("Exception while building request_data for Rollbar payload: %r", e)
-    else:
-        if request_data:
-            data['request'] = request_data
-
-
-def _check_add_locals(frame, frame_num, total_frames):
-    """
-    Returns True if we should record local variables for the given frame.
-    """
-    # Include the last frames locals
-    # Include any frame locals that came from a file in the project's root
-    return any(((frame_num == total_frames - 1),
-                ('root' in SETTINGS and (frame.get('filename') or '').lower().startswith((SETTINGS['root'] or '').lower()))))
-
-
-def _build_request_data(request):
-    """
-    Returns a dictionary containing data from the request.
-    Can handle webob or werkzeug-based request objects.
-    """
-
-    # webob (pyramid)
-    if WebobBaseRequest and isinstance(request, WebobBaseRequest):
-        return _build_webob_request_data(request)
-
-    # django
-    if DjangoHttpRequest and isinstance(request, DjangoHttpRequest):
-        return _build_django_request_data(request)
-
-    # django rest framework
-    if RestFrameworkRequest and isinstance(request, RestFrameworkRequest):
-        return _build_django_request_data(request)
-
-    # werkzeug (flask)
-    if WerkzeugRequest and isinstance(request, WerkzeugRequest):
-        return _build_werkzeug_request_data(request)
-
-    if WerkzeugLocalProxy and isinstance(request, WerkzeugLocalProxy):
+    def _add_request_data(self, data, request):
+        """
+        Attempts to build request data; if successful, sets the 'request' key on `data`.
+        """
         try:
-            actual_request = request._get_current_object()
-        except RuntimeError:
-            return None
-        return _build_werkzeug_request_data(actual_request)
+            request_data = self._build_request_data(request)
+        except Exception as e:
+            log.exception("Exception while building request_data for Rollbar payload: %r", e)
+        else:
+            if request_data:
+                data['request'] = request_data
 
-    # tornado
-    if TornadoRequest and isinstance(request, TornadoRequest):
-        return _build_tornado_request_data(request)
+    def _check_add_locals(self, frame, frame_num, total_frames):
+        """
+        Returns True if we should record local variables for the given frame.
+        """
+        # Include the last frames locals
+        # Include any frame locals that came from a file in the project's root
+        return any(((frame_num == total_frames - 1),
+                    ('root' in self.settings and (frame.get('filename') or '').lower().startswith((self.settings['root'] or '').lower()))))
 
-    # bottle
-    if BottleRequest and isinstance(request, BottleRequest):
-        return _build_bottle_request_data(request)
+    def _build_request_data(request):
+        """
+        Returns a dictionary containing data from the request.
+        Can handle webob or werkzeug-based request objects.
+        """
 
-    # Plain wsgi (should be last)
-    if isinstance(request, dict) and 'wsgi.version' in request:
-        return _build_wsgi_request_data(request)
+        # webob (pyramid)
+        if WebobBaseRequest and isinstance(request, WebobBaseRequest):
+            return self._build_webob_request_data(request)
 
-    return None
+        # django
+        if DjangoHttpRequest and isinstance(request, DjangoHttpRequest):
+            return self._build_django_request_data(request)
 
+        # django rest framework
+        if RestFrameworkRequest and isinstance(request, RestFrameworkRequest):
+            return self._build_django_request_data(request)
 
-def _build_webob_request_data(request):
-    request_data = {
-        'url': request.url,
-        'GET': dict(request.GET),
-        'user_ip': _extract_user_ip(request),
-        'headers': dict(request.headers),
-    }
+        # werkzeug (flask)
+        if WerkzeugRequest and isinstance(request, WerkzeugRequest):
+            return self._build_werkzeug_request_data(request)
 
-    try:
-        if request.json:
-            request_data['json'] = request.json
-    except:
-        pass
+        if WerkzeugLocalProxy and isinstance(request, WerkzeugLocalProxy):
+            try:
+                actual_request = request._get_current_object()
+            except RuntimeError:
+                return None
+            return self._build_werkzeug_request_data(actual_request)
 
-    # pyramid matchdict
-    if getattr(request, 'matchdict', None):
-        request_data['params'] = request.matchdict
+        # tornado
+        if TornadoRequest and isinstance(request, TornadoRequest):
+            return self._build_tornado_request_data(request)
 
-    # workaround for webob bug when the request body contains binary data but has a text
-    # content-type
-    try:
-        request_data['POST'] = dict(request.POST)
-    except UnicodeDecodeError:
-        request_data['body'] = request.body
+        # bottle
+        if BottleRequest and isinstance(request, BottleRequest):
+            return self._build_bottle_request_data(request)
 
-    return request_data
+        # Plain wsgi (should be last)
+        if isinstance(request, dict) and 'wsgi.version' in request:
+            return self._build_wsgi_request_data(request)
 
+        return None
 
-def _extract_wsgi_headers(items):
-    headers = {}
-    for k, v in items:
-        if k.startswith('HTTP_'):
-            header_name = '-'.join(k[len('HTTP_'):].replace('_', ' ').title().split(' '))
-            headers[header_name] = v
-    return headers
+    def _build_webob_request_data(self, request):
+        request_data = {
+            'url': request.url,
+            'GET': dict(request.GET),
+            'user_ip': self._extract_user_ip(request),
+            'headers': dict(request.headers),
+        }
 
-
-def _build_django_request_data(request):
-    request_data = {
-        'url': request.build_absolute_uri(),
-        'method': request.method,
-        'GET': dict(request.GET),
-        'POST': dict(request.POST),
-        'user_ip': _wsgi_extract_user_ip(request.environ),
-    }
-
-    try:
-        request_data['body'] = request.body
-    except:
-        pass
-
-    request_data['headers'] = _extract_wsgi_headers(request.environ.items())
-
-    return request_data
-
-
-def _build_werkzeug_request_data(request):
-    request_data = {
-        'url': request.url,
-        'GET': dict(request.args),
-        'POST': dict(request.form),
-        'user_ip': _extract_user_ip(request),
-        'headers': dict(request.headers),
-        'method': request.method,
-        'files_keys': request.files.keys(),
-    }
-
-    try:
-        if request.json:
-            request_data['body'] = request.json
-    except Exception:
-        pass
-
-    return request_data
-
-
-def _build_tornado_request_data(request):
-    request_data = {
-        'url': request.full_url(),
-        'user_ip': request.remote_ip,
-        'headers': dict(request.headers),
-        'method': request.method,
-        'files_keys': request.files.keys(),
-        'start_time': getattr(request, '_start_time', None),
-    }
-    request_data[request.method] = request.arguments
-
-    return request_data
-
-
-def _build_bottle_request_data(request):
-    request_data = {
-        'url': request.url,
-        'user_ip': request.remote_addr,
-        'headers': dict(request.headers),
-        'method': request.method,
-        'GET': dict(request.query)
-    }
-
-    if request.json:
         try:
-            request_data['body'] = request.body.getvalue()
+            if request.json:
+                request_data['json'] = request.json
         except:
             pass
-    else:
-        request_data['POST'] = dict(request.forms)
 
-    return request_data
+        # pyramid matchdict
+        if getattr(request, 'matchdict', None):
+            request_data['params'] = request.matchdict
 
-
-def _build_wsgi_request_data(request):
-    request_data = {
-        'url': wsgiref.util.request_uri(request),
-        'user_ip': _wsgi_extract_user_ip(request),
-        'method': request.get('REQUEST_METHOD'),
-    }
-    if 'QUERY_STRING' in request:
-        request_data['GET'] = parse_qs(request['QUERY_STRING'], keep_blank_values=True)
-        # Collapse single item arrays
-        request_data['GET'] = dict((k, v[0] if len(v) == 1 else v) for k, v in request_data['GET'].items())
-
-    request_data['headers'] = _extract_wsgi_headers(request.items())
-
-    try:
-        length = int(request.get('CONTENT_LENGTH', 0))
-    except ValueError:
-        length = 0
-    input = request.get('wsgi.input')
-    if length and input and hasattr(input, 'seek') and hasattr(input, 'tell'):
-        pos = input.tell()
-        input.seek(0, 0)
-        request_data['body'] = input.read(length)
-        input.seek(pos, 0)
-
-    return request_data
-
-
-def _build_server_data():
-    """
-    Returns a dictionary containing information about the server environment.
-    """
-    # server environment
-    server_data = {
-        'host': socket.gethostname(),
-        'argv': sys.argv,
-        'pid': os.getpid()
-    }
-
-    for key in ['branch', 'root']:
-        if SETTINGS.get(key):
-            server_data[key] = SETTINGS[key]
-
-    return server_data
-
-
-def _transform(obj, key=None):
-    return transforms.transform(obj, _transforms, key=key)
-
-
-def _build_payload(data):
-    """
-    Returns the full payload as a string.
-    """
-
-    for k, v in iteritems(data):
-        data[k] = _transform(v, key=(k,))
-
-    payload = {
-        'access_token': SETTINGS['access_token'],
-        'data': data
-    }
-
-    return json.dumps(payload)
-
-
-def _send_payload(payload, access_token):
-    try:
-        _post_api('item/', payload, access_token=access_token)
-    except Exception as e:
-        log.exception('Exception while posting item %r', e)
-
-
-def _send_payload_appengine(payload, access_token):
-    try:
-        _post_api_appengine('item/', payload, access_token=access_token)
-    except Exception as e:
-        log.exception('Exception while posting item %r', e)
-
-
-def _post_api_appengine(path, payload, access_token=None):
-    headers = {'Content-Type': 'application/json'}
-
-    if access_token is not None:
-        headers['X-Rollbar-Access-Token'] = access_token
-
-    url = urljoin(SETTINGS['endpoint'], path)
-    resp = AppEngineFetch(url,
-                          method="POST",
-                          payload=payload,
-                          headers=headers,
-                          allow_truncated=False,
-                          deadline=SETTINGS.get('timeout', DEFAULT_TIMEOUT),
-                          validate_certificate=SETTINGS.get('verify_https', True))
-
-    return _parse_response(path, SETTINGS['access_token'], payload, resp)
-
-
-def _post_api(path, payload, access_token=None):
-    headers = {'Content-Type': 'application/json'}
-
-    if access_token is not None:
-        headers['X-Rollbar-Access-Token'] = access_token
-
-    url = urljoin(SETTINGS['endpoint'], path)
-    resp = requests.post(url,
-                         data=payload,
-                         headers=headers,
-                         timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT),
-                         verify=SETTINGS.get('verify_https', True))
-
-    return _parse_response(path, SETTINGS['access_token'], payload, resp)
-
-
-def _get_api(path, access_token=None, endpoint=None, **params):
-    access_token = access_token or SETTINGS['access_token']
-    url = urljoin(endpoint or SETTINGS['endpoint'], path)
-    params['access_token'] = access_token
-    resp = requests.get(url, params=params, verify=SETTINGS.get('verify_https', True))
-    return _parse_response(path, access_token, params, resp, endpoint=endpoint)
-
-
-def _send_payload_tornado(payload, access_token):
-    try:
-        _post_api_tornado('item/', payload, access_token=access_token)
-    except Exception as e:
-        log.exception('Exception while posting item %r', e)
-
-
-@tornado_coroutine
-def _post_api_tornado(path, payload, access_token=None):
-    headers = {'Content-Type': 'application/json'}
-
-    if access_token is not None:
-        headers['X-Rollbar-Access-Token'] = access_token
-
-    url = urljoin(SETTINGS['endpoint'], path)
-
-    resp = yield TornadoAsyncHTTPClient().fetch(
-        url, body=payload, method='POST', connect_timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT),
-        request_timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT)
-    )
-
-    r = requests.Response()
-    r._content = resp.body
-    r.status_code = resp.code
-    r.headers.update(resp.headers)
-
-    _parse_response(path, SETTINGS['access_token'], payload, r)
-
-
-def _send_payload_twisted(payload, access_token):
-    try:
-        _post_api_twisted('item/', payload, access_token=access_token)
-    except Exception as e:
-        log.exception('Exception while posting item %r', e)
-
-
-@inlineCallbacks
-def _post_api_twisted(path, payload, access_token=None):
-    headers = {'Content-Type': ['application/json']}
-
-    if access_token is not None:
-        headers['X-Rollbar-Access-Token'] = [access_token]
-
-    url = urljoin(SETTINGS['endpoint'], path)
-
-    agent = TwistedHTTPClient(reactor, connectTimeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT))
-    resp = yield agent.request(
-           'POST',
-           url,
-           TwistedHeaders(headers),
-           StringProducer(payload))
-
-    r = requests.Response()
-    r.status_code = resp.code
-    r.headers.update(resp.headers.getAllRawHeaders())
-    bodyDeferred = Deferred()
-    resp.deliverBody(ResponseAccumulator(resp.length, bodyDeferred))
-    body = yield bodyDeferred
-    r._content = body
-    _parse_response(path, SETTINGS['access_token'], payload, r)
-    yield returnValue(None)
-
-
-def _parse_response(path, access_token, params, resp, endpoint=None):
-    if isinstance(resp, requests.Response):
+        # workaround for webob bug when the request body contains binary data but has a text
+        # content-type
         try:
-            data = resp.text
-        except Exception as e:
-            data = resp.content
-            log.error('resp.text is undefined, resp.content is %r', resp.content)
-    else:
-        data = resp.content
+            request_data['POST'] = dict(request.POST)
+        except UnicodeDecodeError:
+            request_data['body'] = request.body
 
-    if resp.status_code == 429:
-        log.warning("Rollbar: over rate limit, data was dropped. Payload was: %r", params)
-        return
-    elif resp.status_code == 413:
-        log.warning("Rollbar: request entity too large. Payload was: %r", params)
-        return
-    elif resp.status_code != 200:
-        log.warning("Got unexpected status code from Rollbar api: %s\nResponse:\n%s",
-            resp.status_code, data)
+        return request_data
 
-    try:
-        json_data = json.loads(data)
-    except (TypeError, ValueError):
-        log.exception('Could not decode Rollbar api response:\n%s', data)
-        raise ApiException('Request to %s returned invalid JSON response', path)
-    else:
-        if json_data.get('err'):
-            raise ApiError(json_data.get('message') or 'Unknown error')
+    def _extract_wsgi_headers(self, items):
+        headers = {}
+        for k, v in items:
+            if k.startswith('HTTP_'):
+                header_name = '-'.join(k[len('HTTP_'):].replace('_', ' ').title().split(' '))
+                headers[header_name] = v
+        return headers
 
-        result = json_data.get('result', {})
+    def _build_django_request_data(self, request):
+        request_data = {
+            'url': request.build_absolute_uri(),
+            'method': request.method,
+            'GET': dict(request.GET),
+            'POST': dict(request.POST),
+            'user_ip': self._wsgi_extract_user_ip(request.environ),
+        }
 
-        if 'page' in result:
-            return PagedResult(access_token, path, result['page'], params, result, endpoint=endpoint)
+        try:
+            request_data['body'] = request.body
+        except:
+            pass
+
+        request_data['headers'] = _extract_wsgi_headers(request.environ.items())
+
+        return request_data
+
+    def _build_werkzeug_request_data(self, request):
+        request_data = {
+            'url': request.url,
+            'GET': dict(request.args),
+            'POST': dict(request.form),
+            'user_ip': _extract_user_ip(request),
+            'headers': dict(request.headers),
+            'method': request.method,
+            'files_keys': request.files.keys(),
+        }
+
+        try:
+            if request.json:
+                request_data['body'] = request.json
+        except Exception:
+            pass
+
+        return request_data
+
+    def _build_tornado_request_data(self, request):
+        request_data = {
+            'url': request.full_url(),
+            'user_ip': request.remote_ip,
+            'headers': dict(request.headers),
+            'method': request.method,
+            'files_keys': request.files.keys(),
+            'start_time': getattr(request, '_start_time', None),
+        }
+        request_data[request.method] = request.arguments
+
+        return request_data
+
+    def _build_bottle_request_data(self, request):
+        request_data = {
+            'url': request.url,
+            'user_ip': request.remote_addr,
+            'headers': dict(request.headers),
+            'method': request.method,
+            'GET': dict(request.query)
+        }
+
+        if request.json:
+            try:
+                request_data['body'] = request.body.getvalue()
+            except:
+                pass
         else:
-            return Result(access_token, path, params, result)
+            request_data['POST'] = dict(request.forms)
+
+        return request_data
+
+    def _build_wsgi_request_data(self, request):
+        request_data = {
+            'url': wsgiref.util.request_uri(request),
+            'user_ip': self._wsgi_extract_user_ip(request),
+            'method': request.get('REQUEST_METHOD'),
+        }
+        if 'QUERY_STRING' in request:
+            request_data['GET'] = self.parse_qs(request['QUERY_STRING'], keep_blank_values=True)
+            # Collapse single item arrays
+            request_data['GET'] = dict((k, v[0] if len(v) == 1 else v) for k, v in request_data['GET'].items())
+
+        request_data['headers'] = self._extract_wsgi_headers(request.items())
+
+        try:
+            length = int(request.get('CONTENT_LENGTH', 0))
+        except ValueError:
+            length = 0
+        input = request.get('wsgi.input')
+        if length and input and hasattr(input, 'seek') and hasattr(input, 'tell'):
+            pos = input.tell()
+            input.seek(0, 0)
+            request_data['body'] = input.read(length)
+            input.seek(pos, 0)
+
+        return request_data
+
+    def _build_server_data(self):
+        """
+        Returns a dictionary containing information about the server environment.
+        """
+        # server environment
+        server_data = {
+            'host': socket.gethostname(),
+            'argv': sys.argv,
+            'pid': os.getpid()
+        }
+
+        for key in ['branch', 'root']:
+            if self.settings.get(key):
+                server_data[key] = self.settings[key]
+
+        return server_data
+
+    def _transform(self, obj, key=None):
+        return transforms.transform(obj, self._transforms, key=key)
+
+    def _build_payload(data):
+        """
+        Returns the full payload as a string.
+        """
+
+        for k, v in iteritems(data):
+            data[k] = self._transform(v, key=(k,))
+
+        payload = {
+            'access_token': self.settings['access_token'],
+            'data': data
+        }
+
+        return json.dumps(payload)
+
+    def _post_api_appengine(self, path, payload, access_token=None):
+        headers = {'Content-Type': 'application/json'}
+
+        if access_token is not None:
+            headers['X-Rollbar-Access-Token'] = access_token
+
+        url = urljoin(self.settings['endpoint'], path)
+        resp = AppEngineFetch(url,
+                              method="POST",
+                              payload=payload,
+                              headers=headers,
+                              allow_truncated=False,
+                              deadline=self.settings.get('timeout', self.default_timeout),
+                              validate_certificate=self.settings.get('verify_https', True))
+
+        return self._parse_response(path, self.settings['access_token'], payload, resp)
+
+    def _post_api(self, path, payload, access_token=None):
+        headers = {'Content-Type': 'application/json'}
+
+        if access_token is not None:
+            headers['X-Rollbar-Access-Token'] = access_token
+
+        url = urljoin(self.settings['endpoint'], path)
+        resp = requests.post(url,
+                             data=payload,
+                             headers=headers,
+                             timeout=self.settings.get('timeout', self.default_timeout),
+                             verify=self.settings.get('verify_https', True))
+
+        return self._parse_response(path, self.settings['access_token'], payload, resp)
+
+    def _get_api(self, path, access_token=None, endpoint=None, **params):
+        access_token = access_token or self.settings['access_token']
+        url = urljoin(endpoint or self.settings['endpoint'], path)
+        params['access_token'] = access_token
+        resp = requests.get(url, params=params, verify=self.settings.get('verify_https', True))
+        return self._parse_response(path, access_token, params, resp, endpoint=endpoint)
+
+    def _send_payload_tornado(self, payload, access_token):
+        try:
+            self._post_api_tornado('item/', payload, access_token=access_token)
+        except Exception as e:
+            log.exception('Exception while posting item %r', e)
+
+    @tornado_coroutine
+    def _post_api_tornado(self, path, payload, access_token=None):
+        headers = {'Content-Type': 'application/json'}
+
+        if access_token is not None:
+            headers['X-Rollbar-Access-Token'] = access_token
+
+        url = urljoin(self.settings['endpoint'], path)
+
+        resp = yield TornadoAsyncHTTPClient().fetch(
+            url, body=payload, method='POST', connect_timeout=self.settings.get('timeout', self.default_timeout),
+            request_timeout=self.settings.get('timeout', self.default_timeout)
+        )
+
+        r = requests.Response()
+        r._content = resp.body
+        r.status_code = resp.code
+        r.headers.update(resp.headers)
+
+        self._parse_response(path, self.settings['access_token'], payload, r)
+
+    def _send_payload_twisted(self, payload, access_token):
+        try:
+            self._post_api_twisted('item/', payload, access_token=access_token)
+        except Exception as e:
+            log.exception('Exception while posting item %r', e)
+
+    @inlineCallbacks
+    def _post_api_twisted(self, path, payload, access_token=None):
+        headers = {'Content-Type': ['application/json']}
+
+        if access_token is not None:
+            headers['X-Rollbar-Access-Token'] = [access_token]
+
+        url = urljoin(self.settings['endpoint'], path)
+
+        agent = TwistedHTTPClient(reactor, connectTimeout=self.settings.get('timeout', self.default_timeout))
+        resp = yield agent.request(
+               'POST',
+               url,
+               TwistedHeaders(headers),
+               StringProducer(payload))
+
+        r = requests.Response()
+        r.status_code = resp.code
+        r.headers.update(resp.headers.getAllRawHeaders())
+        bodyDeferred = Deferred()
+        resp.deliverBody(ResponseAccumulator(resp.length, bodyDeferred))
+        body = yield bodyDeferred
+        r._content = body
+        self._parse_response(path, self.settings['access_token'], payload, r)
+        yield returnValue(None)
+
+    def _parse_response(self, path, access_token, params, resp, endpoint=None):
+        if isinstance(resp, requests.Response):
+            try:
+                data = resp.text
+            except Exception as e:
+                data = resp.content
+                log.error('resp.text is undefined, resp.content is %r', resp.content)
+        else:
+            data = resp.content
+
+        if resp.status_code == 429:
+            log.warning("Rollbar: over rate limit, data was dropped. Payload was: %r", params)
+            return
+        elif resp.status_code == 413:
+            log.warning("Rollbar: request entity too large. Payload was: %r", params)
+            return
+        elif resp.status_code != 200:
+            log.warning("Got unexpected status code from Rollbar api: %s\nResponse:\n%s",
+                resp.status_code, data)
+
+        try:
+            json_data = json.loads(data)
+        except (TypeError, ValueError):
+            log.exception('Could not decode Rollbar api response:\n%s', data)
+            raise ApiException('Request to %s returned invalid JSON response', path)
+        else:
+            if json_data.get('err'):
+                raise ApiError(json_data.get('message') or 'Unknown error')
+
+            result = json_data.get('result', {})
+
+            if 'page' in result:
+                return PagedResult(self, access_token, path, result['page'], params, result, endpoint=endpoint)
+            else:
+                return Result(access_token, path, params, result)
+
+    def _extract_user_ip(self, request):
+        # some common things passed by load balancers... will need more of these.
+        real_ip = request.headers.get('X-Real-Ip')
+        if real_ip:
+            return real_ip
+        forwarded_for = request.headers.get('X-Forwarded-For')
+        if forwarded_for:
+            return forwarded_for
+        return request.remote_addr
+
+    def _wsgi_extract_user_ip(self, environ):
+        forwarded_for = environ.get('HTTP_X_FORWARDED_FOR')
+        if forwarded_for:
+            return forwarded_for
+        real_ip = environ.get('HTTP_X_REAL_IP')
+        if real_ip:
+            return real_ip
+        return environ['REMOTE_ADDR']
 
 
-def _extract_user_ip(request):
-    # some common things passed by load balancers... will need more of these.
-    real_ip = request.headers.get('X-Real-Ip')
-    if real_ip:
-        return real_ip
-    forwarded_for = request.headers.get('X-Forwarded-For')
-    if forwarded_for:
-        return forwarded_for
-    return request.remote_addr
+
+# Keep consistent base public API by having a default rollbar instance
+DEFAULT_ROLLBAR = None
+
+def init(access_token, environment=None, **kw):
+    """
+    Init default rollbar instance
+    This uses a shared instance of rollbar for all the base function level calls.
+    For more flexibility, instantiate Rollbar instances directly
+
+    access_token: project access token. Get this from the Rollbar UI:
+                  - click "Settings" in the top nav
+                  - click "Projects" in the left nav
+                  - copy-paste the appropriate token.
+    environment: environment name. Can be any string; suggestions: 'production', 'development',
+                 'staging', 'yourname'
+    **kw: provided keyword arguments will override keys in SETTINGS.
+    """
+    global DEFAULT_ROLLBAR
+    if DEFAULT_ROLLBAR:
+        # NOTE: Temp solution to not being able to re-init.
+        # New versions of pyrollbar will support re-initialization
+        # via the (not-yet-implemented) configure() method.
+        log.warn('Rollbar already initialized. Ignoring re-init.')
+    else:
+        DEFAULT_ROLLBAR = Rollbar(access_token, environment, **kw)
 
 
-def _wsgi_extract_user_ip(environ):
-    forwarded_for = environ.get('HTTP_X_FORWARDED_FOR')
-    if forwarded_for:
-        return forwarded_for
-    real_ip = environ.get('HTTP_X_REAL_IP')
-    if real_ip:
-        return real_ip
-    return environ['REMOTE_ADDR']
+def report_exc_info(exc_info=None, request=None, extra_data=None, payload_data=None, level=None, **kw):
+    """
+    Reports an exception to Rollbar, using exc_info (from calling sys.exc_info())
+    Uses default Rollbar instance
+
+    exc_info: optional, should be the result of calling sys.exc_info(). If omitted, sys.exc_info() will be called here.
+    request: optional, a WebOb or Werkzeug-based request object.
+    extra_data: optional, will be included in the 'custom' section of the payload
+    payload_data: optional, dict that will override values in the final payload
+                  (e.g. 'level' or 'fingerprint')
+    kw: provided for legacy purposes; unused.
+
+    Example usage:
+
+    rollbar.init(access_token='YOUR_PROJECT_ACCESS_TOKEN')
+    try:
+        do_something()
+    except:
+        rollbar.report_exc_info(sys.exc_info(), request, {'foo': 'bar'}, {'level': 'warning'})
+    """
+    global DEFAULT_ROLLBAR
+    if not DEFAULT_ROLLBAR:
+        log.info("pyrollbar: Not reporting because no default instance has been created")
+        return
+
+    return DEFAULT_ROLLBAR.report_exc_info(exc_info, request, extra_data, payload_data, level, **kw)
+
+
+def report_message(message, level='error', request=None, extra_data=None, payload_data=None):
+    """
+    Reports an arbitrary string message to Rollbar.
+    Uses default Rollbar instance
+
+    message: the string body of the message
+    level: level to report at. One of: 'critical', 'error', 'warning', 'info', 'debug'
+    request: the request object for the context of the message
+    extra_data: dictionary of params to include with the message. 'body' is reserved.
+    payload_data: param names to pass in the 'data' level of the payload; overrides defaults.
+    """
+    global DEFAULT_ROLLBAR
+    if not DEFAULT_ROLLBAR:
+        log.info("pyrollbar: Not reporting because no default instance has been created")
+        return
+
+    return DEFAULT_ROLLBAR.report_message(message, level, request, extra_data, payload_data)
+
+
+def send_payload(payload, access_token):
+    """
+    Sends a payload object, (the result of calling _build_payload()).
+    Uses the configured handler from SETTINGS['handler']
+    Uses default Rollbar instance
+
+    Available handlers:
+    - 'blocking': calls _send_payload() (which makes an HTTP request) immediately, blocks on it
+    - 'thread': starts a single-use thread that will call _send_payload(). returns immediately.
+    - 'agent': writes to a log file to be processed by rollbar-agent
+    - 'tornado': calls _send_payload_tornado() (which makes an async HTTP request using tornado's AsyncHTTPClient)
+    """
+    global DEFAULT_ROLLBAR
+    if not DEFAULT_ROLLBAR:
+        log.info("pyrollbar: Not reporting because no default instance has been created")
+        return
+
+    return DEFAULT_ROLLBAR.send_payload(payload, access_token)
+
+
+def search_items(title, return_fields=None, access_token=None, endpoint=None, **search_fields):
+    """
+    Searches a project for items that match the input criteria.
+    Uses default Rollbar instance
+
+    title: all or part of the item's title to search for.
+    return_fields: the fields that should be returned for each item.
+            e.g. ['id', 'project_id', 'status'] will return a dict containing
+                 only those fields for each item.
+    access_token: a project access token. If this is not provided,
+                  the one provided to init() will be used instead.
+    search_fields: additional fields to include in the search.
+            currently supported: status, level, environment
+    """
+    global DEFAULT_ROLLBAR
+    if not DEFAULT_ROLLBAR:
+        log.info("pyrollbar: Not searching because no default instance has been created")
+        return
+
+    return DEFAULT_ROLLBAR.search_items(title, return_fields, access_token, endpoint, **search_fields)
