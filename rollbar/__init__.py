@@ -396,7 +396,7 @@ class Rollbar(object):
         self.settings['access_token'] = access_token
         if not environment:
             # Allow settings via environment variable
-            environment = os.environ.get('ROLLBAR_ENV', 'produciton')
+            environment = os.environ.get('ROLLBAR_ENV', 'production')
             self.settings['environment'] = environment
 
         # Merge the extra config settings into self.settings
