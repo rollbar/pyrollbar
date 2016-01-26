@@ -111,19 +111,19 @@ class RollbarHandler(logging.Handler):
 
         uuid = None
         try:
-            if exc_info:
+            # when not in an exception handler, exc_info == (None, None, None)
+            if exc_info and exc_info[0]:
                 if message:
                     message_template = {
                         'body': {
                             'trace': {
                                 'exception': {
                                     'description': message
-                                 }
+                                }
                             }
                         }
                     }
                     payload_data = rollbar.dict_merge(payload_data, message_template)
-
 
                 uuid = rollbar.report_exc_info(exc_info,
                                                level=level,
