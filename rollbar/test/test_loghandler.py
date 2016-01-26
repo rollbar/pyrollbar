@@ -60,6 +60,20 @@ class LogHandlerTest(BaseTest):
 
         # Python 2.6 doesnt support extra param in logger.exception.
         if not sys.version_info[:2] == (2, 6):
+            # if you call logger.exception outside of an exception
+            # handler, it shouldn't try to report exc_info, since it
+            # won't have any
             with mock.patch("rollbar.report_exc_info") as report_exc_info:
-                logger.exception("Exception message", extra={"request": request})
-                self.assertEqual(report_exc_info.call_args[1]["request"], request)
+                with mock.patch("rollbar.report_message") as report_message_mock:
+                    logger.exception("Exception message", extra={"request": request})
+                    report_exc_info.assert_not_called()
+                    self.assertEqual(report_message_mock.call_args[1]["request"], request)
+
+            with mock.patch("rollbar.report_exc_info") as report_exc_info:
+                with mock.patch("rollbar.report_message") as report_message_mock:
+                    try:
+                        raise Exception()
+                    except:
+                        logger.exception("Exception message", extra={"request": request})
+                        self.assertEqual(report_exc_info.call_args[1]["request"], request)
+                        report_message_mock.assert_not_called()
