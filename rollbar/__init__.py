@@ -4,7 +4,7 @@ Plugin for Pyramid apps to submit errors to Rollbar
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-__version__ = '0.11.1'
+__version__ = '0.11.2'
 
 import copy
 import inspect
@@ -174,7 +174,7 @@ except ImportError:
     TwistedHTTPClient = None
     inlineCallbacks = passthrough_decorator
     StringProducer = None
-    
+
 
 def get_request():
     """

@@ -1,5 +1,8 @@
 # Change Log
 
+**0.11.2**
+- Fixed a bug when calling logging.exception() when not in an exception handler.  Now it correctly determines it doesn't have any exception info and uses report_message() instead of report_exc_info().
+
 **0.11.1**
 - Added a new configuration option to expose the serializer's `whitelisted_types` param
   - Allows users to whitelist types to be serialized using `repr(obj)` instead of `str(type(obj))`
@@ -10,7 +13,7 @@
   - This fixes a bunch of problems with reporting local variables, including `UnicodeEncodeError`s and attempting to read variables after the thread they were in has died.
 - Local variables and payload data is now sent over in their original structure.
   - If a variable was a `dict`, it will be transmitted as a `dict` instead of turned into a string representation of the variable.
-- The entire payload is now scrubbed and URL password fields are scrubbed as well.  
+- The entire payload is now scrubbed and URL password fields are scrubbed as well.
 - Added a Django example.
 - Wrote many, many more tests :)
 - Integrated the `six` library to provide cleaner support for Python3.
@@ -22,7 +25,7 @@
 **0.10.0**
 - Added support for Twisted framework. See [#69](https://github.com/rollbar/pyrollbar/pull/69)
 - Fix a bug that was causing max recursion errors while collecting local variables. See [#77](https://github.com/rollbar/pyrollbar/pull/77)
-  - Added a configuration option, `safe_repr: True` which will cause payload serialization to use the type name for non-built-in objects. 
+  - Added a configuration option, `safe_repr: True` which will cause payload serialization to use the type name for non-built-in objects.
     This option defaults to `True` which may cause data reported to Rollbar to contain less information for custom types.
     Prior to this change, serialization of custom objects called `__repr__()` which may have had undesired side effects.
 - Fixed a bug that did not correctly handle anonymous tuple arguments while gathering local variables.
@@ -44,7 +47,7 @@
 
 **0.9.9**
 - Add exception handler for RQ (requires some instrumentation). See [#57](https://github.com/rollbar/pyrollbar/pull/57)
-- Scrub fields inside `extra_data` 
+- Scrub fields inside `extra_data`
 - Gather the process PID and report it along with the other 'server' data
 
 **0.9.8**
@@ -220,5 +223,3 @@ Note about upgrading from 0.8.x: unless you are using RollbarHandler, there are 
 
 **0.1.8**
 - Add support for Django request objects
-
-
