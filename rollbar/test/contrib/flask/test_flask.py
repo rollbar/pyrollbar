@@ -87,7 +87,7 @@ if ALLOWED_PYTHON_VERSION and FLASK_INSTALLED:
 
             self.assertIn('body', data)
             self.assertEqual(data['body']['trace']['exception']['class'], 'Exception')
-            self.assertStringEqual(data['body']['trace']['exception']['message'], 'Uh oh')
+            self.assertStringEqual(data['body']['trace']['exception']['message'], str(type(Exception('Uh oh'))))
 
             self.assertIn('person', data)
             self.assertDictEqual(data['person'],
@@ -115,7 +115,7 @@ if ALLOWED_PYTHON_VERSION and FLASK_INSTALLED:
 
             self.assertIn('body', data)
             self.assertEqual(data['body']['trace']['exception']['class'], 'Exception')
-            self.assertStringEqual(data['body']['trace']['exception']['message'], 'Uh oh')
+            self.assertStringEqual(data['body']['trace']['exception']['message'], str(type(Exception('Uh oh'))))
 
             self.assertIn('person', data)
             self.assertDictEqual(data['person'],
