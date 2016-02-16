@@ -127,7 +127,7 @@ class RollbarTest(BaseTest):
         self.assertIn('body', payload['data'])
         self.assertIn('trace', payload['data']['body'])
         self.assertIn('exception', payload['data']['body']['trace'])
-        self.assertEqual(payload['data']['body']['trace']['exception']['message'], "<type 'exceptions.Exception'>")
+        self.assertEqual(payload['data']['body']['trace']['exception']['message'], str(type(Exception())))
         self.assertEqual(payload['data']['body']['trace']['exception']['class'], 'Exception')
 
         self.assertNotIn('args', payload['data']['body']['trace']['frames'][-1])
