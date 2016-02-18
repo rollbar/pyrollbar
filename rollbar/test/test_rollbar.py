@@ -792,8 +792,9 @@ class RollbarTest(BaseTest):
             self.assertTrue(False)
 
     def test_scrub_webob_request_data(self):
-        rollbar.SETTINGS['scrub_fields'].extend(['token', 'secret', 'cookies', 'authorization'])
-        rollbar.init(_test_access_token, locals={'enabled': True}, dummy_key='asdf', handler='blocking', timeout=12345)
+        rollbar._initialized = False
+        rollbar.init(_test_access_token, locals={'enabled': True}, dummy_key='asdf', handler='blocking', timeout=12345,
+            scrub_fields=rollbar.SETTINGS['scrub_fields'] + ['token', 'secret', 'cookies', 'authorization'])
 
         import webob
         request = webob.Request.blank('/the/path?q=hello&password=hunter2',
