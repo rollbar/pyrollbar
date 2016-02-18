@@ -326,6 +326,25 @@ def init(access_token, environment='production', **kw):
     """
     global SETTINGS, agent_log, _initialized, _transforms, _serialize_transform
 
+    if _initialized:
+        # NOTE: Temp solution to not being able to re-init.
+        # New versions of pyrollbar will support re-initialization
+        # via the (not-yet-implemented) configure() method.
+        log.warn('Rollbar already initialized. Ignoring re-init.')
+        return
+
+    SETTINGS['access_token'] = access_token
+    SETTINGS['environment'] = environment
+
+    # Merge the extra config settings into SETTINGS
+    SETTINGS = dict_merge(SETTINGS, kw)
+
+    if SETTINGS.get('allow_logging_basic_config'):
+        logging.basicConfig()
+
+    if SETTINGS.get('handler') == 'agent':
+        agent_log = _create_agent_log()
+
     # We will perform these transforms in order:
     # 1. Serialize the payload to be all python built-in objects
     # 2. Scrub the payloads based on the key suffixes in SETTINGS['scrub_fields']
@@ -357,25 +376,7 @@ def init(access_token, environment='production', **kw):
                                    **SETTINGS['locals']['sizes'])
     _transforms.append(shortener)
 
-    if _initialized:
-        # NOTE: Temp solution to not being able to re-init.
-        # New versions of pyrollbar will support re-initialization
-        # via the (not-yet-implemented) configure() method.
-        log.warn('Rollbar already initialized. Ignoring re-init.')
-    else:
-        _initialized = True
-
-        SETTINGS['access_token'] = access_token
-        SETTINGS['environment'] = environment
-
-        # Merge the extra config settings into SETTINGS
-        SETTINGS = dict_merge(SETTINGS, kw)
-
-        if SETTINGS.get('allow_logging_basic_config'):
-            logging.basicConfig()
-
-        if SETTINGS.get('handler') == 'agent':
-            agent_log = _create_agent_log()
+    _initialized = True
 
 
 def report_exc_info(exc_info=None, request=None, extra_data=None, payload_data=None, level=None, **kw):
