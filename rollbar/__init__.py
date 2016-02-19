@@ -12,6 +12,7 @@ import json
 import logging
 import os
 import socket
+from random import randint
 import sys
 import threading
 import time
@@ -868,8 +869,11 @@ def _add_locals_data(data, exc_info):
                     args[named_arg] = local_vars[named_arg]
 
             # Add any varargs
-            if arginfo.varargs is not None and not SETTINGS['locals']['scrub_varargs']:
-                args[arginfo.varargs] = local_vars[arginfo.varargs]
+            if arginfo.varargs is not None:
+                if SETTINGS['locals']['scrub_varargs']:
+                    args[arginfo.varargs] = ['*' * randint(3, 20) for i in range(len(local_vars[arginfo.varargs]))]
+                else:
+                    args[arginfo.varargs] = local_vars[arginfo.varargs]
 
             # Fill in all of the kwargs
             if arginfo.keywords is not None:

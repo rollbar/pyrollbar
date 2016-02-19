@@ -511,6 +511,31 @@ class RollbarTest(BaseTest):
         self.assertEqual('text', payload['data']['body']['trace']['frames'][-1]['kwargs']['clear'])
 
     @mock.patch('rollbar.send_payload')
+    def test_scrub_varargs(self, send_payload):
+        prev_locals = rollbar.SETTINGS['locals']
+        rollbar.SETTINGS['locals']['scrub_varargs'] = True
+
+        def something(*v, **kw):
+            raise Exception()
+
+        try:
+            something('secret', 'password', 'redacted')
+        except:
+            rollbar.report_exc_info()
+        finally:
+            rollbar.SETTINGS['locals'] = prev_locals
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = json.loads(send_payload.call_args[0][0])
+
+        frames = payload['data']['body']['trace']['frames']
+
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['args']['v'][0], '\*+')
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['args']['v'][1], '\*+')
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['args']['v'][2], '\*+')
+
+    @mock.patch('rollbar.send_payload')
     def test_scrub_locals(self, send_payload):
         invalid_b64 = b'CuX2JKuXuLVtJ6l1s7DeeQ=='
         invalid = base64.b64decode(invalid_b64)
@@ -743,7 +768,6 @@ class RollbarTest(BaseTest):
                 self.assertNotIn('locals', frame)
             else:
                 self.assertIn('locals', frame)
-
 
     @mock.patch('rollbar.send_payload')
     def test_modify_arg(self, send_payload):
