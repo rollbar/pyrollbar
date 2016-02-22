@@ -127,7 +127,7 @@ class RollbarTest(BaseTest):
         self.assertIn('body', payload['data'])
         self.assertIn('trace', payload['data']['body'])
         self.assertIn('exception', payload['data']['body']['trace'])
-        self.assertEqual(payload['data']['body']['trace']['exception']['message'], 'foo')
+        self.assertEqual(payload['data']['body']['trace']['exception']['message'], str(type(Exception())))
         self.assertEqual(payload['data']['body']['trace']['exception']['class'], 'Exception')
 
         self.assertNotIn('args', payload['data']['body']['trace']['frames'][-1])
@@ -745,6 +745,27 @@ class RollbarTest(BaseTest):
         self.assertEqual('changed', called_with_frame['args'][0])
 
     @mock.patch('rollbar.send_payload')
+    def test_scrub_arg(self, send_payload):
+
+        def sensitive_call(username, password):
+            step1()
+
+        try:
+            sensitive_call('user', 'secret')
+        except:
+            rollbar.report_exc_info()
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = json.loads(send_payload.call_args[0][0])
+        frames = payload['data']['body']['trace']['frames']
+        called_with_frame = frames[1]
+
+        self.assertEqual('user', called_with_frame['args'][0])
+        self.assertNotEqual('secret', called_with_frame['args'][1])
+        self.assertRegex(called_with_frame['args'][1], r'\*+')
+
+    @mock.patch('rollbar.send_payload')
     def test_unicode_exc_info(self, send_payload):
         message = '\u221a'
 
@@ -756,7 +777,6 @@ class RollbarTest(BaseTest):
         self.assertEqual(send_payload.called, True)
         payload = json.loads(send_payload.call_args[0][0])
         self.assertEqual(payload['data']['body']['trace']['exception']['message'], message)
-
 
     @mock.patch('requests.post', side_effect=lambda *args, **kw: MockResponse({'status': 'OK'}, 200))
     def test_serialize_and_send_payload(self, post=None):

@@ -630,7 +630,7 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
             'frames': frames,
             'exception': {
                 'class': cls.__name__,
-                'message': text(exc),
+                'message': _transform(exc),
             }
         }
     }
@@ -864,7 +864,7 @@ def _add_locals_data(data, exc_info):
             # Fill in all of the named args
             for named_arg in named_args:
                 if named_arg in local_vars:
-                    args.append(local_vars[named_arg])
+                    args.append(_transform(local_vars[named_arg], key=(named_arg,)))
 
             # Add any varargs
             if arginfo.varargs is not None:
