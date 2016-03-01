@@ -625,12 +625,17 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     raw_frames = traceback.extract_tb(trace)
     frames = [{'filename': f[0], 'lineno': f[1], 'method': f[2], 'code': f[3]} for f in raw_frames]
 
+    exc_message = getattr(exc, "message", None)
+    if exc_message is None:
+        exc_message = _transform(exc)
+    else:
+        exc_message = text(exc_message)
     data['body'] = {
         'trace': {
             'frames': frames,
             'exception': {
                 'class': cls.__name__,
-                'message': _transform(exc),
+                'message': exc_message,
             }
         }
     }
