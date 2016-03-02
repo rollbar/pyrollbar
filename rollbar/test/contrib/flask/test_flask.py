@@ -36,7 +36,7 @@ def create_app():
     @app.route('/cause_error', methods=['GET', 'POST'])
     def cause_error():
         raise Exception("Uh oh")
-    
+
     @app.before_first_request
     def init_rollbar():
         rollbar.init(TOKEN, 'flasktest',
@@ -50,7 +50,7 @@ def create_app():
             return {'id': '123', 'username': 'testuser', 'email': 'test@example.com'}
 
     app.request_class = CustomRequest
-    
+
     return app
 
 if ALLOWED_PYTHON_VERSION and FLASK_INSTALLED:
@@ -87,7 +87,7 @@ if ALLOWED_PYTHON_VERSION and FLASK_INSTALLED:
 
             self.assertIn('body', data)
             self.assertEqual(data['body']['trace']['exception']['class'], 'Exception')
-            self.assertStringEqual(data['body']['trace']['exception']['message'], str(type(Exception('Uh oh'))))
+            self.assertStringEqual(data['body']['trace']['exception']['message'], 'Uh oh')
 
             self.assertIn('person', data)
             self.assertDictEqual(data['person'],
@@ -115,7 +115,7 @@ if ALLOWED_PYTHON_VERSION and FLASK_INSTALLED:
 
             self.assertIn('body', data)
             self.assertEqual(data['body']['trace']['exception']['class'], 'Exception')
-            self.assertStringEqual(data['body']['trace']['exception']['message'], str(type(Exception('Uh oh'))))
+            self.assertStringEqual(data['body']['trace']['exception']['message'], 'Uh oh')
 
             self.assertIn('person', data)
             self.assertDictEqual(data['person'],
