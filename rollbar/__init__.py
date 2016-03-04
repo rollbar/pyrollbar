@@ -438,7 +438,7 @@ def send_payload(payload, access_token):
     if handler == 'blocking':
         _send_payload(payload, access_token)
     elif handler == 'agent':
-        agent_log.error(payload, access_token)
+        agent_log.error(payload)
     elif handler == 'tornado':
         if TornadoAsyncHTTPClient is None:
             log.error('Unable to find tornado')
