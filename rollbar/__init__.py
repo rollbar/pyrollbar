@@ -886,7 +886,7 @@ def _add_locals_data(data, exc_info):
                     # The last len(argspec.defaults) args in arginfo.args should be added
                     # to kwargs and removed from args
                     kw.update({k: args[k] for k in arginfo.args[-num_defaults:]})
-                    args = {k: v for k, v in args.items() if k not in arginfo.args[-num_defaults:]}
+                    args = dict((k, v) for k, v in args.items() if k not in arginfo.args[-num_defaults:])
 
             # Optionally fill in locals for this frame
             if local_vars and _check_add_locals(cur_frame, frame_num, num_frames):
