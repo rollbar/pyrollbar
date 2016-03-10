@@ -1,5 +1,14 @@
 # Change Log
 
+**0.11.4**
+
+- revert changes from 0.11.3 since they ended-up having the unintended side effect by that exceptions messages weren't processing as expected.
+- update settings in init first so that custom scrub_fields entries are handled correctly
+
+**0.11.3**
+
+- Obey safe repr for exceptions.  See [#91](https://github.com/rollbar/pyrollbar/pull/91)
+
 **0.11.2**
 - Fixed a bug when calling logging.exception() when not in an exception handler.  Now it correctly determines it doesn't have any exception info and uses report_message() instead of report_exc_info().
 

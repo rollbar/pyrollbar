@@ -36,7 +36,7 @@ def create_app():
     @app.route('/cause_error', methods=['GET', 'POST'])
     def cause_error():
         raise Exception("Uh oh")
-    
+
     @app.before_first_request
     def init_rollbar():
         rollbar.init(TOKEN, 'flasktest',
@@ -50,7 +50,7 @@ def create_app():
             return {'id': '123', 'username': 'testuser', 'email': 'test@example.com'}
 
     app.request_class = CustomRequest
-    
+
     return app
 
 if ALLOWED_PYTHON_VERSION and FLASK_INSTALLED:
