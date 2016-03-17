@@ -75,21 +75,28 @@ class SerializableTransform(Transform):
         if o is None:
             return None
 
-        if any(filter(lambda x: isinstance(o, x), self.whitelist)):
-            try:
-                return repr(o)
-            except TypeError:
-                pass
+        # Best to be very careful when we call user code in the middle of
+        # preparing a stack trace. So we put a try/except around it all.
+        try:
+            if any(filter(lambda x: isinstance(o, x), self.whitelist)):
+                try:
+                    return repr(o)
+                except TypeError:
+                    pass
 
-        # If self.safe_repr is False, use repr() to serialize the object
-        if not self.safe_repr:
-            try:
-                return repr(o)
-            except TypeError:
-                pass
+            # If self.safe_repr is False, use repr() to serialize the object
+            if not self.safe_repr:
+                try:
+                    return repr(o)
+                except TypeError:
+                    pass
 
-        # Otherwise, just use the type name
-        return str(type(o))
+            # Otherwise, just use the type name
+            return str(type(o))
+
+        except Exception as e:
+            return '<%s in %s.__repr__: %s>' % (
+                e.__class__.__name__, o.__class__.__name__, str(e))
 
 
 __all__ = ['SerializableTransform']
