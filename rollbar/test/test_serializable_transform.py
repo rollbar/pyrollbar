@@ -218,3 +218,12 @@ class SerializableTransformTest(BaseTest):
         expected['custom'] = SNOWMAN
         self._assertSerialized(start, expected, whitelist=[CustomRepr])
 
+    def test_encode_with_bad_repr_doesnt_die(self):
+        class CustomRepr(object):
+            def __repr__(self):
+                assert False
+
+        start = {'hello': 'world', 'custom': CustomRepr()}
+        serializable = SerializableTransform(whitelist_types=[CustomRepr])
+        result = transforms.transform(start, [serializable])
+        self.assertRegex(result['custom'], "<AssertionError.*CustomRepr.*>")
