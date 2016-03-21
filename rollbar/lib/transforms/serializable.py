@@ -95,8 +95,13 @@ class SerializableTransform(Transform):
             return str(type(o))
 
         except Exception as e:
+            exc_str = ''
+            try:
+                exc_str = str(e)
+            except Exception as e2:
+                exc_str = '[%s while calling str(%s)]' % (e2.__class__.__name__, e.__class__.__name__)
             return '<%s in %s.__repr__: %s>' % (
-                e.__class__.__name__, o.__class__.__name__, str(e))
+                e.__class__.__name__, o.__class__.__name__, exc_str)
 
 
 __all__ = ['SerializableTransform']
