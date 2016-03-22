@@ -14,3 +14,4 @@ Huge thanks to the following contributors (by github username). For the most up-
 - [rhcarvalho](https://github.com/rhcarvalho)
 - [tschieggm](https://github.com/tschieggm)
 - [zvirusz](https://github.com/zvirusz)
+- [benkuhn](https://github.com/benkuhn)

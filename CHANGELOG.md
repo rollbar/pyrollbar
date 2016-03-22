@@ -1,9 +1,13 @@
 # Change Log
 
+**0.11.5**
+
+- Fixed a bug when custom `__repr__()` calls resulted in an exception being thrown. See [#102](https://github.com/rollbar/pyrollbar/pull/102) 
+
 **0.11.4**
 
-- revert changes from 0.11.3 since they ended-up having the unintended side effect by that exceptions messages weren't processing as expected.
-- update settings in init first so that custom scrub_fields entries are handled correctly
+- Revert changes from 0.11.3 since they ended-up having the unintended side effect by that exceptions messages weren't processing as expected.
+- Update settings in init first so that custom scrub_fields entries are handled correctly
 
 **0.11.3**
 
