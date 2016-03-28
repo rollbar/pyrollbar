@@ -4,7 +4,7 @@ Plugin for Pyramid apps to submit errors to Rollbar
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-__version__ = '0.11.5'
+__version__ = '0.11.6'
 
 import copy
 import inspect

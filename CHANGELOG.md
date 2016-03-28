@@ -1,5 +1,9 @@
 # Change Log
 
+**0.11.6**
+
+- Improve object handling for SQLAlchemy. See [#108](https://github.com/rollbar/pyrollbar/pull/108)
+
 **0.11.5**
 
 - Fixed a bug when custom `__repr__()` calls resulted in an exception being thrown. See [#102](https://github.com/rollbar/pyrollbar/pull/102) 
