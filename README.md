@@ -126,6 +126,7 @@ Note that the access_token, environment, and other Rollbar config params do need
 
 Check out [rollbar-flask-example](https://github.com/rollbar/rollbar-flask-example).
 
+Be sure to add the required `blinker` dependency! See `requirements.txt` in the example repo for how.
 
 ### Bottle
 
