@@ -135,8 +135,8 @@ def traverse(obj,
                     return handler(obj, key=key)
     except:
         # use the default handler for unknown object types
-        log.exception("Exception while processing Rollbar Item. "
-                      "Using default handler.")
+        log.debug("Exception while traversing object using type-specific "
+                  "handler. Switching to default handler.", exc_info=True)
 
     return default_handler(obj, key=key)
 
