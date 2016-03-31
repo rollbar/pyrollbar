@@ -37,4 +37,6 @@ install:
 script:
   - python setup.py test
 
-
+  addons:
+    code_climate:
+        repo_token: 407119ae65ac7645e5d5cf18256a8256de48b3469c30cb32f62142a1b8c1506c
