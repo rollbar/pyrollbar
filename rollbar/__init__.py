@@ -1193,24 +1193,24 @@ def _send_payload_twisted(payload, access_token):
         log.exception('Exception while posting item %r', e)
 
 
-
 def _post_api_twisted(path, payload, access_token=None):
-
     def post_data_cb(data, resp):
         resp._content = data
-        _parse_response(path, settings['access_token'], payload, resp)
+        _parse_response(path, SETTINGS['access_token'], payload, resp)
 
     def post_cb(resp):
         r = requests.Response()
         r.status_code = resp.code
         r.headers.update(resp.headers.getAllRawHeaders())
-        return treq.content(response).addCallback(post_data_cb, r)
+        return treq.content(resp).addCallback(post_data_cb, r)
 
     headers = {'Content-Type': ['application/json']}
     if access_token is not None:
         headers['X-Rollbar-Access-Token'] = [access_token]
+
     url = urljoin(SETTINGS['endpoint'], path)
-    d = treq.post(url, payload, headers=headers, timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT))
+    d = treq.post(url, payload, headers=headers,
+                  timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT))
     d.addCallback(post_cb)
 
 
