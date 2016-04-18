@@ -1,10 +1,13 @@
 # Change Log
 
+**0.12.1**
+
+- Keep blank values from request query strings when scrubbing URLs. See [#110](https://github.com/rollbar/pyrollbar/pull/110)
+
 **0.12.0**
 
 - Fix and update Twisted support. See [#109](https://github.com/rollbar/pyrollbar/pull/109)
   - **Breaking Changes**: [treq](https://github.com/twisted/treq) is now required for using Twisted with pyrollbar.
-
 
 **0.11.6**
 
