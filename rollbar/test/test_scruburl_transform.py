@@ -49,7 +49,7 @@ class ScrubUrlTransformTest(BaseTest):
             url2 = '//%s' % url2
 
         parsed_urls = map(urlparse, (url1, url2))
-        qs_params = map(lambda x: parse_qs(x.query), parsed_urls)
+        qs_params = map(lambda x: parse_qs(x.query, keep_blank_values=True), parsed_urls)
         num_params = map(len, qs_params)
         param_names = map(lambda x: set(x.keys()), qs_params)
 
@@ -115,6 +115,11 @@ class ScrubUrlTransformTest(BaseTest):
         obj = 'cory:secr3t@foo.com/asdf?password=secret&clear=text'
         expected = obj.replace('secr3t', '------').replace('secret', '------')
         self._assertScrubbed(['password'], obj, expected)
+
+    def test_keep_blank_url_params(self):
+        obj = 'http://foo.com/asdf?foo=bar&baz='
+        expected = obj
+        self._assertScrubbed(['password'], obj, expected, skip_id_check=True)
 
     def test_scrub_dict_val_isnt_string(self):
 
