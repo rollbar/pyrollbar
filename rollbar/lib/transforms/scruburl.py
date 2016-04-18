@@ -42,7 +42,7 @@ class ScrubUrlTransform(ScrubTransform):
 
         try:
             url_parts = urlsplit(url_string)
-            qs_params = parse_qs(url_parts.query)
+            qs_params = parse_qs(url_parts.query, keep_blank_values=True)
         except:
             # This isn't a URL, return url_string which is a no-op
             # for this transform
