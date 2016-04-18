@@ -1,12 +1,18 @@
 # Change Log
 
+**0.12.0**
+
+- Fix and update Twisted support. See [#109](https://github.com/rollbar/pyrollbar/pull/109)
+  - **Breaking Changes**: [treq](https://github.com/twisted/treq) is now required for using Twisted with pyrollbar.
+
+
 **0.11.6**
 
 - Improve object handling for SQLAlchemy. See [#108](https://github.com/rollbar/pyrollbar/pull/108)
 
 **0.11.5**
 
-- Fixed a bug when custom `__repr__()` calls resulted in an exception being thrown. See [#102](https://github.com/rollbar/pyrollbar/pull/102) 
+- Fixed a bug when custom `__repr__()` calls resulted in an exception being thrown. See [#102](https://github.com/rollbar/pyrollbar/pull/102)
 
 **0.11.4**
 
