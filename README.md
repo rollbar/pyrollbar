@@ -24,6 +24,7 @@ except IOError:
 except:
     # catch-all
     rollbar.report_exc_info()
+    # equivalent to rollbar.report_exc_info(sys.exc_info())
 ```
 
 ## Requirements
