@@ -4,8 +4,6 @@ Plugin for Pyramid apps to submit errors to Rollbar
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-__version__ = '0.12.1'
-
 import copy
 import inspect
 import json
@@ -18,15 +16,14 @@ import time
 import traceback
 import types
 import uuid
-
 import wsgiref.util
-import requests
 
+import requests
 import six
 
-from rollbar.lib import dict_merge, map, parse_qs, text, urljoin, urlparse, iteritems
+from rollbar.lib import dict_merge, map, parse_qs, text, urljoin, iteritems
 
-
+__version__ = '0.12.1'
 log = logging.getLogger(__name__)
 
 
@@ -80,6 +77,7 @@ try:
 except ImportError:
     AppEngineFetch = None
 
+
 def passthrough_decorator(func):
     def wrap(*args, **kwargs):
         return func(*args, **kwargs)
@@ -113,7 +111,6 @@ try:
                 report_exc_info((err.type, err.value, err.getTracebackObject()))
         except:
             log.exception('Error while reporting to Rollbar')
-
 
     # Add Rollbar as a log handler which will report uncaught errors
     twisted_log.addObserver(log_handler)
@@ -380,6 +377,8 @@ def send_payload(payload, access_token):
     - 'thread': starts a single-use thread that will call _send_payload(). returns immediately.
     - 'agent': writes to a log file to be processed by rollbar-agent
     - 'tornado': calls _send_payload_tornado() (which makes an async HTTP request using tornado's AsyncHTTPClient)
+    - 'gae': calls _send_payload_appengine() (which makes a blocking call to Google App Engine)
+    - 'twisted': calls _send_payload_twisted() (which makes an async HTTP reqeust using Twisted and Treq)
     """
     handler = SETTINGS.get('handler')
     if handler == 'blocking':
@@ -514,6 +513,7 @@ def _resolve_exception_class(idx, filter):
             cls = None
     return cls, level
 
+
 def _filtered_level(exception):
     for i, filter in enumerate(SETTINGS['exception_level_filters']):
         cls, level = _resolve_exception_class(i, filter)
@@ -534,7 +534,7 @@ def _create_agent_log():
     log_file = SETTINGS['agent.log_file']
     if not log_file.endswith('.rollbar'):
         log.error("Provided agent log file does not end with .rollbar, which it must. "
-            "Using default instead.")
+                  "Using default instead.")
         log_file = DEFAULTS['agent.log_file']
 
     retval = logging.getLogger('rollbar_agent')
@@ -839,7 +839,7 @@ def _add_locals_data(data, exc_info):
             kw = kw
             _locals = _locals
 
-        except Exception as e:
+        except Exception:
             log.exception('Error while extracting arguments from frame. Ignoring.')
 
         # Finally, serialize each arg/kwarg/local separately so that we only report
@@ -1218,7 +1218,7 @@ def _parse_response(path, access_token, params, resp, endpoint=None):
     if isinstance(resp, requests.Response):
         try:
             data = resp.text
-        except Exception as e:
+        except Exception:
             data = resp.content
             log.error('resp.text is undefined, resp.content is %r', resp.content)
     else:
@@ -1232,7 +1232,7 @@ def _parse_response(path, access_token, params, resp, endpoint=None):
         return
     elif resp.status_code != 200:
         log.warning("Got unexpected status code from Rollbar api: %s\nResponse:\n%s",
-            resp.status_code, data)
+                    resp.status_code, data)
 
     try:
         json_data = json.loads(data)
