@@ -10,7 +10,7 @@ from rollbar.test import BaseTest, SNOWMAN
 class ScrubTransformTest(BaseTest):
     def _assertScrubbed(self, suffixes, start, expected, redact_char='*', skip_id_check=False):
         scrubber = ScrubTransform(suffixes=suffixes, redact_char=redact_char, randomize_len=False)
-        result = transforms.transform(start, [scrubber])
+        result = transforms.transform(start, scrubber)
 
         """
         print start
@@ -145,7 +145,7 @@ class ScrubTransformTest(BaseTest):
         ref['circular'] = obj
 
         scrubber = ScrubTransform([])
-        result = transforms.transform(obj, [scrubber])
+        result = transforms.transform(obj, scrubber)
 
         self.assertIsNot(result, obj)
         self.assertIsNot(result['password'], ref)
@@ -176,4 +176,3 @@ class ScrubTransformTest(BaseTest):
             'password': '***'
         }
         self._assertScrubbed([['password']], obj, expected)
-

@@ -21,7 +21,7 @@ import wsgiref.util
 import requests
 import six
 
-from rollbar.lib import dict_merge, map, parse_qs, text, transport, urljoin, iteritems
+from rollbar.lib import dict_merge, parse_qs, text, transport, urljoin, iteritems
 
 __version__ = '0.12.1'
 log = logging.getLogger(__name__)
@@ -231,6 +231,7 @@ SETTINGS = {
     'locals': {
         'enabled': True,
         'safe_repr': True,
+        'scrub_varargs': True,
         'sizes': DEFAULT_LOCALS_SIZES,
         'whitelisted_types': []
     },
@@ -246,10 +247,12 @@ _initialized = False
 # Do not call repr() on these types while gathering local variables
 blacklisted_local_types = []
 
+from rollbar.lib.transforms.scrub_redact import REDACT_REF
 
 from rollbar.lib import transforms
 from rollbar.lib.transforms.scrub import ScrubTransform
 from rollbar.lib.transforms.scruburl import ScrubUrlTransform
+from rollbar.lib.transforms.scrub_redact import ScrubRedactTransform
 from rollbar.lib.transforms.serializable import SerializableTransform
 from rollbar.lib.transforms.shortener import ShortenerTransform
 
@@ -298,6 +301,7 @@ def init(access_token, environment='production', **kw):
     _serialize_transform = SerializableTransform(safe_repr=SETTINGS['locals']['safe_repr'],
                                                  whitelist_types=SETTINGS['locals']['whitelisted_types'])
     _transforms = [
+        ScrubRedactTransform(),
         _serialize_transform,
         ScrubTransform(suffixes=[(field,) for field in SETTINGS['scrub_fields']], redact_char='*'),
         ScrubUrlTransform(suffixes=[(field,) for field in SETTINGS['url_fields']], params_to_scrub=SETTINGS['scrub_fields'])
@@ -779,65 +783,41 @@ def _add_locals_data(data, exc_info):
             frame_num += 1
             continue
 
-        # Create placeholders for args/kwargs/locals
-        args = []
-        kw = {}
+        # Create placeholders for argspec/varargspec/keywordspec/locals
+        argspec = None
+        varargspec = None
+        keywordspec = None
         _locals = {}
 
         try:
             arginfo = inspect.getargvalues(tb_frame)
-            local_vars = arginfo.locals
-            argspec = None
-
-            func = _get_func_from_frame(tb_frame)
-            if func:
-                if inspect.isfunction(func) or inspect.ismethod(func):
-                    argspec = inspect.getargspec(func)
-                elif inspect.isclass(func):
-                    init_func = getattr(func, '__init__', None)
-                    if init_func:
-                        argspec = inspect.getargspec(init_func)
-
-            # Get all of the named args
-            #
-            # args can be a nested list of args in the case where there
-            # are anonymous tuple args provided.
-            # e.g. in Python 2 you can:
-            #   def func((x, (a, b), z)):
-            #       return x + a + b + z
-            #
-            #   func((1, (1, 2), 3))
-            named_args = _flatten_nested_lists(arginfo.args)
-
-            # Fill in all of the named args
-            for named_arg in named_args:
-                if named_arg in local_vars:
-                    args.append(local_vars[named_arg])
-
-            # Add any varargs
-            if arginfo.varargs is not None:
-                args.extend(local_vars[arginfo.varargs])
-
-            # Fill in all of the kwargs
-            if arginfo.keywords is not None:
-                kw.update(local_vars[arginfo.keywords])
-
-            if argspec and argspec.defaults:
-                # Put any of the args that have defaults into kwargs
-                num_defaults = len(argspec.defaults)
-                if num_defaults:
-                    # The last len(argspec.defaults) args in arginfo.args should be added
-                    # to kwargs and removed from args
-                    kw.update(dict(zip(arginfo.args[-num_defaults:], args[-num_defaults:])))
-                    args = args[:-num_defaults]
 
             # Optionally fill in locals for this frame
-            if local_vars and _check_add_locals(cur_frame, frame_num, num_frames):
-                _locals.update(local_vars.items())
+            if arginfo.locals and _check_add_locals(cur_frame, frame_num, num_frames):
+                # Get all of the named args
+                #
+                # args can be a nested list of args in the case where there
+                # are anonymous tuple args provided.
+                # e.g. in Python 2 you can:
+                #   def func((x, (a, b), z)):
+                #       return x + a + b + z
+                #
+                #   func((1, (1, 2), 3))
+                argspec = _flatten_nested_lists(arginfo.args)
 
-            args = args
-            kw = kw
-            _locals = _locals
+                if arginfo.varargs is not None:
+                    varargspec = arginfo.varargs
+                    if SETTINGS['locals']['scrub_varargs']:
+                        temp_varargs = list(arginfo.locals[varargspec])
+                        for i, arg in enumerate(temp_varargs):
+                            temp_varargs[i] = REDACT_REF
+
+                        arginfo.locals[varargspec] = tuple(temp_varargs)
+
+                if arginfo.keywords is not None:
+                    keywordspec = arginfo.keywords
+
+                _locals.update(arginfo.locals.items())
 
         except Exception:
             log.exception('Error while extracting arguments from frame. Ignoring.')
@@ -845,10 +825,12 @@ def _add_locals_data(data, exc_info):
         # Finally, serialize each arg/kwarg/local separately so that we only report
         # CircularReferences for each variable, instead of for the entire payload
         # as would be the case if we serialized that payload in one-shot.
-        if args:
-            cur_frame['args'] = map(_serialize_frame_data, args)
-        if kw:
-            cur_frame['kwargs'] = dict((k, _serialize_frame_data(v)) for k, v in iteritems(kw))
+        if argspec:
+            cur_frame['argspec'] = argspec
+        if varargspec:
+            cur_frame['varargspec'] = varargspec
+        if keywordspec:
+            cur_frame['keywordspec'] = keywordspec
         if _locals:
             cur_frame['locals'] = dict((k, _serialize_frame_data(v)) for k, v in iteritems(_locals))
 
@@ -856,7 +838,10 @@ def _add_locals_data(data, exc_info):
 
 
 def _serialize_frame_data(data):
-    return transforms.transform(data, (_serialize_transform,))
+    for transform in (ScrubRedactTransform(), _serialize_transform):
+        data = transforms.transform(data, transform)
+
+    return data
 
 
 def _add_request_data(data, request):
@@ -1082,7 +1067,10 @@ def _build_server_data():
 
 
 def _transform(obj, key=None):
-    return transforms.transform(obj, _transforms, key=key)
+    for transform in _transforms:
+        obj = transforms.transform(obj, transform, key=key)
+
+    return obj
 
 
 def _build_payload(data):
