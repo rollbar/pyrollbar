@@ -21,7 +21,7 @@ import wsgiref.util
 import requests
 import six
 
-from rollbar.lib import dict_merge, map, parse_qs, text, urljoin, iteritems
+from rollbar.lib import dict_merge, map, parse_qs, text, transport, urljoin, iteritems
 
 __version__ = '0.12.1'
 log = logging.getLogger(__name__)
@@ -1140,11 +1140,11 @@ def _post_api(path, payload, access_token=None):
         headers['X-Rollbar-Access-Token'] = access_token
 
     url = urljoin(SETTINGS['endpoint'], path)
-    resp = requests.post(url,
-                         data=payload,
-                         headers=headers,
-                         timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT),
-                         verify=SETTINGS.get('verify_https', True))
+    resp = transport.post(url,
+                          data=payload,
+                          headers=headers,
+                          timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT),
+                          verify=SETTINGS.get('verify_https', True))
 
     return _parse_response(path, SETTINGS['access_token'], payload, resp)
 
@@ -1153,7 +1153,7 @@ def _get_api(path, access_token=None, endpoint=None, **params):
     access_token = access_token or SETTINGS['access_token']
     url = urljoin(endpoint or SETTINGS['endpoint'], path)
     params['access_token'] = access_token
-    resp = requests.get(url, params=params, verify=SETTINGS.get('verify_https', True))
+    resp = transport.get(url, params=params, verify=SETTINGS.get('verify_https', True))
     return _parse_response(path, access_token, params, resp, endpoint=endpoint)
 
 

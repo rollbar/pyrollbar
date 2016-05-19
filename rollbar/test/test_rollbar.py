@@ -757,7 +757,7 @@ class RollbarTest(BaseTest):
         payload = json.loads(send_payload.call_args[0][0])
         self.assertEqual(payload['data']['body']['trace']['exception']['message'], message)
 
-    @mock.patch('requests.post', side_effect=lambda *args, **kw: MockResponse({'status': 'OK'}, 200))
+    @mock.patch('rollbar.lib.transport.post', side_effect=lambda *args, **kw: MockResponse({'status': 'OK'}, 200))
     def test_serialize_and_send_payload(self, post=None):
         invalid_b64 = b'CuX2JKuXuLVtJ6l1s7DeeQ=='
         invalid = base64.b64decode(invalid_b64)
