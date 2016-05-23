@@ -10,6 +10,7 @@ import json
 import logging
 import os
 import socket
+from random import randint
 import sys
 import threading
 import time
@@ -232,7 +233,8 @@ SETTINGS = {
         'enabled': True,
         'safe_repr': True,
         'sizes': DEFAULT_LOCALS_SIZES,
-        'whitelisted_types': []
+        'whitelisted_types': [],
+        'scrub_varargs': True,
     },
     'verify_https': True
 }
@@ -780,7 +782,7 @@ def _add_locals_data(data, exc_info):
             continue
 
         # Create placeholders for args/kwargs/locals
-        args = []
+        args = {}
         kw = {}
         _locals = {}
 
@@ -812,11 +814,14 @@ def _add_locals_data(data, exc_info):
             # Fill in all of the named args
             for named_arg in named_args:
                 if named_arg in local_vars:
-                    args.append(local_vars[named_arg])
+                    args[named_arg] = local_vars[named_arg]
 
             # Add any varargs
             if arginfo.varargs is not None:
-                args.extend(local_vars[arginfo.varargs])
+                if SETTINGS['locals']['scrub_varargs']:
+                    args[arginfo.varargs] = ['*' * randint(3, 20) for i in range(len(local_vars[arginfo.varargs]))]
+                else:
+                    args[arginfo.varargs] = local_vars[arginfo.varargs]
 
             # Fill in all of the kwargs
             if arginfo.keywords is not None:
@@ -828,8 +833,8 @@ def _add_locals_data(data, exc_info):
                 if num_defaults:
                     # The last len(argspec.defaults) args in arginfo.args should be added
                     # to kwargs and removed from args
-                    kw.update(dict(zip(arginfo.args[-num_defaults:], args[-num_defaults:])))
-                    args = args[:-num_defaults]
+                    kw.update(dict((k, args[k]) for k in arginfo.args[-num_defaults:]))
+                    args = dict((k, v) for k, v in args.items() if k not in arginfo.args[-num_defaults:])
 
             # Optionally fill in locals for this frame
             if local_vars and _check_add_locals(cur_frame, frame_num, num_frames):
@@ -846,7 +851,7 @@ def _add_locals_data(data, exc_info):
         # CircularReferences for each variable, instead of for the entire payload
         # as would be the case if we serialized that payload in one-shot.
         if args:
-            cur_frame['args'] = map(_serialize_frame_data, args)
+            cur_frame['args'] = dict((k, _serialize_frame_data(v)) for k, v in iteritems(args))
         if kw:
             cur_frame['kwargs'] = dict((k, _serialize_frame_data(v)) for k, v in iteritems(kw))
         if _locals:
