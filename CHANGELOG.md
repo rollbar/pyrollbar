@@ -1,5 +1,17 @@
 # Change Log
 
+**0.13.0**
+
+- Frame payload refactor and varargs scrubbing. See [#113](https://github.com/rollbar/pyrollbar/pull/113)
+  - Frame Payload Changes
+	  - remove args and kwargs
+	  - add argspec as the list of argument names to the function call
+	  - add varargspec as the name of the list containing the arbitrary unnamed positional arguments to the function call if any exist
+	  - add keywordspec as the name of the object containing the arbitrary keyword arguments to the function call if any exist
+  - Other Changes:
+	  - Arguments with default values are no longer removed from args and placed into kwargs
+	  - varargs are now scrubbable and scrubbed by default
+
 **0.12.1**
 
 - Keep blank values from request query strings when scrubbing URLs. See [#110](https://github.com/rollbar/pyrollbar/pull/110)

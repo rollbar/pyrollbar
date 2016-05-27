@@ -23,7 +23,7 @@ import six
 
 from rollbar.lib import dict_merge, parse_qs, text, transport, urljoin, iteritems
 
-__version__ = '0.12.1'
+__version__ = '0.13.0'
 log = logging.getLogger(__name__)
 
 
