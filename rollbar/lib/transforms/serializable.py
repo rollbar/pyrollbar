@@ -1,5 +1,3 @@
-import base64
-
 from rollbar.lib import binary_type, string_types
 from rollbar.lib import circular_reference_label, undecodable_object_label, unencodable_object_label
 from rollbar.lib import iteritems, python_major_version, text
@@ -69,7 +67,6 @@ class SerializableTransform(Transform):
             ret[new_k] = v
 
         return super(SerializableTransform, self).transform_dict(ret, key=key)
-
 
     def transform_custom(self, o, key=None):
         if o is None:

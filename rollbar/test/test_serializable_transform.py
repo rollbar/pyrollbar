@@ -26,7 +26,7 @@ undecodable_repr = '<Undecodable type:(%s) base64:(%s)>' % (binary_type_name, in
 class SerializableTransformTest(BaseTest):
     def _assertSerialized(self, start, expected, safe_repr=True, whitelist=None, skip_id_check=False):
         serializable = SerializableTransform(safe_repr=safe_repr, whitelist_types=whitelist)
-        result = transforms.transform(start, [serializable])
+        result = transforms.transform(start, serializable)
 
         """
         #print start
@@ -88,7 +88,7 @@ class SerializableTransformTest(BaseTest):
         start = float('nan')
 
         serializable = SerializableTransform()
-        result = transforms.transform(start, [serializable])
+        result = transforms.transform(start, serializable)
 
         self.assertTrue(math.isnan(result))
 
@@ -96,7 +96,7 @@ class SerializableTransformTest(BaseTest):
         start = float('inf')
 
         serializable = SerializableTransform()
-        result = transforms.transform(start, [serializable])
+        result = transforms.transform(start, serializable)
 
         self.assertTrue(math.isinf(result))
 
@@ -190,7 +190,7 @@ class SerializableTransformTest(BaseTest):
         start = {'hello': 'world', 'custom': CustomRepr()}
 
         serializable = SerializableTransform(whitelist_types=[CustomRepr])
-        result = transforms.transform(start, [serializable])
+        result = transforms.transform(start, serializable)
 
         if python_major_version() < 3:
             self.assertEqual(result['custom'], b'hello')
@@ -205,7 +205,7 @@ class SerializableTransformTest(BaseTest):
         start = {'hello': 'world', 'custom': CustomRepr()}
 
         serializable = SerializableTransform(whitelist_types=[CustomRepr])
-        result = transforms.transform(start, [serializable])
+        result = transforms.transform(start, serializable)
         self.assertRegex(result['custom'], "<class '.*CustomRepr'>")
 
     def test_encode_with_custom_repr_returns_unicode(self):
@@ -225,7 +225,7 @@ class SerializableTransformTest(BaseTest):
 
         start = {'hello': 'world', 'custom': CustomRepr()}
         serializable = SerializableTransform(whitelist_types=[CustomRepr])
-        result = transforms.transform(start, [serializable])
+        result = transforms.transform(start, serializable)
         self.assertRegex(result['custom'], "<AssertionError.*CustomRepr.*>")
 
     def test_encode_with_bad_str_doesnt_die(self):
@@ -241,5 +241,5 @@ class SerializableTransformTest(BaseTest):
 
         start = {'hello': 'world', 'custom': CustomRepr()}
         serializable = SerializableTransform(whitelist_types=[CustomRepr])
-        result = transforms.transform(start, [serializable])
+        result = transforms.transform(start, serializable)
         self.assertRegex(result['custom'], "<UnStringableException.*Exception.*str.*>")
