@@ -11,6 +11,7 @@
   - Other Changes:
 	  - Arguments with default values are no longer removed from args and placed into kwargs
 	  - varargs are now scrubbable and scrubbed by default
+- Switched to using a Session object to perform HTTPS requests to optimize for keepalive connections. See [#114](https://github.com/rollbar/pyrollbar/pull/114)
 
 **0.12.1**
 
