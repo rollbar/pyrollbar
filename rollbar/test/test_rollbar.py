@@ -2,6 +2,8 @@ import base64
 import copy
 import json
 import mock
+import socket
+import uuid
 
 try:
     from StringIO import StringIO
@@ -223,6 +225,57 @@ class RollbarTest(BaseTest):
         self.assertEqual(send_payload.called, True)
         payload = json.loads(send_payload.call_args[0][0])
         self.assertEqual(payload['data']['level'], 'warn')
+
+    @mock.patch('rollbar._send_failsafe')
+    @mock.patch('rollbar.lib.transport.post',
+                side_effect=lambda *args, **kw: MockResponse({'status': 'Payload Too Large'}, 413))
+    def test_trigger_failsafe(self, post, _send_failsafe):
+        rollbar.report_message('derp')
+        self.assertEqual(_send_failsafe.call_count, 1)
+
+        try:
+            raise Exception('trigger_failsafe')
+        except:
+            rollbar.report_exc_info()
+            self.assertEqual(_send_failsafe.call_count, 2)
+
+    @mock.patch('rollbar.send_payload')
+    def test_send_failsafe(self, send_payload):
+        test_uuid = str(uuid.uuid4())
+        test_host = socket.gethostname()
+        test_data = {
+            'access_token': _test_access_token,
+            'data': {
+                'body': {
+                    'message': {
+                        'body': 'Failsafe from pyrollbar: test message. '
+                                'Original payload may be found in your server '
+                                'logs by searching for the UUID.'
+                    }
+                },
+                'failsafe': True,
+                'level': 'error',
+                'custom': {
+                    'orig_host': test_host,
+                    'orig_uuid': test_uuid
+                },
+                'environment': rollbar.SETTINGS['environment'],
+                'internal': True,
+                'notifier': rollbar.SETTINGS['notifier']
+            }
+        }
+
+        rollbar._send_failsafe('test message', test_uuid, test_host)
+        self.assertEqual(send_payload.call_count, 1)
+        self.assertEqual(json.loads(send_payload.call_args[0][0]), test_data)
+
+    @mock.patch('rollbar.log.exception')
+    @mock.patch('rollbar.send_payload', side_effect=Exception('Monkey Business!'))
+    def test_fail_to_send_failsafe(self, send_payload, mock_log):
+        test_uuid = str(uuid.uuid4())
+        test_host = socket.gethostname()
+        rollbar._send_failsafe('test message', test_uuid, test_host)
+        self.assertEqual(mock_log.call_count, 1)
 
     @mock.patch('rollbar.send_payload')
     def test_args_constructor(self, send_payload):
