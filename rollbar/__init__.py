@@ -1202,6 +1202,35 @@ def _post_api_twisted(path, payload, access_token=None):
     d.addCallback(post_cb)
 
 
+def _send_failsafe(message, uuid, host):
+    body_message = ('Failsafe from pyrollbar: {0}. Original payload may be found '
+                    'in your server logs by searching for the UUID.').format(message)
+
+    data = {
+        'level': 'error',
+        'environment': SETTINGS['environment'],
+        'body': {
+            'message': {
+                'body': body_message
+            }
+        },
+        'notifier': SETTINGS['notifier'],
+        'custom': {
+            'orig_uuid': uuid,
+            'orig_host': host
+        },
+        'failsafe': True,
+        'internal': True,
+    }
+
+    payload = _build_payload(data)
+
+    try:
+        send_payload(payload, SETTINGS['access_token'], uuid, host)
+    except Exception:
+        log.exception('Rollbar: Error sending failsafe.')
+
+
 def _parse_response(path, access_token, params, resp, endpoint=None):
     if isinstance(resp, requests.Response):
         try:
@@ -1216,8 +1245,20 @@ def _parse_response(path, access_token, params, resp, endpoint=None):
         log.warning("Rollbar: over rate limit, data was dropped. Payload was: %r", params)
         return
     elif resp.status_code == 413:
-        log.warning("Rollbar: request entity too large. Payload was: %r", params)
-        return
+        uuid = None
+        host = None
+
+        try:
+            payload = json.loads(params)
+            uuid = payload['data']['uuid']
+            host = payload['data']['server']['host']
+        except (TypeError, ValueError):
+            log.exception('Unable to decode JSON for failsafe.')
+        except KeyError:
+            log.exception('Unable to find payload parameters for failsafe.')
+
+        log.error("Rollbar: request entity too large for UUID %r\n. Payload:\n%r", uuid, payload)
+        _send_failsafe('payload too large', uuid, host)
     elif resp.status_code != 200:
         log.warning("Got unexpected status code from Rollbar api: %s\nResponse:\n%s",
                     resp.status_code, data)
