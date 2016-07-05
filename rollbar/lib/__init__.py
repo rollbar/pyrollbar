@@ -181,6 +181,17 @@ def circular_reference_label(data, ref_key=None):
     return '<CircularReference type:(%s) ref:(%s)>' % (type(data).__name__, ref)
 
 
+def float_nan_label(data):
+    return '<NaN>'
+
+
+def float_infinity_label(data):
+    if data > 1:
+        return '<Infinity>'
+    else:
+        return '<NegativeInfinity>'
+
+
 def unencodable_object_label(data):
     return '<Unencodable type:(%s) base64:(%s)>' % (type(data).__name__,
                                                     base64.b64encode(data).decode('ascii'))
@@ -189,4 +200,3 @@ def unencodable_object_label(data):
 def undecodable_object_label(data):
     return '<Undecodable type:(%s) base64:(%s)>' % (type(data).__name__,
                                                     base64.b64encode(data).decode('ascii'))
-

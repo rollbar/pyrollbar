@@ -677,6 +677,7 @@ class RollbarTest(BaseTest):
     def test_scrub_nans(self, send_payload):
         def _raise():
             infinity = float('Inf')
+            negative_infinity = float('-Inf')
             not_a_number = float('NaN')
             raise Exception()
 
@@ -689,8 +690,9 @@ class RollbarTest(BaseTest):
 
         payload = json.loads(send_payload.call_args[0][0])
 
-        self.assertEqual('Infinity', payload['data']['body']['trace']['frames'][-1]['locals']['infinity'])
-        self.assertEqual('NaN', payload['data']['body']['trace']['frames'][-1]['locals']['not_a_number'])
+        self.assertEqual('<Infinity>', payload['data']['body']['trace']['frames'][-1]['locals']['infinity'])
+        self.assertEqual('<NegativeInfinity>', payload['data']['body']['trace']['frames'][-1]['locals']['negative_infinity'])
+        self.assertEqual('<NaN>', payload['data']['body']['trace']['frames'][-1]['locals']['not_a_number'])
 
     @mock.patch('rollbar.send_payload')
     def test_scrub_self_referencing(self, send_payload):
