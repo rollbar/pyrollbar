@@ -1,5 +1,7 @@
+import math
+
 from rollbar.lib import binary_type, string_types
-from rollbar.lib import circular_reference_label, undecodable_object_label, unencodable_object_label
+from rollbar.lib import circular_reference_label, float_infinity_label, float_nan_label, undecodable_object_label, unencodable_object_label
 from rollbar.lib import iteritems, python_major_version, text
 
 from rollbar.lib.transforms import Transform
@@ -22,6 +24,14 @@ class SerializableTransform(Transform):
             new_vals.append(transformed_dict[field])
 
         return '<%s>' % text(o._make(new_vals))
+
+    def transform_number(self, o, key=None):
+        if math.isnan(o):
+            return float_nan_label(o)
+        elif math.isinf(o):
+            return float_infinity_label(o)
+        else:
+            return o
 
     def transform_py2_str(self, o, key=None):
         try:

@@ -79,26 +79,25 @@ class SerializableTransformTest(BaseTest):
         expected = 3.14
         self._assertSerialized(start, expected, skip_id_check=True)
 
+    def test_encode_float_nan(self):
+        start = float('nan')
+        expected = '<NaN>'
+        self._assertSerialized(start, expected, skip_id_check=True)
+
+    def test_encode_float_infinity(self):
+        start = float('inf')
+        expected = '<Infinity>'
+        self._assertSerialized(start, expected, skip_id_check=True)
+
+    def test_encode_float_neg_infinity(self):
+        start = float('-inf')
+        expected = '<NegativeInfinity>'
+        self._assertSerialized(start, expected, skip_id_check=True)
+
     def test_encode_int(self):
         start = 33
         expected = 33
         self._assertSerialized(start, expected, skip_id_check=True)
-
-    def test_encode_NaN(self):
-        start = float('nan')
-
-        serializable = SerializableTransform()
-        result = transforms.transform(start, serializable)
-
-        self.assertTrue(math.isnan(result))
-
-    def test_encode_Infinity(self):
-        start = float('inf')
-
-        serializable = SerializableTransform()
-        result = transforms.transform(start, serializable)
-
-        self.assertTrue(math.isinf(result))
 
     def test_encode_empty_tuple(self):
         start = ()
