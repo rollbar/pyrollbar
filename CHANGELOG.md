@@ -1,5 +1,10 @@
 # Change Log
 
+**0.13.2**
+
+- Improved handling of Nan and (Negative)Infinity. See [#117](https://github.com/rollbar/pyrollbar/pull/117)
+- RollbarHandler now ignores log records from Rollbar. See [#118](https://github.com/rollbar/pyrollbar/pull/118)
+
 **0.13.1**
 
 - Failsafe handling for payloads that are too large. See [#116](https://github.com/rollbar/pyrollbar/pull/116)
