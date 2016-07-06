@@ -66,7 +66,9 @@ class RollbarHandler(logging.Handler):
         logging.Handler.setLevel(self, level)
 
     def emit(self, record):
-        if record.name == 'rollbar':
+        # If the record came from Rollbar's own logger don't report it
+        # to Rollbar
+        if record.name == rollbar.__log_name__:
             return
 
         level = record.levelname.lower()
