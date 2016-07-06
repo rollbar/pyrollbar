@@ -18,10 +18,8 @@ Usage:
     logger.addHandler(rollbar_handler)
 
 """
-import copy
 import logging
 import threading
-import time
 
 import rollbar
 
@@ -68,6 +66,11 @@ class RollbarHandler(logging.Handler):
         logging.Handler.setLevel(self, level)
 
     def emit(self, record):
+        # If the record came from Rollbar's own logger don't report it
+        # to Rollbar
+        if record.name == rollbar.__log_name__:
+            return
+
         level = record.levelname.lower()
 
         if level not in self.SUPPORTED_LEVELS:
