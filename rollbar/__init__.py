@@ -678,7 +678,7 @@ def _add_person_data(data, request):
     try:
         person_data = _build_person_data(request)
     except Exception as e:
-        log.exception("Exception while building person data for Rollbar paylooad: %r", e)
+        log.exception("Exception while building person data for Rollbar payload: %r", e)
     else:
         if person_data:
             data['person'] = person_data
