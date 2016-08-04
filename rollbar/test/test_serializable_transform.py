@@ -1,7 +1,7 @@
 import collections
 import base64
 import copy
-import math
+import enum
 
 from rollbar.lib import transforms, python_major_version
 from rollbar.lib.transforms.serializable import SerializableTransform
@@ -55,6 +55,42 @@ class SerializableTransformTest(BaseTest):
         }
         expected = copy.deepcopy(start)
         self._assertSerialized(start, expected)
+
+    def test_enum(self):
+        class EnumTest(enum.Enum):
+            one = 1
+            two = 2
+
+        start = EnumTest.one
+        expected = "<enum 'EnumTest'>"
+        self._assertSerialized(start, expected)
+
+    def test_enum_no_safe_repr(self):
+        class EnumTest(enum.Enum):
+            one = 1
+            two = 2
+
+        start = EnumTest.one
+        expected = '<EnumTest.one: 1>'
+        self._assertSerialized(start, expected, safe_repr=False)
+
+    def test_int_enum(self):
+        class EnumTest(enum.IntEnum):
+            one = 1
+            two = 2
+
+        start = EnumTest.one
+        expected = "<enum 'EnumTest'>"
+        self._assertSerialized(start, expected)
+
+    def test_int_enum_no_safe_repr(self):
+        class EnumTest(enum.IntEnum):
+            one = 1
+            two = 2
+
+        start = EnumTest.one
+        expected = '<EnumTest.one: 1>'
+        self._assertSerialized(start, expected, safe_repr=False)
 
     def test_encode_dict_with_invalid_utf8(self):
         start = {

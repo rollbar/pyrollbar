@@ -79,11 +79,18 @@ def transform(obj, transform, key=None):
                 return do_transform('unicode', s, key=key)
 
     def default_handler(o, key=None):
-        if isinstance(o, integer_types + (float,)):
-            return do_transform('number', o, key=key)
-
         if isinstance(o, bool):
             return do_transform('boolean', o, key=key)
+
+        # There is a quirk in the current version (1.1.6) of the enum
+        # backport enum34 which causes it to not have the same
+        # behavior as Python 3.4+. One way to identify IntEnums is that
+        # they are instances of numbers but not number types.
+        if isinstance(o, integer_types + (float,)):
+            if type(o) not in integer_types + (float, ):
+                return do_transform('custom', o, key=key)
+            else:
+                return do_transform('number', o, key=key)
 
         return do_transform('custom', o, key=key)
 
