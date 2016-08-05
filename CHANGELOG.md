@@ -1,5 +1,9 @@
 # Change Log
 
+**0.13.3**
+
+- Improved handling of Enums. See [#121](https://github.com/rollbar/pyrollbar/pull/121)
+
 **0.13.2**
 
 - Improved handling of Nan and (Negative)Infinity. See [#117](https://github.com/rollbar/pyrollbar/pull/117)
