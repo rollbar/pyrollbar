@@ -1,5 +1,6 @@
 import re
 import os.path
+import sys
 from setuptools import setup, find_packages
 
 HERE = os.path.abspath(os.path.dirname(__file__))
@@ -16,11 +17,22 @@ with open(INIT_PATH) as fd:
     INIT_DATA = fd.read()
     VERSION = re.search(r"^__version__ = ['\"]([^'\"]+)['\"]", INIT_DATA, re.MULTILINE).group(1)
 
+tests_require = [
+    'mock',
+    'webob',
+    'blinker',
+    'unittest2'
+    ]
+
+version = sys.version_info
+if version[0] == 2 or (version[0] == 3 and version[1] < 4):
+    tests_require.append('enum34')
+
 setup(
     name='rollbar',
     packages=find_packages(),
     version=VERSION,
-    entry_points= {
+    entry_points={
         'paste.filter_app_factory': [
             'pyramid=rollbar.contrib.pyramid:create_rollbar_middleware'
         ],
@@ -65,11 +77,5 @@ setup(
         'requests',
         'six',
         ],
-    tests_require=[
-        'mock',
-        'webob',
-        'blinker',
-        'unittest2'
-        ],
+    tests_require=tests_require,
     )
-

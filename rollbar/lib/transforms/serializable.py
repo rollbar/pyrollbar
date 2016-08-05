@@ -1,7 +1,9 @@
 import math
 
 from rollbar.lib import binary_type, string_types
-from rollbar.lib import circular_reference_label, float_infinity_label, float_nan_label, undecodable_object_label, unencodable_object_label
+from rollbar.lib import (
+    circular_reference_label, float_infinity_label, float_nan_label,
+    undecodable_object_label, unencodable_object_label)
 from rollbar.lib import iteritems, python_major_version, text
 
 from rollbar.lib.transforms import Transform
@@ -106,7 +108,8 @@ class SerializableTransform(Transform):
             try:
                 exc_str = str(e)
             except Exception as e2:
-                exc_str = '[%s while calling str(%s)]' % (e2.__class__.__name__, e.__class__.__name__)
+                exc_str = '[%s while calling str(%s)]' % (
+                    e2.__class__.__name__, e.__class__.__name__)
             return '<%s in %s.__repr__: %s>' % (
                 e.__class__.__name__, o.__class__.__name__, exc_str)
 
