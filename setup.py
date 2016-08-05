@@ -32,7 +32,7 @@ setup(
     name='rollbar',
     packages=find_packages(),
     version=VERSION,
-    entry_points= {
+    entry_points={
         'paste.filter_app_factory': [
             'pyramid=rollbar.contrib.pyramid:create_rollbar_middleware'
         ],

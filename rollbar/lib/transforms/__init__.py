@@ -1,4 +1,6 @@
-from rollbar.lib import python_major_version, binary_type, string_types, integer_types, traverse
+from rollbar.lib import (
+    python_major_version, binary_type, string_types, integer_types,
+    number_types, traverse)
 
 _ALLOWED_CIRCULAR_REFERENCE_TYPES = [binary_type, bool, type(None)]
 
@@ -86,8 +88,8 @@ def transform(obj, transform, key=None):
         # backport enum34 which causes it to not have the same
         # behavior as Python 3.4+. One way to identify IntEnums is that
         # they are instances of numbers but not number types.
-        if isinstance(o, integer_types + (float,)):
-            if type(o) not in integer_types + (float, ):
+        if isinstance(o, number_types):
+            if type(o) not in number_types:
                 return do_transform('custom', o, key=key)
             else:
                 return do_transform('number', o, key=key)

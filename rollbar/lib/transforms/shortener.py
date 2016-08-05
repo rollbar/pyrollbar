@@ -1,8 +1,9 @@
 from array import array
 import collections
-import math
 
-from rollbar.lib import integer_types, iteritems, key_in, reprlib, string_types, text
+from rollbar.lib import (
+    integer_types, iteritems, key_in, number_types, reprlib, sequence_types,
+    string_types, text)
 from rollbar.lib.transforms import Transform
 
 
@@ -68,10 +69,10 @@ class ShortenerTransform(Transform):
     def _shorten(self, val):
         max_size = self._get_max_size(val)
 
-        if isinstance(val, (string_types, collections.Mapping, list, tuple, set, collections.deque)):
+        if isinstance(val, (string_types, sequence_types)):
             return self._shorten_sequence(val, max_size)
 
-        if isinstance(val, integer_types):
+        if isinstance(val, number_types):
             return self._shorten_basic(val, self._repr.maxlong)
 
         return self._shorten_other(val)

@@ -1,4 +1,5 @@
 import base64
+import collections
 import copy
 import os
 import sys
@@ -11,7 +12,9 @@ reprlib = six.moves.reprlib
 
 binary_type = six.binary_type
 integer_types = six.integer_types
+number_types = integer_types + (float, )
 string_types = six.string_types
+sequence_types = (collections.Mapping, list, tuple, set, collections.deque)
 
 urlparse = urllib.parse.urlparse
 urlsplit = urllib.parse.urlsplit
@@ -44,11 +47,10 @@ if python_major_version() < 3:
 
         return repr(val)
 
-
     _map = map
+
     def map(*args):
         return _map(*args)
-
 
     def force_lower(val):
         return str(val).lower()
@@ -57,11 +59,10 @@ else:
     def text(val):
         return str(val)
 
-
     _map = map
+
     def map(*args):
         return list(_map(*args))
-
 
     def force_lower(val):
         try:
