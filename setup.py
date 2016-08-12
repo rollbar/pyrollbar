@@ -74,7 +74,7 @@ setup(
         "Topic :: System :: Monitoring",
         ],
     install_requires=[
-        'requests',
+        'requests<=2.10.0',
         'six',
         ],
     tests_require=tests_require,
