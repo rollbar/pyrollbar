@@ -75,8 +75,6 @@ install:
   - if [ -v FLASK_VERSION ]; then pip install Flask==$FLASK_VERSION; fi
   - if [ -v TWISTED_VERSION ]; then pip install Twisted==$TWISTED_VERSION treq; fi
   - if [ -v DJANGO_VERSION ]; then pip install Django==$DJANGO_VERSION; fi
-  - pip install codeclimate-test-reporter
 
 script:
-  - coverage run setup.py test
-  - codeclimate-test-reporter
+  - python setup.py test
