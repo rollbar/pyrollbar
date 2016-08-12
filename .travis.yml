@@ -79,5 +79,4 @@ install:
 
 script:
   - coverage run setup.py test
-  - find . -name "*.pyc" -delete
   - codeclimate-test-reporter
