@@ -22,7 +22,7 @@ tests_require = [
     'webob',
     'blinker',
     'unittest2'
-    ]
+]
 
 version = sys.version_info
 if version[0] == 2 or (version[0] == 3 and version[1] < 4):
@@ -38,7 +38,9 @@ setup(
         ],
         'console_scripts': ['rollbar=rollbar.cli:main']
     },
-    description='Easy and powerful exception tracking with Rollbar. Send messages and exceptions with arbitrary context, get back aggregates, and debug production issues quickly.',
+    description='Easy and powerful exception tracking with Rollbar. Send '
+                'messages and exceptions with arbitrary context, get back '
+                'aggregates, and debug production issues quickly.',
     long_description=README,
     author='Rollbar, Inc.',
     author_email='support@rollbar.com',
@@ -47,16 +49,14 @@ setup(
     classifiers=[
         "Programming Language :: Python",
         "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.6",
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.2",
         "Programming Language :: Python :: 3.3",
         "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: 3.5",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Environment :: Web Environment",
         "Framework :: Bottle",
         "Framework :: Django",
@@ -74,8 +74,8 @@ setup(
         "Topic :: System :: Monitoring",
         ],
     install_requires=[
-        'requests<=2.10.0',
-        'six',
-        ],
+        'requests>=0.12.1',
+        'six>=1.9.0'
+    ],
     tests_require=tests_require,
     )
