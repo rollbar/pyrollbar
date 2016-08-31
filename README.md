@@ -290,45 +290,55 @@ WSGIServer(('', 8000), application).serve_forever()
 ## Configuration reference
 
   <dl>
-  <dt>access_token</dt>
-  <dd>Access token from your Rollbar project
-  </dd>
-  <dt>agent.log_file</dt>
-  <dd>If ```handler``` is ```agent```, the path to the log file. Filename must end in ```.rollbar```
-  </dd>
-  <dt>branch</dt>
-  <dd>Name of the checked-out branch.
+<dt>access_token
+</dt>
+<dd>Access token from your Rollbar project
+</dd>
+<dt>agent.log_file
+</dt>
+<dd>If `handler` is `agent`, the path to the log file. Filename must end in `.rollbar`
+</dd>
+<dt>branch
+</dt>
+<dd>Name of the checked-out branch.
 
-Default: ```master```
+Default: `master`
+</dd>
+<dt>code_version
+</dt>
+<dd>A string describing the current code revision/version (i.e. a git sha). Max 40 characters.
 
-  </dd>
-  <dt>code_version</dt>
-  <dd>A string describing the current code revision/version (i.e. a git sha). Max 40 characters. Default `None`</dd>
-  <dt>enabled</dt>
-  <dd>Controls whether or not Rollbar will report any data
+Default: `None`
+</dd>
+<dt>enabled
+</dt>
+<dd>Controls whether or not Rollbar will report any data
 
-Default: ```True```
+Default: `True`
+</dd>
+<dt>endpoint
+</dt>
+<dd>URL items are posted to.
 
-  </dd>
-  <dt>endpoint</dt>
-  <dd>URL items are posted to.
+Default: `https://api.rollbar.com/api/1/item/`
+</dd>
+<dt>environment
+</dt>
+<dd>Environment name. Any string up to 255 chars is OK. For best results, use "production" for your production environment.
+</dd>
+<dt>exception_level_filters
+</dt>
+<dd>List of tuples in the form `(class, level)` where `class` is an Exception class you
+  want to always filter to the respective `level`. Any subclasses of the given `class`
+  will also be matched.
 
-Default: ```https://api.rollbar.com/api/1/item/```
+Valid levels: `'critical'`, `'error'`, `'warning'`, `'info'`, `'debug'` and `'ignored'`.
 
-  </dd>
-  <dt>environment</dt>
-  <dd>Environment name. Any string up to 255 chars is OK. For best results, use "production" for your production environment.
-  </dd>
-  <dt>exception_level_filters</dt>
-  <dd>List of tuples in the form ```(class, level)``` where ```class``` is an Exception class you want to always filter to the respective ```level```. Any subclasses of the given ```class``` will also be matched.
+Use `'ignored'` if you want an Exception (sub)class to never be reported to Rollbar.
 
-Valid levels: ```'critical'```, ```'error'```, ```'warning'```, ```'info'```, ```'debug'``` and ```'ignored'```.
+Any exceptions not found in this configuration setting will default to `'error'`.
 
-Use ```'ignored'``` if you want an Exception (sub)class to never be reported to Rollbar.
-
-Any exceptions not found in this configuration setting will default to ```'error'```.
-
-Django ```settings.py``` example (and Django default):
+Django `settings.py` example (and Django default):
 
 ```python
 from django.http import Http404
@@ -341,7 +351,7 @@ ROLLBAR = {
 }
 ```
 
-In a Pyramid ``ini`` file, define each tuple as an individual whitespace delimited line, for example:
+In a Pyramid `ini` file, define each tuple as an individual whitespace delimited line, for example:
 
 ```
 rollbar.exception_level_filters =
@@ -349,82 +359,115 @@ rollbar.exception_level_filters =
     #...
 ```
 
-  </dd>
-  <dt>handler</dt>
-  <dd>The method for reporting rollbar items to api.rollbar.com
+</dd>
+<dt>handler
+</dt>
+<dd>The method for reporting rollbar items to api.rollbar.com
 
 One of:
 
-- blocking -- runs in main thread
-- thread -- spawns a new thread
-- agent -- writes messages to a log file for consumption by rollbar-agent
-- tornado -- uses the Tornado async library to send the payload
-- gae -- uses the Google AppEngineFetch library to send the payload
-- twisted -- uses the Twisted event-driven networking library to send the payload
+  - blocking -- runs in main thread
+  - thread -- spawns a new thread
+  - agent -- writes messages to a log file for consumption by rollbar-agent
+  - tornado -- uses the Tornado async library to send the payload
+  - gae -- uses the Google AppEngineFetch library to send the payload
+  - twisted -- uses the Twisted event-driven networking library to send the payload
 
-Default: ```thread```
+Default: `thread`
 
-  </dd>
-  <dt>locals</dt>
-  <dd>Configuration for collecting local variables. A dictionary:
-    <dl>
-      <dt>enabled</dt>
-      <dd>If `True`, variable values will be collected for stack traces. Default `True`.</dd>
-      <dt>safe_repr</dt>
-      <dd>If `True`, non-built-in objects will be serialized into just their class name. If `False` `repr(obj)`
-      will be used for serialization. Default `True`.</dd>
-      <dt>sizes</dt>
-      <dd>Dictionary of configuration describing the max size to repr() for each type.
-        <dl>
-          <dt>maxdict</dt>
-          <dd>Default 10</dd>
-          <dt>maxarray</dt>
-          <dd>Default 10</dd>
-          <dt>maxlist</dt>
-          <dd>Default 10</dd>
-          <dt>maxtuple</dt>
-          <dd>Default 10</dd>
-          <dt>maxset</dt>
-          <dd>Default 10</dd>
-          <dt>maxfrozenset</dt>
-          <dd>Default 10</dd>
-          <dt>maxdeque</dt>
-          <dd>Default 10</dt>
-          <dt>maxstring</dt>
-          <dd>Default 100</dd>
-          <dt>maxlong</dt>
-          <dd>Default 40</dd>
-          <dt>maxother</dt>
-          <dd>Default 100</dd>
-        </dl>
-      </dd>
-      <dt>whitelisted_types</dt>
-      <dd>A list of `type` objects, (e.g. `type(my_class_instance)` or `MyClass`) that will be serialized using
-      `repr()`. Default `[]`</dd>
-    </dl>
-  </dd>
-  <dt>root</dt>
-  <dd>Absolute path to the root of your application, not including the final ```/```.
-  </dd>
-  <dt>scrub_fields</dt>
-  <dd>List of sensitive field names to scrub out of request params and locals. Values will be replaced with asterisks. If overriding, make sure to list all fields you want to scrub, not just fields you want to add to the default. Param names are converted to lowercase before comparing against the scrub list.
+</dd>
+<dt>locals
+</dt>
+<dd>Configuration for collecting local variables. A dictionary:
+  <dl>
+<dt>enabled
+</dt>
+<dd>If `True`, variable values will be collected for stack traces. Default `True`.
+</dd>
+<dt>safe_repr
+</dt>
+<dd>If `True`, non-built-in objects will be serialized into just their class name. If `False` `repr(obj)`
+      will be used for serialization. Default `True`.
+</dd>
+<dt>sizes
+</dt>
+<dd>Dictionary of configuration describing the max size to repr() for each type.
+  <dl>
+<dt>maxdict
+</dt>
+<dd>Default 10
+</dd>
+<dt>maxarray
+</dt>
+<dd>Default 10
+</dd>
+<dt>maxlist
+</dt>
+<dd>Default 10
+</dd>
+<dt>maxtuple
+</dt>
+<dd>Default 10
+</dd>
+<dt>maxset
+</dt>
+<dd>Default 10
+</dd>
+<dt>maxfrozenset
+</dt>
+<dd>Default 10
+</dd>
+<dt>maxdeque
+</dt>
+<dd>Default 10
+</dd>
+<dt>maxstring
+</dt>
+<dd>Default 100
+</dd>
+<dt>maxlong
+</dt>
+<dd>Default 40
+</dd>
+<dt>maxother
+</dt>
+<dd>Default 100
+</dd>
+</dl>
+</dd>
+<dt>whitelisted_types
+</dt>
+<dd>A list of `type` objects, (e.g. `type(my_class_instance)` or `MyClass`) that will be serialized using
+    `repr()`. Default `[]`
+</dd>
+</dl>
+</dd>
+<dt>root
+</dt>
+<dd>Absolute path to the root of your application, not including the final ```/```.
+</dd>
+<dt>scrub_fields
+</dt>
+<dd>List of sensitive field names to scrub out of request params and locals. Values will be replaced with asterisks. If overriding, make sure to list all fields you want to scrub, not just fields you want to add to the default. Param names are converted to lowercase before comparing against the scrub list.
 
-Default: ```['pw', 'passwd', 'password', 'secret', 'confirm_password', 'confirmPassword', 'password_confirmation', 'passwordConfirmation', 'access_token', 'auth', 'authentication']```
+Default: `['pw', 'passwd', 'password', 'secret', 'confirm_password', 'confirmPassword', 'password_confirmation', 'passwordConfirmation', 'access_token', 'auth', 'authentication']`
 
-  </dd>
-  <dt>timeout</dt>
-  <dd>Timeout for any HTTP requests made to the Rollbar API (in seconds).
+</dd>
+<dt>timeout
+</dt>
+<dd>Timeout for any HTTP requests made to the Rollbar API (in seconds).
 
-Default: ```3```
+Default: `3`
 
-  </dd>
-  <dt>allow_logging_basic_config</dt>
-  <dd>When True, ```logging.basicConfig()``` will be called to set up the logging system. Set to False to skip this call. If using Flask, you'll want to set to ```False```. If using Pyramid or Django, ```True``` should be fine.
+</dd>
+<dt>allow_logging_basic_config
+</dt>
+<dd>When True, `logging.basicConfig()` will be called to set up the logging system. Set to False to skip this call. If using Flask, you'll want to set to `False`. If using Pyramid or Django, `True` should be fine.
 
-Default: ```True```
+Default: `True`
 
-  </dd>
-  </dl>
+</dd>
+</dl>
 
 
 ## Help / Support
