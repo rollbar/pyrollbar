@@ -74,7 +74,7 @@ def _patch_debugview(rollbar_web_base):
 
 
 class RollbarNotifierMiddleware(object):
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.settings = getattr(settings, 'ROLLBAR', {})
         if not self.settings.get('access_token'):
             raise MiddlewareNotUsed
