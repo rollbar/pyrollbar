@@ -1056,9 +1056,13 @@ def _build_server_data():
     # server environment
     server_data = {
         'host': socket.gethostname(),
-        'argv': sys.argv,
         'pid': os.getpid()
     }
+
+    # argv does not always exist in embedded python environments
+    argv = getattr(sys, 'argv', None)
+    if argv:
+         server_data['argv'] = argv
 
     for key in ['branch', 'root']:
         if SETTINGS.get(key):
