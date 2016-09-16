@@ -1,5 +1,9 @@
 # Change Log
 
+**0.13.4**
+
+- Fixed failsafe handling for payloads that are too large. See [#133](https://github.com/rollbar/pyrollbar/pull/133)
+
 **0.13.3**
 
 - Improved handling of Enums. See [#121](https://github.com/rollbar/pyrollbar/pull/121)
