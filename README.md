@@ -46,6 +46,8 @@ MIDDLEWARE_CLASSES = (
 )
 ```
 
+Note: Do not put the Rollbar Django middleware in ``MIDDLEWARE``. This is not compatible with the new middleware style (as of Django 1.10), and will cause issues for you. Only put it in ``MIDDLEWARE_CLASSES``.
+
 Add these configuration variables in ``settings.py``:
 
 ```python
