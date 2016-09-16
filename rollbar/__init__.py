@@ -1227,7 +1227,7 @@ def _send_failsafe(message, uuid, host):
     payload = _build_payload(data)
 
     try:
-        send_payload(payload, SETTINGS['access_token'], uuid, host)
+        send_payload(payload, SETTINGS['access_token'])
     except Exception:
         log.exception('Rollbar: Error sending failsafe.')
 
