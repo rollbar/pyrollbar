@@ -1,5 +1,9 @@
 # Change Log
 
+**0.13.5**
+
+- Fixed record message formatting issues breaking the log handler's history. See [#135](https://github.com/rollbar/pyrollbar/pull/135)
+
 **0.13.4**
 
 - Fixed failsafe handling for payloads that are too large. See [#133](https://github.com/rollbar/pyrollbar/pull/133)
