@@ -161,7 +161,8 @@ class RollbarHandler(logging.Handler):
 
     def _build_history_data(self, record):
         data = {'timestamp': record.created,
-                'message': record.getMessage()}
+                'format': record.msg,
+                'args': record.args}
 
         if hasattr(record, 'rollbar_uuid'):
             data['uuid'] = record.rollbar_uuid
