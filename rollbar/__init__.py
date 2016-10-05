@@ -1253,12 +1253,12 @@ def _parse_response(path, access_token, params, resp, endpoint=None):
             payload = json.loads(params)
             uuid = payload['data']['uuid']
             host = payload['data']['server']['host']
+            log.error("Rollbar: request entity too large for UUID %r\n. Payload:\n%r", uuid, payload)
         except (TypeError, ValueError):
             log.exception('Unable to decode JSON for failsafe.')
         except KeyError:
             log.exception('Unable to find payload parameters for failsafe.')
 
-        log.error("Rollbar: request entity too large for UUID %r\n. Payload:\n%r", uuid, payload)
         _send_failsafe('payload too large', uuid, host)
     elif resp.status_code != 200:
         log.warning("Got unexpected status code from Rollbar api: %s\nResponse:\n%s",
