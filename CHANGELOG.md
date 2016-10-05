@@ -1,5 +1,9 @@
 # Change Log
 
+**0.13.6**
+
+- Fixed a referenced before assignment in the failsafe. See [#136](https://github.com/rollbar/pyrollbar/pull/136)
+
 **0.13.5**
 
 - Fixed record message formatting issues breaking the log handler's history. See [#135](https://github.com/rollbar/pyrollbar/pull/135)
