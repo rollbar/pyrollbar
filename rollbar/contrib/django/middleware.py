@@ -2,8 +2,27 @@
 django-rollbar middleware
 
 To install, add the following in your settings.py:
-1. add 'rollbar.contrib.django.middleware.RollbarNotifierMiddleware' to MIDDLEWARE_CLASSES 
+1. add 'rollbar.contrib.django.middleware.RollbarNotifierMiddleware' to MIDDLEWARE_CLASSES
 2. add a section like this:
+ROLLBAR = {
+    'access_token': 'tokengoeshere',
+}
+
+To get more control of middleware and enrich it with custom data:
+1. create a 'middleware.py' file on your project
+2. import the rollbar default middleware: 'from rollbar.contrib.django.middleware import RollbarNotifierMiddleware'
+3. create your own middleware like this:
+class CustomRollbarNotifierMiddleware(RollbarNotifierMiddleware):
+    def get_extra_data(self, request, exc):
+        ''' May be defined.  Must return a dict or None. Use it to put some custom extra data on rollbar event. '''
+        return
+
+    def get_payload_data(self, request, exc):
+        ''' May be defined.  Must return a dict or None. Use it to put some custom payload data on rollbar event. '''
+        return
+
+4. add 'path.to.your.CustomRollbarNotifierMiddleware' to MIDDLEWARE_CLASSES in your settings.py
+5. add a section like this in your settings.py:
 ROLLBAR = {
     'access_token': 'tokengoeshere',
 }
@@ -39,10 +58,10 @@ def _patch_debugview(rollbar_web_base):
         from django.views import debug
     except ImportError:
         return
-    
+
     if rollbar_web_base.endswith('/'):
         rollbar_web_base = rollbar_web_base[:-1]
-    
+
     # modify the TECHNICAL_500_TEMPLATE
     new_data = """
 {% if view_in_rollbar_url %}
@@ -55,11 +74,11 @@ def _patch_debugview(rollbar_web_base):
 
     insert_before = '<table class="meta">'
     replacement = new_data + insert_before
-    debug.TECHNICAL_500_TEMPLATE = debug.TECHNICAL_500_TEMPLATE.replace(insert_before, 
-        replacement, 1)
+    debug.TECHNICAL_500_TEMPLATE = debug.TECHNICAL_500_TEMPLATE.replace(insert_before, replacement, 1)
 
     # patch ExceptionReporter.get_traceback_data
     old_get_traceback_data = debug.ExceptionReporter.get_traceback_data
+
     def new_get_traceback_data(exception_reporter):
         data = old_get_traceback_data(exception_reporter)
         try:
@@ -81,16 +100,16 @@ class RollbarNotifierMiddleware(object):
 
         if not self._get_setting('enabled'):
             raise MiddlewareNotUsed
-        
+
         self._ensure_log_handler()
-        
+
         kw = self.settings.copy()
         access_token = kw.pop('access_token')
         environment = kw.pop('environment', 'development' if settings.DEBUG else 'production')
         kw.setdefault('exception_level_filters', DEFAULTS['exception_level_filters'])
-        
+
         rollbar.init(access_token, environment, **kw)
-        
+
         def hook(request, data):
             try:
                 # try django 1.5 method for getting url_name
@@ -106,20 +125,22 @@ class RollbarNotifierMiddleware(object):
                 data['context'] = url_name
 
             data['framework'] = 'django'
-            
+
             if request:
                 request.META['rollbar.uuid'] = data['uuid']
-            
+
         rollbar.BASE_DATA_HOOK = hook
-        
+
         # monkeypatch debug module
         if self._get_setting('patch_debugview'):
             try:
                 _patch_debugview(self._get_setting('web_base'))
             except Exception as e:
-                log.error("Rollbar - unable to monkeypatch debugview to add 'View in Rollbar' link."
+                log.error(
+                    "Rollbar - unable to monkeypatch debugview to add 'View in Rollbar' link."
                     " To disable, set `ROLLBAR['patch_debugview'] = False` in settings.py."
-                    " Exception was: %r", e)
+                    " Exception was: %r", e
+                )
 
     def _ensure_log_handler(self):
         """
@@ -132,7 +153,7 @@ class RollbarNotifierMiddleware(object):
             '%(asctime)s %(levelname)-5.5s [%(name)s][%(threadName)s] %(message)s')
         handler.setFormatter(formatter)
         log.addHandler(handler)
-    
+
     def _get_setting(self, name, default=None):
         try:
             return self.settings[name]
@@ -144,8 +165,19 @@ class RollbarNotifierMiddleware(object):
                 return default_val
             return default
 
+    def get_extra_data(self, request, exc):
+        return
+
+    def get_payload_data(self, request, exc):
+        return
+
     def process_response(self, request, response):
         return response
 
     def process_exception(self, request, exc):
-        rollbar.report_exc_info(sys.exc_info(), request)
+        rollbar.report_exc_info(
+            sys.exc_info(),
+            request,
+            extra_data=self.get_extra_data(request, exc),
+            payload_data=self.get_payload_data(request, exc),
+        )
