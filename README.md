@@ -37,16 +37,25 @@ except:
 
 ### Django
 
-In your ``settings.py``, add ``'rollbar.contrib.django.middleware.RollbarNotifierMiddleware'`` as the last item in ``MIDDLEWARE_CLASSES``:
+In your ``settings.py``, add ``'rollbar.contrib.django.middleware.RollbarNotifierMiddleware'`` as the last item in
 
-```python
-MIDDLEWARE_CLASSES = (
-    # ... other middleware classes ...
-    'rollbar.contrib.django.middleware.RollbarNotifierMiddleware',
-)
-```
+* ``MIDDLEWARE_CLASSES`` in Django 1.9 and earlier:
 
-Note: Do not put the Rollbar Django middleware in ``MIDDLEWARE``. This is not compatible with the new middleware style (as of Django 1.10), and will cause issues for you. Only put it in ``MIDDLEWARE_CLASSES``.
+  ```python
+  MIDDLEWARE_CLASSES = [
+      # ... other middleware classes ...
+      'rollbar.contrib.django.middleware.RollbarNotifierMiddleware',
+  ]
+  ```
+
+* ``MIDDLEWARE`` in Django 1.10 and up:
+
+  ```python
+  MIDDLEWARE = [
+      # ... other middleware classes ...
+      'rollbar.contrib.django.middleware.RollbarNotifierMiddleware',
+  ]
+  ```
 
 Add these configuration variables in ``settings.py``:
 
