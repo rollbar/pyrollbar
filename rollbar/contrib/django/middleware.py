@@ -2,7 +2,9 @@
 django-rollbar middleware
 
 To install, add the following in your settings.py:
-1. add 'rollbar.contrib.django.middleware.RollbarNotifierMiddleware' to MIDDLEWARE_CLASSES
+1. add 'rollbar.contrib.django.middleware.RollbarNotifierMiddleware' to
+    a. MIDDLEWARE_CLASSES in Django 1.9 and earlier
+    b. MIDDLEWARE in Django 1.10 and up
 2. add a section like this:
 ROLLBAR = {
     'access_token': 'tokengoeshere',
