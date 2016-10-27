@@ -1,5 +1,9 @@
 # Change Log
 
+**0.13.8**
+
+- Fix regression from 0.13.7. See [#141](https://github.com/rollbar/pyrollbar/pull/141)
+
 **0.13.7**
 
 - Update Django middleware to support Django 1.10+. See [#138](https://github.com/rollbar/pyrollbar/pull/138)
