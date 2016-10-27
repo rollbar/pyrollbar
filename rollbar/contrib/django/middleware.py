@@ -26,7 +26,7 @@ from django.http import Http404
 try:
     from django.utils.deprecation import MiddlewareMixin
 except ImportError:
-    from utils import MiddlewareMixin
+    from rollbar.contrib.django.utils import MiddlewareMixin
 
 log = logging.getLogger(__name__)
 
