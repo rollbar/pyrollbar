@@ -648,9 +648,11 @@ def _check_config():
         return False
 
     # make sure we have an access_token
-    if not SETTINGS.get('access_token'):
-        log.warning("pyrollbar: No access_token provided. Please configure by calling rollbar.init() with your access token.")
-        return False
+    handler = SETTINGS.get('handler')
+    if not handler == 'agent':
+        if not SETTINGS.get('access_token'):
+            log.warning("pyrollbar: No access_token provided. Please configure by calling rollbar.init() with your access token.")
+            return False
 
     return True
 
