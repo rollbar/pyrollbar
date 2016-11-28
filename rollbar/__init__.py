@@ -647,12 +647,15 @@ def _check_config():
         log.info("pyrollbar: Not reporting because rollbar is disabled.")
         return False
 
+    # skip access token check for the agent handler
+    if SETTINGS.get('handler') == 'agent':
+        return True
+
     # make sure we have an access_token
     handler = SETTINGS.get('handler')
-    if not handler == 'agent':
-        if not SETTINGS.get('access_token'):
-            log.warning("pyrollbar: No access_token provided. Please configure by calling rollbar.init() with your access token.")
-            return False
+    if not SETTINGS.get('access_token'):
+        log.warning("pyrollbar: No access_token provided. Please configure by calling rollbar.init() with your access token.")
+        return False
 
     return True
 
