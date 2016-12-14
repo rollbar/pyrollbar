@@ -1,5 +1,10 @@
 # Change Log
 
+**0.13.9**
+
+- Change `_check_config()` to deal with agent handler. See [#147](https://github.com/rollbar/pyrollbar/pull/147)
+- Fix settings values not being booleans in Pyramid. See [#150](https://github.com/rollbar/pyrollbar/pull/150)
+
 **0.13.8**
 
 - Fix regression from 0.13.7. See [#141](https://github.com/rollbar/pyrollbar/pull/141)
