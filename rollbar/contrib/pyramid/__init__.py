@@ -13,8 +13,13 @@ from pyramid.settings import asbool
 import rollbar
 
 DEFAULT_WEB_BASE = 'https://rollbar.com'
+BOOLEAN_SETTINGS = [
+    'rollbar.enabled', 'rollbar.allow_logging_basic_config',
+    'rollbar.verify_https'
+]
 
 log = logging.getLogger(__name__)
+
 
 def handle_error(settings, request):
     rollbar.report_exc_info(sys.exc_info(), request)
@@ -25,7 +30,10 @@ def parse_settings(settings):
     out = {}
     for k, v in settings.items():
         if k.startswith(prefix):
+            if k in BOOLEAN_SETTINGS:
+                v = asbool(v)
             out[k[len(prefix):]] = v
+
     return out
 
 
@@ -39,7 +47,7 @@ def rollbar_tween_factory(pyramid_handler, registry):
         # for testing out the integration
         try:
             if (settings.get('allow_test', 'true') == 'true' and
-                request.GET.get('pyramid_rollbar_test') == 'true'):
+                    request.GET.get('pyramid_rollbar_test') == 'true'):
                 try:
                     raise Exception("pyramid_rollbar test exception")
                 except:
@@ -90,9 +98,11 @@ def patch_debugtoolbar(settings):
 
     # patch tbtools.Traceback.render_full
     old_render_full = tbtools.Traceback.render_full
+
     def new_render_full(self, request, *args, **kw):
         html = old_render_full(self, request, *args, **kw)
         return insert_rollbar_console(request, html)
+
     tbtools.Traceback.render_full = new_render_full
 
 
@@ -163,7 +173,7 @@ class RollbarMiddleware(object):
     def __call__(self, environ, start_resp):
         try:
             return self.app(environ, start_resp)
-        except Exception as e:
+        except Exception:
             from pyramid.request import Request
             handle_error(self.settings, Request(environ))
             raise
