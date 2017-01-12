@@ -922,6 +922,7 @@ def _build_webob_request_data(request):
         'GET': dict(request.GET),
         'user_ip': _extract_user_ip(request),
         'headers': dict(request.headers),
+        'method': request.method,
     }
 
     try:
