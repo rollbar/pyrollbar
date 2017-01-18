@@ -451,6 +451,10 @@ Default: `thread`
 <dd>A list of `type` objects, (e.g. `type(my_class_instance)` or `MyClass`) that will be serialized using
     `repr()`. Default `[]`
 </dd>
+<dt>scrub_varargs
+</dt>
+<dd>If `True`, variable arguments will be scrubbed. Default `True`.
+</dd>
 </dl>
 </dd>
 <dt>root
@@ -461,7 +465,7 @@ Default: `thread`
 </dt>
 <dd>List of sensitive field names to scrub out of request params and locals. Values will be replaced with asterisks. If overriding, make sure to list all fields you want to scrub, not just fields you want to add to the default. Param names are converted to lowercase before comparing against the scrub list.
 
-Default: `['pw', 'passwd', 'password', 'secret', 'confirm_password', 'confirmPassword', 'password_confirmation', 'passwordConfirmation', 'access_token', 'auth', 'authentication']`
+Default: `['pw', 'passwd', 'password', 'secret', 'confirm_password', 'confirmPassword', 'password_confirmation', 'passwordConfirmation', 'access_token', 'AccessToken', 'auth', 'authentication']`
 
 </dd>
 <dt>timeout
@@ -477,6 +481,27 @@ Default: `3`
 
 Default: `True`
 
+<dt>notifier
+</dt>
+<dd>Dictionary with the following keys:
+<dl>
+<dt>name
+</dt>
+<dd>Should be 'pyrollbar'
+</dd>
+<dt>version
+</dt>
+<dd>A version string, such as '0.13.9'
+</dd>
+</dl>
+<dt>url_fields
+</dt>
+<dd>List of fields treated as URLs and scrubbed. Default `['url', 'link', 'href']`
+</dd>
+<dt>verify_https
+</dt>
+<dd>If `True`, network requests will fail unless encountering a valid certificate. Default `True`.
+</dd>
 </dd>
 </dl>
 
