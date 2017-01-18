@@ -465,7 +465,7 @@ Default: `thread`
 </dt>
 <dd>List of sensitive field names to scrub out of request params and locals. Values will be replaced with asterisks. If overriding, make sure to list all fields you want to scrub, not just fields you want to add to the default. Param names are converted to lowercase before comparing against the scrub list.
 
-Default: `['pw', 'passwd', 'password', 'secret', 'confirm_password', 'confirmPassword', 'password_confirmation', 'passwordConfirmation', 'access_token', 'AccessToken', 'auth', 'authentication']`
+Default: `['pw', 'passwd', 'password', 'secret', 'confirm_password', 'confirmPassword', 'password_confirmation', 'passwordConfirmation', 'access_token', 'accessToken', 'auth', 'authentication']`
 
 </dd>
 <dt>timeout
