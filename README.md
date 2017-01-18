@@ -453,7 +453,7 @@ Default: `thread`
 </dd>
 <dt>scrub_varargs
 </dt>
-<dd>If `True`, variable arguments will be scrubbed. Default `True`.
+<dd>If `True`, variable argument values will be scrubbed. Default `True`.
 </dd>
 </dl>
 </dd>
@@ -481,19 +481,6 @@ Default: `3`
 
 Default: `True`
 
-<dt>notifier
-</dt>
-<dd>Dictionary with the following keys:
-<dl>
-<dt>name
-</dt>
-<dd>Should be 'pyrollbar'
-</dd>
-<dt>version
-</dt>
-<dd>A version string, such as '0.13.9'
-</dd>
-</dl>
 <dt>url_fields
 </dt>
 <dd>List of fields treated as URLs and scrubbed. Default `['url', 'link', 'href']`
