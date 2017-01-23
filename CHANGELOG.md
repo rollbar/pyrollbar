@@ -1,5 +1,9 @@
 # Change Log
 
+**0.13.10**
+
+- Gather request method from WebOb requests. See [#152](https://github.com/rollbar/pyrollbar/pull/152)
+
 **0.13.9**
 
 - Change `_check_config()` to deal with agent handler. See [#147](https://github.com/rollbar/pyrollbar/pull/147)
