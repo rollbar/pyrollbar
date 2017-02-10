@@ -1,5 +1,9 @@
 # Change Log
 
+**0.13.11**
+
+- Handle environments where `sys.argv` does not exist. See [#131](https://github.com/rollbar/pyrollbar/pull/131)
+
 **0.13.10**
 
 - Gather request method from WebOb requests. See [#152](https://github.com/rollbar/pyrollbar/pull/152)
