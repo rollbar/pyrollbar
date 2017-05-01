@@ -21,8 +21,17 @@ BOOLEAN_SETTINGS = [
 log = logging.getLogger(__name__)
 
 
-def handle_error(settings, request):
-    rollbar.report_exc_info(sys.exc_info(), request)
+EXCEPTION_BLACKLIST = (WSGIHTTPException,)
+EXCEPTION_WHITELIST = tuple()
+
+
+def handle_error(request, exception, exc_info):
+    if(
+            isinstance(exception, EXCEPTION_BLACKLIST) and
+            not isinstance(exception, EXCEPTION_WHITELIST)
+    ):
+        return
+    rollbar.report_exc_info(exc_info, request)
 
 
 def parse_settings(settings):
@@ -40,9 +49,6 @@ def parse_settings(settings):
 def rollbar_tween_factory(pyramid_handler, registry):
     settings = parse_settings(registry.settings)
 
-    whitelist = ()
-    blacklist = (WSGIHTTPException,)
-
     def rollbar_tween(request):
         # for testing out the integration
         try:
@@ -50,21 +56,18 @@ def rollbar_tween_factory(pyramid_handler, registry):
                     request.GET.get('pyramid_rollbar_test') == 'true'):
                 try:
                     raise Exception("pyramid_rollbar test exception")
-                except:
-                    handle_error(settings, request)
+                except Exception as exc:
+                    handle_error(request, exc, sys.exc_info())
         except:
             log.exception("Error in pyramid_rollbar_test block")
 
         try:
             response = pyramid_handler(request)
-        except whitelist:
-            handle_error(settings, request)
+        except Exception as exc:
+            handle_error(request, exc, sys.exc_info())
             raise
-        except blacklist:
-            raise
-        except:
-            handle_error(settings, request)
-            raise
+        if request.exception is not None:
+            handle_error(request, request.exception, request.exc_info)
         return response
 
     return rollbar_tween
@@ -112,7 +115,7 @@ def includeme(config):
     """
     settings = config.registry.settings
 
-    config.add_tween('rollbar.contrib.pyramid.rollbar_tween_factory', under=EXCVIEW)
+    config.add_tween('rollbar.contrib.pyramid.rollbar_tween_factory', over=EXCVIEW)
 
     # run patch_debugtoolbar, unless they disabled it
     if asbool(settings.get('rollbar.patch_debugtoolbar', True)):
