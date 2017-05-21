@@ -18,10 +18,15 @@ import sys
 
 import rollbar
 
+import django
 from django.core.exceptions import MiddlewareNotUsed
-from django.core.urlresolvers import resolve
 from django.conf import settings
 from django.http import Http404
+
+if django.VERSION >= (1, 10):
+    from django.urls import resolve
+else:
+    from django.core.urlresolvers import resolve
 
 try:
     from django.utils.deprecation import MiddlewareMixin
