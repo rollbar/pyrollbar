@@ -99,4 +99,4 @@ install:
   - if [ -v DJANGO_VERSION ]; then pip install Django==$DJANGO_VERSION; fi
 
 script:
-  - python setup.py test
+  - python -Wall setup.py test
