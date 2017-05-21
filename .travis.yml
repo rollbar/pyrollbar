@@ -91,12 +91,6 @@ matrix:
       env: DJANGO_VERSION=1.11.1
 
     - python: "3.6"
-      env: DJANGO_VERSION=1.8.18
-    - python: "3.6"
-      env: DJANGO_VERSION=1.9.13
-    - python: "3.6"
-      env: DJANGO_VERSION=1.10.7
-    - python: "3.6"
       env: DJANGO_VERSION=1.11.1
 
 install:
