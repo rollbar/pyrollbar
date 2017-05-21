@@ -8,18 +8,32 @@ matrix:
       env: FLASK_VERSION=0.10.1
     - python: "2.7"
       env: FLASK_VERSION=0.11.1
+    - python: "2.7"
+      env: FLASK_VERSION=0.12.2
     - python: "3.3"
       env: FLASK_VERSION=0.10.1
     - python: "3.3"
       env: FLASK_VERSION=0.11.1
+    - python: "3.3"
+      env: FLASK_VERSION=0.12.2
     - python: "3.4"
       env: FLASK_VERSION=0.10.1
     - python: "3.4"
       env: FLASK_VERSION=0.11.1
+    - python: "3.4"
+      env: FLASK_VERSION=0.12.2
     - python: "3.5"
       env: FLASK_VERSION=0.10.1
     - python: "3.5"
       env: FLASK_VERSION=0.11.1
+    - python: "3.4"
+      env: FLASK_VERSION=0.12.2
+    - python: "3.6"
+      env: FLASK_VERSION=0.10.1
+    - python: "3.6"
+      env: FLASK_VERSION=0.11.1
+    - python: "3.6"
+      env: FLASK_VERSION=0.12.2
 
     - python: "2.7"
       env: TWISTED_VERSION=15.5.0
@@ -40,6 +54,8 @@ matrix:
       env: DJANGO_VERSION=1.9.9
     - python: "2.7"
       env: DJANGO_VERSION=1.10
+    - python: "2.7"
+      env: DJANGO_VERSION=1.11
     - python: "3.3"
       env: DJANGO_VERSION=1.6.11
     - python: "3.3"
@@ -58,6 +74,16 @@ matrix:
       env: DJANGO_VERSION=1.9.9
     - python: "3.5"
       env: DJANGO_VERSION=1.10
+    - python: "3.5"
+      env: DJANGO_VERSION=1.11
+    - python: "3.6"
+      env: DJANGO_VERSION=1.8.14
+    - python: "3.6"
+      env: DJANGO_VERSION=1.9.9
+    - python: "3.6"
+      env: DJANGO_VERSION=1.10
+    - python: "3.6"
+      env: DJANGO_VERSION=1.11
 
 install:
   - if [ -v FLASK_VERSION ]; then pip install Flask==$FLASK_VERSION; fi
