@@ -43,6 +43,14 @@ matrix:
       env: TWISTED_VERSION=16.2.0
     - python: "2.7"
       env: TWISTED_VERSION=16.3.0
+    - python: "2.7"
+      env: TWISTED_VERSION=16.4.0
+    - python: "2.7"
+      env: TWISTED_VERSION=16.5.0
+    - python: "2.7"
+      env: TWISTED_VERSION=16.6.0
+    - python: "2.7"
+      env: TWISTED_VERSION=17.1.0
 
     - python: "2.7"
       env: DJANGO_VERSION=1.6.11
