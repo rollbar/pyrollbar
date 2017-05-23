@@ -18,14 +18,13 @@ import sys
 
 import rollbar
 
-import django
 from django.core.exceptions import MiddlewareNotUsed
 from django.conf import settings
 from django.http import Http404
 
-if django.VERSION >= (1, 10):
+try:
     from django.urls import resolve
-else:
+except ImportError:
     from django.core.urlresolvers import resolve
 
 try:
