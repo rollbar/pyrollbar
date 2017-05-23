@@ -19,9 +19,13 @@ import sys
 import rollbar
 
 from django.core.exceptions import MiddlewareNotUsed
-from django.core.urlresolvers import resolve
 from django.conf import settings
 from django.http import Http404
+
+try:
+    from django.urls import resolve
+except ImportError:
+    from django.core.urlresolvers import resolve
 
 try:
     from django.utils.deprecation import MiddlewareMixin
