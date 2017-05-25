@@ -128,6 +128,7 @@ class RollbarTest(BaseTest):
         self.assertEqual(payload['access_token'], _test_access_token)
         self.assertIn('body', payload['data'])
         self.assertIn('trace', payload['data']['body'])
+        self.assertNotIn('trace_chain', payload['data']['body'])
         self.assertIn('exception', payload['data']['body']['trace'])
         self.assertEqual(payload['data']['body']['trace']['exception']['message'], 'foo')
         self.assertEqual(payload['data']['body']['trace']['exception']['class'], 'Exception')
@@ -136,6 +137,68 @@ class RollbarTest(BaseTest):
         self.assertNotIn('varargspec', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('keywordspec', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('locals', payload['data']['body']['trace']['frames'][-1])
+
+    @mock.patch('rollbar.send_payload')
+    def test_report_exception_with_cause(self, send_payload):
+
+        def _raise():
+            cause = CauseException('bar')
+            try:
+                raise Exception('foo') from cause
+            except:
+                rollbar.report_exc_info()
+
+        _raise()
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = json.loads(send_payload.call_args[0][0])
+
+        self.assertEqual(payload['access_token'], _test_access_token)
+        self.assertIn('body', payload['data'])
+        self.assertNotIn('trace', payload['data']['body'])
+        self.assertIn('trace_chain', payload['data']['body'])
+        self.assertEqual(2, len(payload['data']['body']['trace_chain']))
+
+        self.assertIn('exception', payload['data']['body']['trace_chain'][0])
+        self.assertEqual(payload['data']['body']['trace_chain'][0]['exception']['message'], 'foo')
+        self.assertEqual(payload['data']['body']['trace_chain'][0]['exception']['class'], 'Exception')
+
+        self.assertIn('exception', payload['data']['body']['trace_chain'][1])
+        self.assertEqual(payload['data']['body']['trace_chain'][1]['exception']['message'], 'bar')
+        self.assertEqual(payload['data']['body']['trace_chain'][1]['exception']['class'], 'CauseException')
+
+    @mock.patch('rollbar.send_payload')
+    def test_report_exception_with_context(self, send_payload):
+
+        def _raise():
+            try:
+                raise CauseException('bar')
+            except:
+                try:
+                    raise Exception('foo')
+                except:
+                    rollbar.report_exc_info()
+
+        _raise()
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = json.loads(send_payload.call_args[0][0])
+
+        self.assertEqual(payload['access_token'], _test_access_token)
+        self.assertIn('body', payload['data'])
+        self.assertNotIn('trace', payload['data']['body'])
+        self.assertIn('trace_chain', payload['data']['body'])
+        self.assertEqual(2, len(payload['data']['body']['trace_chain']))
+
+        self.assertIn('exception', payload['data']['body']['trace_chain'][0])
+        self.assertEqual(payload['data']['body']['trace_chain'][0]['exception']['message'], 'foo')
+        self.assertEqual(payload['data']['body']['trace_chain'][0]['exception']['class'], 'Exception')
+
+        self.assertIn('exception', payload['data']['body']['trace_chain'][1])
+        self.assertEqual(payload['data']['body']['trace_chain'][1]['exception']['message'], 'bar')
+        self.assertEqual(payload['data']['body']['trace_chain'][1]['exception']['class'], 'CauseException')
 
     @mock.patch('rollbar.send_payload')
     def test_exception_filters(self, send_payload):
@@ -1002,6 +1065,10 @@ def step2():
 def called_with(arg1):
     arg1 = 'changed'
     step1()
+
+
+class CauseException(Exception):
+    pass
 
 
 class MockResponse:

@@ -573,20 +573,17 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     if level:
         data['level'] = level
 
-    # exception info
-    # most recent call last
-    raw_frames = traceback.extract_tb(trace)
-    frames = [{'filename': f[0], 'lineno': f[1], 'method': f[2], 'code': f[3]} for f in raw_frames]
+    # walk the trace chain to collect cause and context exceptions
+    trace_chain = _walk_trace_chain(cls, exc, trace)
 
-    data['body'] = {
-        'trace': {
-            'frames': frames,
-            'exception': {
-                'class': cls.__name__,
-                'message': text(exc),
-            }
+    if len(trace_chain) > 1:
+        data['body'] = {
+            'trace_chain': trace_chain
         }
-    }
+    else:
+        data['body'] = {
+            'trace': trace_chain[0]
+        }
 
     if extra_data:
         extra_data = extra_data
@@ -595,7 +592,6 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
         else:
             data['custom'] = {'value': extra_data}
 
-    _add_locals_data(data, exc_info)
     _add_request_data(data, request)
     _add_person_data(data, request)
     data['server'] = _build_server_data()
@@ -607,6 +603,37 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     send_payload(payload, data.get('access_token'))
 
     return data['uuid']
+
+
+def _walk_trace_chain(cls, exc, trace):
+    trace_chain = [_trace_data(cls, exc, trace)]
+
+    while True:
+        exc = getattr(exc, '__cause__') or getattr(exc, '__context__')
+        if not exc:
+            break
+        trace_chain.append(_trace_data(type(exc), exc, getattr(exc, '__traceback__')))
+
+    return trace_chain
+
+
+def _trace_data(cls, exc, trace):
+    # exception info
+    # most recent call last
+    raw_frames = traceback.extract_tb(trace)
+    frames = [{'filename': f[0], 'lineno': f[1], 'method': f[2], 'code': f[3]} for f in raw_frames]
+
+    trace_data = {
+        'frames': frames,
+        'exception': {
+            'class': cls.__name__,
+            'message': text(exc),
+        }
+    }
+
+    _add_locals_data(trace_data, (cls, exc, trace))
+
+    return trace_data
 
 
 def _report_message(message, level, request, extra_data, payload_data):
@@ -766,11 +793,11 @@ def _flatten_nested_lists(l):
     return ret
 
 
-def _add_locals_data(data, exc_info):
+def _add_locals_data(trace_data, exc_info):
     if not SETTINGS['locals']['enabled']:
         return
 
-    frames = data['body']['trace']['frames']
+    frames = trace_data['frames']
 
     cur_tb = exc_info[2]
     frame_num = 0
