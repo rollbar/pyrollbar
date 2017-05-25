@@ -144,7 +144,11 @@ class RollbarTest(BaseTest):
         def _raise():
             cause = CauseException('bar')
             try:
-                raise Exception('foo') from cause
+                # in python3 this would normally be expressed as
+                # raise Exception('foo') from cause
+                e = Exception('foo')
+                setattr(e, '__cause__', cause)  # PEP-3134
+                raise e
             except:
                 rollbar.report_exc_info()
 
@@ -172,13 +176,14 @@ class RollbarTest(BaseTest):
     def test_report_exception_with_context(self, send_payload):
 
         def _raise():
+            context = CauseException('bar')
             try:
-                raise CauseException('bar')
+                # in python3 __context__ is automatically set when an exception is raised in an except block
+                e = Exception('foo')
+                setattr(e, '__context__', context)  # PEP-3134
+                raise e
             except:
-                try:
-                    raise Exception('foo')
-                except:
-                    rollbar.report_exc_info()
+                rollbar.report_exc_info()
 
         _raise()
 

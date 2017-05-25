@@ -609,10 +609,10 @@ def _walk_trace_chain(cls, exc, trace):
     trace_chain = [_trace_data(cls, exc, trace)]
 
     while True:
-        exc = getattr(exc, '__cause__') or getattr(exc, '__context__')
+        exc = getattr(exc, '__cause__', None) or getattr(exc, '__context__', None)
         if not exc:
             break
-        trace_chain.append(_trace_data(type(exc), exc, getattr(exc, '__traceback__')))
+        trace_chain.append(_trace_data(type(exc), exc, getattr(exc, '__traceback__', None)))
 
     return trace_chain
 
