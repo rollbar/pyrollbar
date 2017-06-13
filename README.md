@@ -133,6 +133,8 @@ root = %(here)s
 
 Note that the access_token, environment, and other Rollbar config params do need to be present in both the ```app``` section and the ```filter``` section.
 
+Additionally, note that because Pyramid uses INI files for configuration, any changes to nested settings, like the `locals` dictionary, will need to be handled in code.
+
 
 ### Flask
 
