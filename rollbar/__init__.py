@@ -106,7 +106,6 @@ try:
                 return
 
             err = event['failure']
-
             # Don't report Rollbar internal errors to ourselves
             if issubclass(err.type, ApiException):
                 log.error('Rollbar internal error: %s', err.value)
@@ -1187,12 +1186,7 @@ def _post_api_tornado(path, payload, access_token=None):
 
 
 def _send_payload_twisted(payload, access_token):
-    try:
-        _post_api_twisted('item/', payload, access_token=access_token)
-    except Exception as e:
-        print '>>> UPPER BAD TIMES >>>'
-        # XXX(ezarowny): if I raise in _post_api_twisted I don't get here
-        log.exception('Exception while posting item %r', e)
+    _post_api_twisted('item/', payload, access_token=access_token)
 
 
 @inlineCallbacks
@@ -1201,26 +1195,30 @@ def _post_api_twisted(path, payload, access_token=None):
     #     print 'failure: {}'.format(failure)
     #     return False
 
-    headers = {'Content-Type': ['application/json']}
-    if access_token is not None:
-        headers['X-Rollbar-Access-Token'] = [access_token]
-
-    url = urljoin(SETTINGS['endpoint'], path)
     try:
+        headers = {'Content-Type': ['application/json']}
+        if access_token is not None:
+            headers['X-Rollbar-Access-Token'] = [access_token]
+
+        url = urljoin(SETTINGS['endpoint'], path)
         resp = yield treq.post(url, payload, headers=headers,
                                timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT))
         text = yield treq.content(resp)
-    except Exception as e:
-        print '>>> BAD TIMES >>>'
-        print e
-        # XXX(ezarowny): not sure what to do here?
-
-    r = requests.Response()
-    r._content = text
-    r.status_code = resp.code
-    r.headers.update(resp.headers.getAllRawHeaders())
-
-    _parse_response(path, SETTINGS['access_token'], payload, r)
+        r = requests.Response()
+        r._content = text
+        r.status_code = resp.code
+        r.headers.update(resp.headers.getAllRawHeaders())
+        _parse_response(path, SETTINGS['access_token'], payload, r)
+    except:
+        # An exception that escapes here will be caught by Deferred
+        # and sent into Twisted's logging system.  This will again
+        # invoke the observer that called this function, starting an
+        # infinite recursion.  Catch all exceptions to prevent this,
+        # including exceptions in the logging system itself.
+        try:
+            log.exception("Failed to post to rollbar")
+        except:
+            pass
 
 
 def _send_failsafe(message, uuid, host):
