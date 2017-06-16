@@ -93,6 +93,8 @@ except ImportError:
 
 try:
     import treq
+    from twisted.internet.defer import inlineCallbacks
+    from twisted.internet.defer import returnValue
     from twisted.python import log as twisted_log
 
     def log_handler(event):
@@ -112,12 +114,8 @@ try:
                 report_exc_info((err.type, err.value, err.getTracebackObject()))
         except:
             log.exception('Error while reporting to Rollbar')
-
-    # Add Rollbar as a log handler which will report uncaught errors
-    twisted_log.addObserver(log_handler)
-
-
 except ImportError:
+    inlineCallbacks = passthrough_decorator
     treq = None
 
 
@@ -290,8 +288,12 @@ def init(access_token, environment='production', **kw):
     if SETTINGS.get('allow_logging_basic_config'):
         logging.basicConfig()
 
-    if SETTINGS.get('handler') == 'agent':
+    handler = SETTINGS.get('handler')
+    if handler == 'agent':
         agent_log = _create_agent_log()
+    elif handler == 'twisted' and treq:
+        # Add Rollbar as a Twisted log handler which will report uncaught errors
+        twisted_log.addObserver(log_handler)
 
     # We will perform these transforms in order:
     # 1. Serialize the payload to be all python built-in objects
@@ -1188,28 +1190,37 @@ def _send_payload_twisted(payload, access_token):
     try:
         _post_api_twisted('item/', payload, access_token=access_token)
     except Exception as e:
+        print '>>> UPPER BAD TIMES >>>'
+        # XXX(ezarowny): if I raise in _post_api_twisted I don't get here
         log.exception('Exception while posting item %r', e)
 
 
+@inlineCallbacks
 def _post_api_twisted(path, payload, access_token=None):
-    def post_data_cb(data, resp):
-        resp._content = data
-        _parse_response(path, SETTINGS['access_token'], payload, resp)
-
-    def post_cb(resp):
-        r = requests.Response()
-        r.status_code = resp.code
-        r.headers.update(resp.headers.getAllRawHeaders())
-        return treq.content(resp).addCallback(post_data_cb, r)
+    # def handle_twisted_error(failure):
+    #     print 'failure: {}'.format(failure)
+    #     return False
 
     headers = {'Content-Type': ['application/json']}
     if access_token is not None:
         headers['X-Rollbar-Access-Token'] = [access_token]
 
     url = urljoin(SETTINGS['endpoint'], path)
-    d = treq.post(url, payload, headers=headers,
-                  timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT))
-    d.addCallback(post_cb)
+    try:
+        resp = yield treq.post(url, payload, headers=headers,
+                               timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT))
+        text = yield treq.content(resp)
+    except Exception as e:
+        print '>>> BAD TIMES >>>'
+        print e
+        # XXX(ezarowny): not sure what to do here?
+
+    r = requests.Response()
+    r._content = text
+    r.status_code = resp.code
+    r.headers.update(resp.headers.getAllRawHeaders())
+
+    _parse_response(path, SETTINGS['access_token'], payload, r)
 
 
 def _send_failsafe(message, uuid, host):
