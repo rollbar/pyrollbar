@@ -17,7 +17,9 @@ try:
     from twisted.test import proto_helpers
     from twisted.trial import unittest
     from twisted.internet import protocol
-    from twisted.python import log
+    from twisted.logger import Logger
+
+    log = Logger()
 
     TWISTED_INSTALLED = True
 except ImportError:
@@ -29,7 +31,7 @@ if ALLOWED_PYTHON_VERSION and TWISTED_INSTALLED:
             try:
                 number = int(data)
             except ValueError:
-                log.err()
+                log.failure('error')
                 self.transport.write('error')
             else:
                 self.transport.write(str(number**2))
@@ -55,7 +57,7 @@ if ALLOWED_PYTHON_VERSION and TWISTED_INSTALLED:
         @mock.patch('rollbar.send_payload')
         def test_caught_exception(self, send_payload):
             self.proto.dataReceived('rollbar')
-            self.assertEqual(self.tr.value(), "error")
+            self.assertEqual(self.tr.value(), 'error')
             errors = self.flushLoggedErrors(ValueError)
             self.assertEqual(len(errors), 1)
 
