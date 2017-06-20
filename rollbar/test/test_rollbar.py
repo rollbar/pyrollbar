@@ -137,6 +137,57 @@ class RollbarTest(BaseTest):
         self.assertNotIn('keywordspec', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('locals', payload['data']['body']['trace']['frames'][-1])
 
+
+    @mock.patch('rollbar.send_payload')
+    def test_report_chained_exception(self, send_payload):
+
+        def _raise_inner():
+            raise Exception('inner')
+
+        def _raise_middle():
+            try:
+                _raise_inner()
+            except Exception as e:
+                # raise ... from ... is only on recent versions of python, so
+                # this will either raise a chained exception (3.5+) or
+                # SyntaxError (earlier versions).
+                raise Exception('outer') from e
+
+        def _raise_outer():
+            try:
+                _raise_middle()
+            except:
+                rollbar.report_exc_info()
+
+        _raise_outer()
+
+        self.assertEqual(send_payload.called, True)
+
+
+        payload = json.loads(send_payload.call_args[0][0])
+        exception_class = payload['data']['body']['trace']['exception']['class']
+        if exception_class == 'SyntaxError':
+            # python < 3.5
+            pass
+
+        elif exception_class == 'Exception':
+            frames = payload['data']['body']['trace']['frames']
+            self.assertEqual(4, len(frames))
+            self.assertEqual(frames[0]['method'], '_raise_outer')
+            self.assertEqual(frames[0]['code'], '_raise_middle()')
+
+            self.assertEqual(frames[1]['method'], '_raise_middle')
+            self.assertEqual(frames[1]['code'], "raise Exception('outer') from e")
+
+            self.assertEqual(frames[2]['method'], '_raise_middle')
+            self.assertEqual(frames[2]['code'], '_raise_inner()')
+
+            self.assertEqual(frames[3]['method'], '_raise_inner')
+            self.assertEqual(frames[3]['code'], "raise Exception('inner')")
+        else:
+            self.assertFalse()
+
+
     @mock.patch('rollbar.send_payload')
     def test_exception_filters(self, send_payload):
 

@@ -550,6 +550,24 @@ def _create_agent_log():
     retval.setLevel(logging.WARNING)
     return retval
 
+def _extract_frames(traceback_exception):
+    """
+    Python 3.5 introduced "raise ... from ..." exception chaining.  Combine the
+    stacks of each chained exception to get one stack running from where the
+    error first occured up to where it was given to rollbar.
+
+    Only compatible with (or run under) python 3.5+.
+    """
+    if not traceback_exception:
+        return
+
+    for stack_summary in traceback_exception.stack:
+        yield {'filename': stack_summary.filename,
+               'lineno': stack_summary.lineno,
+               'method': stack_summary.name,
+               'code': stack_summary.line}
+
+    yield from _extract_frames(traceback_exception.__cause__)
 
 def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     """
@@ -575,8 +593,13 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
 
     # exception info
     # most recent call last
-    raw_frames = traceback.extract_tb(trace)
-    frames = [{'filename': f[0], 'lineno': f[1], 'method': f[2], 'code': f[3]} for f in raw_frames]
+    if hasattr(exc, '__cause__'):
+        # If we have __cause__ that means were on python 3.5+ and so
+        # TracebackException is available.
+        frames = list(_extract_frames(traceback.TracebackException(type(exc), exc, trace)))
+    else:
+        raw_frames = traceback.extract_tb(trace)
+        frames = [{'filename': f[0], 'lineno': f[1], 'method': f[2], 'code': f[3]} for f in raw_frames]
 
     data['body'] = {
         'trace': {
