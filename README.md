@@ -491,6 +491,31 @@ Default: `True`
 </dt>
 <dd>If `True`, network requests will fail unless encountering a valid certificate. Default `True`.
 </dd>
+<dt>shortener_keys
+</dt>
+<dd>A list of key prefixes (as tuple) to apply our shortener transform to. Added to built-in list:
+
+```
+[
+    ('body', 'request', 'POST'),
+    ('body', 'request', 'json')
+]
+```
+
+If `locals.enabled` is `True`, extra keys are also automatically added:
+
+```
+[
+    ('body', 'trace', 'frames', '*', 'code'),
+    ('body', 'trace', 'frames', '*', 'args', '*'),
+    ('body', 'trace', 'frames', '*', 'kwargs', '*'),
+    ('body', 'trace', 'frames', '*', 'locals', '*')
+]
+```
+
+Default: `[]`
+
+</dd>
 </dd>
 </dl>
 
