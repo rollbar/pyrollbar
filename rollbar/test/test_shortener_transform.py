@@ -63,8 +63,7 @@ class ShortenerTransformTest(BaseTest):
         self._assert_shortened('string', expected)
 
     def test_shorten_long(self):
-        # XXX(eric): this probably isn't doing what we expected
-        expected = "u'17955682733916468498414734863645002504519623752387'"
+        expected = '179556827339164684...002504519623752387L'
         self._assert_shortened('long', expected)
 
     def test_shorten_mapping(self):

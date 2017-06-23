@@ -55,7 +55,7 @@ class ShortenerTransform(Transform):
         if len(val) <= max_len:
             return obj
 
-        return self._repr.repr(val)
+        return self._repr.repr(obj)
 
     def _shorten_other(self, obj):
         if obj is None:
