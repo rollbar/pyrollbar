@@ -309,8 +309,12 @@ def init(access_token, environment='production', **kw):
         ScrubUrlTransform(suffixes=[(field,) for field in SETTINGS['url_fields']], params_to_scrub=SETTINGS['scrub_fields'])
     ]
 
-    # A list of key prefixes to apply our shortener transform to
+    # A list of key prefixes to apply our shortener transform to. The request
+    # being included in the body key is old behavior and is being retained for
+    # backwards compatibility.
     shortener_keys = [
+        ('request', 'POST'),
+        ('request', 'json'),
         ('body', 'request', 'POST'),
         ('body', 'request', 'json'),
     ]
