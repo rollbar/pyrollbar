@@ -236,7 +236,8 @@ SETTINGS = {
         'sizes': DEFAULT_LOCALS_SIZES,
         'whitelisted_types': []
     },
-    'verify_https': True
+    'verify_https': True,
+    'shortener_keys': []
 }
 
 # Set in init()
@@ -319,6 +320,8 @@ def init(access_token, environment='production', **kw):
         shortener_keys.append(('body', 'trace', 'frames', '*', 'args', '*'))
         shortener_keys.append(('body', 'trace', 'frames', '*', 'kwargs', '*'))
         shortener_keys.append(('body', 'trace', 'frames', '*', 'locals', '*'))
+
+    shortener_keys.extend(SETTINGS['shortener_keys'])
 
     shortener = ShortenerTransform(safe_repr=SETTINGS['locals']['safe_repr'],
                                    keys=shortener_keys,
