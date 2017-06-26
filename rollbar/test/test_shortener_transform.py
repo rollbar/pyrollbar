@@ -45,7 +45,7 @@ class ShortenerTransformTest(BaseTest):
         if key == 'dict':
             self.assertEqual(expected, result[key].count(':'))
         elif key == 'other':
-            self.assertTrue(result[key].startswith(expected))
+            self.assertIn(expected, result[key])
         else:
             self.assertEqual(expected, result[key])
 
@@ -100,6 +100,5 @@ class ShortenerTransformTest(BaseTest):
         self._assert_shortened('deque', expected)
 
     def test_shorten_other(self):
-        expected = ("u'<rollbar.test.test_shortener_transform.TestCla..."
-                    "eryVeryVeryVeryLongName instance at")
+        expected = '<rollbar.test.test_shortener_transform.TestCla...'
         self._assert_shortened('other', expected)
