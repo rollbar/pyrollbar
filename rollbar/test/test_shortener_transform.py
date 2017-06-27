@@ -42,12 +42,15 @@ class ShortenerTransformTest(BaseTest):
         shortener = ShortenerTransform(keys=[(key,)], **DEFAULT_LOCALS_SIZES)
         result = transforms.transform(self.data, shortener)
 
+        # the repr output can vary between Python versions
+        stripped_result_key = result[key].strip("'\"u")
+
         if key == 'dict':
-            self.assertEqual(expected, result[key].count(':'))
+            self.assertEqual(expected, stripped_result_key.count(':'))
         elif key == 'other':
-            self.assertIn(expected, result[key])
+            self.assertIn(expected, stripped_result_key)
         else:
-            self.assertEqual(expected, result[key])
+            self.assertEqual(expected, stripped_result_key)
 
         result.pop(key)
         self.data.pop(key)
@@ -59,7 +62,7 @@ class ShortenerTransformTest(BaseTest):
         self.assertEqual(self.data, result)
 
     def test_shorten_string(self):
-        expected = "'{}...{}'".format('x'*47, 'x'*48)
+        expected = '{}...{}'.format('x'*47, 'x'*48)
         self._assert_shortened('string', expected)
 
     def test_shorten_long(self):
@@ -84,15 +87,11 @@ class ShortenerTransformTest(BaseTest):
         self._assert_shortened('set', expected)
 
     def test_shorten_frozenset(self):
-        # XXX(eric): this probably isn't doing what we expected
-        # expected = 'frozenset([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...])'
-        expected = "u'frozenset([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])'"
+        expected = 'frozenset([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...])'
         self._assert_shortened('frozenset', expected)
 
     def test_shorten_array(self):
-        # XXX(eric): this probably isn't doing what we expected
-        # expected = 'array(\'l\', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...])'
-        expected = 'u"array(\'l\', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])"'
+        expected = 'array(\'l\', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...])'
         self._assert_shortened('array', expected)
 
     def test_shorten_deque(self):
