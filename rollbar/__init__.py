@@ -966,11 +966,6 @@ def _build_django_request_data(request):
         'user_ip': _wsgi_extract_user_ip(request.environ),
     }
 
-    try:
-        request_data['body'] = request.body
-    except:
-        pass
-
     request_data['headers'] = _extract_wsgi_headers(request.environ.items())
 
     return request_data
