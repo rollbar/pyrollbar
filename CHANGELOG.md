@@ -1,5 +1,11 @@
 # Change Log
 
+**0.13.12**
+
+- Remove the Django request body from the payload as it can contain sensitive data. See [#174](https://github.com/rollbar/pyrollbar/pull/174)
+- Allow users to shorten arbitrary parts of the payload. See [#173](https://github.com/rollbar/pyrollbar/pull/173)
+- Fix a Django deprecation warning. See [#165](https://github.com/rollbar/pyrollbar/pull/165)
+
 **0.13.11**
 
 - Handle environments where `sys.argv` does not exist. See [#131](https://github.com/rollbar/pyrollbar/pull/131)
