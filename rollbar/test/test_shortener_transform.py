@@ -54,9 +54,10 @@ class ShortenerTransformTest(BaseTest):
         else:
             self.assertEqual(expected, stripped_result_key)
 
-        # result.pop(key)
-        # self.data.pop(key)
-        # self.assertEqual(result, self.data)
+        # make sure nothing else was shortened
+        result.pop(key)
+        self.assertNotIn('...', str(result))
+        self.assertNotIn('...', str(self.data))
 
     def test_no_shorten(self):
         shortener = ShortenerTransform(**DEFAULT_LOCALS_SIZES)
