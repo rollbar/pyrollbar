@@ -5,6 +5,8 @@ import mock
 import socket
 import uuid
 
+import sys
+
 try:
     from StringIO import StringIO
 except ImportError:
@@ -148,6 +150,10 @@ class RollbarTest(BaseTest):
             try:
                 _raise_cause()
             except CauseException as cause:
+                # python2 won't automatically assign this traceback...
+                exc_info = sys.exc_info()
+                setattr(cause, '__traceback__', exc_info[2])
+
                 try:
                     foo_local = 'foo'
                     # in python3 this would normally be expressed as
@@ -190,6 +196,10 @@ class RollbarTest(BaseTest):
             try:
                 _raise_context()
             except CauseException as context:
+                # python2 won't automatically assign this traceback...
+                exc_info = sys.exc_info()
+                setattr(context, '__traceback__', exc_info[2])
+
                 try:
                     foo_local = 'foo'
                     # in python3 __context__ is automatically set when an exception is raised in an except block
