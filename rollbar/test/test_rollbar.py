@@ -140,19 +140,25 @@ class RollbarTest(BaseTest):
 
     @mock.patch('rollbar.send_payload')
     def test_report_exception_with_cause(self, send_payload):
+        def _raise_cause():
+            bar_local = 'bar'
+            raise CauseException('bar')
 
-        def _raise():
-            cause = CauseException('bar')
+        def _raise_ex():
             try:
-                # in python3 this would normally be expressed as
-                # raise Exception('foo') from cause
-                e = Exception('foo')
-                setattr(e, '__cause__', cause)  # PEP-3134
-                raise e
-            except:
-                rollbar.report_exc_info()
+                _raise_cause()
+            except CauseException as cause:
+                try:
+                    foo_local = 'foo'
+                    # in python3 this would normally be expressed as
+                    # raise Exception('foo') from cause
+                    e = Exception('foo')
+                    setattr(e, '__cause__', cause)  # PEP-3134
+                    raise e
+                except:
+                    rollbar.report_exc_info()
 
-        _raise()
+        _raise_ex()
 
         self.assertEqual(send_payload.called, True)
 
@@ -167,25 +173,33 @@ class RollbarTest(BaseTest):
         self.assertIn('exception', payload['data']['body']['trace_chain'][0])
         self.assertEqual(payload['data']['body']['trace_chain'][0]['exception']['message'], 'foo')
         self.assertEqual(payload['data']['body']['trace_chain'][0]['exception']['class'], 'Exception')
+        self.assertEqual(payload['data']['body']['trace_chain'][0]['frames'][-1]['locals']['foo_local'], 'foo')
 
         self.assertIn('exception', payload['data']['body']['trace_chain'][1])
         self.assertEqual(payload['data']['body']['trace_chain'][1]['exception']['message'], 'bar')
         self.assertEqual(payload['data']['body']['trace_chain'][1]['exception']['class'], 'CauseException')
+        self.assertEqual(payload['data']['body']['trace_chain'][1]['frames'][-1]['locals']['bar_local'], 'bar')
 
     @mock.patch('rollbar.send_payload')
     def test_report_exception_with_context(self, send_payload):
+        def _raise_context():
+            bar_local = 'bar'
+            raise CauseException('bar')
 
-        def _raise():
-            context = CauseException('bar')
+        def _raise_ex():
             try:
-                # in python3 __context__ is automatically set when an exception is raised in an except block
-                e = Exception('foo')
-                setattr(e, '__context__', context)  # PEP-3134
-                raise e
-            except:
-                rollbar.report_exc_info()
+                _raise_context()
+            except CauseException as context:
+                try:
+                    foo_local = 'foo'
+                    # in python3 __context__ is automatically set when an exception is raised in an except block
+                    e = Exception('foo')
+                    setattr(e, '__context__', context)  # PEP-3134
+                    raise e
+                except:
+                    rollbar.report_exc_info()
 
-        _raise()
+        _raise_ex()
 
         self.assertEqual(send_payload.called, True)
 
@@ -200,10 +214,12 @@ class RollbarTest(BaseTest):
         self.assertIn('exception', payload['data']['body']['trace_chain'][0])
         self.assertEqual(payload['data']['body']['trace_chain'][0]['exception']['message'], 'foo')
         self.assertEqual(payload['data']['body']['trace_chain'][0]['exception']['class'], 'Exception')
+        self.assertEqual(payload['data']['body']['trace_chain'][0]['frames'][-1]['locals']['foo_local'], 'foo')
 
         self.assertIn('exception', payload['data']['body']['trace_chain'][1])
         self.assertEqual(payload['data']['body']['trace_chain'][1]['exception']['message'], 'bar')
         self.assertEqual(payload['data']['body']['trace_chain'][1]['exception']['class'], 'CauseException')
+        self.assertEqual(payload['data']['body']['trace_chain'][1]['frames'][-1]['locals']['bar_local'], 'bar')
 
     @mock.patch('rollbar.send_payload')
     def test_exception_filters(self, send_payload):
