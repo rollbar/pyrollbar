@@ -5,6 +5,8 @@ import mock
 import socket
 import uuid
 
+import sys
+
 try:
     from StringIO import StringIO
 except ImportError:
@@ -128,6 +130,7 @@ class RollbarTest(BaseTest):
         self.assertEqual(payload['access_token'], _test_access_token)
         self.assertIn('body', payload['data'])
         self.assertIn('trace', payload['data']['body'])
+        self.assertNotIn('trace_chain', payload['data']['body'])
         self.assertIn('exception', payload['data']['body']['trace'])
         self.assertEqual(payload['data']['body']['trace']['exception']['message'], 'foo')
         self.assertEqual(payload['data']['body']['trace']['exception']['class'], 'Exception')
@@ -136,6 +139,97 @@ class RollbarTest(BaseTest):
         self.assertNotIn('varargspec', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('keywordspec', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('locals', payload['data']['body']['trace']['frames'][-1])
+
+    @mock.patch('rollbar.send_payload')
+    def test_report_exception_with_cause(self, send_payload):
+        def _raise_cause():
+            bar_local = 'bar'
+            raise CauseException('bar')
+
+        def _raise_ex():
+            try:
+                _raise_cause()
+            except CauseException as cause:
+                # python2 won't automatically assign this traceback...
+                exc_info = sys.exc_info()
+                setattr(cause, '__traceback__', exc_info[2])
+
+                try:
+                    foo_local = 'foo'
+                    # in python3 this would normally be expressed as
+                    # raise Exception('foo') from cause
+                    e = Exception('foo')
+                    setattr(e, '__cause__', cause)  # PEP-3134
+                    raise e
+                except:
+                    rollbar.report_exc_info()
+
+        _raise_ex()
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = json.loads(send_payload.call_args[0][0])
+
+        self.assertEqual(payload['access_token'], _test_access_token)
+        self.assertIn('body', payload['data'])
+        self.assertNotIn('trace', payload['data']['body'])
+        self.assertIn('trace_chain', payload['data']['body'])
+        self.assertEqual(2, len(payload['data']['body']['trace_chain']))
+
+        self.assertIn('exception', payload['data']['body']['trace_chain'][0])
+        self.assertEqual(payload['data']['body']['trace_chain'][0]['exception']['message'], 'foo')
+        self.assertEqual(payload['data']['body']['trace_chain'][0]['exception']['class'], 'Exception')
+        self.assertEqual(payload['data']['body']['trace_chain'][0]['frames'][-1]['locals']['foo_local'], 'foo')
+
+        self.assertIn('exception', payload['data']['body']['trace_chain'][1])
+        self.assertEqual(payload['data']['body']['trace_chain'][1]['exception']['message'], 'bar')
+        self.assertEqual(payload['data']['body']['trace_chain'][1]['exception']['class'], 'CauseException')
+        self.assertEqual(payload['data']['body']['trace_chain'][1]['frames'][-1]['locals']['bar_local'], 'bar')
+
+    @mock.patch('rollbar.send_payload')
+    def test_report_exception_with_context(self, send_payload):
+        def _raise_context():
+            bar_local = 'bar'
+            raise CauseException('bar')
+
+        def _raise_ex():
+            try:
+                _raise_context()
+            except CauseException as context:
+                # python2 won't automatically assign this traceback...
+                exc_info = sys.exc_info()
+                setattr(context, '__traceback__', exc_info[2])
+
+                try:
+                    foo_local = 'foo'
+                    # in python3 __context__ is automatically set when an exception is raised in an except block
+                    e = Exception('foo')
+                    setattr(e, '__context__', context)  # PEP-3134
+                    raise e
+                except:
+                    rollbar.report_exc_info()
+
+        _raise_ex()
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = json.loads(send_payload.call_args[0][0])
+
+        self.assertEqual(payload['access_token'], _test_access_token)
+        self.assertIn('body', payload['data'])
+        self.assertNotIn('trace', payload['data']['body'])
+        self.assertIn('trace_chain', payload['data']['body'])
+        self.assertEqual(2, len(payload['data']['body']['trace_chain']))
+
+        self.assertIn('exception', payload['data']['body']['trace_chain'][0])
+        self.assertEqual(payload['data']['body']['trace_chain'][0]['exception']['message'], 'foo')
+        self.assertEqual(payload['data']['body']['trace_chain'][0]['exception']['class'], 'Exception')
+        self.assertEqual(payload['data']['body']['trace_chain'][0]['frames'][-1]['locals']['foo_local'], 'foo')
+
+        self.assertIn('exception', payload['data']['body']['trace_chain'][1])
+        self.assertEqual(payload['data']['body']['trace_chain'][1]['exception']['message'], 'bar')
+        self.assertEqual(payload['data']['body']['trace_chain'][1]['exception']['class'], 'CauseException')
+        self.assertEqual(payload['data']['body']['trace_chain'][1]['frames'][-1]['locals']['bar_local'], 'bar')
 
     @mock.patch('rollbar.send_payload')
     def test_exception_filters(self, send_payload):
@@ -1002,6 +1096,10 @@ def step2():
 def called_with(arg1):
     arg1 = 'changed'
     step1()
+
+
+class CauseException(Exception):
+    pass
 
 
 class MockResponse:
