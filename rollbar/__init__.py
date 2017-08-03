@@ -633,7 +633,7 @@ def _trace_data(cls, exc, trace):
     trace_data = {
         'frames': frames,
         'exception': {
-            'class': cls.__name__,
+            'class': getattr(cls, '__name__', cls.__class__.__name__),
             'message': text(exc),
         }
     }
