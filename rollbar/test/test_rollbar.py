@@ -320,6 +320,15 @@ class RollbarTest(BaseTest):
         payload = json.loads(send_payload.call_args[0][0])
         self.assertEqual(payload['data']['level'], 'warn')
 
+    @mock.patch('rollbar.send_payload')
+    def test_report_exc_info_nones(self, send_payload):
+
+        rollbar.report_exc_info(exc_info=(None, None, None))
+
+        self.assertEqual(send_payload.called, True)
+        payload = json.loads(send_payload.call_args[0][0])
+        self.assertEqual(payload['data']['level'], 'error')
+
     @mock.patch('rollbar._send_failsafe')
     @mock.patch('rollbar.lib.transport.post',
                 side_effect=lambda *args, **kw: MockResponse({'status': 'Payload Too Large'}, 413))
