@@ -73,6 +73,25 @@ Be sure to replace ```POST_SERVER_ITEM_ACCESS_TOKEN``` with your project's ```po
 
 Check out the [Django example](https://github.com/rollbar/pyrollbar/tree/master/rollbar/examples/django).
 
+If you'd like to be able to use a Django `LOGGING` handler that could catch errors that happen outside of the middleware and ship them to Rollbar, such as in celery job queue tasks that run in the background separate from web requests, do the following:
+
+Add this to the `handlers` key:
+
+        'rollbar': {
+            'filters': ['require_debug_false'],
+            'access_token': 'POST_SERVER_ITEM_ACCESS_TOKEN',
+            'environment': 'production',
+            'class': 'rollbar.logger.RollbarHandler'
+        },
+
+Then add the handler to the `loggers` key values where you want it to fire off.
+
+        'myappwithtasks': {
+            'handlers': ['console', 'logfile', 'rollbar'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+
 ### Pyramid
 
 In your ``ini`` file (e.g. ``production.ini``), add ``rollbar.contrib.pyramid`` to the end of your ``pyramid.includes``:
