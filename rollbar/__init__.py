@@ -5,6 +5,7 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import copy
+import functools
 import inspect
 import json
 import logging
@@ -334,6 +335,20 @@ def init(access_token, environment='production', **kw):
 
     _initialized = True
 
+def lambda_function(f):
+    """
+    Decorator for making error handling on AWS Lambda easier
+    """
+    @functools.wraps(f)
+    def wrapper(event, context):
+        SETTINGS['handler'] = 'blocking'
+        try:
+            f(event, context)
+        except:
+            cls, exc, trace = sys.exc_info()
+            report_exc_info((cls, exc, trace.tb_next))
+            raise
+    return wrapper
 
 def report_exc_info(exc_info=None, request=None, extra_data=None, payload_data=None, level=None, **kw):
     """
