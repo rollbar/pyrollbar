@@ -28,6 +28,12 @@ __version__ = '0.13.12'
 __log_name__ = 'rollbar'
 log = logging.getLogger(__log_name__)
 
+try:
+    # 2.x
+    import Queue as queue
+except ImportError:
+    # 3.x
+    import queue
 
 # import request objects from various frameworks, if available
 try:
@@ -274,7 +280,7 @@ def init(access_token, environment='production', **kw):
                  'staging', 'yourname'
     **kw: provided keyword arguments will override keys in SETTINGS.
     """
-    global SETTINGS, agent_log, _initialized, _transforms, _serialize_transform
+    global SETTINGS, agent_log, _initialized, _transforms, _serialize_transform, _threads
 
     if _initialized:
         # NOTE: Temp solution to not being able to re-init.
@@ -333,7 +339,10 @@ def init(access_token, environment='production', **kw):
                                    **SETTINGS['locals']['sizes'])
     _transforms.append(shortener)
 
+    _threads = queue.Queue()
+
     _initialized = True
+
 
 def lambda_function(f):
     """
@@ -341,14 +350,16 @@ def lambda_function(f):
     """
     @functools.wraps(f)
     def wrapper(event, context):
-        SETTINGS['handler'] = 'blocking'
         try:
-            f(event, context)
+            result = f(event, context)
+            return wait(lambda: result)
         except:
             cls, exc, trace = sys.exc_info()
             report_exc_info((cls, exc, trace.tb_next))
+            wait()
             raise
     return wrapper
+
 
 def report_exc_info(exc_info=None, request=None, extra_data=None, payload_data=None, level=None, **kw):
     """
@@ -430,6 +441,7 @@ def send_payload(payload, access_token):
     else:
         # default to 'thread'
         thread = threading.Thread(target=_send_payload, args=(payload, access_token))
+        _threads.put(thread)
         thread.start()
 
 
@@ -458,6 +470,12 @@ def search_items(title, return_fields=None, access_token=None, endpoint=None, **
                     access_token=access_token,
                     endpoint=endpoint,
                     **search_fields)
+
+
+def wait(f=None):
+    _threads.join()
+    if f is not None:
+        return f()
 
 
 class ApiException(Exception):
@@ -1148,6 +1166,11 @@ def _send_payload(payload, access_token):
         _post_api('item/', payload, access_token=access_token)
     except Exception as e:
         log.exception('Exception while posting item %r', e)
+    try:
+        _threads.get_nowait()
+        _threads.task_done()
+    except queue.Empty:
+        pass
 
 
 def _send_payload_appengine(payload, access_token):
