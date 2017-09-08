@@ -928,7 +928,8 @@ def _add_lambda_context_data(data):
     """
     global _CURRENT_LAMBDA_CONTEXT
     context = _CURRENT_LAMBDA_CONTEXT
-    return if context is None:
+    if context is None:
+        return
     try:
         lambda_data = {
             'lambda': {
