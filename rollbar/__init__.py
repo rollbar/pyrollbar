@@ -933,7 +933,7 @@ def _add_lambda_context_data(data):
     try:
         lambda_data = {
             'lambda': {
-                'remaining_time_in_millis': context.remaining_time_in_millis(),
+                'remaining_time_in_millis': context.get_remaining_time_in_millis(),
                 'function_name': context.function_name,
                 'function_version': context.function_version,
                 'arn': context.invoked_function_arn,
