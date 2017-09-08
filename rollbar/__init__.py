@@ -247,6 +247,8 @@ SETTINGS = {
     'shortener_keys': []
 }
 
+_CURRENT_LAMBDA_CONTEXT = None
+
 # Set in init()
 _transforms = []
 _serialize_transform = None
@@ -350,6 +352,8 @@ def lambda_function(f):
     """
     @functools.wraps(f)
     def wrapper(event, context):
+        global _CURRENT_LAMBDA_CONTEXT
+        _CURRENT_LAMBDA_CONTEXT = context
         try:
             result = f(event, context)
             return wait(lambda: result)
@@ -634,6 +638,7 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
 
     _add_request_data(data, request)
     _add_person_data(data, request)
+    _add_lambda_context_data(data)
     data['server'] = _build_server_data()
 
     if payload_data:
@@ -698,6 +703,7 @@ def _report_message(message, level, request, extra_data, payload_data):
 
     _add_request_data(data, request)
     _add_person_data(data, request)
+    _add_lambda_context_data(data)
     data['server'] = _build_server_data()
 
     if payload_data:
@@ -914,6 +920,33 @@ def _serialize_frame_data(data):
         data = transforms.transform(data, transform)
 
     return data
+
+
+def _add_lambda_context_data(data):
+    """
+    Attempts to add information from the lambda context if it exists
+    """
+    global _CURRENT_LAMBDA_CONTEXT
+    context = _CURRENT_LAMBDA_CONTEXT
+    return if context is None:
+    try:
+        lambda_data = {
+            'lambda': {
+                'remaining_time_in_millis': context.remaining_time_in_millis(),
+                'function_name': context.function_name,
+                'function_version': context.function_version,
+                'arn': context.invoked_function_arn,
+                'request_id': context.aws_request_id,
+            }
+        }
+        if 'custom' in data:
+            data['custom'] = dict_merge(data['custom'], lambda_data)
+        else:
+            data['custom'] = lambda_data
+    except Exception as e:
+        log.exception("Exception while adding lambda context data: %r", e)
+    finally:
+        _CURRENT_LAMBDA_CONTEXT = None
 
 
 def _add_request_data(data, request):
