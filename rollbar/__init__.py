@@ -5,6 +5,7 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import copy
+import functools
 import inspect
 import json
 import logging
@@ -27,6 +28,12 @@ __version__ = '0.13.12'
 __log_name__ = 'rollbar'
 log = logging.getLogger(__log_name__)
 
+try:
+    # 2.x
+    import Queue as queue
+except ImportError:
+    # 3.x
+    import queue
 
 # import request objects from various frameworks, if available
 try:
@@ -240,6 +247,8 @@ SETTINGS = {
     'shortener_keys': []
 }
 
+_CURRENT_LAMBDA_CONTEXT = None
+
 # Set in init()
 _transforms = []
 _serialize_transform = None
@@ -273,7 +282,7 @@ def init(access_token, environment='production', **kw):
                  'staging', 'yourname'
     **kw: provided keyword arguments will override keys in SETTINGS.
     """
-    global SETTINGS, agent_log, _initialized, _transforms, _serialize_transform
+    global SETTINGS, agent_log, _initialized, _transforms, _serialize_transform, _threads
 
     if _initialized:
         # NOTE: Temp solution to not being able to re-init.
@@ -332,7 +341,28 @@ def init(access_token, environment='production', **kw):
                                    **SETTINGS['locals']['sizes'])
     _transforms.append(shortener)
 
+    _threads = queue.Queue()
+
     _initialized = True
+
+
+def lambda_function(f):
+    """
+    Decorator for making error handling on AWS Lambda easier
+    """
+    @functools.wraps(f)
+    def wrapper(event, context):
+        global _CURRENT_LAMBDA_CONTEXT
+        _CURRENT_LAMBDA_CONTEXT = context
+        try:
+            result = f(event, context)
+            return wait(lambda: result)
+        except:
+            cls, exc, trace = sys.exc_info()
+            report_exc_info((cls, exc, trace.tb_next))
+            wait()
+            raise
+    return wrapper
 
 
 def report_exc_info(exc_info=None, request=None, extra_data=None, payload_data=None, level=None, **kw):
@@ -415,6 +445,7 @@ def send_payload(payload, access_token):
     else:
         # default to 'thread'
         thread = threading.Thread(target=_send_payload, args=(payload, access_token))
+        _threads.put(thread)
         thread.start()
 
 
@@ -443,6 +474,12 @@ def search_items(title, return_fields=None, access_token=None, endpoint=None, **
                     access_token=access_token,
                     endpoint=endpoint,
                     **search_fields)
+
+
+def wait(f=None):
+    _threads.join()
+    if f is not None:
+        return f()
 
 
 class ApiException(Exception):
@@ -601,6 +638,7 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
 
     _add_request_data(data, request)
     _add_person_data(data, request)
+    _add_lambda_context_data(data)
     data['server'] = _build_server_data()
 
     if payload_data:
@@ -665,6 +703,7 @@ def _report_message(message, level, request, extra_data, payload_data):
 
     _add_request_data(data, request)
     _add_person_data(data, request)
+    _add_lambda_context_data(data)
     data['server'] = _build_server_data()
 
     if payload_data:
@@ -881,6 +920,34 @@ def _serialize_frame_data(data):
         data = transforms.transform(data, transform)
 
     return data
+
+
+def _add_lambda_context_data(data):
+    """
+    Attempts to add information from the lambda context if it exists
+    """
+    global _CURRENT_LAMBDA_CONTEXT
+    context = _CURRENT_LAMBDA_CONTEXT
+    if context is None:
+        return
+    try:
+        lambda_data = {
+            'lambda': {
+                'remaining_time_in_millis': context.get_remaining_time_in_millis(),
+                'function_name': context.function_name,
+                'function_version': context.function_version,
+                'arn': context.invoked_function_arn,
+                'request_id': context.aws_request_id,
+            }
+        }
+        if 'custom' in data:
+            data['custom'] = dict_merge(data['custom'], lambda_data)
+        else:
+            data['custom'] = lambda_data
+    except Exception as e:
+        log.exception("Exception while adding lambda context data: %r", e)
+    finally:
+        _CURRENT_LAMBDA_CONTEXT = None
 
 
 def _add_request_data(data, request):
@@ -1133,6 +1200,11 @@ def _send_payload(payload, access_token):
         _post_api('item/', payload, access_token=access_token)
     except Exception as e:
         log.exception('Exception while posting item %r', e)
+    try:
+        _threads.get_nowait()
+        _threads.task_done()
+    except queue.Empty:
+        pass
 
 
 def _send_payload_appengine(payload, access_token):
