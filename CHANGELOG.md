@@ -1,5 +1,9 @@
 # Change Log
 
+**0.13.13**
+
+- Add support for AWS Lambda. See [#191](https://github.com/rollbar/pyrollbar/pull/191)
+
 **0.13.12**
 
 - Remove the Django request body from the payload as it can contain sensitive data. See [#174](https://github.com/rollbar/pyrollbar/pull/174)
