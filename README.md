@@ -591,6 +591,10 @@ If `locals.enabled` is `True`, extra keys are also automatically added:
 Default: `[]`
 
 </dd>
+<dt>suppress_reinit_warning
+</dt>
+<dd>If `True`, suppresses the warning normally shown when `rollbar.init()` is called multiple times. Default `False`.
+</dd>
 </dl>
 
 
