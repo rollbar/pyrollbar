@@ -591,7 +591,6 @@ If `locals.enabled` is `True`, extra keys are also automatically added:
 Default: `[]`
 
 </dd>
-</dd>
 </dl>
 
 
