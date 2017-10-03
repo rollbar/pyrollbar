@@ -44,14 +44,15 @@ class ShortenerTransformTest(BaseTest):
         shortener = ShortenerTransform(keys=[(key,)], **DEFAULT_LOCALS_SIZES)
         result = transforms.transform(self.data, shortener)
 
-        # the repr output can vary between Python versions
-        stripped_result_key = result[key].strip("'\"u")
-
         if key == 'dict':
-            self.assertEqual(expected, stripped_result_key.count(':'))
-        elif key == 'other':
-            self.assertIn(expected, stripped_result_key)
+            self.assertEqual(expected, len(result))
         else:
+            # the repr output can vary between Python versions
+            stripped_result_key = result[key].strip("'\"u")
+
+        if key == 'other':
+            self.assertIn(expected, stripped_result_key)
+        elif key != 'dict':
             self.assertEqual(expected, stripped_result_key)
 
         # make sure nothing else was shortened
@@ -114,3 +115,16 @@ class ShortenerTransformTest(BaseTest):
         if six.PY3:
             expected = '<rollbar.test.test_shortener_transform.TestClas...'
         self._assert_shortened('other', expected)
+
+    def test_shorten_object(self):
+        data = {'request': {'POST': {i: i for i in range(10)}}}
+        keys = shortener_keys = [
+                ('request', 'POST'),
+                ('request', 'json'),
+                ('body', 'request', 'POST'),
+                ('body', 'request', 'json'),
+                ]
+        shortener = ShortenerTransform(keys=keys, **DEFAULT_LOCALS_SIZES)
+        result = transforms.transform(data, shortener)
+        self.assertEqual(type(result), dict)
+
