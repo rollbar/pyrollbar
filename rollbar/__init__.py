@@ -244,7 +244,8 @@ SETTINGS = {
         'whitelisted_types': []
     },
     'verify_https': True,
-    'shortener_keys': []
+    'shortener_keys': [],
+    'suppress_reinit_warning': False,
 }
 
 _CURRENT_LAMBDA_CONTEXT = None
@@ -288,7 +289,8 @@ def init(access_token, environment='production', **kw):
         # NOTE: Temp solution to not being able to re-init.
         # New versions of pyrollbar will support re-initialization
         # via the (not-yet-implemented) configure() method.
-        log.warn('Rollbar already initialized. Ignoring re-init.')
+        if not SETTINGS.get('suppress_reinit_warning'):
+            log.warn('Rollbar already initialized. Ignoring re-init.')
         return
 
     SETTINGS['access_token'] = access_token
