@@ -1,5 +1,13 @@
 # Change Log
 
+**0.13.14**
+
+- Fix bug that caused some payload objects to be turned into the wrong type when
+shortening is applied. This would lead to API rejections. See [#200](https://github.com/rollbar/pyrollbar/pull/200)
+- Add `suppress_reinit_warning` option if you want to allow calling init twice. See [#198](https://github.com/rollbar/pyrollbar/pull/198)
+- Pass through keyword arguments from the logging handler to the underling Rollbar init call. See
+  [#203](https://github.com/rollbar/pyrollbar/pull/203)
+
 **0.13.13**
 
 - Add support for AWS Lambda. See [#191](https://github.com/rollbar/pyrollbar/pull/191)
