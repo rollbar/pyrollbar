@@ -1,5 +1,9 @@
 # Change Log
 
+**0.13.15**
+
+- Fix shortener issue for Python 3
+
 **0.13.14**
 
 - Fix bug that caused some payload objects to be turned into the wrong type when
