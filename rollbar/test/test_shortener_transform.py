@@ -117,14 +117,16 @@ class ShortenerTransformTest(BaseTest):
         self._assert_shortened('other', expected)
 
     def test_shorten_object(self):
-        data = {'request': {'POST': {i: i for i in range(10)}}}
+        data = {'request': {'POST': {i: i for i in range(12)}}}
         keys = shortener_keys = [
                 ('request', 'POST'),
                 ('request', 'json'),
                 ('body', 'request', 'POST'),
                 ('body', 'request', 'json'),
                 ]
+        self.assertEqual(len(data['request']['POST']), 12)
         shortener = ShortenerTransform(keys=keys, **DEFAULT_LOCALS_SIZES)
         result = transforms.transform(data, shortener)
         self.assertEqual(type(result), dict)
+        self.assertEqual(len(result['request']['POST']), 10)
 
