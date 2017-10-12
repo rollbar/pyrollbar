@@ -34,12 +34,13 @@ class RollbarHandler(logging.Handler):
                  environment=None,
                  level=logging.INFO,
                  history_size=10,
-                 history_level=logging.DEBUG):
+                 history_level=logging.DEBUG,
+                 **kw):
 
         logging.Handler.__init__(self)
 
         if access_token is not None:
-            rollbar.init(access_token, environment)
+            rollbar.init(access_token, environment, **kw)
 
         self.notify_level = level
 
