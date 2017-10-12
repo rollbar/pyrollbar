@@ -118,7 +118,7 @@ class ShortenerTransformTest(BaseTest):
 
     def test_shorten_object(self):
         data = {'request': {'POST': {i: i for i in range(12)}}}
-        keys = shortener_keys = [
+        keys = [
                 ('request', 'POST'),
                 ('request', 'json'),
                 ('body', 'request', 'POST'),

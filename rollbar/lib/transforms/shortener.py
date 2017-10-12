@@ -1,5 +1,6 @@
 from array import array
 import collections
+import itertools
 
 from rollbar.lib import (
     integer_types, iteritems, key_in, number_types, reprlib, sequence_types,
@@ -55,7 +56,7 @@ class ShortenerTransform(Transform):
         if _len <= max_keys:
             return obj
 
-        return {k: obj[k] for k in obj.keys()[:max_keys]}
+        return {k: obj[k] for k in itertools.islice(obj.keys(), max_keys)}
 
     def _shorten_basic(self, obj, max_len):
         val = text(obj)
