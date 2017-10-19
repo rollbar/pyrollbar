@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
-README_PATH = os.path.join(HERE, 'README')
+README_PATH = os.path.join(HERE, 'README.rst')
 try:
     with open(README_PATH) as fd:
         README = fd.read()
