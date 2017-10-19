@@ -1,5 +1,9 @@
 # Change Log
 
+**0.13.16**
+
+- Fix PyPI documentation
+
 **0.13.15**
 
 - Fix shortener issue for Python 3
