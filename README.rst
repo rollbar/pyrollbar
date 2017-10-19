@@ -1,16 +1,8 @@
 Rollbar notifier for Python |Build Status|
 ==========================================
 
-.. raw:: html
-
-   <!-- RemoveNext -->
-
 Python notifier for reporting exceptions, errors, and log messages to
 `Rollbar <https://rollbar.com>`__.
-
-.. raw:: html
-
-   <!-- Sub:[TOC] -->
 
 Quick start
 -----------
@@ -71,10 +63,6 @@ Add these configuration variables in ``settings.py``:
         'root': '/absolute/path/to/code/root',
     }
 
-.. raw:: html
-
-   <!-- RemoveNextIfProject -->
-
 Be sure to replace ``POST_SERVER_ITEM_ACCESS_TOKEN`` with your project's
 ``post_server_item`` access token, which you can find in the Rollbar.com
 interface.
@@ -131,10 +119,6 @@ And add these rollbar configuration variables:
     rollbar.environment = production
     rollbar.branch = master
     rollbar.root = %(here)s
-
-.. raw:: html
-
-   <!-- RemoveNextIfProject -->
 
 Be sure to replace ``POST_SERVER_ITEM_ACCESS_TOKEN`` with your project's
 ``post_server_item`` access token, which you can find in the Rollbar.com
@@ -221,10 +205,6 @@ route basis.
 
     if __name__ == '__main__':
         bottle.run(host='localhost', port=8080)
-
-.. raw:: html
-
-   <!-- RemoveNextIfProject -->
 
 Be sure to replace ``POST_SERVER_ITEM_ACCESS_TOKEN`` with your project's
 ``post_server_item`` access token, which you can find in the Rollbar.com
@@ -435,788 +415,182 @@ Here's a full example, integrating into a simple Gevent app.
 Configuration reference
 -----------------------
 
-.. raw:: html
-
-   <dl>
-
-.. raw:: html
-
-   <dt>
-
 access\_token
-
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-Access token from your Rollbar project
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
+  Access token from your Rollbar project
 
 agent.log\_file
-
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-If ``handler`` is ``agent``, the path to the log file. Filename must end
-in ``.rollbar``
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
+  If ``handler`` is ``agent``, the path to the log file. Filename must end in ``.rollbar``
 
 branch
+  Name of the checked-out branch.
 
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-Name of the checked-out branch.
-
-Default: ``master``
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
+  Default: ``master``
 
 code\_version
+  A string describing the current code revision/version (i.e. a git sha). Max 40 characters.
 
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-A string describing the current code revision/version (i.e. a git sha).
-Max 40 characters.
-
-Default: ``None``
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
+  Default: ``None``
 
 enabled
+  Controls whether or not Rollbar will report any data
 
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-Controls whether or not Rollbar will report any data
-
-Default: ``True``
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
+  Default: ``True``
 
 endpoint
+  URL items are posted to.
 
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-URL items are posted to.
-
-Default: ``https://api.rollbar.com/api/1/item/``
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
+  Default: ``https://api.rollbar.com/api/1/item/``
 
 environment
-
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-Environment name. Any string up to 255 chars is OK. For best results,
-use "production" for your production environment.
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
+  Environment name. Any string up to 255 chars is OK. For best results, use "production" for your production environment.
 
 exception\_level\_filters
 
-.. raw:: html
+  List of tuples in the form ``(class, level)`` where ``class`` is an Exception class you want to always filter to the respective ``level``. Any subclasses of the given ``class`` will also be matched.
 
-   </dt>
+  Valid levels: ``'critical'``, ``'error'``, ``'warning'``, ``'info'``, ``'debug'`` and ``'ignored'``.
 
-.. raw:: html
+  Use ``'ignored'`` if you want an Exception (sub)class to never be reported to Rollbar.
 
-   <dd>
+  Any exceptions not found in this configuration setting will default to ``'error'``.
 
-List of tuples in the form ``(class, level)`` where ``class`` is an
-Exception class you want to always filter to the respective ``level``.
-Any subclasses of the given ``class`` will also be matched.
+  Django ``settings.py`` example (and Django default):
 
-Valid levels: ``'critical'``, ``'error'``, ``'warning'``, ``'info'``,
-``'debug'`` and ``'ignored'``.
+  .. code:: python
 
-Use ``'ignored'`` if you want an Exception (sub)class to never be
-reported to Rollbar.
+      from django.http import Http404
 
-Any exceptions not found in this configuration setting will default to
-``'error'``.
+      ROLLBAR = {
+          ...
+          'exception_level_filters': [
+              (Http404, 'warning')
+          ]
+      }
 
-Django ``settings.py`` example (and Django default):
+  In a Pyramid ``ini`` file, define each tuple as an individual whitespace delimited line, for example:
 
-.. code:: python
+  ::
 
-    from django.http import Http404
-
-    ROLLBAR = {
-        ...
-        'exception_level_filters': [
-            (Http404, 'warning')
-        ]
-    }
-
-In a Pyramid ``ini`` file, define each tuple as an individual whitespace
-delimited line, for example:
-
-::
-
-    rollbar.exception_level_filters =
-        pyramid.exceptions.ConfigurationError critical
-        #...
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
+      rollbar.exception_level_filters =
+          pyramid.exceptions.ConfigurationError critical
+          #...
 
 handler
+  The method for reporting rollbar items to api.rollbar.com
 
-.. raw:: html
+  One of:
 
-   </dt>
+  -  blocking -- runs in main thread
+  -  thread -- spawns a new thread
+  -  agent -- writes messages to a log file for consumption by
+     rollbar-agent
+  -  tornado -- uses the Tornado async library to send the payload
+  -  gae -- uses the Google AppEngineFetch library to send the payload
+  -  twisted -- uses the Twisted event-driven networking library to send
+     the payload
 
-.. raw:: html
-
-   <dd>
-
-The method for reporting rollbar items to api.rollbar.com
-
-One of:
-
--  blocking -- runs in main thread
--  thread -- spawns a new thread
--  agent -- writes messages to a log file for consumption by
-   rollbar-agent
--  tornado -- uses the Tornado async library to send the payload
--  gae -- uses the Google AppEngineFetch library to send the payload
--  twisted -- uses the Twisted event-driven networking library to send
-   the payload
-
-Default: ``thread``
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
+  Default: ``thread``
 
 locals
+  Configuration for collecting local variables. A dictionary:
 
-.. raw:: html
+  enabled
+    If ``True``, variable values will be collected for stack traces. Default ``True``.
 
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-Configuration for collecting local variables. A dictionary:
-
-.. raw:: html
-
-   <dl>
-
-.. raw:: html
-
-   <dt>
-
-enabled
-
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-If ``True``, variable values will be collected for stack traces. Default
-``True``.
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
-
-safe\_repr
-
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-If ``True``, non-built-in objects will be serialized into just their
-class name. If ``False`` ``repr(obj)`` will be used for serialization.
-Default ``True``.
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
+  safe\_repr
+    If ``True``, non-built-in objects will be serialized into just their class name. If ``False`` ``repr(obj)`` will be used for serialization. Default ``True``.
 
 sizes
+  Dictionary of configuration describing the max size to repr() for each type.
 
-.. raw:: html
+  maxdict
+    Default 10
 
-   </dt>
+  maxarray
+    Default 10
 
-.. raw:: html
+  maxlist
+    Default 10
 
-   <dd>
+  maxtuple
+    Default 10
 
-Dictionary of configuration describing the max size to repr() for each
-type.
+  maxset
+    Default 10
 
-.. raw:: html
+  maxfrozenset
+    Default 10
 
-   <dl>
+  maxdeque
+    Default 10
 
-.. raw:: html
+  maxstring
+    Default 100
 
-   <dt>
+  maxlong
+    Default 40
 
-maxdict
-
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-Default 10
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
-
-maxarray
-
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-Default 10
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
-
-maxlist
-
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-Default 10
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
-
-maxtuple
-
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-Default 10
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
-
-maxset
-
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-Default 10
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
-
-maxfrozenset
-
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-Default 10
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
-
-maxdeque
-
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-Default 10
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
-
-maxstring
-
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-Default 100
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
-
-maxlong
-
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-Default 40
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
-
-maxother
-
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-Default 100
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   </dl>
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
+  maxother
+    Default 100
 
 whitelisted\_types
-
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-A list of ``type`` objects, (e.g. ``type(my_class_instance)`` or
-``MyClass``) that will be serialized using ``repr()``. Default ``[]``
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
+  A list of ``type`` objects, (e.g. ``type(my_class_instance)`` or ``MyClass``) that will be serialized using ``repr()``. Default ``[]``
 
 scrub\_varargs
-
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-If ``True``, variable argument values will be scrubbed. Default
-``True``.
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   </dl>
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
+  If ``True``, variable argument values will be scrubbed. Default ``True``.
 
 root
-
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-Absolute path to the root of your application, not including the final
-``/``.
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
+  Absolute path to the root of your application, not including the final ``/``.
 
 scrub\_fields
+  List of sensitive field names to scrub out of request params and locals. Values will be replaced with asterisks. If overriding, make sure to list all fields you want to scrub, not just fields you want to add to the default. Param names are converted to lowercase before comparing against the scrub list.
 
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-List of sensitive field names to scrub out of request params and locals.
-Values will be replaced with asterisks. If overriding, make sure to list
-all fields you want to scrub, not just fields you want to add to the
-default. Param names are converted to lowercase before comparing against
-the scrub list.
-
-Default:
-``['pw', 'passwd', 'password', 'secret', 'confirm_password', 'confirmPassword', 'password_confirmation', 'passwordConfirmation', 'access_token', 'accessToken', 'auth', 'authentication']``
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
+  Default: ``['pw', 'passwd', 'password', 'secret', 'confirm_password', 'confirmPassword', 'password_confirmation', 'passwordConfirmation', 'access_token', 'accessToken', 'auth', 'authentication']``
 
 timeout
+  Timeout for any HTTP requests made to the Rollbar API (in seconds).
 
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-Timeout for any HTTP requests made to the Rollbar API (in seconds).
-
-Default: ``3``
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
+  Default: ``3``
 
 allow\_logging\_basic\_config
+  When True, ``logging.basicConfig()`` will be called to set up the logging system. Set to False to skip this call. If using Flask, you'll want to set to ``False``. If using Pyramid or Django, ``True`` should be fine.
 
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-When True, ``logging.basicConfig()`` will be called to set up the
-logging system. Set to False to skip this call. If using Flask, you'll
-want to set to ``False``. If using Pyramid or Django, ``True`` should be
-fine.
-
-Default: ``True``
-
-.. raw:: html
-
-   <dt>
+  Default: ``True``
 
 url\_fields
-
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-List of fields treated as URLs and scrubbed. Default
-``['url', 'link', 'href']``
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
+  List of fields treated as URLs and scrubbed. Default ``['url', 'link', 'href']``
 
 verify\_https
-
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-If ``True``, network requests will fail unless encountering a valid
-certificate. Default ``True``.
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
+  If ``True``, network requests will fail unless encountering a valid certificate. Default ``True``.
 
 shortener\_keys
+  A list of key prefixes (as tuple) to apply our shortener transform to.
 
-.. raw:: html
+  Added to built-in list:
 
-   </dt>
+  ::
 
-.. raw:: html
+      [
+          ('body', 'request', 'POST'),
+          ('body', 'request', 'json')
+      ]
 
-   <dd>
+  If ``locals.enabled`` is ``True``, extra keys are also automatically added:
 
-A list of key prefixes (as tuple) to apply our shortener transform to.
-Added to built-in list:
+  ::
 
-::
+      [
+          ('body', 'trace', 'frames', '*', 'code'),
+          ('body', 'trace', 'frames', '*', 'args', '*'),
+          ('body', 'trace', 'frames', '*', 'kwargs', '*'),
+          ('body', 'trace', 'frames', '*', 'locals', '*')
+      ]
 
-    [
-        ('body', 'request', 'POST'),
-        ('body', 'request', 'json')
-    ]
+  Default: ``[]``
 
-If ``locals.enabled`` is ``True``, extra keys are also automatically
-added:
-
-::
-
-    [
-        ('body', 'trace', 'frames', '*', 'code'),
-        ('body', 'trace', 'frames', '*', 'args', '*'),
-        ('body', 'trace', 'frames', '*', 'kwargs', '*'),
-        ('body', 'trace', 'frames', '*', 'locals', '*')
-    ]
-
-Default: ``[]``
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   <dt>
 
 suppress\_reinit\_warning
-
-.. raw:: html
-
-   </dt>
-
-.. raw:: html
-
-   <dd>
-
-If ``True``, suppresses the warning normally shown when
-``rollbar.init()`` is called multiple times. Default ``False``.
-
-.. raw:: html
-
-   </dd>
-
-.. raw:: html
-
-   </dl>
+  If ``True``, suppresses the warning normally shown when ``rollbar.init()`` is called multiple times. Default ``False``.
 
 Help / Support
 --------------
