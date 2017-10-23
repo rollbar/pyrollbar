@@ -626,6 +626,9 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
         data['body'] = {
             'trace_chain': trace_chain
         }
+        if payload_data and payload_data['body'] and payload_data['body']['trace']:
+            payload_data['body']['trace_chain'] = payload_data['body']['trace']
+            del payload_data['body']['trace']
     else:
         data['body'] = {
             'trace': trace_chain[0]
