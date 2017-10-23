@@ -116,7 +116,7 @@ class LogHandlerTest(BaseTest):
         has_only_trace = trace is not None and trace_chain is None
         self.assertTrue(has_only_trace or has_only_trace_chain)
         if trace_chain is not None:
-            self.assertEqual('Bad time', trace_chain['exception']['description'])
+            self.assertEqual('Bad time', payload['data']['custom']['exception']['description'])
         if trace is not None:
             self.assertEqual('Bad time', trace['exception']['description'])
 
@@ -145,6 +145,6 @@ class LogHandlerTest(BaseTest):
         has_only_trace = trace is not None and trace_chain is None
         self.assertTrue(has_only_trace or has_only_trace_chain)
         if trace_chain is not None:
-            self.assertEqual('Bad time', trace_chain['exception']['description'])
+            self.assertEqual('Bad time', payload['data']['custom']['exception']['description'])
         if trace is not None:
             self.assertEqual('Bad time', trace['exception']['description'])
