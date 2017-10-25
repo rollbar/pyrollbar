@@ -173,7 +173,10 @@ def dict_merge(a, b):
         if k in result and isinstance(result[k], dict):
             result[k] = dict_merge(result[k], v)
         else:
-            result[k] = copy.deepcopy(v)
+            try:
+                result[k] = copy.deepcopy(v)
+            except TypeError:
+                result[k] = '<Unpickleable obj:(%s)>' % (v,)
 
     return result
 
