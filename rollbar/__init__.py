@@ -622,10 +622,14 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     # walk the trace chain to collect cause and context exceptions
     trace_chain = _walk_trace_chain(cls, exc, trace)
 
+    extra_trace_data = None
     if len(trace_chain) > 1:
         data['body'] = {
             'trace_chain': trace_chain
         }
+        if payload_data and payload_data['body'] and payload_data['body']['trace']:
+            extra_trace_data = payload_data['body']['trace']
+            del payload_data['body']['trace']
     else:
         data['body'] = {
             'trace': trace_chain[0]
@@ -633,10 +637,13 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
 
     if extra_data:
         extra_data = extra_data
-        if isinstance(extra_data, dict):
-            data['custom'] = extra_data
-        else:
-            data['custom'] = {'value': extra_data}
+        if not isinstance(extra_data, dict):
+            extra_data = {'value': extra_data}
+        if extra_trace_data:
+            extra_data = dict_merge(extra_data, extra_trace_data)
+        data['custom'] = extra_data
+    if extra_trace_data and not extra_data:
+        data['custom'] = extra_trace_data
 
     _add_request_data(data, request)
     _add_person_data(data, request)

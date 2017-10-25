@@ -17,6 +17,9 @@ _test_access_token = 'aaaabbbbccccddddeeeeffff00001111'
 _test_environment = 'test'
 _default_settings = copy.deepcopy(rollbar.SETTINGS)
 
+class CauseException(Exception):
+    pass
+
 
 class LogHandlerTest(BaseTest):
     def setUp(self):
@@ -77,3 +80,71 @@ class LogHandlerTest(BaseTest):
                         logger.exception("Exception message", extra={"request": request})
                         self.assertEqual(report_exc_info.call_args[1]["request"], request)
                         report_message_mock.assert_not_called()
+
+    @mock.patch('rollbar.send_payload')
+    def test_nested_exception_trace_chain(self, send_payload):
+        logger = self._create_logger()
+
+        def _raise_context():
+            bar_local = 'bar'
+            raise CauseException('bar')
+
+        def _raise_ex():
+            try:
+                _raise_context()
+            except CauseException as context:
+                # python2 won't automatically assign this traceback...
+                exc_info = sys.exc_info()
+                setattr(context, '__traceback__', exc_info[2])
+                try:
+                    foo_local = 'foo'
+                    # in python3 __context__ is automatically set when an exception is raised in an except block
+                    e = Exception('foo')
+                    setattr(e, '__context__', context)  # PEP-3134
+                    raise e
+                except:
+                    logger.exception("Bad time")
+
+        _raise_ex()
+
+        self.assertEqual(send_payload.called, True)
+        payload = json.loads(send_payload.call_args[0][0])
+        body = payload['data']['body']
+        trace = body['trace'] if 'trace' in body else None
+        trace_chain = body['trace_chain'] if 'trace_chain' in body else None
+        has_only_trace_chain = trace is None and trace_chain is not None
+        has_only_trace = trace is not None and trace_chain is None
+        self.assertTrue(has_only_trace or has_only_trace_chain)
+        if trace_chain is not None:
+            self.assertEqual('Bad time', payload['data']['custom']['exception']['description'])
+        if trace is not None:
+            self.assertEqual('Bad time', trace['exception']['description'])
+
+    @mock.patch('rollbar.send_payload')
+    def test_not_nested_exception_trace_chain(self, send_payload):
+        logger = self._create_logger()
+
+        def _raise_context():
+            bar_local = 'bar'
+            raise CauseException('bar')
+
+        def _raise_ex():
+            try:
+                _raise_context()
+            except:
+                logger.exception("Bad time")
+
+        _raise_ex()
+
+        self.assertEqual(send_payload.called, True)
+        payload = json.loads(send_payload.call_args[0][0])
+        body = payload['data']['body']
+        trace = body['trace'] if 'trace' in body else None
+        trace_chain = body['trace_chain'] if 'trace_chain' in body else None
+        has_only_trace_chain = trace is None and trace_chain is not None
+        has_only_trace = trace is not None and trace_chain is None
+        self.assertTrue(has_only_trace or has_only_trace_chain)
+        if trace_chain is not None:
+            self.assertEqual('Bad time', payload['data']['custom']['exception']['description'])
+        if trace is not None:
+            self.assertEqual('Bad time', trace['exception']['description'])
