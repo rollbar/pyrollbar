@@ -79,8 +79,6 @@ class RollbarHandler(logging.Handler):
 
         exc_info = record.exc_info
 
-        # use the original message, not the formatted one
-        message = record.msg
         extra_data = {
             'args': record.args,
             'record': {
@@ -117,12 +115,12 @@ class RollbarHandler(logging.Handler):
         try:
             # when not in an exception handler, exc_info == (None, None, None)
             if exc_info and exc_info[0]:
-                if message:
+                if record.msg:
                     message_template = {
                         'body': {
                             'trace': {
                                 'exception': {
-                                    'description': message
+                                    'description': record.getMessage()
                                 }
                             }
                         }
@@ -135,7 +133,7 @@ class RollbarHandler(logging.Handler):
                                                extra_data=extra_data,
                                                payload_data=payload_data)
             else:
-                uuid = rollbar.report_message(message,
+                uuid = rollbar.report_message(record.msg,
                                               level=level,
                                               request=request,
                                               extra_data=extra_data,
