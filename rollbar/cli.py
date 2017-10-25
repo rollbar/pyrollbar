@@ -33,7 +33,8 @@ def main():
                       metavar='ACCESS_TOKEN')
     parser.add_option('-e', '--environment',
                       dest='environment',
-                      help="The environment to report errors and messages to.",
+                      help="The environment to report errors and messages to. \
+                      Can be any string; suggestions: 'production', 'development', 'staging'",
                       metavar='ENVIRONMENT')
     parser.add_option('-u', '--url',
                       dest='endpoint_url',
