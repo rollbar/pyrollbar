@@ -640,7 +640,7 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
         if not isinstance(extra_data, dict):
             extra_data = {'value': extra_data}
         if extra_trace_data:
-            dict_merge(extra_data, extra_trace_data)
+            extra_data = dict_merge(extra_data, extra_trace_data)
         data['custom'] = extra_data
     if extra_trace_data and not extra_data:
         data['custom'] = extra_trace_data
