@@ -290,7 +290,7 @@ def init(access_token, environment='production', **kw):
         # New versions of pyrollbar will support re-initialization
         # via the (not-yet-implemented) configure() method.
         if not SETTINGS.get('suppress_reinit_warning'):
-            log.warn('Rollbar already initialized. Ignoring re-init.')
+            log.warning('Rollbar already initialized. Ignoring re-init.')
         return
 
     SETTINGS['access_token'] = access_token
