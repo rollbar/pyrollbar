@@ -56,4 +56,4 @@ class RollbarLibTest(BaseTest):
         self.assertIn('b', result['a'])
         self.assertEqual(42, result['a']['b'])
         self.assertIn('y', result['a'])
-        self.assertRegex(result['a']['y'], r'Unpickleable obj')
+        self.assertRegex(result['a']['y'], r'Uncopyable obj')

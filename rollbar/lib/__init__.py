@@ -175,8 +175,8 @@ def dict_merge(a, b):
         else:
             try:
                 result[k] = copy.deepcopy(v)
-            except TypeError:
-                result[k] = '<Unpickleable obj:(%s)>' % (v,)
+            except:
+                result[k] = '<Uncopyable obj:(%s)>' % (v,)
 
     return result
 
