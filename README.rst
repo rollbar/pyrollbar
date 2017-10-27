@@ -615,5 +615,5 @@ Contributing
 Tests are in ``rollbar/test``. To run the tests:
 ``python setup.py test``
 
-.. |Build Status| image:: https://api.travis-ci.org/rollbar/pyrollbar.png?branch=v0.13.16
+.. |Build Status| image:: https://api.travis-ci.org/rollbar/pyrollbar.png?branch=v0.13.17
    :target: https://travis-ci.org/rollbar/pyrollbar

@@ -1,5 +1,13 @@
 # Change Log
 
+**0.13.17**
+
+- Fix deprecation warning related to Logging.warn
+- Fix bug where non-copyable objects could cause an exception if they end up trying to get passed to
+  one of the logging methods.
+- Fix bug where both `trace` and `trace_chain` could appear in the final payload, which is not
+  allowed by the API.
+
 **0.13.16**
 
 - Fix PyPI documentation
