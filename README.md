@@ -92,6 +92,10 @@ Then add the handler to the `loggers` key values where you want it to fire off.
             'propagate': True,
         },
 
+#### Celery
+
+To use pyrollbar with Celery in a Django app, please see [this blog post](https://www.mattlayman.com/2017/django-celery-rollbar.html) written by [Matt Layman](https://www.mattlayman.com/) which explains how to configure everything in detail. 
+
 ### Pyramid
 
 In your ``ini`` file (e.g. ``production.ini``), add ``rollbar.contrib.pyramid`` to the end of your ``pyramid.includes``:
