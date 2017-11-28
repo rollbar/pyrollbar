@@ -561,7 +561,7 @@ Default: `3`
 <dd>When True, `logging.basicConfig()` will be called to set up the logging system. Set to False to skip this call. If using Flask, you'll want to set to `False`. If using Pyramid or Django, `True` should be fine.
 
 Default: `True`
-
+</dd>
 <dt>url_fields
 </dt>
 <dd>List of fields treated as URLs and scrubbed. Default `['url', 'link', 'href']`
@@ -599,7 +599,6 @@ Default: `[]`
 </dt>
 <dd>If `True`, suppresses the warning normally shown when `rollbar.init()` is called multiple times. Default `False`.
 </dd>
-</dl>
 
 
 ## Help / Support
