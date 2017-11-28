@@ -599,6 +599,7 @@ Default: `[]`
 </dt>
 <dd>If `True`, suppresses the warning normally shown when `rollbar.init()` is called multiple times. Default `False`.
 </dd>
+</dl>
 
 
 ## Help / Support
