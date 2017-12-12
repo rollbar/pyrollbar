@@ -436,6 +436,24 @@ class RollbarTest(BaseTest):
             rollbar.report_exc_info()
             self.assertEqual(_send_failsafe.call_count, 2)
 
+    @mock.patch('rollbar._send_failsafe')
+    @mock.patch('rollbar.lib.transport.post',
+                side_effect=lambda *args, **kw: MockRawResponse('<html>\r\n' \
+                                                             '<head><title>502 Bad Gateway</title></head>\r\n' \
+                                                             '<body bgcolor="white">\r\n' \
+                                                             '<center><h1>502 Bad Gateway</h1></center>\r\n' \
+                                                             '<hr><center>nginx</center>\r\n' \
+                                                             '</body>\r\n' \
+                                                             '</html>\r\n', 502))
+    def test_502_failsafe(self, post, _send_failsafe):
+        rollbar.report_message('derp')
+        # self.assertEqual(_send_failsafe.call_count, 1)
+
+        try:
+            raise Exception('trigger_failsafe')
+        except:
+            rollbar._post_api('/api/1/item', {'derp'})
+
     @mock.patch('rollbar.send_payload')
     def test_send_failsafe(self, send_payload):
         test_uuid = str(uuid.uuid4())
@@ -1216,6 +1234,19 @@ class MockResponse:
 
     def json(self):
         return self.json_data
+
+
+class MockRawResponse:
+    def __init__(self, data, status_code):
+        self.data = data
+        self.status_code = status_code
+
+    @property
+    def content(self):
+        return self.data
+
+    def json(self):
+        return self.data
 
 class MockLambdaContext(object):
     def __init__(self, x):
