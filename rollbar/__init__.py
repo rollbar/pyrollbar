@@ -1364,6 +1364,9 @@ def _parse_response(path, access_token, params, resp, endpoint=None):
     if resp.status_code == 429:
         log.warning("Rollbar: over rate limit, data was dropped. Payload was: %r", params)
         return
+    elif resp.status_code == 502:
+        log.exception('Rollbar api returned a 502')
+        return
     elif resp.status_code == 413:
         uuid = None
         host = None
