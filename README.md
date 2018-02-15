@@ -68,6 +68,14 @@ ROLLBAR = {
 }
 ```
 
+If you're using Django REST Framework and would like to have parsed POST variables placed in your output for exception handling, then add these configuration variables in ``settings.py``:
+
+```python
+REST_FRAMEWORK = {
+    'EXCEPTION_HANDLER': 'rollbar.contrib.django_rest_framework.post_exception_handler'
+}
+```
+
 <!-- RemoveNextIfProject -->
 Be sure to replace ```POST_SERVER_ITEM_ACCESS_TOKEN``` with your project's ```post_server_item``` access token, which you can find in the Rollbar.com interface.
 
