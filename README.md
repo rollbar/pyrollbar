@@ -233,7 +233,7 @@ otherwise unspecified, therefore you must use wait if you do not set the handler
 `wait` is a function which takes an optional function as an argument. It waits for
 all currently running Rollbar created threads to stop processing, meaning it waits
 for any items to be sent over the network, then it returns the result of calling
-the function passed as an argument or `None` if function was given. Hence, one can
+the function passed as an argument or `None` if no function was given. Hence, one can
 use it via
 
 ```python
