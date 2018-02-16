@@ -9,16 +9,16 @@ _event_handlers = {
 }
 
 
-def _check_type(type):
-    if type not in _event_handlers:
-        raise ValueError('Unknown type: %s. Must be one of %s' % (type, _event_handlers.keys()))
+def _check_type(typ):
+    if typ not in _event_handlers:
+        raise ValueError('Unknown type: %s. Must be one of %s' % (typ, _event_handlers.keys()))
 
 
-def _add_handler(type, handler_fn, pos):
-    _check_type(type)
+def _add_handler(typ, handler_fn, pos):
+    _check_type(typ)
 
     pos = pos if pos is not None else -1
-    handlers = _event_handlers[type]
+    handlers = _event_handlers[typ]
 
     try:
         handlers.index(handler_fn)
@@ -26,10 +26,10 @@ def _add_handler(type, handler_fn, pos):
         handlers.insert(pos, handler_fn)
 
 
-def _remove_handler(type, handler_fn):
-    _check_type(type)
+def _remove_handler(typ, handler_fn):
+    _check_type(typ)
 
-    handlers = _event_handlers[type]
+    handlers = _event_handlers[typ]
 
     try:
         index = handlers.index(handler_fn)
@@ -38,11 +38,11 @@ def _remove_handler(type, handler_fn):
         pass
 
 
-def _on_event(type, target, **kw):
-    _check_type(type)
+def _on_event(typ, target, **kw):
+    _check_type(typ)
 
     ref = target
-    for handler in _event_handlers[type]:
+    for handler in _event_handlers[typ]:
         result = handler(ref, **kw)
         if result is False:
             return False

@@ -1,5 +1,5 @@
 def filter_rollbar_ignored_exceptions(exc_info, **kw):
-    cls, exc, trace = exc_info
+    _, exc, _ = exc_info
     if getattr(exc, '_rollbar_ignore', False):
         return False
 
