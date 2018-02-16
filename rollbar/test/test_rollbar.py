@@ -262,7 +262,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertEqual(payload['access_token'], _test_access_token)
         self.assertIn('body', payload['data'])
@@ -307,7 +307,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertEqual(payload['access_token'], _test_access_token)
         self.assertIn('body', payload['data'])
@@ -420,7 +420,7 @@ class RollbarTest(BaseTest):
         rollbar.report_exc_info(exc_info=(None, None, None))
 
         self.assertEqual(send_payload.called, True)
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
         self.assertEqual(payload['data']['level'], 'error')
 
     @mock.patch('rollbar._send_failsafe')
@@ -464,7 +464,7 @@ class RollbarTest(BaseTest):
 
         rollbar._send_failsafe('test message', test_uuid, test_host)
         self.assertEqual(send_payload.call_count, 1)
-        self.assertEqual(json.loads(send_payload.call_args[0][0]), test_data)
+        self.assertEqual(send_payload.call_args[0][0], test_data)
 
     @mock.patch('rollbar.log.exception')
     @mock.patch('rollbar.send_payload', side_effect=Exception('Monkey Business!'))
@@ -795,7 +795,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertNotIn('argspec', payload['data']['body']['trace']['frames'][-1])
         self.assertIn('varargspec', payload['data']['body']['trace']['frames'][-1])
@@ -821,7 +821,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertNotIn('argspec', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('varargspec', payload['data']['body']['trace']['frames'][-1])
@@ -1140,7 +1140,7 @@ class RollbarTest(BaseTest):
         self.assertIn('bug bug', payload_data)
 
         try:
-            json.loads(post.call_args[1]['data'])
+            post.call_args[1]['data']
         except:
             self.assertTrue(False)
 

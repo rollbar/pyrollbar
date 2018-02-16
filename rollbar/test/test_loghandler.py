@@ -108,7 +108,7 @@ class LogHandlerTest(BaseTest):
         _raise_ex()
 
         self.assertEqual(send_payload.called, True)
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
         body = payload['data']['body']
         trace = body['trace'] if 'trace' in body else None
         trace_chain = body['trace_chain'] if 'trace_chain' in body else None
@@ -137,7 +137,7 @@ class LogHandlerTest(BaseTest):
         _raise_ex()
 
         self.assertEqual(send_payload.called, True)
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
         body = payload['data']['body']
         trace = body['trace'] if 'trace' in body else None
         trace_chain = body['trace_chain'] if 'trace_chain' in body else None
