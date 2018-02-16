@@ -82,7 +82,7 @@ if ALLOWED_PYTHON_VERSION and FLASK_INSTALLED:
             self.assertEqual(resp.status_code, 500)
 
             self.assertEqual(send_payload.called, True)
-            payload = json.loads(send_payload.call_args[0][0])
+            payload = send_payload.call_args[0][0]
             data = payload['data']
 
             self.assertIn('body', data)
@@ -110,7 +110,7 @@ if ALLOWED_PYTHON_VERSION and FLASK_INSTALLED:
             self.assertEqual(resp.status_code, 500)
 
             self.assertEqual(send_payload.called, True)
-            payload = json.loads(send_payload.call_args[0][0])
+            payload = send_payload.call_args[0][0]
             data = payload['data']
 
             self.assertIn('body', data)

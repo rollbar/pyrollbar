@@ -60,7 +60,7 @@ if ALLOWED_PYTHON_VERSION and TWISTED_INSTALLED:
             self.assertEqual(len(errors), 1)
 
             self.assertEqual(send_payload.called, True)
-            payload = json.loads(send_payload.call_args[0][0])
+            payload = send_payload.call_args[0][0]
             data = payload['data']
 
             self.assertIn('body', data)
@@ -78,7 +78,7 @@ if ALLOWED_PYTHON_VERSION and TWISTED_INSTALLED:
         #     self.assertEqual(len(errors), 1)
         #
         #     self.assertEqual(send_payload.called, True)
-        #     payload = json.loads(send_payload.call_args[0][0])
+        #     payload = send_payload.call_args[0][0]
         #     data = payload['data']
         #
         #     self.assertIn('body', data)
