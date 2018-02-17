@@ -1,5 +1,9 @@
 # Change Log
 
+**0.13.18**
+
+- See Release Notes
+
 **0.13.17**
 
 - Fix deprecation warning related to Logging.warn
