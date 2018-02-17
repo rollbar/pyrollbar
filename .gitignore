@@ -7,3 +7,5 @@ rollbar.egg-info/
 .eggs/
 .idea/
 *~
+Pipfile
+Pipfile.lock
