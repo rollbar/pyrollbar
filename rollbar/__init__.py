@@ -81,6 +81,11 @@ except ImportError:
     BottleRequest = None
 
 try:
+    from sanic.request import Request as SanicRequest
+except ImportError:
+    SanicRequest = None
+
+try:
     from google.appengine.api.urlfetch import fetch as AppEngineFetch
 except ImportError:
     AppEngineFetch = None
@@ -373,7 +378,7 @@ def report_exc_info(exc_info=None, request=None, extra_data=None, payload_data=N
     Reports an exception to Rollbar, using exc_info (from calling sys.exc_info())
 
     exc_info: optional, should be the result of calling sys.exc_info(). If omitted, sys.exc_info() will be called here.
-    request: optional, a WebOb or Werkzeug-based request object.
+    request: optional, a WebOb, Werkzeug-based or Sanic request object.
     extra_data: optional, will be included in the 'custom' section of the payload
     payload_data: optional, dict that will override values in the final payload
                   (e.g. 'level' or 'fingerprint')
@@ -1040,6 +1045,10 @@ def _build_request_data(request):
     if BottleRequest and isinstance(request, BottleRequest):
         return _build_bottle_request_data(request)
 
+    # Sanic
+    if SanicRequest and isinstance(request, SanicRequest):
+        return _build_sanic_request_data(request)
+
     # Plain wsgi (should be last)
     if isinstance(request, dict) and 'wsgi.version' in request:
         return _build_wsgi_request_data(request)
@@ -1149,6 +1158,26 @@ def _build_bottle_request_data(request):
             pass
     else:
         request_data['POST'] = dict(request.forms)
+
+    return request_data
+
+
+def _build_sanic_request_data(request):
+    request_data = {
+        'url': request.url,
+        'user_ip': request.remote_addr,
+        'headers': request.headers,
+        'method': request.method,
+        'GET': dict(request.args)
+    }
+
+    if request.json:
+        try:
+            request_data['body'] = request.json
+        except:
+            pass
+    else:
+        request_data['POST'] = request.form
 
     return request_data
 
