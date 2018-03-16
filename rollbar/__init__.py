@@ -261,9 +261,6 @@ _serialize_transform = None
 
 _initialized = False
 
-# Do not call repr() on these types while gathering local variables
-blacklisted_local_types = []
-
 from rollbar.lib.transforms.scrub_redact import REDACT_REF
 
 from rollbar.lib import transforms
