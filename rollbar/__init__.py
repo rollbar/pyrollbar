@@ -253,6 +253,7 @@ SETTINGS = {
 _CURRENT_LAMBDA_CONTEXT = None
 
 # Set in init()
+_threads = None
 _transforms = []
 _serialize_transform = None
 
