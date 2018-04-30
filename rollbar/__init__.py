@@ -107,8 +107,6 @@ except ImportError:
 try:
     import treq
     from twisted.internet.defer import inlineCallbacks
-    # from twisted.internet.task import TaskStopped
-    # from twisted.web._newclient import _WrapperException
     from twisted.python import log as twisted_log
 
     def twisted_log_observer(event):
@@ -123,9 +121,6 @@ try:
             # Don't report Rollbar internal errors to ourselves
             if issubclass(err.type, ApiException):
                 log.error('Rollbar internal error: %s', err.value)
-            # XXX(ezarowny): could we possibly know it's a Twisted internal error here?
-            # elif issubclass(err.type, _WrapperException):
-            #     log.error('Rollbar internal error: %s', err.value)
             else:
                 report_exc_info((err.type, err.value, err.getTracebackObject()))
         except:
@@ -1362,26 +1357,12 @@ def _send_payload_twisted(payload_str, access_token):
 @inlineCallbacks
 def _post_api_twisted(path, payload_str, access_token=None):
     import datetime
-    # def handle_twisted_error(failure):
-    #     print 'failure: {}'.format(failure)
-    #     return False
 
     headers = {'Content-Type': ['application/json']}
     if access_token is not None:
         headers['X-Rollbar-Access-Token'] = [access_token]
 
     url = urljoin(SETTINGS['endpoint'], path)
-
-    # resp = yield treq.post(url, payload, headers=headers,
-    #                        timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT))
-    # text = yield treq.content(resp)
-    #
-    # r = requests.Response()
-    # r._content = text
-    # r.status_code = resp.code
-    # r.headers.update(resp.headers.getAllRawHeaders())
-    #
-    # _parse_response(path, SETTINGS['access_token'], payload, r)
 
     try:
         resp = yield treq.post(url, payload_str, headers=headers,
@@ -1391,7 +1372,7 @@ def _post_api_twisted(path, payload_str, access_token=None):
         # An exception that escapes here will be caught by Deferred
         # and sent into Twisted's logging system.  This will again
         # invoke the observer that called this function, starting an
-        # infinite recursion.  Catch all exceptions to prevent this,
+        # infinite recursion. Catch all exceptions to prevent this,
         # including exceptions in the logging system itself.
 
         # XXX(ezarowny): the removal and addition of the log observer here isn't
@@ -1400,10 +1381,9 @@ def _post_api_twisted(path, payload_str, access_token=None):
 
         try:
             now = datetime.datetime.utcnow().isoformat()
-            # log.exception('{} Failed to post to rollbar'.format(now))
             twisted_log.err(e, '{} - Failed to post to rollbar'.format(now))
         except:
-            print '>>>>>>> heyo'
+            pass
 
         twisted_log.addObserver(twisted_log_observer)
     else:

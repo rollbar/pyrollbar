@@ -41,7 +41,7 @@ if ALLOWED_PYTHON_VERSION and TWISTED_INSTALLED:
 
     class TwistedTest(unittest.TestCase):
         def setUp(self):
-            rollbar.init(TOKEN, 'twisted-test')
+            rollbar.init(TOKEN, 'twisted-test', handler='twisted')
             factory = SquareFactory()
             self.proto = factory.buildProtocol(('127.0.0.1', 0))
             self.tr = proto_helpers.StringTransport()
@@ -75,7 +75,7 @@ if ALLOWED_PYTHON_VERSION and TWISTED_INSTALLED:
         # @mock.patch('rollbar.send_payload')
         # def test_uncaught_exception(self, send_payload):
         #     self.proto.dataReceived([8, 9])
-        #     self.assertEqual(self.tr.value(), "error")
+        #     self.assertEqual(self.tr.value(), 'error')
         #     errors = self.flushLoggedErrors(TypeError)
         #     self.assertEqual(len(errors), 1)
         #
