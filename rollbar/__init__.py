@@ -288,6 +288,8 @@ def init(access_token, environment='production', **kw):
             _threads, _agent_log_installed, _twisted_log_installed
 
     handler = SETTINGS.get('handler')
+    if 'handler' in kw:
+        handler = kw.get('handler')
     if handler == 'agent' and not _agent_log_installed:
         agent_log = _create_agent_log()
         _agent_log_installed = True
