@@ -257,6 +257,8 @@ _transforms = []
 _serialize_transform = None
 
 _initialized = False
+_agent_log_installed = False
+_twisted_log_installed = False
 
 from rollbar.lib.transforms.scrub_redact import REDACT_REF
 
@@ -282,7 +284,16 @@ def init(access_token, environment='production', **kw):
                  'staging', 'yourname'
     **kw: provided keyword arguments will override keys in SETTINGS.
     """
-    global SETTINGS, agent_log, _initialized, _transforms, _serialize_transform, _threads
+    global SETTINGS, agent_log, _initialized, _transforms, _serialize_transform,\
+            _threads, _agent_log_installed, _twisted_log_installed
+
+    handler = SETTINGS.get('handler')
+    if handler == 'agent' and not _agent_log_installed:
+        agent_log = _create_agent_log()
+        _agent_log_installed = True
+    elif handler == 'twisted' and treq and not _twisted_log_installed:
+        twisted_log.addObserver(twisted_log_observer)
+        _twisted_log_installed = True
 
     if _initialized:
         # NOTE: Temp solution to not being able to re-init.
@@ -301,12 +312,6 @@ def init(access_token, environment='production', **kw):
     if SETTINGS.get('allow_logging_basic_config'):
         logging.basicConfig()
 
-    handler = SETTINGS.get('handler')
-    if handler == 'agent':
-        agent_log = _create_agent_log()
-    elif handler == 'twisted' and treq:
-        # Add Rollbar as a Twisted log handler which will report uncaught errors
-        twisted_log.addObserver(twisted_log_observer)
 
     # We will perform these transforms in order:
     # 1. Serialize the payload to be all python built-in objects
