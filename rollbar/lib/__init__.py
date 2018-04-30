@@ -3,6 +3,7 @@ import collections
 import copy
 import os
 import sys
+from array import array
 
 import six
 from six.moves import urllib
@@ -14,7 +15,7 @@ binary_type = six.binary_type
 integer_types = six.integer_types
 number_types = integer_types + (float, )
 string_types = six.string_types
-sequence_types = (collections.Mapping, list, tuple, set, collections.deque)
+sequence_types = (collections.Mapping, list, tuple, set, frozenset, array, collections.deque)
 
 urlparse = urllib.parse.urlparse
 urlsplit = urllib.parse.urlsplit
@@ -172,7 +173,10 @@ def dict_merge(a, b):
         if k in result and isinstance(result[k], dict):
             result[k] = dict_merge(result[k], v)
         else:
-            result[k] = copy.deepcopy(v)
+            try:
+                result[k] = copy.deepcopy(v)
+            except:
+                result[k] = '<Uncopyable obj:(%s)>' % (v,)
 
     return result
 

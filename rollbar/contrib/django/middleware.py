@@ -10,6 +10,27 @@ ROLLBAR = {
     'access_token': 'tokengoeshere',
 }
 
+To get more control of middleware and enrich it with custom data:
+1. create a 'middleware.py' file on your project (name is up to you)
+2. import the rollbar default middleware: 'from rollbar.contrib.django.middleware import RollbarNotifierMiddleware'
+3. create your own middleware like this:
+class CustomRollbarNotifierMiddleware(RollbarNotifierMiddleware):
+    def get_extra_data(self, request, exc):
+        ''' May be defined.  Must return a dict or None. Use it to put some custom extra data on rollbar event. '''
+        return
+
+    def get_payload_data(self, request, exc):
+        ''' May be defined.  Must return a dict or None. Use it to put some custom payload data on rollbar event. '''
+        return
+
+4. add 'path.to.your.CustomRollbarNotifierMiddleware' in your settings.py to
+    a. MIDDLEWARE_CLASSES in Django 1.9 and earlier
+    b. MIDDLEWARE in Django 1.10 and up
+5. add a section like this in your settings.py:
+ROLLBAR = {
+    'access_token': 'tokengoeshere',
+}
+
 See README.rst for full installation and configuration instructions.
 """
 
@@ -66,11 +87,11 @@ def _patch_debugview(rollbar_web_base):
 
     insert_before = '<table class="meta">'
     replacement = new_data + insert_before
-    debug.TECHNICAL_500_TEMPLATE = debug.TECHNICAL_500_TEMPLATE.replace(insert_before,
-        replacement, 1)
+    debug.TECHNICAL_500_TEMPLATE = debug.TECHNICAL_500_TEMPLATE.replace(insert_before, replacement, 1)
 
     # patch ExceptionReporter.get_traceback_data
     old_get_traceback_data = debug.ExceptionReporter.get_traceback_data
+
     def new_get_traceback_data(exception_reporter):
         data = old_get_traceback_data(exception_reporter)
         try:
@@ -130,9 +151,11 @@ class RollbarNotifierMiddleware(MiddlewareMixin):
             try:
                 _patch_debugview(self._get_setting('web_base'))
             except Exception as e:
-                log.error("Rollbar - unable to monkeypatch debugview to add 'View in Rollbar' link."
+                log.error(
+                    "Rollbar - unable to monkeypatch debugview to add 'View in Rollbar' link."
                     " To disable, set `ROLLBAR['patch_debugview'] = False` in settings.py."
-                    " Exception was: %r", e)
+                    " Exception was: %r", e
+                )
 
     def _ensure_log_handler(self):
         """
@@ -157,8 +180,19 @@ class RollbarNotifierMiddleware(MiddlewareMixin):
                 return default_val
             return default
 
+    def get_extra_data(self, request, exc):
+        return
+
+    def get_payload_data(self, request, exc):
+        return
+
     def process_response(self, request, response):
         return response
 
     def process_exception(self, request, exc):
-        rollbar.report_exc_info(sys.exc_info(), request)
+        rollbar.report_exc_info(
+            sys.exc_info(),
+            request,
+            extra_data=self.get_extra_data(request, exc),
+            payload_data=self.get_payload_data(request, exc),
+        )

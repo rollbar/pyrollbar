@@ -1,5 +1,43 @@
 # Change Log
 
+**0.13.18**
+
+- See Release Notes
+
+**0.13.17**
+
+- Fix deprecation warning related to Logging.warn
+- Fix bug where non-copyable objects could cause an exception if they end up trying to get passed to
+  one of the logging methods.
+- Fix bug where both `trace` and `trace_chain` could appear in the final payload, which is not
+  allowed by the API.
+
+**0.13.16**
+
+- Fix PyPI documentation
+
+**0.13.15**
+
+- Fix shortener issue for Python 3
+
+**0.13.14**
+
+- Fix bug that caused some payload objects to be turned into the wrong type when
+shortening is applied. This would lead to API rejections. See [#200](https://github.com/rollbar/pyrollbar/pull/200)
+- Add `suppress_reinit_warning` option if you want to allow calling init twice. See [#198](https://github.com/rollbar/pyrollbar/pull/198)
+- Pass through keyword arguments from the logging handler to the underling Rollbar init call. See
+  [#203](https://github.com/rollbar/pyrollbar/pull/203)
+
+**0.13.13**
+
+- Add support for AWS Lambda. See [#191](https://github.com/rollbar/pyrollbar/pull/191)
+
+**0.13.12**
+
+- Remove the Django request body from the payload as it can contain sensitive data. See [#174](https://github.com/rollbar/pyrollbar/pull/174)
+- Allow users to shorten arbitrary parts of the payload. See [#173](https://github.com/rollbar/pyrollbar/pull/173)
+- Fix a Django deprecation warning. See [#165](https://github.com/rollbar/pyrollbar/pull/165)
+
 **0.13.11**
 
 - Handle environments where `sys.argv` does not exist. See [#131](https://github.com/rollbar/pyrollbar/pull/131)

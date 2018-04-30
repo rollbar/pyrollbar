@@ -1,4 +1,4 @@
-# Rollbar notifier for Python [![Build Status](https://api.travis-ci.org/rollbar/pyrollbar.png?branch=v0.13.11)](https://travis-ci.org/rollbar/pyrollbar)
+# Rollbar notifier for Python [![Build Status](https://api.travis-ci.org/rollbar/pyrollbar.png?branch=v0.13.18)](https://travis-ci.org/rollbar/pyrollbar)
 
 <!-- RemoveNext -->
 Python notifier for reporting exceptions, errors, and log messages to [Rollbar](https://rollbar.com).
@@ -29,7 +29,7 @@ except:
 
 ## Requirements
 
-- Python 2.7, 3.3, 3.4, or 3.5
+- Python 2.7, 3.3, 3.4, 3.5, or 3.6
 - requests 0.12+
 - A Rollbar account
 
@@ -68,10 +68,41 @@ ROLLBAR = {
 }
 ```
 
+If you're using Django REST Framework and would like to have parsed POST variables placed in your output for exception handling, then add these configuration variables in ``settings.py``:
+
+```python
+REST_FRAMEWORK = {
+    'EXCEPTION_HANDLER': 'rollbar.contrib.django_rest_framework.post_exception_handler'
+}
+```
+
 <!-- RemoveNextIfProject -->
 Be sure to replace ```POST_SERVER_ITEM_ACCESS_TOKEN``` with your project's ```post_server_item``` access token, which you can find in the Rollbar.com interface.
 
 Check out the [Django example](https://github.com/rollbar/pyrollbar/tree/master/rollbar/examples/django).
+
+If you'd like to be able to use a Django `LOGGING` handler that could catch errors that happen outside of the middleware and ship them to Rollbar, such as in celery job queue tasks that run in the background separate from web requests, do the following:
+
+Add this to the `handlers` key:
+
+        'rollbar': {
+            'filters': ['require_debug_false'],
+            'access_token': 'POST_SERVER_ITEM_ACCESS_TOKEN',
+            'environment': 'production',
+            'class': 'rollbar.logger.RollbarHandler'
+        },
+
+Then add the handler to the `loggers` key values where you want it to fire off.
+
+        'myappwithtasks': {
+            'handlers': ['console', 'logfile', 'rollbar'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+
+#### Celery
+
+To use pyrollbar with Celery in a Django app, please see [this blog post](https://www.mattlayman.com/2017/django-celery-rollbar.html) written by [Matt Layman](https://www.mattlayman.com/) which explains how to configure everything in detail. 
 
 ### Pyramid
 
@@ -175,6 +206,62 @@ Be sure to replace ```POST_SERVER_ITEM_ACCESS_TOKEN``` with your project's ```po
 
 Check out the [Twisted example](https://github.com/rollbar/pyrollbar/tree/master/rollbar/examples/twisted).
 
+### AWS Lambda
+
+The biggest issue with the Lambda execution environment is that as soon as you
+return from your handler function, any work executing in other threads will
+stop executing as the process is frozen. This is true also of any child
+processes that one may spawn. Furthermore, the Lambda environment implements
+multithreading via a hypervisor on a single CPU core. Therefore, using
+separate threads to do additional work will not necessarily lead to better
+performance.
+
+In order to ensure that the Rollbar library works correctly, meaning that items
+are transmitted to the Rollbar API, one must not return from the main handler
+function before all of this work completes. In order to ensure this, one can
+either use the `blocking` handler by specifying this value in the configuration,
+
+
+```python
+rollbar.init(token, environment='production', handler='blocking')
+```
+
+or use the Rollbar function wait to delay the return from your function until
+all Rollbar threads have finished. Note that we use threads for the handler if
+otherwise unspecified, therefore you must use wait if you do not set the handler.
+
+`wait` is a function which takes an optional function as an argument. It waits for
+all currently running Rollbar created threads to stop processing, meaning it waits
+for any items to be sent over the network, then it returns the result of calling
+the function passed as an argument or `None` if no function was given. Hence, one can
+use it via
+
+```python
+def lambda_handler(event, context):
+    try:
+        result = ...
+        return rollbar.wait(lambda: result)
+    except:
+        rollbar.report_exc_info()
+        rollbar.wait()
+        raise
+```
+
+We provide a decorator for your handler functions which takes care of calling
+wait properly as well as catching any exceptions, namely
+`rollbar.lambda_function`:
+
+```python
+import os
+import rollbar
+
+token = os.getenv('ROLLBAR_KEY', 'missing_api_key')
+rollbar.init(token, 'production')
+
+@rollbar.lambda_function
+def lambda_handler(event, context):
+    return some_other_function('Hello from Lambda')
+```
 
 ### Other
 
@@ -482,7 +569,7 @@ Default: `3`
 <dd>When True, `logging.basicConfig()` will be called to set up the logging system. Set to False to skip this call. If using Flask, you'll want to set to `False`. If using Pyramid or Django, `True` should be fine.
 
 Default: `True`
-
+</dd>
 <dt>url_fields
 </dt>
 <dd>List of fields treated as URLs and scrubbed. Default `['url', 'link', 'href']`
@@ -491,6 +578,34 @@ Default: `True`
 </dt>
 <dd>If `True`, network requests will fail unless encountering a valid certificate. Default `True`.
 </dd>
+<dt>shortener_keys
+</dt>
+<dd>A list of key prefixes (as tuple) to apply our shortener transform to. Added to built-in list:
+
+```
+[
+    ('body', 'request', 'POST'),
+    ('body', 'request', 'json')
+]
+```
+
+If `locals.enabled` is `True`, extra keys are also automatically added:
+
+```
+[
+    ('body', 'trace', 'frames', '*', 'code'),
+    ('body', 'trace', 'frames', '*', 'args', '*'),
+    ('body', 'trace', 'frames', '*', 'kwargs', '*'),
+    ('body', 'trace', 'frames', '*', 'locals', '*')
+]
+```
+
+Default: `[]`
+
+</dd>
+<dt>suppress_reinit_warning
+</dt>
+<dd>If `True`, suppresses the warning normally shown when `rollbar.init()` is called multiple times. Default `False`.
 </dd>
 </dl>
 

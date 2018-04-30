@@ -5,6 +5,8 @@ import mock
 import socket
 import uuid
 
+import sys
+
 try:
     from StringIO import StringIO
 except ImportError:
@@ -123,11 +125,12 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertEqual(payload['access_token'], _test_access_token)
         self.assertIn('body', payload['data'])
         self.assertIn('trace', payload['data']['body'])
+        self.assertNotIn('trace_chain', payload['data']['body'])
         self.assertIn('exception', payload['data']['body']['trace'])
         self.assertEqual(payload['data']['body']['trace']['exception']['message'], 'foo')
         self.assertEqual(payload['data']['body']['trace']['exception']['class'], 'Exception')
@@ -136,6 +139,191 @@ class RollbarTest(BaseTest):
         self.assertNotIn('varargspec', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('keywordspec', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('locals', payload['data']['body']['trace']['frames'][-1])
+
+    @mock.patch('rollbar._post_api')
+    def test_lambda_function_good(self, _post_api):
+        rollbar.SETTINGS['handler'] = 'thread'
+        fake_event = {'a': 42}
+        fake_context = MockLambdaContext(99)
+        @rollbar.lambda_function
+        def my_lambda_func(event, context):
+            return [event['a'], context.x]
+
+        result = my_lambda_func(fake_event, fake_context)
+
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0], 42)
+        self.assertEqual(result[1], 99)
+        self.assertEqual(_post_api.called, False)
+
+        rollbar._CURRENT_LAMBDA_CONTEXT = None
+        rollbar.SETTINGS['handler'] = 'blocking'
+
+    @mock.patch('rollbar._post_api')
+    def test_lambda_function_bad(self, _post_api):
+        rollbar.SETTINGS['handler'] = 'thread'
+        fake_event = {'a': 42}
+        fake_context = MockLambdaContext(99)
+        @rollbar.lambda_function
+        def my_lambda_func(event, context):
+            raise event['a']
+
+        result = None
+        try:
+            result = my_lambda_func(fake_event, fake_context)
+        except:
+            pass
+
+        self.assertEqual(result, None)
+        self.assertEqual(_post_api.called, True)
+
+        rollbar._CURRENT_LAMBDA_CONTEXT = None
+        rollbar.SETTINGS['handler'] = 'blocking'
+
+    @mock.patch('rollbar._post_api')
+    def test_lambda_function_method_good(self, _post_api):
+        rollbar.SETTINGS['handler'] = 'thread'
+        fake_event = {'a': 42}
+        fake_context = MockLambdaContext(99)
+
+        class LambdaClass(object):
+            def __init__(self):
+                self.a = 13
+
+            def my_lambda_func(self, event, context):
+                return [event['a'], context.x, self.a]
+
+        app = LambdaClass()
+        app.my_lambda_func = rollbar.lambda_function(app.my_lambda_func)
+        result = app.my_lambda_func(fake_event, fake_context)
+
+        self.assertEqual(len(result), 3)
+        self.assertEqual(result[0], 42)
+        self.assertEqual(result[1], 99)
+        self.assertEqual(result[2], 13)
+        self.assertEqual(_post_api.called, False)
+
+        rollbar._CURRENT_LAMBDA_CONTEXT = None
+        rollbar.SETTINGS['handler'] = 'blocking'
+
+    @mock.patch('rollbar._post_api')
+    def test_lambda_function_method_bad(self, _post_api):
+        rollbar.SETTINGS['handler'] = 'thread'
+        fake_event = {'a': 42}
+        fake_context = MockLambdaContext(99)
+
+        class LambdaClass(object):
+            def __init__(self):
+                self.a = 13
+
+            def my_lambda_func(self, event, context):
+                raise self.a
+
+        app = LambdaClass()
+        app.my_lambda_func = rollbar.lambda_function(app.my_lambda_func)
+
+        result = None
+        try:
+            result = app.my_lambda_func(fake_event, fake_context)
+        except:
+            pass
+
+        self.assertEqual(result, None)
+        self.assertEqual(_post_api.called, True)
+
+        rollbar._CURRENT_LAMBDA_CONTEXT = None
+        rollbar.SETTINGS['handler'] = 'blocking'
+
+    @mock.patch('rollbar.send_payload')
+    def test_report_exception_with_cause(self, send_payload):
+        def _raise_cause():
+            bar_local = 'bar'
+            raise CauseException('bar')
+
+        def _raise_ex():
+            try:
+                _raise_cause()
+            except CauseException as cause:
+                # python2 won't automatically assign this traceback...
+                exc_info = sys.exc_info()
+                setattr(cause, '__traceback__', exc_info[2])
+
+                try:
+                    foo_local = 'foo'
+                    # in python3 this would normally be expressed as
+                    # raise Exception('foo') from cause
+                    e = Exception('foo')
+                    setattr(e, '__cause__', cause)  # PEP-3134
+                    raise e
+                except:
+                    rollbar.report_exc_info()
+
+        _raise_ex()
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = send_payload.call_args[0][0]
+
+        self.assertEqual(payload['access_token'], _test_access_token)
+        self.assertIn('body', payload['data'])
+        self.assertNotIn('trace', payload['data']['body'])
+        self.assertIn('trace_chain', payload['data']['body'])
+        self.assertEqual(2, len(payload['data']['body']['trace_chain']))
+
+        self.assertIn('exception', payload['data']['body']['trace_chain'][0])
+        self.assertEqual(payload['data']['body']['trace_chain'][0]['exception']['message'], 'foo')
+        self.assertEqual(payload['data']['body']['trace_chain'][0]['exception']['class'], 'Exception')
+        self.assertEqual(payload['data']['body']['trace_chain'][0]['frames'][-1]['locals']['foo_local'], 'foo')
+
+        self.assertIn('exception', payload['data']['body']['trace_chain'][1])
+        self.assertEqual(payload['data']['body']['trace_chain'][1]['exception']['message'], 'bar')
+        self.assertEqual(payload['data']['body']['trace_chain'][1]['exception']['class'], 'CauseException')
+        self.assertEqual(payload['data']['body']['trace_chain'][1]['frames'][-1]['locals']['bar_local'], 'bar')
+
+    @mock.patch('rollbar.send_payload')
+    def test_report_exception_with_context(self, send_payload):
+        def _raise_context():
+            bar_local = 'bar'
+            raise CauseException('bar')
+
+        def _raise_ex():
+            try:
+                _raise_context()
+            except CauseException as context:
+                # python2 won't automatically assign this traceback...
+                exc_info = sys.exc_info()
+                setattr(context, '__traceback__', exc_info[2])
+
+                try:
+                    foo_local = 'foo'
+                    # in python3 __context__ is automatically set when an exception is raised in an except block
+                    e = Exception('foo')
+                    setattr(e, '__context__', context)  # PEP-3134
+                    raise e
+                except:
+                    rollbar.report_exc_info()
+
+        _raise_ex()
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = send_payload.call_args[0][0]
+
+        self.assertEqual(payload['access_token'], _test_access_token)
+        self.assertIn('body', payload['data'])
+        self.assertNotIn('trace', payload['data']['body'])
+        self.assertIn('trace_chain', payload['data']['body'])
+        self.assertEqual(2, len(payload['data']['body']['trace_chain']))
+
+        self.assertIn('exception', payload['data']['body']['trace_chain'][0])
+        self.assertEqual(payload['data']['body']['trace_chain'][0]['exception']['message'], 'foo')
+        self.assertEqual(payload['data']['body']['trace_chain'][0]['exception']['class'], 'Exception')
+        self.assertEqual(payload['data']['body']['trace_chain'][0]['frames'][-1]['locals']['foo_local'], 'foo')
+
+        self.assertIn('exception', payload['data']['body']['trace_chain'][1])
+        self.assertEqual(payload['data']['body']['trace_chain'][1]['exception']['message'], 'bar')
+        self.assertEqual(payload['data']['body']['trace_chain'][1]['exception']['class'], 'CauseException')
+        self.assertEqual(payload['data']['body']['trace_chain'][1]['frames'][-1]['locals']['bar_local'], 'bar')
 
     @mock.patch('rollbar.send_payload')
     def test_exception_filters(self, send_payload):
@@ -179,7 +367,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertEqual(payload['access_token'], _test_access_token)
         self.assertIn('body', payload['data'])
@@ -191,7 +379,7 @@ class RollbarTest(BaseTest):
     def test_uuid(self, send_payload):
         uuid = rollbar.report_message('foo')
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertEqual(payload['data']['uuid'], uuid)
 
@@ -204,7 +392,7 @@ class RollbarTest(BaseTest):
             rollbar.report_exc_info()
 
         self.assertEqual(send_payload.called, True)
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
         self.assertEqual(payload['data']['level'], 'error')
 
         try:
@@ -213,7 +401,7 @@ class RollbarTest(BaseTest):
             rollbar.report_exc_info(level='info')
 
         self.assertEqual(send_payload.called, True)
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
         self.assertEqual(payload['data']['level'], 'info')
 
         # payload takes precendence over 'level'
@@ -223,8 +411,17 @@ class RollbarTest(BaseTest):
             rollbar.report_exc_info(level='info', payload_data={'level': 'warn'})
 
         self.assertEqual(send_payload.called, True)
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
         self.assertEqual(payload['data']['level'], 'warn')
+
+    @mock.patch('rollbar.send_payload')
+    def test_report_exc_info_nones(self, send_payload):
+
+        rollbar.report_exc_info(exc_info=(None, None, None))
+
+        self.assertEqual(send_payload.called, True)
+        payload = send_payload.call_args[0][0]
+        self.assertEqual(payload['data']['level'], 'error')
 
     @mock.patch('rollbar._send_failsafe')
     @mock.patch('rollbar.lib.transport.post',
@@ -238,6 +435,24 @@ class RollbarTest(BaseTest):
         except:
             rollbar.report_exc_info()
             self.assertEqual(_send_failsafe.call_count, 2)
+
+    @mock.patch('rollbar._send_failsafe')
+    @mock.patch('rollbar.lib.transport.post',
+                side_effect=lambda *args, **kw: MockRawResponse('<html>\r\n' \
+                                                             '<head><title>502 Bad Gateway</title></head>\r\n' \
+                                                             '<body bgcolor="white">\r\n' \
+                                                             '<center><h1>502 Bad Gateway</h1></center>\r\n' \
+                                                             '<hr><center>nginx</center>\r\n' \
+                                                             '</body>\r\n' \
+                                                             '</html>\r\n', 502))
+    def test_502_failsafe(self, post, _send_failsafe):
+        rollbar.report_message('derp')
+        # self.assertEqual(_send_failsafe.call_count, 1)
+
+        try:
+            raise Exception('trigger_failsafe')
+        except:
+            rollbar._post_api('/api/1/item', {'derp'})
 
     @mock.patch('rollbar.send_payload')
     def test_send_failsafe(self, send_payload):
@@ -267,7 +482,7 @@ class RollbarTest(BaseTest):
 
         rollbar._send_failsafe('test message', test_uuid, test_host)
         self.assertEqual(send_payload.call_count, 1)
-        self.assertEqual(json.loads(send_payload.call_args[0][0]), test_data)
+        self.assertEqual(send_payload.call_args[0][0], test_data)
 
     @mock.patch('rollbar.log.exception')
     @mock.patch('rollbar.send_payload', side_effect=Exception('Monkey Business!'))
@@ -292,7 +507,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertIn('argspec', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('varargspec', payload['data']['body']['trace']['frames'][-1])
@@ -313,7 +528,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertNotIn('argspec', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('varargspec', payload['data']['body']['trace']['frames'][-1])
@@ -332,7 +547,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertIn('argspec', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('varargspec', payload['data']['body']['trace']['frames'][-1])
@@ -356,7 +571,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertIn('argspec', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('varargspec', payload['data']['body']['trace']['frames'][-1])
@@ -380,7 +595,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertNotIn('argspec', payload['data']['body']['trace']['frames'][-1])
         self.assertIn('varargspec', payload['data']['body']['trace']['frames'][-1])
@@ -403,7 +618,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertIn('argspec', payload['data']['body']['trace']['frames'][-1])
         self.assertIn('varargspec', payload['data']['body']['trace']['frames'][-1])
@@ -431,7 +646,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertNotIn('argspec', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('varargspec', payload['data']['body']['trace']['frames'][-1])
@@ -455,7 +670,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertIn('argspec', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('varargspec', payload['data']['body']['trace']['frames'][-1])
@@ -485,7 +700,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertIn('argspec', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('varargspec', payload['data']['body']['trace']['frames'][-1])
@@ -523,7 +738,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertIn('argspec', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('varargspec', payload['data']['body']['trace']['frames'][-1])
@@ -547,7 +762,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertIn('argspec', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('varargspec', payload['data']['body']['trace']['frames'][-1])
@@ -573,7 +788,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertIn('argspec', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('kwargs', payload['data']['body']['trace']['frames'][-1]['locals'])
@@ -598,7 +813,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertNotIn('argspec', payload['data']['body']['trace']['frames'][-1])
         self.assertIn('varargspec', payload['data']['body']['trace']['frames'][-1])
@@ -624,7 +839,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertNotIn('argspec', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('varargspec', payload['data']['body']['trace']['frames'][-1])
@@ -663,7 +878,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['password'], '\*+')
         self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['Password'], '\*+')
@@ -688,7 +903,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertEqual('<Infinity>', payload['data']['body']['trace']['frames'][-1]['locals']['infinity'])
         self.assertEqual('<NegativeInfinity>', payload['data']['body']['trace']['frames'][-1]['locals']['negative_infinity'])
@@ -713,7 +928,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertTrue(
             (isinstance(payload['data']['body']['trace']['frames'][-1]['locals']['obj'], dict) and
@@ -744,7 +959,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertEqual('sensitive', payload['data']['body']['trace']['frames'][-1]['locals']['copy'])
 
@@ -762,7 +977,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertIn('argspec', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('varargspec', payload['data']['body']['trace']['frames'][-1])
@@ -791,7 +1006,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertIn('argspec', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('varargspec', payload['data']['body']['trace']['frames'][-1])
@@ -824,7 +1039,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         self.assertNotIn('argspec', payload['data']['body']['trace']['frames'][-1])
         self.assertNotIn('varargspec', payload['data']['body']['trace']['frames'][-1])
@@ -850,7 +1065,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
         for frame in payload['data']['body']['trace']['frames']:
             self.assertIn('locals', frame)
 
@@ -869,7 +1084,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         num_frames = len(payload['data']['body']['trace']['frames'])
         for i, frame in enumerate(payload['data']['body']['trace']['frames']):
@@ -893,7 +1108,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
 
         frames = payload['data']['body']['trace']['frames']
         called_with_frame = frames[1]
@@ -911,7 +1126,7 @@ class RollbarTest(BaseTest):
             rollbar.report_exc_info()
 
         self.assertEqual(send_payload.called, True)
-        payload = json.loads(send_payload.call_args[0][0])
+        payload = send_payload.call_args[0][0]
         self.assertEqual(payload['data']['body']['trace']['exception']['message'], message)
 
     @mock.patch('rollbar.lib.transport.post', side_effect=lambda *args, **kw: MockResponse({'status': 'OK'}, 200))
@@ -943,7 +1158,7 @@ class RollbarTest(BaseTest):
         self.assertIn('bug bug', payload_data)
 
         try:
-            json.loads(post.call_args[1]['data'])
+            post.call_args[1]['data']
         except:
             self.assertTrue(False)
 
@@ -1004,6 +1219,10 @@ def called_with(arg1):
     step1()
 
 
+class CauseException(Exception):
+    pass
+
+
 class MockResponse:
     def __init__(self, json_data, status_code):
         self.json_data = json_data
@@ -1016,6 +1235,29 @@ class MockResponse:
     def json(self):
         return self.json_data
 
+
+class MockRawResponse:
+    def __init__(self, data, status_code):
+        self.data = data
+        self.status_code = status_code
+
+    @property
+    def content(self):
+        return self.data
+
+    def json(self):
+        return self.data
+
+class MockLambdaContext(object):
+    def __init__(self, x):
+        self.function_name = 1
+        self.function_version = 2
+        self.invoked_function_arn = 3
+        self.aws_request_id = 4
+        self.x = x
+
+    def get_remaining_time_in_millis(self):
+        42
 
 if __name__ == '__main__':
     unittest.main()

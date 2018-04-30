@@ -5,6 +5,7 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import copy
+import functools
 import inspect
 import json
 import logging
@@ -21,12 +22,18 @@ import wsgiref.util
 import requests
 import six
 
-from rollbar.lib import dict_merge, parse_qs, text, transport, urljoin, iteritems
+from rollbar.lib import events, filters, dict_merge, parse_qs, text, transport, urljoin, iteritems
 
-__version__ = '0.13.11'
+__version__ = '0.13.18'
 __log_name__ = 'rollbar'
 log = logging.getLogger(__log_name__)
 
+try:
+    # 2.x
+    import Queue as queue
+except ImportError:
+    # 3.x
+    import queue
 
 # import request objects from various frameworks, if available
 try:
@@ -72,6 +79,11 @@ try:
     from bottle import BaseRequest as BottleRequest
 except ImportError:
     BottleRequest = None
+
+try:
+    from sanic.request import Request as SanicRequest
+except ImportError:
+    SanicRequest = None
 
 try:
     from google.appengine.api.urlfetch import fetch as AppEngineFetch
@@ -238,17 +250,18 @@ SETTINGS = {
         'sizes': DEFAULT_LOCALS_SIZES,
         'whitelisted_types': []
     },
-    'verify_https': True
+    'verify_https': True,
+    'shortener_keys': [],
+    'suppress_reinit_warning': False,
 }
+
+_CURRENT_LAMBDA_CONTEXT = None
 
 # Set in init()
 _transforms = []
 _serialize_transform = None
 
 _initialized = False
-
-# Do not call repr() on these types while gathering local variables
-blacklisted_local_types = []
 
 from rollbar.lib.transforms.scrub_redact import REDACT_REF
 
@@ -274,13 +287,14 @@ def init(access_token, environment='production', **kw):
                  'staging', 'yourname'
     **kw: provided keyword arguments will override keys in SETTINGS.
     """
-    global SETTINGS, agent_log, _initialized, _transforms, _serialize_transform
+    global SETTINGS, agent_log, _initialized, _transforms, _serialize_transform, _threads
 
     if _initialized:
         # NOTE: Temp solution to not being able to re-init.
         # New versions of pyrollbar will support re-initialization
         # via the (not-yet-implemented) configure() method.
-        log.warn('Rollbar already initialized. Ignoring re-init.')
+        if not SETTINGS.get('suppress_reinit_warning'):
+            log.warning('Rollbar already initialized. Ignoring re-init.')
         return
 
     SETTINGS['access_token'] = access_token
@@ -314,8 +328,12 @@ def init(access_token, environment='production', **kw):
         ScrubUrlTransform(suffixes=[(field,) for field in SETTINGS['url_fields']], params_to_scrub=SETTINGS['scrub_fields'])
     ]
 
-    # A list of key prefixes to apply our shortener transform to
+    # A list of key prefixes to apply our shortener transform to. The request
+    # being included in the body key is old behavior and is being retained for
+    # backwards compatibility.
     shortener_keys = [
+        ('request', 'POST'),
+        ('request', 'json'),
         ('body', 'request', 'POST'),
         ('body', 'request', 'json'),
     ]
@@ -326,12 +344,36 @@ def init(access_token, environment='production', **kw):
         shortener_keys.append(('body', 'trace', 'frames', '*', 'kwargs', '*'))
         shortener_keys.append(('body', 'trace', 'frames', '*', 'locals', '*'))
 
+    shortener_keys.extend(SETTINGS['shortener_keys'])
+
     shortener = ShortenerTransform(safe_repr=SETTINGS['locals']['safe_repr'],
                                    keys=shortener_keys,
                                    **SETTINGS['locals']['sizes'])
     _transforms.append(shortener)
+    _threads = queue.Queue()
+    events.reset()
+    filters.add_builtin_filters(SETTINGS)
 
     _initialized = True
+
+
+def lambda_function(f):
+    """
+    Decorator for making error handling on AWS Lambda easier
+    """
+    @functools.wraps(f)
+    def wrapper(event, context):
+        global _CURRENT_LAMBDA_CONTEXT
+        _CURRENT_LAMBDA_CONTEXT = context
+        try:
+            result = f(event, context)
+            return wait(lambda: result)
+        except:
+            cls, exc, trace = sys.exc_info()
+            report_exc_info((cls, exc, trace.tb_next))
+            wait()
+            raise
+    return wrapper
 
 
 def report_exc_info(exc_info=None, request=None, extra_data=None, payload_data=None, level=None, **kw):
@@ -339,7 +381,7 @@ def report_exc_info(exc_info=None, request=None, extra_data=None, payload_data=N
     Reports an exception to Rollbar, using exc_info (from calling sys.exc_info())
 
     exc_info: optional, should be the result of calling sys.exc_info(). If omitted, sys.exc_info() will be called here.
-    request: optional, a WebOb or Werkzeug-based request object.
+    request: optional, a WebOb, Werkzeug-based or Sanic request object.
     extra_data: optional, will be included in the 'custom' section of the payload
     payload_data: optional, dict that will override values in the final payload
                   (e.g. 'level' or 'fingerprint')
@@ -380,7 +422,7 @@ def report_message(message, level='error', request=None, extra_data=None, payloa
 
 def send_payload(payload, access_token):
     """
-    Sends a payload object, (the result of calling _build_payload()).
+    Sends a payload object, (the result of calling _build_payload() + _serialize_payload()).
     Uses the configured handler from SETTINGS['handler']
 
     Available handlers:
@@ -391,29 +433,36 @@ def send_payload(payload, access_token):
     - 'gae': calls _send_payload_appengine() (which makes a blocking call to Google App Engine)
     - 'twisted': calls _send_payload_twisted() (which makes an async HTTP reqeust using Twisted and Treq)
     """
+    payload = events.on_payload(payload)
+    if payload is False:
+        return
+
+    payload_str = _serialize_payload(payload)
+
     handler = SETTINGS.get('handler')
     if handler == 'blocking':
-        _send_payload(payload, access_token)
+        _send_payload(payload_str, access_token)
     elif handler == 'agent':
-        agent_log.error(payload)
+        agent_log.error(payload_str)
     elif handler == 'tornado':
         if TornadoAsyncHTTPClient is None:
             log.error('Unable to find tornado')
             return
-        _send_payload_tornado(payload, access_token)
+        _send_payload_tornado(payload_str, access_token)
     elif handler == 'gae':
         if AppEngineFetch is None:
             log.error('Unable to find AppEngine URLFetch module')
             return
-        _send_payload_appengine(payload, access_token)
+        _send_payload_appengine(payload_str, access_token)
     elif handler == 'twisted':
         if treq is None:
             log.error('treq and twisted are required for the twisted handler')
             return
-        _send_payload_twisted(payload, access_token)
+        _send_payload_twisted(payload_str, access_token)
     else:
         # default to 'thread'
-        thread = threading.Thread(target=_send_payload, args=(payload, access_token))
+        thread = threading.Thread(target=_send_payload, args=(payload_str, access_token))
+        _threads.put(thread)
         thread.start()
 
 
@@ -442,6 +491,12 @@ def search_items(title, return_fields=None, access_token=None, endpoint=None, **
                     access_token=access_token,
                     endpoint=endpoint,
                     **search_fields)
+
+
+def wait(f=None):
+    _threads.join()
+    if f is not None:
+        return f()
 
 
 class ApiException(Exception):
@@ -561,49 +616,58 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     """
     Called by report_exc_info() wrapper
     """
-    # check if exception is marked ignored
-    cls, exc, trace = exc_info
-    if getattr(exc, '_rollbar_ignore', False) or _is_ignored(exc):
-        return
 
     if not _check_config():
         return
 
+    filtered_level = _filtered_level(exc_info[1])
+    if level is None:
+        level = filtered_level
+
+    filtered_exc_info = events.on_exception_info(exc_info,
+                                                 request=request,
+                                                 extra_data=extra_data,
+                                                 payload_data=payload_data,
+                                                 level=level)
+
+    if filtered_exc_info is False:
+        return
+
+    cls, exc, trace = filtered_exc_info
+
     data = _build_base_data(request)
-
-    filtered_level = _filtered_level(exc)
-    if filtered_level:
-        data['level'] = filtered_level
-
-    # explicitly override the level with provided level
-    if level:
+    if level is not None:
         data['level'] = level
 
-    # exception info
-    # most recent call last
-    raw_frames = traceback.extract_tb(trace)
-    frames = [{'filename': f[0], 'lineno': f[1], 'method': f[2], 'code': f[3]} for f in raw_frames]
+    # walk the trace chain to collect cause and context exceptions
+    trace_chain = _walk_trace_chain(cls, exc, trace)
 
-    data['body'] = {
-        'trace': {
-            'frames': frames,
-            'exception': {
-                'class': cls.__name__,
-                'message': text(exc),
-            }
+    extra_trace_data = None
+    if len(trace_chain) > 1:
+        data['body'] = {
+            'trace_chain': trace_chain
         }
-    }
+        if payload_data and ('body' in payload_data) and ('trace' in payload_data['body']):
+            extra_trace_data = payload_data['body']['trace']
+            del payload_data['body']['trace']
+    else:
+        data['body'] = {
+            'trace': trace_chain[0]
+        }
 
     if extra_data:
         extra_data = extra_data
-        if isinstance(extra_data, dict):
-            data['custom'] = extra_data
-        else:
-            data['custom'] = {'value': extra_data}
+        if not isinstance(extra_data, dict):
+            extra_data = {'value': extra_data}
+        if extra_trace_data:
+            extra_data = dict_merge(extra_data, extra_trace_data)
+        data['custom'] = extra_data
+    if extra_trace_data and not extra_data:
+        data['custom'] = extra_trace_data
 
-    _add_locals_data(data, exc_info)
     _add_request_data(data, request)
     _add_person_data(data, request)
+    _add_lambda_context_data(data)
     data['server'] = _build_server_data()
 
     if payload_data:
@@ -615,6 +679,37 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     return data['uuid']
 
 
+def _walk_trace_chain(cls, exc, trace):
+    trace_chain = [_trace_data(cls, exc, trace)]
+
+    while True:
+        exc = getattr(exc, '__cause__', None) or getattr(exc, '__context__', None)
+        if not exc:
+            break
+        trace_chain.append(_trace_data(type(exc), exc, getattr(exc, '__traceback__', None)))
+
+    return trace_chain
+
+
+def _trace_data(cls, exc, trace):
+    # exception info
+    # most recent call last
+    raw_frames = traceback.extract_tb(trace)
+    frames = [{'filename': f[0], 'lineno': f[1], 'method': f[2], 'code': f[3]} for f in raw_frames]
+
+    trace_data = {
+        'frames': frames,
+        'exception': {
+            'class': getattr(cls, '__name__', cls.__class__.__name__),
+            'message': text(exc),
+        }
+    }
+
+    _add_locals_data(trace_data, (cls, exc, trace))
+
+    return trace_data
+
+
 def _report_message(message, level, request, extra_data, payload_data):
     """
     Called by report_message() wrapper
@@ -622,12 +717,21 @@ def _report_message(message, level, request, extra_data, payload_data):
     if not _check_config():
         return
 
+    filtered_message = events.on_message(message,
+                                         request=request,
+                                         extra_data=extra_data,
+                                         payload_data=payload_data,
+                                         level=level)
+
+    if filtered_message is False:
+        return
+
     data = _build_base_data(request, level=level)
 
     # message
     data['body'] = {
         'message': {
-            'body': message
+            'body': filtered_message
         }
     }
 
@@ -637,6 +741,7 @@ def _report_message(message, level, request, extra_data, payload_data):
 
     _add_request_data(data, request)
     _add_person_data(data, request)
+    _add_lambda_context_data(data)
     data['server'] = _build_server_data()
 
     if payload_data:
@@ -772,11 +877,11 @@ def _flatten_nested_lists(l):
     return ret
 
 
-def _add_locals_data(data, exc_info):
+def _add_locals_data(trace_data, exc_info):
     if not SETTINGS['locals']['enabled']:
         return
 
-    frames = data['body']['trace']['frames']
+    frames = trace_data['frames']
 
     cur_tb = exc_info[2]
     frame_num = 0
@@ -855,6 +960,34 @@ def _serialize_frame_data(data):
     return data
 
 
+def _add_lambda_context_data(data):
+    """
+    Attempts to add information from the lambda context if it exists
+    """
+    global _CURRENT_LAMBDA_CONTEXT
+    context = _CURRENT_LAMBDA_CONTEXT
+    if context is None:
+        return
+    try:
+        lambda_data = {
+            'lambda': {
+                'remaining_time_in_millis': context.get_remaining_time_in_millis(),
+                'function_name': context.function_name,
+                'function_version': context.function_version,
+                'arn': context.invoked_function_arn,
+                'request_id': context.aws_request_id,
+            }
+        }
+        if 'custom' in data:
+            data['custom'] = dict_merge(data['custom'], lambda_data)
+        else:
+            data['custom'] = lambda_data
+    except Exception as e:
+        log.exception("Exception while adding lambda context data: %r", e)
+    finally:
+        _CURRENT_LAMBDA_CONTEXT = None
+
+
 def _add_request_data(data, request):
     """
     Attempts to build request data; if successful, sets the 'request' key on `data`.
@@ -915,6 +1048,10 @@ def _build_request_data(request):
     if BottleRequest and isinstance(request, BottleRequest):
         return _build_bottle_request_data(request)
 
+    # Sanic
+    if SanicRequest and isinstance(request, SanicRequest):
+        return _build_sanic_request_data(request)
+
     # Plain wsgi (should be last)
     if isinstance(request, dict) and 'wsgi.version' in request:
         return _build_wsgi_request_data(request)
@@ -968,11 +1105,6 @@ def _build_django_request_data(request):
         'POST': dict(request.POST),
         'user_ip': _wsgi_extract_user_ip(request.environ),
     }
-
-    try:
-        request_data['body'] = request.body
-    except:
-        pass
 
     request_data['headers'] = _extract_wsgi_headers(request.environ.items())
 
@@ -1029,6 +1161,26 @@ def _build_bottle_request_data(request):
             pass
     else:
         request_data['POST'] = dict(request.forms)
+
+    return request_data
+
+
+def _build_sanic_request_data(request):
+    request_data = {
+        'url': request.url,
+        'user_ip': request.remote_addr,
+        'headers': request.headers,
+        'method': request.method,
+        'GET': dict(request.args)
+    }
+
+    if request.json:
+        try:
+            request_data['body'] = request.json
+        except:
+            pass
+    else:
+        request_data['POST'] = request.form
 
     return request_data
 
@@ -1102,24 +1254,33 @@ def _build_payload(data):
         'data': data
     }
 
+    return payload
+
+
+def _serialize_payload(payload):
     return json.dumps(payload)
 
 
-def _send_payload(payload, access_token):
+def _send_payload(payload_str, access_token):
     try:
-        _post_api('item/', payload, access_token=access_token)
+        _post_api('item/', payload_str, access_token=access_token)
+    except Exception as e:
+        log.exception('Exception while posting item %r', e)
+    try:
+        _threads.get_nowait()
+        _threads.task_done()
+    except queue.Empty:
+        pass
+
+
+def _send_payload_appengine(payload_str, access_token):
+    try:
+        _post_api_appengine('item/', payload_str, access_token=access_token)
     except Exception as e:
         log.exception('Exception while posting item %r', e)
 
 
-def _send_payload_appengine(payload, access_token):
-    try:
-        _post_api_appengine('item/', payload, access_token=access_token)
-    except Exception as e:
-        log.exception('Exception while posting item %r', e)
-
-
-def _post_api_appengine(path, payload, access_token=None):
+def _post_api_appengine(path, payload_str, access_token=None):
     headers = {'Content-Type': 'application/json'}
 
     if access_token is not None:
@@ -1128,16 +1289,16 @@ def _post_api_appengine(path, payload, access_token=None):
     url = urljoin(SETTINGS['endpoint'], path)
     resp = AppEngineFetch(url,
                           method="POST",
-                          payload=payload,
+                          payload=payload_str,
                           headers=headers,
                           allow_truncated=False,
                           deadline=SETTINGS.get('timeout', DEFAULT_TIMEOUT),
                           validate_certificate=SETTINGS.get('verify_https', True))
 
-    return _parse_response(path, SETTINGS['access_token'], payload, resp)
+    return _parse_response(path, SETTINGS['access_token'], payload_str, resp)
 
 
-def _post_api(path, payload, access_token=None):
+def _post_api(path, payload_str, access_token=None):
     headers = {'Content-Type': 'application/json'}
 
     if access_token is not None:
@@ -1145,12 +1306,12 @@ def _post_api(path, payload, access_token=None):
 
     url = urljoin(SETTINGS['endpoint'], path)
     resp = transport.post(url,
-                          data=payload,
-                          headers=headers,
-                          timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT),
-                          verify=SETTINGS.get('verify_https', True))
+                         data=payload_str,
+                         headers=headers,
+                         timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT),
+                         verify=SETTINGS.get('verify_https', True))
 
-    return _parse_response(path, SETTINGS['access_token'], payload, resp)
+    return _parse_response(path, SETTINGS['access_token'], payload_str, resp)
 
 
 def _get_api(path, access_token=None, endpoint=None, **params):
@@ -1161,15 +1322,15 @@ def _get_api(path, access_token=None, endpoint=None, **params):
     return _parse_response(path, access_token, params, resp, endpoint=endpoint)
 
 
-def _send_payload_tornado(payload, access_token):
+def _send_payload_tornado(payload_str, access_token):
     try:
-        _post_api_tornado('item/', payload, access_token=access_token)
+        _post_api_tornado('item/', payload_str, access_token=access_token)
     except Exception as e:
         log.exception('Exception while posting item %r', e)
 
 
 @tornado_coroutine
-def _post_api_tornado(path, payload, access_token=None):
+def _post_api_tornado(path, payload_str, access_token=None):
     headers = {'Content-Type': 'application/json'}
 
     if access_token is not None:
@@ -1177,28 +1338,29 @@ def _post_api_tornado(path, payload, access_token=None):
 
     url = urljoin(SETTINGS['endpoint'], path)
 
-    resp = yield TornadoAsyncHTTPClient().fetch(
-        url, body=payload, method='POST', connect_timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT),
-        request_timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT)
-    )
+    resp = yield TornadoAsyncHTTPClient().fetch(url,
+                                                body=payload_str,
+                                                method='POST',
+                                                connect_timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT),
+                                                request_timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT))
 
     r = requests.Response()
     r._content = resp.body
     r.status_code = resp.code
     r.headers.update(resp.headers)
 
-    _parse_response(path, SETTINGS['access_token'], payload, r)
+    _parse_response(path, SETTINGS['access_token'], payload_str, r)
 
 
-def _send_payload_twisted(payload, access_token):
+def _send_payload_twisted(payload_str, access_token):
     try:
-        _post_api_twisted('item/', payload, access_token=access_token)
+        _post_api_twisted('item/', payload_str, access_token=access_token)
     except Exception as e:
         log.exception('Exception while posting item %r', e)
 
 
 @inlineCallbacks
-def _post_api_twisted(path, payload, access_token=None):
+def _post_api_twisted(path, payload_str, access_token=None):
     import datetime
     # def handle_twisted_error(failure):
     #     print 'failure: {}'.format(failure)
@@ -1222,7 +1384,7 @@ def _post_api_twisted(path, payload, access_token=None):
     # _parse_response(path, SETTINGS['access_token'], payload, r)
 
     try:
-        resp = yield treq.post(url, payload, headers=headers,
+        resp = yield treq.post(url, payload_str, headers=headers,
                                timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT))
         text = yield treq.content(resp)
     except Exception as e:
@@ -1250,7 +1412,7 @@ def _post_api_twisted(path, payload, access_token=None):
         r.status_code = resp.code
         r.headers.update(resp.headers.getAllRawHeaders())
 
-        _parse_response(path, SETTINGS['access_token'], payload, r)
+        _parse_response(path, SETTINGS['access_token'], payload_str, r)
 
 
 def _send_failsafe(message, uuid, host):
@@ -1294,6 +1456,9 @@ def _parse_response(path, access_token, params, resp, endpoint=None):
 
     if resp.status_code == 429:
         log.warning("Rollbar: over rate limit, data was dropped. Payload was: %r", params)
+        return
+    elif resp.status_code == 502:
+        log.exception('Rollbar api returned a 502')
         return
     elif resp.status_code == 413:
         uuid = None
