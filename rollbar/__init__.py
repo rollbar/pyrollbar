@@ -1383,8 +1383,6 @@ def _post_api_twisted(path, payload_str, access_token=None):
         # infinite recursion. Catch all exceptions to prevent this,
         # including exceptions in the logging system itself.
 
-        # XXX(ezarowny): the removal and addition of the log observer here isn't
-        # having the effect of stopping the loop as I expected
         twisted_log.removeObserver(twisted_log_observer)
 
         try:
