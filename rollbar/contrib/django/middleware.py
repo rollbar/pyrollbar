@@ -82,16 +82,37 @@ def _patch_debugview(rollbar_web_base):
 {% endif %}
     """
 
-    if new_data in debug.TECHNICAL_500_TEMPLATE:
-        return
-
     insert_before = '<table class="meta">'
     replacement = new_data + insert_before
-    debug.TECHNICAL_500_TEMPLATE = debug.TECHNICAL_500_TEMPLATE.replace(insert_before, replacement, 1)
+
+    if hasattr(debug, 'TECHNICAL_500_TEMPLATE'):
+        if new_data in debug.TECHNICAL_500_TEMPLATE:
+            return
+        debug.TECHNICAL_500_TEMPLATE = debug.TECHNICAL_500_TEMPLATE.replace(insert_before, replacement, 1)
+    else:
+        # patch ExceptionReporter.get_traceback_html if this version of Django is using
+        # the file system templates rather than the ones in code
+        # This code comes from:
+        # https://github.com/django/django/blob/d79cf1e9e2887aa12567c8f27e384195253cb847/django/views/debug.py#L329,L334
+        # There are theoretical issues with the code below, for example t.render could throw because
+        # t might be None, but this is the code from Django
+        from pathlib import Path
+        from django.template import Context
+        def new_get_traceback_html(exception_reporter):
+            """Return HTML version of debug 500 HTTP error page."""
+            with Path(debug.CURRENT_DIR, 'templates', 'technical_500.html').open() as fh:
+                template_string = fh.read()
+                template_string = template_string.replace(insert_before, replacement, 1)
+                t = debug.DEBUG_ENGINE.from_string(template_string)
+            c = Context(exception_reporter.get_traceback_data(), use_l10n=False)
+            return t.render(c)
+        debug.ExceptionReporter.get_traceback_html = new_get_traceback_html
+
+    if hasattr(debug.ExceptionReporter, '__rollbar__patched'):
+        return
 
     # patch ExceptionReporter.get_traceback_data
     old_get_traceback_data = debug.ExceptionReporter.get_traceback_data
-
     def new_get_traceback_data(exception_reporter):
         data = old_get_traceback_data(exception_reporter)
         try:
@@ -103,6 +124,8 @@ def _patch_debugview(rollbar_web_base):
             log.exception("Exception while adding view-in-rollbar link to technical_500_template.")
         return data
     debug.ExceptionReporter.get_traceback_data = new_get_traceback_data
+    debug.ExceptionReporter.__rollbar__patched = True
+
 
 
 class RollbarNotifierMiddleware(MiddlewareMixin):
