@@ -97,10 +97,8 @@ def passthrough_decorator(func):
     return wrap
 
 try:
-    from tornado.gen import coroutine as tornado_coroutine
     from tornado.httpclient import AsyncHTTPClient as TornadoAsyncHTTPClient
 except ImportError:
-    tornado_coroutine = passthrough_decorator
     TornadoAsyncHTTPClient = None
 
 try:
@@ -1323,27 +1321,33 @@ def _send_payload_tornado(payload_str, access_token):
         log.exception('Exception while posting item %r', e)
 
 
-@tornado_coroutine
 def _post_api_tornado(path, payload_str, access_token=None):
     headers = {'Content-Type': 'application/json'}
 
     if access_token is not None:
         headers['X-Rollbar-Access-Token'] = access_token
+    else:
+        access_token = SETTINGS['access_token']
 
     url = urljoin(SETTINGS['endpoint'], path)
 
-    resp = yield TornadoAsyncHTTPClient().fetch(url,
-                                                body=payload_str,
-                                                method='POST',
-                                                connect_timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT),
-                                                request_timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT))
+    def post_tornado_cb(resp):
+        r = requests.Response()
+        r._content = resp.body
+        r.status_code = resp.code
+        r.headers.update(resp.headers)
+        try:
+            _parse_response(path, access_token, payload_str, r)
+        except Exception as e:
+            log.exception('Exception while posting item %r', e)
 
-    r = requests.Response()
-    r._content = resp.body
-    r.status_code = resp.code
-    r.headers.update(resp.headers)
-
-    _parse_response(path, SETTINGS['access_token'], payload_str, r)
+    TornadoAsyncHTTPClient().fetch(url,
+                                   callback=post_tornado_cb,
+                                   raise_error=False,
+                                   body=payload_str,
+                                   method='POST',
+                                   connect_timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT),
+                                   request_timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT))
 
 
 def _send_payload_twisted(payload_str, access_token):
