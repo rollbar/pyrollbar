@@ -287,6 +287,9 @@ def init(access_token, environment='production', **kw):
     """
     global SETTINGS, agent_log, _initialized, _transforms, _serialize_transform, _threads
 
+    # Merge the extra config settings into SETTINGS
+    SETTINGS = dict_merge(SETTINGS, kw)
+    
     if _initialized:
         # NOTE: Temp solution to not being able to re-init.
         # New versions of pyrollbar will support re-initialization
@@ -297,9 +300,6 @@ def init(access_token, environment='production', **kw):
 
     SETTINGS['access_token'] = access_token
     SETTINGS['environment'] = environment
-
-    # Merge the extra config settings into SETTINGS
-    SETTINGS = dict_merge(SETTINGS, kw)
 
     if SETTINGS.get('allow_logging_basic_config'):
         logging.basicConfig()
