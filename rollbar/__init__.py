@@ -289,7 +289,6 @@ def init(access_token, environment='production', **kw):
 
     # Merge the extra config settings into SETTINGS
     SETTINGS = dict_merge(SETTINGS, kw)
-    
     if _initialized:
         # NOTE: Temp solution to not being able to re-init.
         # New versions of pyrollbar will support re-initialization
