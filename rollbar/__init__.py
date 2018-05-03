@@ -251,6 +251,8 @@ SETTINGS = {
     'verify_https': True,
     'shortener_keys': [],
     'suppress_reinit_warning': False,
+    'capture_email': False,
+    'capture_username': False,
 }
 
 _CURRENT_LAMBDA_CONTEXT = None
@@ -790,6 +792,10 @@ def _add_person_data(data, request):
         log.exception("Exception while building person data for Rollbar payload: %r", e)
     else:
         if person_data:
+            if not SETTINGS['capture_username'] and 'username' in person_data:
+                person_data['username'] = None
+            if not SETTINGS['capture_email'] and 'email' in person_data:
+                person_data['email'] = None
             data['person'] = person_data
 
 
@@ -831,9 +837,11 @@ def _build_person_data(request):
 
             # id is required, so only include username/email if we have an id
             if retval.get('id'):
+                username = getattr(user, 'username', None)
+                email = getattr(user, 'email', None)
                 retval.update({
-                    'username': getattr(user, 'username', None),
-                    'email': getattr(user, 'email', None)
+                    'username': username,
+                    'email': email
                 })
             return retval
 
