@@ -1201,6 +1201,50 @@ class RollbarTest(BaseTest):
         self.assertRegex(scrubbed['headers']['Cookies'], r'\*+')
         self.assertRegex(scrubbed['headers']['Authorization'], r'\*+')
 
+    def test_filter_ip_no_user_ip(self):
+        request_data = {'something': 'but no ip'}
+        rollbar._filter_ip(request_data, False)
+        self.assertNotIn('user_ip', request_data)
+
+    def test_filter_ip_capture_true(self):
+        ip = '123.32.394.99'
+        request_data = {'user_ip': ip}
+        rollbar._filter_ip(request_data, True)
+        self.assertEqual(ip, request_data['user_ip'])
+
+    def test_filter_ip_anonymize(self):
+        ip = '123.32.394.99'
+        request_data = {'user_ip': ip}
+        rollbar._filter_ip(request_data, rollbar.ANONYMIZE)
+        self.assertNotEqual(ip, request_data['user_ip'])
+        self.assertNotEqual(None, request_data['user_ip'])
+
+    def test_filter_ip_capture_false(self):
+        ip = '123.32.394.99'
+        request_data = {'user_ip': ip}
+        rollbar._filter_ip(request_data, False)
+        self.assertNotEqual(ip, request_data['user_ip'])
+        self.assertEqual(None, request_data['user_ip'])
+
+    def test_filter_ip_ipv6_capture_false(self):
+        ip = '2607:f0d0:1002:51::4'
+        request_data = {'user_ip': ip}
+        rollbar._filter_ip(request_data, False)
+        self.assertNotEqual(ip, request_data['user_ip'])
+        self.assertEqual(None, request_data['user_ip'])
+
+    def test_filter_ip_anonymize_ipv6(self):
+        ips = [
+            'FE80:0000:0000:0000:0202:B3FF:FE1E:8329',
+            'FE80::0202:B3FF:FE1E:8329',
+            '2607:f0d0:1002:51::4',
+        ]
+        for ip in ips:
+            request_data = {'user_ip': ip}
+            rollbar._filter_ip(request_data, rollbar.ANONYMIZE)
+            self.assertNotEqual(ip, request_data['user_ip'])
+            self.assertNotEqual(None, request_data['user_ip'])
+
 
 ### Helpers
 
