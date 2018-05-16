@@ -607,6 +607,21 @@ Default: `[]`
 </dt>
 <dd>If `True`, suppresses the warning normally shown when `rollbar.init()` is called multiple times. Default `False`.
 </dd>
+<dt>capture_ip</dt>
+<dd>If equal to `True`, we will attempt to capture the full client IP address from a request.
+
+If equal to the string `anonymize`, we will capture the client IP address, but then semi-anonymize it by masking out the least significant bits.
+
+If equal to `False`, we will not capture the client IP address from a request.
+</dd>
+<dt>capture_email</dt>
+<dd>If set to `True`, we will attempt to enrich person data with an email address if available.
+By default this is set to `False`, which implies we will not include an email address with person data.
+</dd>
+<dt>capture_username</dt>
+<dd>If set to `True`, we will attempt to enrich person data with a username if available.
+By default this is set to `False`, which implies we will not include a username with person data.
+</dd>
 </dl>
 
 

@@ -1231,13 +1231,12 @@ def _filter_ip(request_data, capture_ip):
     elif capture_ip == ANONYMIZE:
         try:
             if '.' in current_ip:
-                new_ip = '.'.join(current_ip.split('.')[0:3]) + '.0/24'
+                new_ip = '.'.join(current_ip.split('.')[0:3]) + '.0'
             elif ':' in current_ip:
-                # TODO: Handle IPv6 better
-                if len(current_ip) > 12:
-                    new_ip = current_ip[0:12] + '...'
-                else:
-                    new_ip = current_ip
+                parts = current_ip.split(':')
+                if len(parts) > 2:
+                    terminal = '0000:0000:0000:0000:0000'
+                    new_ip = ':'.join(parts[0:3] + [terminal])
             else:
                 new_ip = None
         except:
