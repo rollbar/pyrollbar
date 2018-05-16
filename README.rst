@@ -592,6 +592,28 @@ shortener\_keys
 suppress\_reinit\_warning
   If ``True``, suppresses the warning normally shown when ``rollbar.init()`` is called multiple times. Default ``False``.
 
+
+capture\_ip
+  If equal to `True`, we will attempt to capture the full client IP address from a request.
+
+  If equal to the string `anonymize`, we will capture the client IP address, but then semi-anonymize it by masking out the least significant bits.
+
+  If equal to `False`, we will not capture the client IP address from a request.
+
+
+capture\_email
+  If set to `True`, we will attempt to enrich person data with an email address if available.
+
+  By default this is set to `False`, which implies we will not include an email address with person data.
+
+
+capture\_username
+  If set to `True`, we will attempt to enrich person data with a username if available.
+
+  By default this is set to `False`, which implies we will not include a username with person data.
+
+
+
 Help / Support
 --------------
 
@@ -615,5 +637,5 @@ Contributing
 Tests are in ``rollbar/test``. To run the tests:
 ``python setup.py test``
 
-.. |Build Status| image:: https://api.travis-ci.org/rollbar/pyrollbar.png?branch=v0.13.18
+.. |Build Status| image:: https://api.travis-ci.org/rollbar/pyrollbar.png?branch=v0.14.0
    :target: https://travis-ci.org/rollbar/pyrollbar

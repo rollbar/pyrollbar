@@ -1,5 +1,23 @@
 # Change Log
 
+**0.14.0**
+
+- Create the configuration options, `capture_username` and `capture_email`. Prior to this release,
+  if we gather person data automatically, we would try to capture the id, email, and username.
+  Starting with this release by default we will only capture the id. If you set `capture_username`
+  to `True` then we will also attempt to capture the username. Similarly for `capture_email` with
+  the email. (See [#262](https://github.com/rollbar/pyrollbar/pull/262))
+- Create the configuration option `capture_ip`. This can take one of three values: `True`,
+  `'anonymize'`, or `False`. This controls how we handle IP addresses that are captured from
+  requests. If `True`, then we will send the full IP address. This is the current behaviour and the
+  default. If set to the string `'anonymize'` which is also available as the constant `ANONYMIZE` on
+  the `rollbar` module, we will mask out the least significant bits of the IP address. If set to
+  `False`, then we will not capture the IP address. (See [#262](https://github.com/rollbar/pyrollbar/pull/262))
+- Fix `request.files_keys` for Flask [#263](https://github.com/rollbar/pyrollbar/pull/263)
+- If you call `init` multiple times we will update the settings at each call. Prior to
+  this release we emitted a warning and did not update settings. [#259](https://github.com/rollbar/pyrollbar/pull/259)
+- Better Tornado support [#256](https://github.com/rollbar/pyrollbar/pull/256)
+
 **0.13.18**
 
 - See Release Notes
