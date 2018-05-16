@@ -1124,7 +1124,7 @@ def _build_werkzeug_request_data(request):
         'user_ip': _extract_user_ip(request),
         'headers': dict(request.headers),
         'method': request.method,
-        'files_keys': request.files.keys(),
+        'files_keys': list(request.files.keys()),
     }
 
     try:
