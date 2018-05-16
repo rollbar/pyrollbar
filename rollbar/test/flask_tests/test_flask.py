@@ -37,15 +37,6 @@ def create_app():
     def cause_error():
         raise Exception("Uh oh")
 
-    @app.before_first_request
-    def init_rollbar():
-        rollbar.init(TOKEN, 'flasktest',
-                     root=os.path.dirname(os.path.realpath(__file__)),
-                     allow_logging_basic_config=True,
-                     capture_email=True,
-                     capture_username=True)
-        got_request_exception.connect(rollbar.contrib.flask.report_exception, app)
-
     class CustomRequest(Request):
         @property
         def rollbar_person(self):
@@ -55,14 +46,21 @@ def create_app():
 
     return app
 
+def init_rollbar(app):
+    from flask import got_request_exception
+    rollbar.init(TOKEN, 'flasktest',
+                 root=os.path.dirname(os.path.realpath(__file__)),
+                 allow_logging_basic_config=True,
+                 capture_email=True,
+                 capture_username=True)
+    got_request_exception.connect(rollbar.contrib.flask.report_exception, app)
+
 if ALLOWED_PYTHON_VERSION and FLASK_INSTALLED:
     class FlaskTest(BaseTest):
         def setUp(self):
             super(FlaskTest, self).setUp()
             self.app = create_app()
-            # Deal with potential test ordering reinit issue
-            rollbar.SETTINGS['capture_email'] = True
-            rollbar.SETTINGS['capture_username'] = True
+            init_rollbar(self.app)
             self.client = self.app.test_client()
 
         def test_index(self):
