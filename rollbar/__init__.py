@@ -192,6 +192,7 @@ agent_log = None
 VERSION = __version__
 DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/'
 DEFAULT_TIMEOUT = 3
+ANONYMIZE = 'anonymize'
 
 DEFAULT_LOCALS_SIZES = {
     'maxlevel': 5,
@@ -251,6 +252,9 @@ SETTINGS = {
     'verify_https': True,
     'shortener_keys': [],
     'suppress_reinit_warning': False,
+    'capture_email': False,
+    'capture_username': False,
+    'capture_ip': True,
 }
 
 _CURRENT_LAMBDA_CONTEXT = None
@@ -790,6 +794,10 @@ def _add_person_data(data, request):
         log.exception("Exception while building person data for Rollbar payload: %r", e)
     else:
         if person_data:
+            if not SETTINGS['capture_username'] and 'username' in person_data:
+                person_data['username'] = None
+            if not SETTINGS['capture_email'] and 'email' in person_data:
+                person_data['email'] = None
             data['person'] = person_data
 
 
@@ -831,9 +839,11 @@ def _build_person_data(request):
 
             # id is required, so only include username/email if we have an id
             if retval.get('id'):
+                username = getattr(user, 'username', None)
+                email = getattr(user, 'email', None)
                 retval.update({
-                    'username': getattr(user, 'username', None),
-                    'email': getattr(user, 'email', None)
+                    'username': username,
+                    'email': email
                 })
             return retval
 
@@ -992,6 +1002,7 @@ def _add_request_data(data, request):
         log.exception("Exception while building request_data for Rollbar payload: %r", e)
     else:
         if request_data:
+            _filter_ip(request_data, SETTINGS['capture_ip'])
             data['request'] = request_data
 
 
@@ -1204,6 +1215,34 @@ def _build_wsgi_request_data(request):
         input.seek(pos, 0)
 
     return request_data
+
+
+def _filter_ip(request_data, capture_ip):
+    if 'user_ip' not in request_data or capture_ip == True:
+        return
+
+    current_ip = request_data['user_ip']
+    if not current_ip:
+        return
+
+    new_ip = current_ip
+    if not capture_ip:
+        new_ip = None
+    elif capture_ip == ANONYMIZE:
+        try:
+            if '.' in current_ip:
+                new_ip = '.'.join(current_ip.split('.')[0:3]) + '.0'
+            elif ':' in current_ip:
+                parts = current_ip.split(':')
+                if len(parts) > 2:
+                    terminal = '0000:0000:0000:0000:0000'
+                    new_ip = ':'.join(parts[0:3] + [terminal])
+            else:
+                new_ip = None
+        except:
+            new_ip = None
+
+    request_data['user_ip'] = new_ip
 
 
 def _build_server_data():
