@@ -1,5 +1,7 @@
 # Change Log
 
+The change log has moved to this repo's [GitHub Releases Page](https://github.com/rollbar/pyrollbar/releases).
+
 **0.14.0**
 
 - Create the configuration options, `capture_username` and `capture_email`. Prior to this release,
