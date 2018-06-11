@@ -253,9 +253,11 @@ SETTINGS = {
     'capture_email': False,
     'capture_username': False,
     'capture_ip': True,
+    'log_all_rate_limited_items': True,
 }
 
 _CURRENT_LAMBDA_CONTEXT = None
+_LAST_RESPONSE_STATUS = None
 
 # Set in init()
 _transforms = []
@@ -1455,8 +1457,13 @@ def _parse_response(path, access_token, params, resp, endpoint=None):
     else:
         data = resp.content
 
+    global _LAST_RESPONSE_STATUS
+    last_response_was_429 = _LAST_RESPONSE_STATUS == 429
+    _LAST_RESPONSE_STATUS = resp.status_code
+
     if resp.status_code == 429:
-        log.warning("Rollbar: over rate limit, data was dropped. Payload was: %r", params)
+        if SETTINGS['log_all_rate_limited_items'] or not last_response_was_429:
+            log.warning("Rollbar: over rate limit, data was dropped. Payload was: %r", params)
         return
     elif resp.status_code == 502:
         log.exception('Rollbar api returned a 502')
@@ -1476,9 +1483,11 @@ def _parse_response(path, access_token, params, resp, endpoint=None):
             log.exception('Unable to find payload parameters for failsafe.')
 
         _send_failsafe('payload too large', uuid, host)
+        # TODO: Should we return here?
     elif resp.status_code != 200:
         log.warning("Got unexpected status code from Rollbar api: %s\nResponse:\n%s",
                     resp.status_code, data)
+        # TODO: Should we also return here?
 
     try:
         json_data = json.loads(data)
