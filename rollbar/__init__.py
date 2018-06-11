@@ -166,6 +166,9 @@ def _get_flask_request():
     if WerkzeugRequest is None:
         return None
     from flask import request
+    #from flask import _request_ctx_stack
+    #if _request_ctx_stack.top is None:
+    #    return None
     return request
 
 
@@ -660,6 +663,7 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     if extra_trace_data and not extra_data:
         data['custom'] = extra_trace_data
 
+    request = _get_actual_request(request)
     _add_request_data(data, request)
     _add_person_data(data, request)
     _add_lambda_context_data(data)
@@ -734,6 +738,7 @@ def _report_message(message, level, request, extra_data, payload_data):
         extra_data = extra_data
         data['body']['message'].update(extra_data)
 
+    request = _get_actual_request(request)
     _add_request_data(data, request)
     _add_person_data(data, request)
     _add_lambda_context_data(data)
@@ -1013,6 +1018,15 @@ def _check_add_locals(frame, frame_num, total_frames):
                 ('root' in SETTINGS and (frame.get('filename') or '').lower().startswith((SETTINGS['root'] or '').lower()))))
 
 
+def _get_actual_request(request):
+    if WerkzeugLocalProxy and isinstance(request, WerkzeugLocalProxy):
+        try:
+            actual_request = request._get_current_object()
+        except RuntimeError:
+            return None
+        return actual_request
+    return request
+
 def _build_request_data(request):
     """
     Returns a dictionary containing data from the request.
@@ -1034,13 +1048,6 @@ def _build_request_data(request):
     # werkzeug (flask)
     if WerkzeugRequest and isinstance(request, WerkzeugRequest):
         return _build_werkzeug_request_data(request)
-
-    if WerkzeugLocalProxy and isinstance(request, WerkzeugLocalProxy):
-        try:
-            actual_request = request._get_current_object()
-        except RuntimeError:
-            return None
-        return _build_werkzeug_request_data(actual_request)
 
     # tornado
     if TornadoRequest and isinstance(request, TornadoRequest):
