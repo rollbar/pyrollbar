@@ -166,9 +166,6 @@ def _get_flask_request():
     if WerkzeugRequest is None:
         return None
     from flask import request
-    #from flask import _request_ctx_stack
-    #if _request_ctx_stack.top is None:
-    #    return None
     return request
 
 
