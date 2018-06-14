@@ -1,16 +1,60 @@
 """
 django-rollbar middleware
 
-To install, add the following in your settings.py:
-1. add 'rollbar.contrib.django.middleware.RollbarNotifierMiddleware' to
-    a. MIDDLEWARE_CLASSES in Django 1.9 and earlier
-    b. MIDDLEWARE in Django 1.10 and up
-2. add a section like this:
+There are two options for installing the Rollbar middleware. Both options
+require modifying your settings.py file.
+
+The first option is to use
+'rollbar.contrib.django.middleware.RollbarNotifierMiddleware' which will
+report all exceptions to Rollbar including 404s. This middlware should be
+placed as the last item in your middleware list which is:
+    * MIDDLEWARE_CLASSES in Django 1.9 and earlier
+    * MIDDLEWARE in Django 1.10 and up
+
+The other option is two use the two separate middlewares:
+    * 'rollbar.contrib.django.middleware.RollbarNotifierMiddlewareExcluding404'
+    * 'rollbar.contrib.django.middleware.RollbarNotifierMiddlewareOnly404'
+The Excluding404 middleware should be placed as the last item in your middleware
+list, and the Only404 middleware should be placed as the first item in your
+middleware list. This allows 404s to be processed by your other middlewares
+before sendind an item to Rollbar. Therefore if you handle the 404 differently
+in a way that returns a response early you won't end up with a Rollbar item.
+
+Regardless of which method you use, you also should add a section to settings.py
+like this:
+
 ROLLBAR = {
     'access_token': 'tokengoeshere',
 }
 
-To get more control of middleware and enrich it with custom data:
+This can be used for passing configuration options to Rollbar. Additionally,
+you can use the key 'ignorable_404_urls' to set an iterable of regular expression
+patterns to use to determine whether a 404 exception should be ignored based
+on the full url path for the request. For example,
+
+import re
+ROLLBAR = {
+    'access_token': 'YOUR_TOKEN',
+    'ignorable_404_urls': (
+        re.compile('/index\.php'),
+        re.compile('/foobar'),
+    ),
+}
+
+To get more control of middleware and enrich it with custom data
+you can subclass any of the middleware classes described above
+and optionally override the methods:
+    def get_extra_data(self, request, exc):
+        ''' May be defined.  Must return a dict or None. Use it to put some custom extra data on rollbar event. '''
+        return
+
+    def get_payload_data(self, request, exc):
+        ''' May be defined.  Must return a dict or None. Use it to put some custom payload data on rollbar event. '''
+        return
+You would then insert your custom subclass into your middleware
+configuration in the same place as the base class as described above.
+For example:
+
 1. create a 'middleware.py' file on your project (name is up to you)
 2. import the rollbar default middleware: 'from rollbar.contrib.django.middleware import RollbarNotifierMiddleware'
 3. create your own middleware like this:
@@ -105,6 +149,11 @@ def _patch_debugview(rollbar_web_base):
     debug.ExceptionReporter.get_traceback_data = new_get_traceback_data
 
 
+def _should_ignore_404(url):
+    url_patterns = getattr(settings, 'ROLLBAR', {}).get('ignorable_404_urls', ())
+    return any(p.search(url) for p in url_patterns)
+
+
 class RollbarNotifierMiddleware(MiddlewareMixin):
     def __init__(self, get_response=None):
         super(RollbarNotifierMiddleware, self).__init__(get_response)
@@ -122,6 +171,9 @@ class RollbarNotifierMiddleware(MiddlewareMixin):
         access_token = kw.pop('access_token')
         environment = kw.pop('environment', 'development' if settings.DEBUG else 'production')
         kw.setdefault('exception_level_filters', DEFAULTS['exception_level_filters'])
+
+        # ignorable_404_urls is only relevant for this middleware not as an argument to init
+        kw.pop('ignorable_404_urls', None)
 
         rollbar.init(access_token, environment, **kw)
 
@@ -190,9 +242,49 @@ class RollbarNotifierMiddleware(MiddlewareMixin):
         return response
 
     def process_exception(self, request, exc):
+        if isinstance(exc, Http404) and _should_ignore_404(request.get_full_path()):
+            return
         rollbar.report_exc_info(
             sys.exc_info(),
             request,
             extra_data=self.get_extra_data(request, exc),
             payload_data=self.get_payload_data(request, exc),
         )
+
+
+class RollbarNotifierMiddlewareOnly404(MiddlewareMixin):
+    def get_extra_data(self, request, exc):
+        return
+
+    def get_payload_data(self, request, exc):
+        return
+
+    def process_response(self, request, response):
+        if response.status_code != 404:
+            return response
+
+        if _should_ignore_404(request.get_full_path()):
+            return response
+
+        try:
+            if hasattr(request, '_rollbar_notifier_original_http404_exc_info'):
+                exc_type, exc_value, exc_traceback = request._rollbar_notifier_original_http404_exc_info
+                raise exc_type, exc_value, exc_traceback
+            else:
+                raise Http404()
+        except Exception as exc:
+            rollbar.report_exc_info(
+                sys.exc_info(),
+                request,
+                extra_data=self.get_extra_data(request, exc),
+                payload_data=self.get_payload_data(request, exc),
+            )
+        return response
+
+
+class RollbarNotifierMiddlewareExcluding404(RollbarNotifierMiddleware):
+    def process_exception(self, request, exc):
+        if isinstance(exc, Http404):
+            request._rollbar_notifier_original_http404_exc_info = sys.exc_info()
+        else:
+            super(RollbarNotifierMiddlewareExcluding404, self).process_exception(request, exc)
