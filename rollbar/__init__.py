@@ -61,7 +61,7 @@ else:
     del ImproperlyConfigured
 
 try:
-    from werkzeug.wrappers import Request as WerkzeugRequest
+    from werkzeug.wrappers import BaseRequest as WerkzeugRequest
 except (ImportError, SyntaxError):
     WerkzeugRequest = None
 
@@ -1030,6 +1030,7 @@ def _get_actual_request(request):
             return None
         return actual_request
     return request
+
 
 def _build_request_data(request):
     """
