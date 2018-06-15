@@ -282,7 +282,7 @@ from rollbar.lib.transforms.shortener import ShortenerTransform
 
 ## public api
 
-def init(access_token, environment='production', **kw):
+def init(access_token, environment='production', scrub_fields=None, **kw):
     """
     Saves configuration variables in this module's SETTINGS.
 
@@ -308,6 +308,8 @@ def init(access_token, environment='production', **kw):
 
     SETTINGS['access_token'] = access_token
     SETTINGS['environment'] = environment
+    if scrub_fields is not None:
+       SETTINGS['scrub_fields'] = list(scrub_fields)
 
     if SETTINGS.get('allow_logging_basic_config'):
         logging.basicConfig()
