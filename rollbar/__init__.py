@@ -1126,10 +1126,10 @@ def _build_django_request_data(request):
         'method': request.method,
         'GET': dict(request.GET),
         'POST': dict(request.POST),
-        'user_ip': _wsgi_extract_user_ip(request.environ),
+        'user_ip': _wsgi_extract_user_ip(request.META),
     }
 
-    request_data['headers'] = _extract_wsgi_headers(request.environ.items())
+    request_data['headers'] = _extract_wsgi_headers(request.META.items())
 
     return request_data
 
