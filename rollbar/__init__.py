@@ -1125,9 +1125,13 @@ def _build_django_request_data(request):
         'url': request.build_absolute_uri(),
         'method': request.method,
         'GET': dict(request.GET),
-        'POST': dict(request.POST),
         'user_ip': _wsgi_extract_user_ip(request.META),
     }
+
+    if request.content_type == 'application/json':
+        request_data['json'] = json.loads(request.body)
+    else:
+        request_data['POST'] = dict(request.POST)
 
     request_data['headers'] = _extract_wsgi_headers(request.META.items())
 
