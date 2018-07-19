@@ -12,12 +12,20 @@ def _session():
     return _local.session
 
 
-def post(*args, **kw):
-    return _session().post(*args, **kw)
+def _get_proxy_cfg(proxy):
+    if proxy:
+        return {
+            'http': proxy,
+        }
 
 
-def get(*args, **kw):
-    return _session().get(*args, **kw)
+def post(*args, proxy=None, **kw):
+
+    return _session().post(*args, proxies=_get_proxy_cfg(proxy), **kw)
+
+
+def get(*args, proxy=None, **kw):
+    return _session().get(*args, proxies=_get_proxy_cfg(proxy), **kw)
 
 
 __all__ = ['post', 'get']

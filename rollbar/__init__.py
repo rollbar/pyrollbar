@@ -259,6 +259,7 @@ SETTINGS = {
     'capture_username': False,
     'capture_ip': True,
     'log_all_rate_limited_items': True,
+    'http_proxy': None,  # HTTP proxy '<host>:<port>'
 }
 
 _CURRENT_LAMBDA_CONTEXT = None
@@ -1370,10 +1371,11 @@ def _post_api(path, payload_str, access_token=None):
 
     url = urljoin(SETTINGS['endpoint'], path)
     resp = transport.post(url,
-                         data=payload_str,
-                         headers=headers,
-                         timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT),
-                         verify=SETTINGS.get('verify_https', True))
+                          data=payload_str,
+                          headers=headers,
+                          timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT),
+                          verify=SETTINGS.get('verify_https', True),
+                          proxy=SETTINGS.get('http_proxy'))
 
     return _parse_response(path, SETTINGS['access_token'], payload_str, resp)
 
@@ -1382,7 +1384,10 @@ def _get_api(path, access_token=None, endpoint=None, **params):
     access_token = access_token or SETTINGS['access_token']
     url = urljoin(endpoint or SETTINGS['endpoint'], path)
     params['access_token'] = access_token
-    resp = transport.get(url, params=params, verify=SETTINGS.get('verify_https', True))
+    resp = transport.get(url,
+                         params=params,
+                         verify=SETTINGS.get('verify_https', True),
+                         proxy=SETTINGS.get('http_proxy'))
     return _parse_response(path, access_token, params, resp, endpoint=endpoint)
 
 
