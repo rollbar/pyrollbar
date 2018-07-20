@@ -12,7 +12,10 @@ def _session():
     return _local.session
 
 
-def _get_proxy_cfg(proxy=None, proxy_user=None, proxy_password=None):
+def _get_proxy_cfg(kw):
+    proxy = kw.pop('proxy', None)
+    proxy_user = kw.pop('proxy_user', None)
+    proxy_password = kw.pop('proxy_password', None)
     if proxy and proxy_user and proxy_password:
         return {
             'http': 'http://{}:{}@{}'.format(proxy_user, proxy_password, proxy),
@@ -25,12 +28,14 @@ def _get_proxy_cfg(proxy=None, proxy_user=None, proxy_password=None):
         }
 
 
-def post(*args, proxy=None, proxy_user=None, proxy_password=None, **kw):
-    return _session().post(*args, proxies=_get_proxy_cfg(proxy, proxy_user, proxy_password), **kw)
+def post(*args, **kw):
+    proxies = _get_proxy_cfg(kw)
+    return _session().post(*args, proxies=proxies, **kw)
 
 
-def get(*args, proxy=None, proxy_user=None, proxy_password=None, **kw):
-    return _session().get(*args, proxies=_get_proxy_cfg(proxy, proxy_user, proxy_password), **kw)
+def get(*args, **kw):
+    proxies = _get_proxy_cfg(kw)
+    return _session().get(*args, proxies=proxies, **kw)
 
 
 __all__ = ['post', 'get']
