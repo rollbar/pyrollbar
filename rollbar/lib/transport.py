@@ -12,24 +12,24 @@ def _session():
     return _local.session
 
 
-def _get_proxy_cfg(proxy_host=None, proxy_port=8080, proxy_user=None, proxy_password=None):
-    if proxy_host and proxy_user and proxy_password:
+def _get_proxy_cfg(proxy=None, proxy_user=None, proxy_password=None):
+    if proxy and proxy_user and proxy_password:
         return {
-            'http': 'http://{}:{}@{}:{}'.format(proxy_user, proxy_password, proxy_host, proxy_port),
+            'http': 'http://{}:{}@{}'.format(proxy_user, proxy_password, proxy),
         }
-    elif proxy_host:
+    elif proxy:
         return {
-            'http': 'http://{}:{}'.format(proxy_host, proxy_port),
+            'http': 'http://{}'.format(proxy),
         }
 
 
-def post(*args, proxy_host=None, proxy_port=None, proxy_user=None, proxy_password=None, **kw):
+def post(*args, proxy=None, proxy_user=None, proxy_password=None, **kw):
 
-    return _session().post(*args, proxies=_get_proxy_cfg(proxy_host, proxy_port, proxy_user, proxy_password), **kw)
+    return _session().post(*args, proxies=_get_proxy_cfg(proxy, proxy_user, proxy_password), **kw)
 
 
-def get(*args, proxy_host=None, proxy_port=None, proxy_user=None, proxy_password=None, **kw):
-    return _session().get(*args, proxies=_get_proxy_cfg(proxy_host, proxy_port, proxy_user, proxy_password), **kw)
+def get(*args, proxy=None, proxy_user=None, proxy_password=None, **kw):
+    return _session().get(*args, proxies=_get_proxy_cfg(proxy, proxy_user, proxy_password), **kw)
 
 
 __all__ = ['post', 'get']

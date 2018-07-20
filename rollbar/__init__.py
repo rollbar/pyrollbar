@@ -259,8 +259,7 @@ SETTINGS = {
     'capture_username': False,
     'capture_ip': True,
     'log_all_rate_limited_items': True,
-    'http_proxy_host': None,
-    'http_proxy_port': None,
+    'http_proxy': None,
     'http_proxy_user': None,
     'http_proxy_password': None,
 }
@@ -1378,8 +1377,7 @@ def _post_api(path, payload_str, access_token=None):
                           headers=headers,
                           timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT),
                           verify=SETTINGS.get('verify_https', True),
-                          proxy_host=SETTINGS.get('http_proxy_host'),
-                          proxy_port=SETTINGS.get('http_proxy_port'),
+                          proxy=SETTINGS.get('http_proxy'),
                           proxy_user=SETTINGS.get('http_proxy_user'),
                           proxy_password=SETTINGS.get('http_proxy_password'))
 
@@ -1393,8 +1391,7 @@ def _get_api(path, access_token=None, endpoint=None, **params):
     resp = transport.get(url,
                          params=params,
                          verify=SETTINGS.get('verify_https', True),
-                         proxy_host=SETTINGS.get('http_proxy_host'),
-                         proxy_port=SETTINGS.get('http_proxy_port'),
+                         proxy=SETTINGS.get('http_proxy'),
                          proxy_user=SETTINGS.get('http_proxy_user'),
                          proxy_password=SETTINGS.get('http_proxy_password'))
     return _parse_response(path, access_token, params, resp, endpoint=endpoint)
