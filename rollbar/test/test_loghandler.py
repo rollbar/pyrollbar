@@ -30,10 +30,10 @@ class LogHandlerTest(BaseTest):
         logger = logging.getLogger(__name__)
         logger.setLevel(logging.DEBUG)
 
-        rollbar_handler = RollbarHandler(_test_access_token, _test_environment)
-        rollbar_handler.setLevel(logging.WARNING)
+        self.rollbar_handler = RollbarHandler(_test_access_token, _test_environment)
+        self.rollbar_handler.setLevel(logging.WARNING)
 
-        logger.addHandler(rollbar_handler)
+        logger.addHandler(self.rollbar_handler)
 
         return logger
 
@@ -47,6 +47,22 @@ class LogHandlerTest(BaseTest):
         self.assertEqual(payload['data']['body']['message']['body'], "Hello %d %s")
         self.assertEqual(payload['data']['body']['message']['args'], (1, 'world'))
         self.assertEqual(payload['data']['body']['message']['record']['name'], __name__)
+
+    @mock.patch('rollbar.send_payload')
+    def test_string_or_int_level(self, send_payload):
+        logger = self._create_logger()
+        logger.setLevel(logging.ERROR)
+        self.rollbar_handler.setLevel('WARNING')
+        logger.error("I am an error")
+
+        payload = send_payload.call_args[0][0]
+
+        self.assertEqual(payload['data']['level'], 'error')
+
+        self.rollbar_handler.setLevel(logging.WARNING)
+        logger.error("I am an error")
+
+        self.assertEqual(payload['data']['level'], 'error')
 
     def test_request_is_get_from_log_record_if_present(self):
         logger = self._create_logger()
