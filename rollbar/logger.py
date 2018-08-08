@@ -56,7 +56,13 @@ class RollbarHandler(logging.Handler):
         log records we notify Rollbar about instead of which
         records we save to the history.
         """
-        self.notify_level = level
+        # hack to fix backward compatibility in Python3
+        try:
+            from logging import _checkLevel
+        except ImportError:
+            _checkLevel = lambda lvl: lvl
+
+        self.notify_level = _checkLevel(level)
 
     def setHistoryLevel(self, level):
         """
