@@ -837,7 +837,10 @@ def _add_locals_data(data, exc_info):
         if keywordspec:
             cur_frame['keywordspec'] = keywordspec
         if _locals:
-            cur_frame['locals'] = dict((k, _serialize_frame_data(v)) for k, v in iteritems(_locals))
+            try:
+                cur_frame['locals'] = dict((k, _serialize_frame_data(v)) for k, v in iteritems(_locals))
+            except Exception:
+                log.exception('Error while serializing frame data.')
 
         frame_num += 1
 
