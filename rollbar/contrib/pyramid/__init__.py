@@ -178,5 +178,5 @@ class RollbarMiddleware(object):
             return self.app(environ, start_resp)
         except Exception:
             from pyramid.request import Request
-            handle_error(self.settings, Request(environ))
+            handle_error(self.settings, Request(environ), sys.exc_info())
             raise
