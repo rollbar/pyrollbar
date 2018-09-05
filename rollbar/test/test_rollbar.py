@@ -517,6 +517,22 @@ class RollbarTest(BaseTest):
         self.assertEqual(33, payload['data']['body']['trace']['frames'][-1]['locals']['arg1'])
 
     @mock.patch('rollbar.send_payload')
+    def test_failed_locals_serialization(self, send_payload):
+
+        class tmp(object):
+            @property
+            def __class__(self):
+                foo()
+
+        try:
+            t = tmp()
+            raise Exception('trigger_serialize')
+        except:
+            rollbar.report_exc_info()
+
+        self.assertEqual(send_payload.called, True)
+
+    @mock.patch('rollbar.send_payload')
     def test_args_lambda_no_args(self, send_payload):
 
         _raise = lambda: foo()
