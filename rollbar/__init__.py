@@ -476,31 +476,45 @@ def send_payload(payload, access_token):
         thread.start()
 
 
-def search_items(title, return_fields=None, access_token=None, endpoint=None, **search_fields):
+def search_items(query, page=1, access_token=None, endpoint=None, **search_fields):
     """
     Searches a project for items that match the input criteria.
 
-    title: all or part of the item's title to search for.
-    return_fields: the fields that should be returned for each item.
-            e.g. ['id', 'project_id', 'status'] will return a dict containing
-                 only those fields for each item.
+    query: item query string, just like you'd enter into the rollbar
+           search field.  Can be a full or partial item title.
+    page: requested page, defaults to 1. 20 items are returned
+          per page.
     access_token: a project access token. If this is not provided,
                   the one provided to init() will be used instead.
     search_fields: additional fields to include in the search.
-            currently supported: status, level, environment
+            currently supported: status, level, environment, framework,
+            assigned_user, ids.
     """
-    if not title:
+    if not query:
         return []
 
-    if return_fields is not None:
-        return_fields = ','.join(return_fields)
-
-    return _get_api('search/',
-                    title=title,
-                    fields=return_fields,
+    return _get_api('items/',
+                    query=query,
+                    page=page,
                     access_token=access_token,
                     endpoint=endpoint,
                     **search_fields)
+
+
+def occurrences(item_id, page=1, access_token=None, endpoint=None):
+    """
+    Return a list of occurrences for the specified item.
+
+    item_id: item ID to query
+    page: requested page, defaults to 1. 20 occurrences are returned
+          per page.
+    :param access_token: a project access token. If this is not provided,
+                         the one provided to init() will be used instead.
+    :param endpoint: the rollbar API endpoint to use. If this is not
+                     provided, the one provided to ini() will be used instead.
+    :return:
+    """
+    return _get_api('item/{}/instances'.format(item_id), page=page, access_token=access_token, endpoint=endpoint)
 
 
 def wait(f=None):
