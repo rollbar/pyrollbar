@@ -1127,12 +1127,8 @@ def _extract_wsgi_headers(items):
 
 
 def _build_django_request_data(request):
-    try:
-        uri = request.build_absolute_uri()
-    except DisallowedHost:
-        uri = request.get_raw_uri()
     request_data = {
-        'url': uri,
+        'url': request.get_raw_uri(),
         'method': request.method,
         'GET': dict(request.GET),
         'POST': dict(request.POST),
