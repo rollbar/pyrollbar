@@ -3,6 +3,13 @@ import base64
 import copy
 import enum
 
+try:
+    # Python 3
+    from collections.abc import Mapping
+except ImportError:
+    # Python 2.7
+    from collections import Mapping
+
 from rollbar.lib import transforms, python_major_version
 from rollbar.lib.transforms.serializable import SerializableTransform
 
@@ -39,7 +46,7 @@ class SerializableTransformTest(BaseTest):
 
         self.assertEqual(type(expected), type(result))
 
-        if isinstance(result, collections.Mapping):
+        if isinstance(result, Mapping):
             self.assertDictEqual(result, expected)
         elif isinstance(result, tuple):
             self.assertTupleEqual(result, expected)
