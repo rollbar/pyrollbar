@@ -9,10 +9,10 @@ if isinstance(string_types, tuple):
 else:
     _ALLOWED_CIRCULAR_REFERENCE_TYPES.append(string_types)
 
-if isinstance(integer_types, tuple):
-    _ALLOWED_CIRCULAR_REFERENCE_TYPES.extend(integer_types)
+if isinstance(number_types, tuple):
+    _ALLOWED_CIRCULAR_REFERENCE_TYPES.extend(number_types)
 else:
-    _ALLOWED_CIRCULAR_REFERENCE_TYPES.append(integer_types)
+    _ALLOWED_CIRCULAR_REFERENCE_TYPES.append(number_types)
 
 _ALLOWED_CIRCULAR_REFERENCE_TYPES = tuple(_ALLOWED_CIRCULAR_REFERENCE_TYPES)
 

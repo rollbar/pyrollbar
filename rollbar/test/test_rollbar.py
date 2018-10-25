@@ -931,7 +931,7 @@ class RollbarTest(BaseTest):
             raise Exception()
 
         try:
-            obj = {}
+            obj = {'x': 42.3}
             obj['child'] = {
                 'parent': obj
             }
@@ -949,6 +949,17 @@ class RollbarTest(BaseTest):
         self.assertTrue(
             (isinstance(payload['data']['body']['trace']['frames'][-1]['locals']['obj'], dict) and
              'child' in payload['data']['body']['trace']['frames'][-1]['locals']['obj'])
+
+             or
+
+            (isinstance(payload['data']['body']['trace']['frames'][-1]['locals']['obj'], string_types) and
+             payload['data']['body']['trace']['frames'][-1]['locals']['obj'].startswith('<CircularReference'))
+        )
+
+        self.assertTrue(
+            (isinstance(payload['data']['body']['trace']['frames'][-1]['locals']['obj'], dict) and
+             'x' in payload['data']['body']['trace']['frames'][-1]['locals']['obj'] and
+             payload['data']['body']['trace']['frames'][-1]['locals']['obj']['x'] == 42.3)
 
              or
 
