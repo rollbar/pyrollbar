@@ -1,5 +1,3 @@
-import copy
-
 try:
     # Python 3
     from collections.abc import Mapping
@@ -34,7 +32,7 @@ class ScrubRedactTransformTest(BaseTest):
 
         self.assertEqual(type(result), type(expected))
 
-        if isinstance(result, collections.Mapping):
+        if isinstance(result, Mapping):
             self.assertDictEqual(result, expected)
         elif isinstance(result, tuple):
             self.assertTupleEqual(result, expected)
