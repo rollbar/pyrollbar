@@ -1,5 +1,9 @@
-import collections
-import copy
+try:
+    # Python 3
+    from collections.abc import Mapping
+except ImportError:
+    # Python 2.7
+    from collections import Mapping
 
 from rollbar.lib import text, transforms
 from rollbar.lib.transforms.scrub_redact import ScrubRedactTransform, REDACT_REF
@@ -28,7 +32,7 @@ class ScrubRedactTransformTest(BaseTest):
 
         self.assertEqual(type(result), type(expected))
 
-        if isinstance(result, collections.Mapping):
+        if isinstance(result, Mapping):
             self.assertDictEqual(result, expected)
         elif isinstance(result, tuple):
             self.assertTupleEqual(result, expected)

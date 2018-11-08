@@ -1,5 +1,13 @@
-import collections
 import logging
+
+try:
+    # Python 3
+    from collections.abc import Mapping
+    from collections.abc import Sequence
+except ImportError:
+    # Python 2.7
+    from collections import Mapping
+    from collections import Sequence
 
 from rollbar.lib import binary_type, iteritems, string_types, circular_reference_label
 
@@ -59,7 +67,7 @@ def get_type(obj):
     if isinstance(obj, (string_types, binary_type)):
         return STRING
 
-    if isinstance(obj, collections.Mapping):
+    if isinstance(obj, Mapping):
         return MAPPING
 
     if isinstance(obj, tuple):
@@ -71,7 +79,7 @@ def get_type(obj):
     if isinstance(obj, set):
         return SET
 
-    if isinstance(obj, collections.Sequence):
+    if isinstance(obj, Sequence):
         return LIST
 
     return DEFAULT

@@ -5,6 +5,13 @@ import os
 import sys
 from array import array
 
+try:
+    # Python 3
+    from collections.abc import Mapping
+except ImportError:
+    # Python 2.7
+    from collections import Mapping
+
 import six
 from six.moves import urllib
 
@@ -15,7 +22,7 @@ binary_type = six.binary_type
 integer_types = six.integer_types
 number_types = integer_types + (float, )
 string_types = six.string_types
-sequence_types = (collections.Mapping, list, tuple, set, frozenset, array, collections.deque)
+sequence_types = (Mapping, list, tuple, set, frozenset, array, collections.deque)
 
 urlparse = urllib.parse.urlparse
 urlsplit = urllib.parse.urlsplit

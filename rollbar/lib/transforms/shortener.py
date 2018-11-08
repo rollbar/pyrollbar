@@ -2,6 +2,13 @@ from array import array
 import collections
 import itertools
 
+try:
+    # Python 3
+    from collections.abc import Mapping
+except ImportError:
+    # Python 2.7
+    from collections import Mapping
+
 from rollbar.lib import (
     integer_types, iteritems, key_in, number_types, reprlib, sequence_types,
     string_types, text)
@@ -11,7 +18,7 @@ from rollbar.lib.transforms import Transform
 _type_name_mapping = {
     'string': string_types,
     'long': integer_types,
-    'mapping': collections.Mapping,
+    'mapping': Mapping,
     'list': list,
     'tuple': tuple,
     'set': set,
@@ -34,7 +41,7 @@ class ShortenerTransform(Transform):
 
     def _get_max_size(self, obj):
         for name, _type in iteritems(_type_name_mapping):
-            # Special case for dicts since we are using collections.Mapping
+            # Special case for dicts since we are using collections.abc.Mapping
             # to provide better type checking for dict-like objects
             if name == 'mapping':
                 name = 'dict'
