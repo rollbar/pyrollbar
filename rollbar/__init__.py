@@ -22,7 +22,8 @@ import wsgiref.util
 import requests
 import six
 
-from rollbar.lib import events, filters, dict_merge, parse_qs, text, transport, urljoin, iteritems
+from rollbar.lib import events, filters, dict_merge, parse_qs, text, transport, urljoin, iteritems, RollbarJSONEncoder
+
 
 __version__ = '0.14.5'
 __log_name__ = 'rollbar'
@@ -1328,7 +1329,7 @@ def _build_payload(data):
 
 
 def _serialize_payload(payload):
-    return json.dumps(payload)
+    return json.dumps(payload, cls=RollbarJSONEncoder)
 
 
 def _send_payload(payload_str, access_token):

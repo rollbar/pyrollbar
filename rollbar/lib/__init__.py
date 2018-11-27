@@ -4,6 +4,7 @@ import copy
 import os
 import sys
 from array import array
+import json
 
 try:
     # Python 3
@@ -212,3 +213,16 @@ def unencodable_object_label(data):
 def undecodable_object_label(data):
     return '<Undecodable type:(%s) base64:(%s)>' % (type(data).__name__,
                                                     base64.b64encode(data).decode('ascii'))
+
+try:
+    from django.utils.functional import SimpleLazyObject
+except ImportError:
+    SimpleLazyObject = None
+
+class RollbarJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if SimpleLazyObject and isinstance(obj, SimpleLazyObject):
+            if not obj._wrapped:
+                obj._setup()
+            return obj._wrapped
+        return json.JSONEncoder.default(self, obj)
