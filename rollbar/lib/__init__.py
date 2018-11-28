@@ -219,10 +219,10 @@ try:
 except ImportError:
     SimpleLazyObject = None
 
-class RollbarJSONEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if SimpleLazyObject and isinstance(obj, SimpleLazyObject):
-            if not obj._wrapped:
-                obj._setup()
-            return obj._wrapped
-        return json.JSONEncoder.default(self, obj)
+
+def defaultJSONEncode(o):
+    if SimpleLazyObject and isinstance(o, SimpleLazyObject):
+        if not o._wrapped:
+            o._setup()
+        return o._wrapped
+    raise TypeError(repr(o) + " is not JSON serializable")
