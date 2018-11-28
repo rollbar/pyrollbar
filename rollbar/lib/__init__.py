@@ -225,4 +225,4 @@ def defaultJSONEncode(o):
         if not o._wrapped:
             o._setup()
         return o._wrapped
-    raise TypeError(repr(o) + " is not JSON serializable")
+    return repr(o) + " is not JSON serializable"
