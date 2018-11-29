@@ -1454,12 +1454,12 @@ def _post_api_twisted(path, payload_str, access_token=None):
         r.headers.update(resp.headers.getAllRawHeaders())
         return treq.content(resp).addCallback(post_data_cb, r)
 
-    headers = {'Content-Type': ['application/json']}
+    headers = {'Content-Type': ['application/json; charset=utf-8']}
     if access_token is not None:
         headers['X-Rollbar-Access-Token'] = [access_token]
 
     url = urljoin(SETTINGS['endpoint'], path)
-    d = treq.post(url, payload_str, headers=headers,
+    d = treq.post(url, payload_str.encode('utf8'), headers=headers,
                   timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT))
     d.addCallback(post_cb)
 
