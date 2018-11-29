@@ -96,6 +96,7 @@ def passthrough_decorator(func):
         return func(*args, **kwargs)
     return wrap
 
+
 try:
     from tornado.httpclient import AsyncHTTPClient as TornadoAsyncHTTPClient
 except ImportError:
@@ -103,9 +104,10 @@ except ImportError:
 
 try:
     import treq
+    from twisted.internet.defer import inlineCallbacks
     from twisted.python import log as twisted_log
 
-    def log_handler(event):
+    def twisted_log_observer(event):
         """
         Default uncaught error handler
         """
@@ -114,7 +116,6 @@ try:
                 return
 
             err = event['failure']
-
             # Don't report Rollbar internal errors to ourselves
             if issubclass(err.type, ApiException):
                 log.error('Rollbar internal error: %s', err.value)
@@ -122,12 +123,8 @@ try:
                 report_exc_info((err.type, err.value, err.getTracebackObject()))
         except:
             log.exception('Error while reporting to Rollbar')
-
-    # Add Rollbar as a log handler which will report uncaught errors
-    twisted_log.addObserver(log_handler)
-
-
 except ImportError:
+    inlineCallbacks = passthrough_decorator
     treq = None
 
 try:
@@ -268,10 +265,13 @@ _CURRENT_LAMBDA_CONTEXT = None
 _LAST_RESPONSE_STATUS = None
 
 # Set in init()
+_threads = None
 _transforms = []
 _serialize_transform = None
 
 _initialized = False
+_agent_log_installed = False
+_twisted_log_installed = False
 
 from rollbar.lib.transforms.scrub_redact import REDACT_REF
 
@@ -297,7 +297,18 @@ def init(access_token, environment='production', scrub_fields=None, url_fields=N
                  'staging', 'yourname'
     **kw: provided keyword arguments will override keys in SETTINGS.
     """
-    global SETTINGS, agent_log, _initialized, _transforms, _serialize_transform, _threads
+    global SETTINGS, agent_log, _initialized, _transforms, _serialize_transform,\
+            _threads, _agent_log_installed, _twisted_log_installed
+
+    handler = SETTINGS.get('handler')
+    if 'handler' in kw:
+        handler = kw.get('handler')
+    if handler == 'agent' and not _agent_log_installed:
+        agent_log = _create_agent_log()
+        _agent_log_installed = True
+    elif handler == 'twisted' and treq and not _twisted_log_installed:
+        twisted_log.addObserver(twisted_log_observer)
+        _twisted_log_installed = True
 
     if scrub_fields is not None:
        SETTINGS['scrub_fields'] = list(scrub_fields)
@@ -320,8 +331,6 @@ def init(access_token, environment='production', scrub_fields=None, url_fields=N
     if SETTINGS.get('allow_logging_basic_config'):
         logging.basicConfig()
 
-    if SETTINGS.get('handler') == 'agent':
-        agent_log = _create_agent_log()
 
     # We will perform these transforms in order:
     # 1. Serialize the payload to be all python built-in objects
@@ -466,7 +475,7 @@ def send_payload(payload, access_token):
         _send_payload_appengine(payload_str, access_token)
     elif handler == 'twisted':
         if treq is None:
-            log.error('Unable to find Treq')
+            log.error('treq and twisted are required for the twisted handler')
             return
         _send_payload_twisted(payload_str, access_token)
     else:
@@ -1295,7 +1304,7 @@ def _build_server_data():
     # argv does not always exist in embedded python environments
     argv = getattr(sys, 'argv', None)
     if argv:
-         server_data['argv'] = argv
+        server_data['argv'] = argv
 
     for key in ['branch', 'root']:
         if SETTINGS.get(key):
@@ -1443,25 +1452,43 @@ def _send_payload_twisted(payload_str, access_token):
         log.exception('Exception while posting item %r', e)
 
 
+@inlineCallbacks
 def _post_api_twisted(path, payload_str, access_token=None):
-    def post_data_cb(data, resp):
-        resp._content = data
-        _parse_response(path, SETTINGS['access_token'], payload_str, resp)
-
-    def post_cb(resp):
-        r = requests.Response()
-        r.status_code = resp.code
-        r.headers.update(resp.headers.getAllRawHeaders())
-        return treq.content(resp).addCallback(post_data_cb, r)
+    import datetime
 
     headers = {'Content-Type': ['application/json']}
     if access_token is not None:
         headers['X-Rollbar-Access-Token'] = [access_token]
 
     url = urljoin(SETTINGS['endpoint'], path)
-    d = treq.post(url, payload_str, headers=headers,
-                  timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT))
-    d.addCallback(post_cb)
+
+    try:
+        resp = yield treq.post(url, payload_str, headers=headers,
+                               timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT))
+        text = yield treq.content(resp)
+    except Exception as e:
+        # An exception that escapes here will be caught by Deferred
+        # and sent into Twisted's logging system.  This will again
+        # invoke the observer that called this function, starting an
+        # infinite recursion. Catch all exceptions to prevent this,
+        # including exceptions in the logging system itself.
+
+        twisted_log.removeObserver(twisted_log_observer)
+
+        try:
+            now = datetime.datetime.utcnow().isoformat()
+            twisted_log.err(e, '{} - Failed to post to rollbar'.format(now))
+        except:
+            pass
+
+        twisted_log.addObserver(twisted_log_observer)
+    else:
+        r = requests.Response()
+        r._content = text
+        r.status_code = resp.code
+        r.headers.update(resp.headers.getAllRawHeaders())
+
+        _parse_response(path, SETTINGS['access_token'], payload_str, r)
 
 
 def _send_failsafe(message, uuid, host):
