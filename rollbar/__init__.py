@@ -239,6 +239,7 @@ SETTINGS = {
         'accessToken',
         'auth',
         'authentication',
+        'authorization',
     ],
     'url_fields': ['url', 'link', 'href'],
     'notifier': {
