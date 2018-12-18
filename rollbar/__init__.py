@@ -25,7 +25,7 @@ import six
 from rollbar.lib import events, filters, dict_merge, parse_qs, text, transport, urljoin, iteritems, defaultJSONEncode
 
 
-__version__ = '0.14.5'
+__version__ = '0.14.6'
 __log_name__ = 'rollbar'
 log = logging.getLogger(__log_name__)
 
