@@ -4,6 +4,7 @@ import copy
 import os
 import sys
 from array import array
+import json
 
 try:
     # Python 3
@@ -212,3 +213,16 @@ def unencodable_object_label(data):
 def undecodable_object_label(data):
     return '<Undecodable type:(%s) base64:(%s)>' % (type(data).__name__,
                                                     base64.b64encode(data).decode('ascii'))
+
+try:
+    from django.utils.functional import SimpleLazyObject
+except ImportError:
+    SimpleLazyObject = None
+
+
+def defaultJSONEncode(o):
+    if SimpleLazyObject and isinstance(o, SimpleLazyObject):
+        if not o._wrapped:
+            o._setup()
+        return o._wrapped
+    return repr(o) + " is not JSON serializable"
