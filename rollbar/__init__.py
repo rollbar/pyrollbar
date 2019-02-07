@@ -264,6 +264,7 @@ SETTINGS = {
     'http_proxy': None,
     'http_proxy_user': None,
     'http_proxy_password': None,
+    'include_request_body': False,
 }
 
 _CURRENT_LAMBDA_CONTEXT = None
@@ -1136,6 +1137,12 @@ def _build_django_request_data(request):
         'POST': dict(request.POST),
         'user_ip': _wsgi_extract_user_ip(request.META),
     }
+
+    if SETTINGS['include_request_body']:
+        try:
+            request_data['body'] = request.body
+        except:
+            pass
 
     request_data['headers'] = _extract_wsgi_headers(request.META.items())
 
