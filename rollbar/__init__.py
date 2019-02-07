@@ -687,7 +687,7 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
         data = dict_merge(data, payload_data)
 
     payload = _build_payload(data)
-    send_payload(payload, data.get('access_token'))
+    send_payload(payload, payload.get('access_token'))
 
     return data['uuid']
 
@@ -762,7 +762,7 @@ def _report_message(message, level, request, extra_data, payload_data):
         data = dict_merge(data, payload_data)
 
     payload = _build_payload(data)
-    send_payload(payload, data.get('access_token'))
+    send_payload(payload, payload.get('access_token'))
 
     return data['uuid']
 
