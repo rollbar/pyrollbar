@@ -1129,8 +1129,13 @@ def _extract_wsgi_headers(items):
 
 
 def _build_django_request_data(request):
+    try:
+        url = request.get_raw_uri()
+    except AttributeError:
+        url = request.build_absolute_uri()
+
     request_data = {
-        'url': request.get_raw_uri(),
+        'url': url,
         'method': request.method,
         'GET': dict(request.GET),
         'POST': dict(request.POST),
