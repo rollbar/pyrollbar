@@ -28,6 +28,17 @@ def _get_proxy_cfg(kw):
         }
 
 
+def configure_pool(**kw):
+    keys = ['pool_connections', 'pool_maxsize', 'max_retries']
+    args = {k: kw[k] for k in keys if kw.get(k, None) is not None}
+    if len(args) == 0:
+        return
+    https_adapter = requests.adapters.HTTPAdapter(**args)
+    http_adapter = requests.adapters.HTTPAdapter(**args)
+    _session().mount('https://', https_adapter)
+    _session().mount('http://', http_adapter)
+
+
 def post(*args, **kw):
     proxies = _get_proxy_cfg(kw)
     return _session().post(*args, proxies=proxies, **kw)
@@ -38,4 +49,4 @@ def get(*args, **kw):
     return _session().get(*args, proxies=proxies, **kw)
 
 
-__all__ = ['post', 'get']
+__all__ = ['post', 'get', 'configure_pool']
