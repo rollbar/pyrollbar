@@ -6,7 +6,7 @@ import json
 import sys
 
 import mock
-import rollbar
+from rollbar.sdk as rollbar
 
 # access token for https://rollbar.com/rollbar/pyrollbar
 TOKEN = '92c10f5616944b81a2e6f3c6493a0ec2'

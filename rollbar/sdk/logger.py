@@ -21,7 +21,7 @@ Usage:
 import logging
 import threading
 
-import rollbar
+import rollbar.sdk as rollbar
 
 # hack to fix backward compatibility in Python3
 try:

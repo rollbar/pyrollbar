@@ -5,10 +5,10 @@ except ImportError:
     # Python 2.7
     from collections import Mapping
 
-from rollbar.lib import text, transforms
-from rollbar.lib.transforms.scrub_redact import ScrubRedactTransform, REDACT_REF
+from rollbar.sdk.lib import text, transforms
+from rollbar.sdk.lib.transforms.scrub_redact import ScrubRedactTransform, REDACT_REF
 
-from rollbar.test import BaseTest
+from rollbar.sdk.test import BaseTest
 
 
 class NotRedactRef():

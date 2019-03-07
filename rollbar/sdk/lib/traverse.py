@@ -9,7 +9,7 @@ except ImportError:
     from collections import Mapping
     from collections import Sequence
 
-from rollbar.lib import binary_type, iteritems, string_types, circular_reference_label
+from rollbar.sdk.lib import binary_type, iteritems, string_types, circular_reference_label
 
 CIRCULAR = -1
 DEFAULT = 0

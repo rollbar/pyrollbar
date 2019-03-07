@@ -1,6 +1,6 @@
-from rollbar.lib import dict_merge
+from rollbar.sdk.lib import dict_merge
 
-from rollbar.test import BaseTest
+from rollbar.sdk.test import BaseTest
 
 class RollbarLibTest(BaseTest):
     def test_dict_merge_not_dict(self):

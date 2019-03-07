@@ -7,10 +7,10 @@ import logging
 import mock
 import sys
 
-import rollbar
-from rollbar.logger import RollbarHandler
+import rollbar.sdk as rollbar
+from rollbar.sdk.logger import RollbarHandler
 
-from rollbar.test import BaseTest
+from rollbar.sdk.test import BaseTest
 
 
 _test_access_token = 'aaaabbbbccccddddeeeeffff00001111'

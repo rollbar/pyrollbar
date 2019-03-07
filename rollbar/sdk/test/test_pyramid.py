@@ -1,6 +1,6 @@
 import mock
 
-from rollbar.test import BaseTest
+from rollbar.sdk.test import BaseTest
 
 try:
     from pyramid.request import Request

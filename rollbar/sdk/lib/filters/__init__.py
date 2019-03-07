@@ -1,5 +1,5 @@
-from rollbar.lib import events
-from rollbar.lib.filters.basic import filter_rollbar_ignored_exceptions, filter_by_level
+from rollbar.sdk.lib import events
+from rollbar.sdk.lib.filters.basic import filter_rollbar_ignored_exceptions, filter_by_level
 
 
 def add_builtin_filters(settings):

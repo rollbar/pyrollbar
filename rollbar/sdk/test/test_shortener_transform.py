@@ -3,10 +3,10 @@ from array import array
 from collections import deque
 
 import six
-from rollbar import DEFAULT_LOCALS_SIZES
-from rollbar.lib import transforms
-from rollbar.lib.transforms.shortener import ShortenerTransform
-from rollbar.test import BaseTest
+from rollbar.sdk import DEFAULT_LOCALS_SIZES
+from rollbar.sdk.lib import transforms
+from rollbar.sdk.lib.transforms.shortener import ShortenerTransform
+from rollbar.sdk.test import BaseTest
 
 
 class TestClassWithAVeryVeryVeryVeryVeryVeryVeryLongName:

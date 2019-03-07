@@ -1,6 +1,6 @@
-from rollbar.lib import events, filters
+from rollbar.sdk.lib import events, filters
 
-from rollbar.test import BaseTest
+from rollbar.sdk.test import BaseTest
 
 
 class BasicFiltersTest(BaseTest):

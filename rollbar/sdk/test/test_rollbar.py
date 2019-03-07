@@ -13,10 +13,10 @@ except ImportError:
     from io import StringIO
 import unittest
 
-import rollbar
-from rollbar.lib import python_major_version, string_types
+import rollbar.sdk as rollbar
+from rollbar.sdk.lib import python_major_version, string_types
 
-from rollbar.test import BaseTest
+from rollbar.sdk.test import BaseTest
 
 try:
     eval("""

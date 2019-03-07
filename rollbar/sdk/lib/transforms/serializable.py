@@ -1,12 +1,12 @@
 import math
 
-from rollbar.lib import binary_type, string_types
-from rollbar.lib import (
+from rollbar.sdk.lib import binary_type, string_types
+from rollbar.sdk.lib import (
     circular_reference_label, float_infinity_label, float_nan_label,
     undecodable_object_label, unencodable_object_label)
-from rollbar.lib import iteritems, python_major_version, text
+from rollbar.sdk.lib import iteritems, python_major_version, text
 
-from rollbar.lib.transforms import Transform
+from rollbar.sdk.lib.transforms import Transform
 
 
 class SerializableTransform(Transform):

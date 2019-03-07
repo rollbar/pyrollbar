@@ -1,6 +1,6 @@
-from rollbar.lib.traverse import traverse
+from rollbar.sdk.lib.traverse import traverse
 
-from rollbar.test import BaseTest
+from rollbar.sdk.test import BaseTest
 
 
 class NamedTuple(tuple):

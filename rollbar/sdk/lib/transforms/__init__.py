@@ -1,4 +1,4 @@
-from rollbar.lib import (
+from rollbar.sdk.lib import (
     python_major_version, binary_type, string_types, integer_types,
     number_types, traverse)
 

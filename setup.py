@@ -12,7 +12,7 @@ try:
 except IOError:
     README = ''
 
-INIT_PATH = os.path.join(HERE, 'rollbar/__init__.py')
+INIT_PATH = os.path.join(HERE, 'rollbar/sdk/__init__.py')
 with open(INIT_PATH) as fd:
     INIT_DATA = fd.read()
     VERSION = re.search(r"^__version__ = ['\"]([^'\"]+)['\"]", INIT_DATA, re.MULTILINE).group(1)

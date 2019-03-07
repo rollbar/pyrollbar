@@ -7,9 +7,9 @@ import sys
 import os
 
 import mock
-import rollbar
+import rollbar.sdk as rollbar
 
-from rollbar.test import BaseTest
+from rollbar.sdk.test import BaseTest
 
 # access token for https://rollbar.com/rollbar/pyrollbar
 TOKEN = '92c10f5616944b81a2e6f3c6493a0ec2'

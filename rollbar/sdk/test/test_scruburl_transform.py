@@ -1,9 +1,9 @@
 import copy
 
-from rollbar.lib import map, transforms, string_types, urlparse, parse_qs, python_major_version
-from rollbar.lib.transforms.scruburl import ScrubUrlTransform, _starts_with_auth_re
+from rollbar.sdk.lib import map, transforms, string_types, urlparse, parse_qs, python_major_version
+from rollbar.sdk.lib.transforms.scruburl import ScrubUrlTransform, _starts_with_auth_re
 
-from rollbar.test import BaseTest, SNOWMAN, SNOWMAN_UNICODE
+from rollbar.sdk.test import BaseTest, SNOWMAN, SNOWMAN_UNICODE
 
 if python_major_version() >= 3:
     SNOWMAN = SNOWMAN_UNICODE

@@ -1,4 +1,4 @@
-from rollbar.lib.transforms.scrub import ScrubTransform
+from rollbar.sdk.lib.transforms.scrub import ScrubTransform
 
 
 class RedactRef(object):

@@ -1,7 +1,7 @@
 import optparse
 import sys
 
-import rollbar
+import rollbar.sdk as rollbar
 
 VERSION = '0.1'
 

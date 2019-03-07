@@ -9,10 +9,10 @@ except ImportError:
     # Python 2.7
     from collections import Mapping
 
-from rollbar.lib import (
+from rollbar.sdk.lib import (
     integer_types, iteritems, key_in, number_types, reprlib, sequence_types,
     string_types, text)
-from rollbar.lib.transforms import Transform
+from rollbar.sdk.lib.transforms import Transform
 
 
 _type_name_mapping = {

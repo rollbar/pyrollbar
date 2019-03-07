@@ -7,10 +7,10 @@ except ImportError:
     # Python 2.7
     from collections import Mapping
 
-from rollbar.lib import transforms
-from rollbar.lib.transforms.scrub import ScrubTransform
+from rollbar.sdk.lib import transforms
+from rollbar.sdk.lib.transforms.scrub import ScrubTransform
 
-from rollbar.test import BaseTest, SNOWMAN
+from rollbar.sdk.test import BaseTest, SNOWMAN
 
 
 class ScrubTransformTest(BaseTest):

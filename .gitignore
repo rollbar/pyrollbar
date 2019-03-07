@@ -10,3 +10,5 @@ rollbar.egg-info/
 Pipfile
 Pipfile.lock
 .pytest_cache/
+.DS_Store
+.venv/
