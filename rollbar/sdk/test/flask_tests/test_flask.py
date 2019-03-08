@@ -26,7 +26,7 @@ except ImportError:
 
 def create_app():
     from flask import Flask, Request, got_request_exception
-    import rollbar.contrib.flask
+    import rollbar.sdk.contrib.flask
     app = Flask(__name__)
 
     @app.route('/')

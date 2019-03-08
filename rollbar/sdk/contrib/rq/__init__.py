@@ -1,18 +1,19 @@
 """
 Exception handler hook for RQ (http://python-rq.org/)
 
-How to use: 
+How to use:
 
 1. Instead of using the default "rqworker" script to run the worker, write your own short script
-as shown in this example: 
+as shown in this example:
 https://github.com/nvie/rq/blob/master/examples/run_worker.py
 
 2. In this script, initialize rollbar with `handler='blocking'`, for example:
 
+import rollbar.sdk as rollbar
 rollbar.init('your access token', 'production', handler='blocking')
 
 3. After constructing the worker but before calling `.work()`, add
-`rollbar.contrib.rq.exception_handler` as an exception handler.
+`rollbar.sdk.contrib.rq.exception_handler` as an exception handler.
 
 Full example:
 
@@ -48,7 +49,7 @@ def exception_handler(job, *exc_info):
 
     extra_data = {'job': job_info}
     payload_data = {'framework': 'rq'}
-    
+
     rollbar.report_exc_info(exc_info, extra_data=extra_data, payload_data=payload_data)
 
     # continue to the next handler

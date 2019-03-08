@@ -2,8 +2,9 @@
 Hooks for integrating with the python logging framework.
 
 Usage:
+    import rollbar.sdk as rollbar
     import logging
-    from rollbar.logger import RollbarHandler
+    from rollbar.sdk.logger import RollbarHandler
 
     rollbar.init('ACCESS_TOKEN', 'ENVIRONMENT')
 
