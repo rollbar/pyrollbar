@@ -93,6 +93,10 @@ matrix:
     - python: "3.6"
       env: DJANGO_VERSION=1.11.1
 
+    - python: "3.7"
+      env: DJANGO_VERSION=1.11.20
+      dist: xenial
+
     - python: "3.6"
       env: PYRAMID_VERSION=1.9.2
 
