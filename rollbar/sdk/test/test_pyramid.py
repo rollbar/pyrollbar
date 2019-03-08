@@ -14,7 +14,7 @@ if PYRAMID_INSTALLED:
 
     class PyramidMiddlewareTest(BaseTest):
         def test_catch_exception_in_the_wsgi_app(self):
-            from rollbar.contrib.pyramid import RollbarMiddleware
+            from rollbar.sdk.contrib.pyramid import RollbarMiddleware
 
             def wsgi_app(environ, start_resp):
                 raise RuntimeError("oops")

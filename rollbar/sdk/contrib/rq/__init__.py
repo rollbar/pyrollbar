@@ -18,7 +18,7 @@ rollbar.init('your access token', 'production', handler='blocking')
 Full example:
 
 ```
-import rollbar
+import rollbar.sdk as rollbar
 from rq import Connection, Queue, Worker
 
 if __name__ == '__main__':
@@ -31,7 +31,7 @@ if __name__ == '__main__':
 ```
 """
 
-import rollbar
+import rollbar.sdk as rollbar
 
 
 def exception_handler(job, *exc_info):

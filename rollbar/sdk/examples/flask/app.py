@@ -2,8 +2,8 @@ import logging
 
 from flask import Flask
 
-import rollbar
-from rollbar.logger import RollbarHandler
+import rollbar.sdk as rollbar
+from rollbar.sdk.logger import RollbarHandler
 
 ACCESS_TOKEN = 'ACCESS_TOKEN'
 ENVIRONMENT = 'development'

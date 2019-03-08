@@ -3,7 +3,7 @@ Integration with Quart
 """
 
 from quart import request
-import rollbar
+import rollbar.sdk as rollbar
 
 
 def report_exception(app, exception):

@@ -7,7 +7,7 @@
 
 from twisted.internet import reactor, protocol
 
-import rollbar
+import rollbar.sdk as rollbar
 
 
 def bar(p):

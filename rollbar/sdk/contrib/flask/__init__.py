@@ -3,7 +3,7 @@ Integration with Flask
 """
 
 from flask import request
-import rollbar
+import rollbar.sdk as rollbar
 
 
 def report_exception(app, exception):

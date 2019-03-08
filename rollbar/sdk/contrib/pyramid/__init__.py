@@ -10,7 +10,7 @@ from pyramid.tweens import EXCVIEW
 from pyramid.util import DottedNameResolver
 from pyramid.settings import asbool
 
-import rollbar
+import rollbar.sdk as rollbar
 
 DEFAULT_WEB_BASE = 'https://rollbar.com'
 BOOLEAN_SETTINGS = [
@@ -115,7 +115,7 @@ def includeme(config):
     """
     settings = config.registry.settings
 
-    config.add_tween('rollbar.contrib.pyramid.rollbar_tween_factory', over=EXCVIEW)
+    config.add_tween('rollbar.sdk.contrib.pyramid.rollbar_tween_factory', over=EXCVIEW)
 
     # run patch_debugtoolbar, unless they disabled it
     if asbool(settings.get('rollbar.patch_debugtoolbar', True)):

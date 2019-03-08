@@ -56,7 +56,7 @@ configuration in the same place as the base class as described above.
 For example:
 
 1. create a 'middleware.py' file on your project (name is up to you)
-2. import the rollbar default middleware: 'from rollbar.contrib.django.middleware import RollbarNotifierMiddleware'
+2. import the rollbar default middleware: 'from rollbar.sdk.contrib.django.middleware import RollbarNotifierMiddleware'
 3. create your own middleware like this:
 class CustomRollbarNotifierMiddleware(RollbarNotifierMiddleware):
     def get_extra_data(self, request, exc):
@@ -81,7 +81,7 @@ See README.rst for full installation and configuration instructions.
 import logging
 import sys
 
-import rollbar
+import rollbar.sdk as rollbar
 
 from django.core.exceptions import MiddlewareNotUsed
 from django.conf import settings
@@ -96,7 +96,7 @@ except ImportError:
 try:
     from django.utils.deprecation import MiddlewareMixin
 except ImportError:
-    from rollbar.contrib.django.utils import MiddlewareMixin
+    from rollbar.sdk.contrib.django.utils import MiddlewareMixin
 
 log = logging.getLogger(__name__)
 
