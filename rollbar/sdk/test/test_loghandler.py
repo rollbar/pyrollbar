@@ -37,7 +37,7 @@ class LogHandlerTest(BaseTest):
 
         return logger
 
-    @mock.patch('rollbar.send_payload')
+    @mock.patch('rollbar.sdk.send_payload')
     def test_message_stays_unformatted(self, send_payload):
         logger = self._create_logger()
         logger.warning("Hello %d %s", 1, 'world')
@@ -48,7 +48,7 @@ class LogHandlerTest(BaseTest):
         self.assertEqual(payload['data']['body']['message']['args'], (1, 'world'))
         self.assertEqual(payload['data']['body']['message']['record']['name'], __name__)
 
-    @mock.patch('rollbar.send_payload')
+    @mock.patch('rollbar.sdk.send_payload')
     def test_string_or_int_level(self, send_payload):
         logger = self._create_logger()
         logger.setLevel(logging.ERROR)
@@ -73,7 +73,7 @@ class LogHandlerTest(BaseTest):
         # No need to test request parsing and payload sent,
         # just need to be sure that proper rollbar function is called
         # with passed request as argument.
-        with mock.patch("rollbar.report_message") as report_message_mock:
+        with mock.patch("rollbar.sdk.report_message") as report_message_mock:
             logger.warning("Warning message", extra={"request": request})
             self.assertEqual(report_message_mock.call_args[1]["request"], request)
 
@@ -82,14 +82,14 @@ class LogHandlerTest(BaseTest):
             # if you call logger.exception outside of an exception
             # handler, it shouldn't try to report exc_info, since it
             # won't have any
-            with mock.patch("rollbar.report_exc_info") as report_exc_info:
-                with mock.patch("rollbar.report_message") as report_message_mock:
+            with mock.patch("rollbar.sdk.report_exc_info") as report_exc_info:
+                with mock.patch("rollbar.sdk.report_message") as report_message_mock:
                     logger.exception("Exception message", extra={"request": request})
                     report_exc_info.assert_not_called()
                     self.assertEqual(report_message_mock.call_args[1]["request"], request)
 
-            with mock.patch("rollbar.report_exc_info") as report_exc_info:
-                with mock.patch("rollbar.report_message") as report_message_mock:
+            with mock.patch("rollbar.sdk.report_exc_info") as report_exc_info:
+                with mock.patch("rollbar.sdk.report_message") as report_message_mock:
                     try:
                         raise Exception()
                     except:
@@ -97,7 +97,7 @@ class LogHandlerTest(BaseTest):
                         self.assertEqual(report_exc_info.call_args[1]["request"], request)
                         report_message_mock.assert_not_called()
 
-    @mock.patch('rollbar.send_payload')
+    @mock.patch('rollbar.sdk.send_payload')
     def test_nested_exception_trace_chain(self, send_payload):
         logger = self._create_logger()
 
@@ -136,7 +136,7 @@ class LogHandlerTest(BaseTest):
         if trace is not None:
             self.assertEqual('Bad time', trace['exception']['description'])
 
-    @mock.patch('rollbar.send_payload')
+    @mock.patch('rollbar.sdk.send_payload')
     def test_not_nested_exception_trace_chain(self, send_payload):
         logger = self._create_logger()
 

@@ -6,7 +6,7 @@ import json
 import sys
 
 import mock
-from rollbar.sdk as rollbar
+import rollbar.sdk as rollbar
 
 # access token for https://rollbar.com/rollbar/pyrollbar
 TOKEN = '92c10f5616944b81a2e6f3c6493a0ec2'
@@ -45,14 +45,14 @@ if ALLOWED_PYTHON_VERSION and TWISTED_INSTALLED:
             self.tr = proto_helpers.StringTransport()
             self.proto.makeConnection(self.tr)
 
-        @mock.patch('rollbar.send_payload')
+        @mock.patch('rollbar.sdk.send_payload')
         def test_base_case(self, send_payload):
             self.proto.dataReceived('8')
             self.assertEqual(int(self.tr.value()), 64)
 
             self.assertEqual(send_payload.called, False)
 
-        @mock.patch('rollbar.send_payload')
+        @mock.patch('rollbar.sdk.send_payload')
         def test_caught_exception(self, send_payload):
             self.proto.dataReceived('rollbar')
             self.assertEqual(self.tr.value(), "error")
@@ -70,7 +70,7 @@ if ALLOWED_PYTHON_VERSION and TWISTED_INSTALLED:
                              "invalid literal for int() with base 10: 'rollbar'")
 
         # XXX not able to test uncaught exceptions for some reason
-        # @mock.patch('rollbar.send_payload')
+        # @mock.patch('rollbar.sdk.send_payload')
         # def test_uncaught_exception(self, send_payload):
         #     self.proto.dataReceived([8, 9])
         #     self.assertEqual(self.tr.value(), "error")

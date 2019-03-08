@@ -5,15 +5,15 @@ There are two options for installing the Rollbar middleware. Both options
 require modifying your settings.py file.
 
 The first option is to use
-'rollbar.contrib.django.middleware.RollbarNotifierMiddleware' which will
+'rollbar.sdk.contrib.django.middleware.RollbarNotifierMiddleware' which will
 report all exceptions to Rollbar including 404s. This middlware should be
 placed as the last item in your middleware list which is:
     * MIDDLEWARE_CLASSES in Django 1.9 and earlier
     * MIDDLEWARE in Django 1.10 and up
 
 The other option is two use the two separate middlewares:
-    * 'rollbar.contrib.django.middleware.RollbarNotifierMiddlewareExcluding404'
-    * 'rollbar.contrib.django.middleware.RollbarNotifierMiddlewareOnly404'
+    * 'rollbar.sdk.contrib.django.middleware.RollbarNotifierMiddlewareExcluding404'
+    * 'rollbar.sdk.contrib.django.middleware.RollbarNotifierMiddlewareOnly404'
 The Excluding404 middleware should be placed as the last item in your middleware
 list, and the Only404 middleware should be placed as the first item in your
 middleware list. This allows 404s to be processed by your other middlewares

@@ -78,7 +78,7 @@ if ALLOWED_PYTHON_VERSION and FLASK_INSTALLED:
             else:
                 return self.assertEqual(left, right)
 
-        @mock.patch('rollbar.send_payload')
+        @mock.patch('rollbar.sdk.send_payload')
         def test_uncaught(self, send_payload):
             resp = self.client.get('/cause_error?foo=bar',
                 headers={'X-Real-Ip': '1.2.3.4', 'User-Agent': 'Flask Test'})
@@ -103,7 +103,7 @@ if ALLOWED_PYTHON_VERSION and FLASK_INSTALLED:
             self.assertEqual(data['request']['method'], 'GET')
             self.assertEqual(data['request']['headers']['User-Agent'], 'Flask Test')
 
-        @mock.patch('rollbar.send_payload')
+        @mock.patch('rollbar.sdk.send_payload')
         def test_uncaught_json_request(self, send_payload):
             json_body = {"hello": "world"}
             json_body_str = json.dumps(json_body)
@@ -130,7 +130,7 @@ if ALLOWED_PYTHON_VERSION and FLASK_INSTALLED:
             self.assertEqual(data['request']['user_ip'], '5.6.7.8')
             self.assertEqual(data['request']['method'], 'POST')
 
-        @mock.patch('rollbar.send_payload')
+        @mock.patch('rollbar.sdk.send_payload')
         def test_uncaught_no_username_no_email(self, send_payload):
             rollbar.SETTINGS['capture_email'] = False
             rollbar.SETTINGS['capture_username'] = False

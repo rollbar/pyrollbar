@@ -20,7 +20,7 @@ settings.configure(
         'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
         # Rollbar middleware
-        'rollbar.contrib.django.middleware.RollbarNotifierMiddleware',
+        'rollbar.sdk.contrib.django.middleware.RollbarNotifierMiddleware',
     ),
 )
 

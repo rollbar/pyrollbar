@@ -21,7 +21,7 @@ if PYRAMID_INSTALLED:
 
             middleware = RollbarMiddleware({}, wsgi_app)
 
-            with mock.patch("rollbar.report_exc_info") as mock_report:
+            with mock.patch("rollbar.sdk.report_exc_info") as mock_report:
                 with self.assertRaises(RuntimeError):
                     middleware(environ={}, start_resp=lambda: None)
 

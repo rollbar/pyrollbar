@@ -2,7 +2,7 @@
 django-rollbar context processor
 
 To install, add the following in your settings.py:
-1. add 'rollbar.contrib.django.context_processors.rollbar_settings' to TEMPLATE_CONTEXT_PROCESSORS
+1. add 'rollbar.sdk.contrib.django.context_processors.rollbar_settings' to TEMPLATE_CONTEXT_PROCESSORS
 2. add a section like this:
 ROLLBAR = {
     'client_access_token': 'tokengoeshere',

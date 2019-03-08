@@ -111,9 +111,9 @@ class ShortenerTransformTest(BaseTest):
         self._assert_shortened('deque', expected)
 
     def test_shorten_other(self):
-        expected = '<rollbar.test.test_shortener_transform.TestCla...'
+        expected = '<rollbar.sdk.test.test_shortener_transform.Tes...'
         if six.PY3:
-            expected = '<rollbar.test.test_shortener_transform.TestClas...'
+            expected = '<rollbar.sdk.test.test_shortener_transform.Test...'
         self._assert_shortened('other', expected)
 
     def test_shorten_object(self):
