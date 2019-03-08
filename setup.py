@@ -34,9 +34,9 @@ setup(
     version=VERSION,
     entry_points={
         'paste.filter_app_factory': [
-            'pyramid=rollbar.contrib.pyramid:create_rollbar_middleware'
+            'pyramid=rollbar.sdk.contrib.pyramid:create_rollbar_middleware'
         ],
-        'console_scripts': ['rollbar=rollbar.cli:main']
+        'console_scripts': ['rollbar=rollbar.sdk.cli:main']
     },
     description='Easy and powerful exception tracking with Rollbar. Send '
                 'messages and exceptions with arbitrary context, get back '
