@@ -9,31 +9,31 @@ matrix:
     - python: "2.7"
       env: FLASK_VERSION=0.11.1
     - python: "2.7"
-      env: FLASK_VERSION=0.12.2
+      env: FLASK_VERSION=0.12.4
     - python: "3.3"
       env: FLASK_VERSION=0.10.1
     - python: "3.3"
       env: FLASK_VERSION=0.11.1
     - python: "3.3"
-      env: FLASK_VERSION=0.12.2
+      env: FLASK_VERSION=0.12.4
     - python: "3.4"
       env: FLASK_VERSION=0.10.1
     - python: "3.4"
       env: FLASK_VERSION=0.11.1
     - python: "3.4"
-      env: FLASK_VERSION=0.12.2
+      env: FLASK_VERSION=0.12.4
     - python: "3.5"
       env: FLASK_VERSION=0.10.1
     - python: "3.5"
       env: FLASK_VERSION=0.11.1
     - python: "3.4"
-      env: FLASK_VERSION=0.12.2
+      env: FLASK_VERSION=0.12.4
     - python: "3.6"
       env: FLASK_VERSION=0.10.1
     - python: "3.6"
       env: FLASK_VERSION=0.11.1
     - python: "3.6"
-      env: FLASK_VERSION=0.12.2
+      env: FLASK_VERSION=0.12.4
 
     - python: "2.7"
       env: TWISTED_VERSION=15.5.0
