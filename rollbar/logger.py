@@ -139,7 +139,7 @@ class RollbarHandler(logging.Handler):
                                                extra_data=extra_data,
                                                payload_data=payload_data)
             else:
-                uuid = rollbar.report_message(record.msg,
+                uuid = rollbar.report_message(self.format(record),
                                               level=level,
                                               request=request,
                                               extra_data=extra_data,
