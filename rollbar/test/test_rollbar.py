@@ -3,6 +3,7 @@ import copy
 import json
 import mock
 import socket
+import threading
 import uuid
 
 import sys
@@ -282,9 +283,11 @@ class RollbarTest(BaseTest):
 
     @mock.patch('rollbar.send_payload')
     def test_report_exception_with_same_exception_as_cause(self, send_payload):
+        cause_exc = CauseException('bar')
+
         def _raise_cause():
             bar_local = 'bar'
-            raise CauseException('bar')
+            raise cause_exc
 
         def _raise_ex():
             try:
@@ -303,7 +306,20 @@ class RollbarTest(BaseTest):
                 except:
                     rollbar.report_exc_info()
 
-        _raise_ex()
+        ex_raiser = threading.Thread(target=_raise_ex)
+        ex_raiser.daemon = True
+        ex_raiser.start()
+        # 0.5 seconds ought be enough for any modern computer to get into the
+        # cyclical parts of the code, but not so long as to collect a lot of
+        # objects in memory
+        ex_raiser.join(timeout=0.5)
+
+        if ex_raiser.is_alive():
+            # This breaks the circular reference, allowing thread to exit and
+            # to be joined
+            cause_exc.__cause__ = None
+            ex_raiser.join()
+            self.fail('Cyclic reference in rollbar._walk_trace_chain()')
 
         self.assertEqual(send_payload.called, True)
 
