@@ -3,6 +3,7 @@ import copy
 import json
 import mock
 import socket
+import threading
 import uuid
 
 import sys
@@ -274,6 +275,67 @@ class RollbarTest(BaseTest):
         self.assertEqual(payload['data']['body']['trace_chain'][0]['exception']['message'], 'foo')
         self.assertEqual(payload['data']['body']['trace_chain'][0]['exception']['class'], 'Exception')
         self.assertEqual(payload['data']['body']['trace_chain'][0]['frames'][-1]['locals']['foo_local'], 'foo')
+
+        self.assertIn('exception', payload['data']['body']['trace_chain'][1])
+        self.assertEqual(payload['data']['body']['trace_chain'][1]['exception']['message'], 'bar')
+        self.assertEqual(payload['data']['body']['trace_chain'][1]['exception']['class'], 'CauseException')
+        self.assertEqual(payload['data']['body']['trace_chain'][1]['frames'][-1]['locals']['bar_local'], 'bar')
+
+    @mock.patch('rollbar.send_payload')
+    def test_report_exception_with_same_exception_as_cause(self, send_payload):
+        cause_exc = CauseException('bar')
+
+        def _raise_cause():
+            bar_local = 'bar'
+            raise cause_exc
+
+        def _raise_ex():
+            try:
+                _raise_cause()
+            except CauseException as cause:
+                # python2 won't automatically assign this traceback...
+                exc_info = sys.exc_info()
+                setattr(cause, '__traceback__', exc_info[2])
+
+                try:
+                    foo_local = 'foo'
+                    # in python3 this would normally be expressed as
+                    # raise cause from cause
+                    setattr(cause, '__cause__', cause)  # PEP-3134
+                    raise cause
+                except:
+                    rollbar.report_exc_info()
+
+        ex_raiser = threading.Thread(target=_raise_ex)
+        ex_raiser.daemon = True
+        ex_raiser.start()
+        # 0.5 seconds ought be enough for any modern computer to get into the
+        # cyclical parts of the code, but not so long as to collect a lot of
+        # objects in memory
+        ex_raiser.join(timeout=0.5)
+
+        if ex_raiser.is_alive():
+            # This breaks the circular reference, allowing thread to exit and
+            # to be joined
+            cause_exc.__cause__ = None
+            ex_raiser.join()
+            self.fail('Cyclic reference in rollbar._walk_trace_chain()')
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = send_payload.call_args[0][0]
+
+        self.assertEqual(payload['access_token'], _test_access_token)
+        self.assertIn('body', payload['data'])
+        self.assertNotIn('trace', payload['data']['body'])
+        self.assertIn('trace_chain', payload['data']['body'])
+        self.assertEqual(2, len(payload['data']['body']['trace_chain']))
+
+        self.assertIn('exception', payload['data']['body']['trace_chain'][0])
+        self.assertEqual(payload['data']['body']['trace_chain'][0]['exception']['message'], 'bar')
+        self.assertEqual(payload['data']['body']['trace_chain'][0]['exception']['class'], 'CauseException')
+        frames = payload['data']['body']['trace_chain'][0]['frames']
+        self.assertEqual(payload['data']['body']['trace_chain'][0]['frames'][0]['locals']['foo_local'], 'foo')
 
         self.assertIn('exception', payload['data']['body']['trace_chain'][1])
         self.assertEqual(payload['data']['body']['trace_chain'][1]['exception']['message'], 'bar')
