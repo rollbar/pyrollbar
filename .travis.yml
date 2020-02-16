@@ -133,6 +133,7 @@ matrix:
       env: PYRAMID_VERSION=1.9.2
 
 install:
+  - pip install setuptools==39.2.0 --force-reinstall
   - if [ -v FLASK_VERSION ]; then pip install Flask==$FLASK_VERSION; fi
   - if [ -v TWISTED_VERSION ]; then pip install Twisted==$TWISTED_VERSION treq; fi
   - if [ -v DJANGO_VERSION ]; then pip install Django==$DJANGO_VERSION; fi
