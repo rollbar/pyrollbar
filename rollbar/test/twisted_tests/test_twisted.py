@@ -5,7 +5,11 @@ Tests for Twisted instrumentation
 import json
 import sys
 
-import mock
+try:
+    from unittest import mock
+except ImportError:
+    import mock
+
 import rollbar
 
 # access token for https://rollbar.com/rollbar/pyrollbar

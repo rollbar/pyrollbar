@@ -6,7 +6,11 @@ import json
 import sys
 import os
 
-import mock
+try:
+    from unittest import mock
+except ImportError:
+    import mock
+
 import rollbar
 
 from rollbar.test import BaseTest
