@@ -134,6 +134,7 @@ matrix:
 
 install:
   - pip install setuptools==39.2.0 --force-reinstall
+  - if [ $TRAVIS_PYTHON_VERSION == 3.3 ]; then pip install Werkzeug==0.14.1 --force-reinstall; fi
   - if [ -v FLASK_VERSION ]; then pip install Flask==$FLASK_VERSION; fi
   - if [ -v TWISTED_VERSION ]; then pip install Twisted==$TWISTED_VERSION treq; fi
   - if [ -v DJANGO_VERSION ]; then pip install Django==$DJANGO_VERSION; fi
