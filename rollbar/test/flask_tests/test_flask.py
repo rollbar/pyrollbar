@@ -6,7 +6,11 @@ import json
 import sys
 import os
 
-import mock
+try:
+    from unittest import mock
+except ImportError:
+    import mock
+
 import rollbar
 
 from rollbar.test import BaseTest
@@ -98,7 +102,15 @@ if ALLOWED_PYTHON_VERSION and FLASK_INSTALLED:
 
             self.assertIn('request', data)
             self.assertEqual(data['request']['url'], 'http://localhost/cause_error?foo=bar')
-            self.assertDictEqual(data['request']['GET'], {'foo': ['bar']})
+
+            # The behavior of implicitly converting werkzeug.ImmutableMultiDict
+            # using dict() changes starting in Python 3.6.
+            # See _build_werkzeug_request_data()
+            if sys.version_info >= (3, 6):
+                self.assertDictEqual(data['request']['GET'], {'foo': 'bar'})
+            else:
+                self.assertDictEqual(data['request']['GET'], {'foo': ['bar']})
+
             self.assertEqual(data['request']['user_ip'], '1.2.3.4')
             self.assertEqual(data['request']['method'], 'GET')
             self.assertEqual(data['request']['headers']['User-Agent'], 'Flask Test')
@@ -153,7 +165,15 @@ if ALLOWED_PYTHON_VERSION and FLASK_INSTALLED:
 
             self.assertIn('request', data)
             self.assertEqual(data['request']['url'], 'http://localhost/cause_error?foo=bar')
-            self.assertDictEqual(data['request']['GET'], {'foo': ['bar']})
+
+            # The behavior of implicitly converting werkzeug.ImmutableMultiDict
+            # using dict() changes starting in Python 3.6.
+            # See _build_werkzeug_request_data()
+            if sys.version_info >= (3, 6):
+                self.assertDictEqual(data['request']['GET'], {'foo': 'bar'})
+            else:
+                self.assertDictEqual(data['request']['GET'], {'foo': ['bar']})
+
             self.assertEqual(data['request']['user_ip'], '1.2.3.4')
             self.assertEqual(data['request']['method'], 'GET')
             self.assertEqual(data['request']['headers']['User-Agent'], 'Flask Test')

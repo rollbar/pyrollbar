@@ -13,12 +13,16 @@ matrix:
     - python: "2.7"
       env: FLASK_VERSION=1.0.2
     - python: "3.3"
+      dist: trusty
       env: FLASK_VERSION=0.10.1
     - python: "3.3"
+      dist: trusty
       env: FLASK_VERSION=0.11.1
     - python: "3.3"
+      dist: trusty
       env: FLASK_VERSION=0.12.4
     - python: "3.3"
+      dist: trusty
       env: FLASK_VERSION=1.0.2
     - python: "3.4"
       env: FLASK_VERSION=0.10.1
@@ -76,8 +80,10 @@ matrix:
       env: DJANGO_VERSION=1.11.20
 
     - python: "3.3"
+      dist: trusty
       env: DJANGO_VERSION=1.6.11
     - python: "3.3"
+      dist: trusty
       env: DJANGO_VERSION=1.8.19
 
     - python: "3.4"
@@ -127,6 +133,8 @@ matrix:
       env: PYRAMID_VERSION=1.9.2
 
 install:
+  - pip install setuptools==39.2.0 --force-reinstall
+  - if [ $TRAVIS_PYTHON_VERSION == 3.3 ]; then pip install Werkzeug==0.14.1 --force-reinstall; fi
   - if [ -v FLASK_VERSION ]; then pip install Flask==$FLASK_VERSION; fi
   - if [ -v TWISTED_VERSION ]; then pip install Twisted==$TWISTED_VERSION treq; fi
   - if [ -v DJANGO_VERSION ]; then pip install Django==$DJANGO_VERSION; fi

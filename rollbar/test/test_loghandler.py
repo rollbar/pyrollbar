@@ -4,8 +4,12 @@ Tests for the RollbarHandler logging handler
 import copy
 import json
 import logging
-import mock
 import sys
+
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 
 import rollbar
 from rollbar.logger import RollbarHandler

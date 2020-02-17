@@ -10,3 +10,4 @@ rollbar.egg-info/
 Pipfile
 Pipfile.lock
 .pytest_cache/
+.python-version

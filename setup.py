@@ -18,7 +18,6 @@ with open(INIT_PATH) as fd:
     VERSION = re.search(r"^__version__ = ['\"]([^'\"]+)['\"]", INIT_DATA, re.MULTILINE).group(1)
 
 tests_require = [
-    'mock',
     'webob',
     'blinker',
     'unittest2'
@@ -26,6 +25,7 @@ tests_require = [
 
 version = sys.version_info
 if version[0] == 2 or (version[0] == 3 and version[1] < 4):
+    tests_require.append('mock<=3.0.5') # mock > 3.0.5 requires python >= 3.5
     tests_require.append('enum34')
 
 setup(
