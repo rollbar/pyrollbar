@@ -831,11 +831,7 @@ def _build_person_data(request):
     """
     if hasattr(request, 'rollbar_person'):
         rollbar_person_prop = request.rollbar_person
-        try:
-            person = rollbar_person_prop()
-        except TypeError:
-            person = rollbar_person_prop
-
+        person = rollbar_person_prop() if callable(rollbar_person_prop) else rollbar_person_prop
         if person and isinstance(person, dict):
             return person
         else:
@@ -843,11 +839,7 @@ def _build_person_data(request):
 
     if hasattr(request, 'user'):
         user_prop = request.user
-        try:
-            user = user_prop()
-        except TypeError:
-            user = user_prop
-
+        user = user_prop() if callable(user_prop) else user_prop
         if not user:
             return None
         elif isinstance(user, dict):
@@ -871,11 +863,7 @@ def _build_person_data(request):
 
     if hasattr(request, 'user_id'):
         user_id_prop = request.user_id
-        try:
-            user_id = user_id_prop()
-        except TypeError:
-            user_id = user_id_prop
-
+        user_id = user_id_prop() if callable(user_id_prop) else user_id_prop
         if not user_id:
             return None
         return {'id': text(user_id)}
