@@ -1,4 +1,4 @@
-"""
+r"""
 django-rollbar middleware
 
 There are two options for installing the Rollbar middleware. Both options
@@ -36,7 +36,7 @@ import re
 ROLLBAR = {
     'access_token': 'YOUR_TOKEN',
     'ignorable_404_urls': (
-        re.compile('/index\.php'),
+        re.compile(r'/index\.php'),
         re.compile('/foobar'),
     ),
 }
