@@ -686,7 +686,7 @@ class RollbarTest(BaseTest):
         varargs = payload['data']['body']['trace']['frames'][-1]['varargspec']
 
         self.assertEqual(1, len(payload['data']['body']['trace']['frames'][-1]['locals'][varargs]))
-        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals'][varargs][0], '\*+')
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals'][varargs][0], r'\*+')
 
     @mock.patch('rollbar.send_payload')
     def test_args_lambda_with_star_args_and_args(self, send_payload):
@@ -713,8 +713,8 @@ class RollbarTest(BaseTest):
         self.assertEqual('arg1-value', payload['data']['body']['trace']['frames'][-1]['locals']['arg1'])
 
         self.assertEqual(2, len(payload['data']['body']['trace']['frames'][-1]['locals'][varargs]))
-        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals'][varargs][0], '\*+')
-        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals'][varargs][1], '\*+')
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals'][varargs][0], r'\*+')
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals'][varargs][1], r'\*+')
 
     @mock.patch('rollbar.send_payload')
     def test_args_lambda_with_kwargs(self, send_payload):
@@ -877,7 +877,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(2, len(payload['data']['body']['trace']['frames'][-1]['argspec']))
         self.assertEqual('password', payload['data']['body']['trace']['frames'][-1]['argspec'][0])
-        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['password'], '\*+')
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['password'], r'\*+')
         self.assertEqual('clear', payload['data']['body']['trace']['frames'][-1]['argspec'][1])
         self.assertEqual('text', payload['data']['body']['trace']['frames'][-1]['locals']['clear'])
 
@@ -931,7 +931,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(2, len(payload['data']['body']['trace']['frames'][-1]['locals'][keywords]))
         self.assertIn('password', payload['data']['body']['trace']['frames'][-1]['locals'][keywords])
-        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals'][keywords]['password'], '\*+')
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals'][keywords]['password'], r'\*+')
         self.assertIn('clear', payload['data']['body']['trace']['frames'][-1]['locals'][keywords])
         self.assertEqual('text', payload['data']['body']['trace']['frames'][-1]['locals'][keywords]['clear'])
 
@@ -962,8 +962,8 @@ class RollbarTest(BaseTest):
 
         payload = send_payload.call_args[0][0]
 
-        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['password'], '\*+')
-        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['Password'], '\*+')
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['password'], r'\*+')
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['Password'], r'\*+')
         self.assertIn('_invalid', payload['data']['body']['trace']['frames'][-1]['locals'])
 
         binary_type_name = 'str' if python_major_version() < 3 else 'bytes'
