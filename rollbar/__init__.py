@@ -265,6 +265,9 @@ SETTINGS = {
     'http_proxy_user': None,
     'http_proxy_password': None,
     'include_request_body': False,
+    'request_pool_connections': None,
+    'request_pool_maxsize': None,
+    'request_max_retries': None,
 }
 
 _CURRENT_LAMBDA_CONTEXT = None
@@ -319,6 +322,7 @@ def init(access_token, environment='production', scrub_fields=None, url_fields=N
 
     SETTINGS['access_token'] = access_token
     SETTINGS['environment'] = environment
+    _configure_transport(**SETTINGS)
 
     if SETTINGS.get('allow_logging_basic_config'):
         logging.basicConfig()
@@ -368,6 +372,20 @@ def init(access_token, environment='production', scrub_fields=None, url_fields=N
     filters.add_builtin_filters(SETTINGS)
 
     _initialized = True
+
+
+def _configure_transport(**kw):
+    configuration = _requests_configuration(**kw)
+    transport.configure_pool(**configuration)
+
+
+def _requests_configuration(**kw):
+    keys = {
+        'request_pool_connections': 'pool_connections',
+        'request_pool_maxsize': 'pool_maxsize',
+        'request_max_retries': 'max_retries',
+    }
+    return {keys[k]: kw.get(k, None) for k in keys}
 
 
 def lambda_function(f):
