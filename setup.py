@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
-README_PATH = os.path.join(HERE, 'README.rst')
+README_PATH = os.path.join(HERE, 'README.md')
 try:
     with open(README_PATH) as fd:
         README = fd.read()
@@ -42,6 +42,7 @@ setup(
                 'messages and exceptions with arbitrary context, get back '
                 'aggregates, and debug production issues quickly.',
     long_description=README,
+    long_description_content_type="text/markdown",
     author='Rollbar, Inc.',
     author_email='support@rollbar.com',
     test_suite='rollbar.test',
