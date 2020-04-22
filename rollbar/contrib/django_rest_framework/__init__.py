@@ -1,14 +1,12 @@
 try:
     from django.core.exceptions import ImproperlyConfigured
 except ImportError:
-    RestFrameworkExceptionHandler = None
-else:
-    try:
-        from rest_framework.views import exception_handler as RestFrameworkExceptionHandler
-    except (ImportError, ImproperlyConfigured):
-        RestFrameworkExceptionHandler = None
+    ImproperlyConfigured = RuntimeError
 
-    del ImproperlyConfigured
+try:
+    from rest_framework.views import exception_handler as _exception_handler
+except (ImportError, ImproperlyConfigured):
+    _exception_handler = None
 
 
 def post_exception_handler(exc, context):
@@ -18,5 +16,14 @@ def post_exception_handler(exc, context):
     # because we cannot read the request data/stream more than once.
     # This will allow us to see the parsed POST params in the rollbar
     # exception log.
-    context['request']._request.POST = context['request'].data
-    return RestFrameworkExceptionHandler(exc, context)
+
+    if _exception_handler is None:
+        raise ImproperlyConfigured(
+            'Could not import rest_framework.views.exception_handler')
+
+    try:
+        context['request']._request.POST = context['request'].data
+    except Exception:
+        pass
+
+    return _exception_handler(exc, context)
