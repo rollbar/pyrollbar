@@ -7,8 +7,12 @@ import time
 import uuid
 
 import sys
+from random import random
 from threading import Event
 from unittest.mock import Mock
+
+from rollbar import maybe_throttle_error, sampling
+from rollbar.sampling import _maybe_throttle_key, _get_exception_key
 
 try:
     from unittest import mock
@@ -1342,31 +1346,140 @@ class RollbarTest(BaseTest):
             self.assertNotEqual(None, request_data['user_ip'])
 
     def test_max_threads_num(self):
-        rollbar.SETTINGS['max_threads_num'] = 5
+        for func in [
+            lambda: rollbar.report_message('test {}'.format(random())),
+            lambda: rollbar.report_exc_info(
+                (ZeroDivisionError, ZeroDivisionError(random()), None)
+            )
+        ]:
+            rollbar.SETTINGS['max_threads_num'] = 5
+            rollbar.SETTINGS['handler'] = 'thread'
+            event = Event()
+
+            spy = Mock()
+
+            def long_run_mock(*a, **k):
+                event.wait(timeout=10)
+                spy()
+
+            with mock.patch('rollbar._post_api', long_run_mock), \
+                    mock.patch('rollbar.log') as log_mck:
+                for i in range(10):
+                    func()
+
+            self.assertEqual(rollbar._threads.qsize(), 5)
+            event.set()
+
+            time.sleep(.1)
+            self.assertEqual(rollbar._threads.qsize(), 0)
+
+            self.assertEqual(spy.call_count, 5)
+            self.assertEqual(log_mck.warning.call_count, 5)
+            self.assertEqual(log_mck.warning.call_args,
+                             mock.call('pyrollbar: too many active threads: %s for limit %s', 5, 5))
+
+    @mock.patch('rollbar._post_api')
+    def test_sampling_performance(self, request_mck):
         rollbar.SETTINGS['handler'] = 'thread'
-        event = Event()
+        rollbar.SETTINGS['error_report_min_interval_seconds'] = 0.1
 
-        spy = Mock()
+        def func(i=0, fails=True):
+            if i > 10:
+                if fails:
+                    raise ValueError(i)
+                else:
+                    return 1
+            return func(i + 1, fails=fails)
 
-        def long_run_mock(*a, **k):
-            event.wait(timeout=10)
-            spy()
+        # measure speed when no error
+        start = time.time()
+        for i in range(100):
+            func(fails=False)
+        duration_no_reporting = time.time() - start
 
-        with mock.patch('rollbar._post_api', long_run_mock), \
-                mock.patch('rollbar.log') as log_mck:
-            for i in range(10):
-                rollbar.report_message('test ' + str(i))
+        assert request_mck.call_count == 0
 
-        self.assertEqual(rollbar._threads.qsize(), 5)
-        event.set()
+        # measure speed when reporting
+        start = time.time()
+        for i in range(100):
+            try:
+                func()
+            except:
+                rollbar.report_exc_info()
 
-        time.sleep(.1)
-        self.assertEqual(rollbar._threads.qsize(), 0)
+        duration_reporting = time.time() - start
 
-        self.assertEqual(spy.call_count, 5)
-        self.assertEqual(log_mck.warning.call_count, 5)
-        self.assertEqual(log_mck.warning.call_args,
-                         mock.call('pyrollbar: too many active threads: %s for limit %s', 5, 5))
+        # Without sampling - x5000-x7000 times slower
+        # With sampling - x1000-x200 times slower (with 0.1 second interval)
+        self.assertLessEqual(
+            duration_reporting / duration_no_reporting, 200,
+        )
+        self.assertEqual(request_mck.call_count, 1)
+
+    def test_maybe_throttle_key(self):
+        def failed_func(i = None):
+            if i == 1:
+                raise ValueError(1)
+            elif i == 2:
+                raise ValueError(2)
+            else:
+                raise TypeError()
+
+        try:
+            failed_func(1)
+        except Exception as e1:
+            exc_info_1 = sys.exc_info()
+
+        try:
+            failed_func(2)
+        except Exception as e2:
+            exc_info_2 = sys.exc_info()
+
+        try:
+            failed_func()
+        except Exception as e3:
+            exc_info_3 = sys.exc_info()
+
+        self.assertNotEqual(_get_exception_key(exc_info_1),
+                            _get_exception_key(exc_info_2))
+        self.assertNotEqual(_get_exception_key(exc_info_1),
+                            _get_exception_key(exc_info_3))
+        self.assertNotEqual(_get_exception_key(exc_info_2),
+                            _get_exception_key(exc_info_3))
+
+        # None means no limit
+        sampling._throttle_info = {}
+        rollbar.SETTINGS['error_report_min_interval_seconds'] = None
+        self.assertFalse(maybe_throttle_error(exc_info_1))
+        self.assertFalse(maybe_throttle_error(exc_info_1))
+
+        # very small interval
+        sampling._throttle_info = {}
+        rollbar.SETTINGS['error_report_min_interval_seconds'] = 0.01
+        self.assertFalse(maybe_throttle_error(exc_info_1))
+        self.assertTrue(maybe_throttle_error(exc_info_1))
+        self.assertFalse(maybe_throttle_error(exc_info_2))
+        time.sleep(0.02)
+        self.assertFalse(maybe_throttle_error(exc_info_1))
+
+        # big interval
+        sampling._throttle_info = {}
+        rollbar.SETTINGS['error_report_min_interval_seconds'] = 0.05
+        self.assertFalse(maybe_throttle_error(exc_info_1))
+        self.assertTrue(maybe_throttle_error(exc_info_1))
+        self.assertFalse(maybe_throttle_error(exc_info_2))
+        self.assertFalse(maybe_throttle_error(exc_info_3))
+        self.assertTrue(maybe_throttle_error(exc_info_2))
+        self.assertTrue(maybe_throttle_error(exc_info_3))
+        time.sleep(0.02)
+        self.assertTrue(maybe_throttle_error(exc_info_1))
+        self.assertTrue(maybe_throttle_error(exc_info_2))
+        self.assertTrue(maybe_throttle_error(exc_info_3))
+
+        time.sleep(0.05)
+        self.assertFalse(maybe_throttle_error(exc_info_1))
+        self.assertFalse(maybe_throttle_error(exc_info_2))
+        self.assertFalse(maybe_throttle_error(exc_info_3))
 
 
 ### Helpers
