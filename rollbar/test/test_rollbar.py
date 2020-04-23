@@ -3,9 +3,12 @@ import copy
 import json
 import socket
 import threading
+import time
 import uuid
 
 import sys
+from threading import Event
+from unittest.mock import Mock
 
 try:
     from unittest import mock
@@ -1337,6 +1340,33 @@ class RollbarTest(BaseTest):
             rollbar._filter_ip(request_data, rollbar.ANONYMIZE)
             self.assertNotEqual(ip, request_data['user_ip'])
             self.assertNotEqual(None, request_data['user_ip'])
+
+    def test_max_threads_num(self):
+        rollbar.SETTINGS['max_threads_num'] = 5
+        rollbar.SETTINGS['handler'] = 'thread'
+        event = Event()
+
+        spy = Mock()
+
+        def long_run_mock(*a, **k):
+            event.wait(timeout=10)
+            spy()
+
+        with mock.patch('rollbar._post_api', long_run_mock), \
+                mock.patch('rollbar.log') as log_mck:
+            for i in range(10):
+                rollbar.report_message('test ' + str(i))
+
+        self.assertEqual(rollbar._threads.qsize(), 5)
+        event.set()
+
+        time.sleep(.1)
+        self.assertEqual(rollbar._threads.qsize(), 0)
+
+        self.assertEqual(spy.call_count, 5)
+        self.assertEqual(log_mck.warning.call_count, 5)
+        self.assertEqual(log_mck.warning.call_args,
+                         mock.call('pyrollbar: too many active threads: %s for limit %s', 5, 5))
 
 
 ### Helpers

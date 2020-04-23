@@ -268,6 +268,12 @@ SETTINGS = {
     'request_pool_connections': None,
     'request_pool_maxsize': None,
     'request_max_retries': None,
+
+    'max_threads_num': 1000,
+
+    # Sampling settings. 1. - means send all.
+    'error_sample_rate': 1.,
+    'message_sample_rate': 1.,
 }
 
 _CURRENT_LAMBDA_CONTEXT = None
@@ -804,6 +810,14 @@ def _check_config():
     if not SETTINGS.get('access_token'):
         log.warning("pyrollbar: No access_token provided. Please configure by calling rollbar.init() with your access token.")
         return False
+
+    max_thread_num = SETTINGS.get('max_threads_num')
+    if max_thread_num:
+        current_threads = _threads.qsize()
+        if current_threads >= max_thread_num:
+            log.warning("pyrollbar: too many active threads: %s for limit %s",
+                        current_threads, max_thread_num)
+            return False
 
     return True
 
