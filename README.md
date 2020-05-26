@@ -1,5 +1,5 @@
 # Pyrollbar
-[![Build Status](https://api.travis-ci.org/rollbar/pyrollbar.png?branch=v0.14.2)](https://travis-ci.org/rollbar/pyrollbar)
+[![Build Status](https://travis-ci.org/rollbar/pyrollbar.svg?branch=v0.15.0)](https://travis-ci.org/rollbar/pyrollbar)
 
 Python notifier for reporting exceptions, errors, and log messages to [Rollbar](https://rollbar.com).
 
