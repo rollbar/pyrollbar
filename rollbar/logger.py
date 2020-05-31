@@ -21,6 +21,8 @@ Usage:
 import logging
 import threading
 
+from logging.config import ConvertingDict, ConvertingList, ConvertingTuple
+
 import rollbar
 
 # hack to fix backward compatibility in Python3
@@ -28,6 +30,17 @@ try:
     from logging import _checkLevel
 except ImportError:
     _checkLevel = lambda lvl: lvl
+
+
+def resolve_logging_types(obj):
+    if isinstance(obj, (dict, ConvertingDict)):
+        return {k: resolve_logging_types(v) for k, v in obj.items()}
+    elif isinstance(obj, (list, ConvertingList)):
+        return [resolve_logging_types(i) for i in obj]
+    elif isinstance(obj, (tuple, ConvertingTuple)):
+        return tuple(resolve_logging_types(i) for i in obj)
+
+    return obj
 
 
 class RollbarHandler(logging.Handler):
@@ -46,7 +59,8 @@ class RollbarHandler(logging.Handler):
         logging.Handler.__init__(self)
 
         if access_token is not None:
-            rollbar.init(access_token, environment, **kw)
+            rollbar.init(
+                access_token, environment, **resolve_logging_types(kw))
 
         self.notify_level = _checkLevel(level)
 
@@ -131,7 +145,8 @@ class RollbarHandler(logging.Handler):
                             }
                         }
                     }
-                    payload_data = rollbar.dict_merge(payload_data, message_template)
+                    payload_data = rollbar.dict_merge(
+                        payload_data, message_template, silence_errors=True)
 
                 uuid = rollbar.report_exc_info(exc_info,
                                                level=level,

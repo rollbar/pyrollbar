@@ -691,7 +691,7 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
         if not isinstance(extra_data, dict):
             extra_data = {'value': extra_data}
         if extra_trace_data:
-            extra_data = dict_merge(extra_data, extra_trace_data)
+            extra_data = dict_merge(extra_data, extra_trace_data, silence_errors=True)
         data['custom'] = extra_data
     if extra_trace_data and not extra_data:
         data['custom'] = extra_trace_data
@@ -703,7 +703,7 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     data['server'] = _build_server_data()
 
     if payload_data:
-        data = dict_merge(data, payload_data)
+        data = dict_merge(data, payload_data, silence_errors=True)
 
     payload = _build_payload(data)
     send_payload(payload, payload.get('access_token'))
@@ -783,7 +783,7 @@ def _report_message(message, level, request, extra_data, payload_data):
     data['server'] = _build_server_data()
 
     if payload_data:
-        data = dict_merge(data, payload_data)
+        data = dict_merge(data, payload_data, silence_errors=True)
 
     payload = _build_payload(data)
     send_payload(payload, payload.get('access_token'))
@@ -1014,7 +1014,7 @@ def _add_lambda_context_data(data):
             }
         }
         if 'custom' in data:
-            data['custom'] = dict_merge(data['custom'], lambda_data)
+            data['custom'] = dict_merge(data['custom'], lambda_data, silence_errors=True)
         else:
             data['custom'] = lambda_data
     except Exception as e:

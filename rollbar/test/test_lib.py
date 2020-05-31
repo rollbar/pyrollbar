@@ -50,7 +50,7 @@ class RollbarLibTest(BaseTest):
         p = poll()
         a = {'a': {'b': 42}}
         b = {'a': {'y': p}}
-        result = dict_merge(a, b)
+        result = dict_merge(a, b, silence_errors=True)
 
         self.assertIn('a', result)
         self.assertIn('b', result['a'])
