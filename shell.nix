@@ -20,7 +20,7 @@ python = let
   };
 in python36.override { inherit packageOverrides; };
 pyrollbar = pkgs.callPackage ./. { inherit python; };
-pyenv = python.withPackages(ps: with ps; [ pyrollbar twine unittest2 mock pyramid ]);
+pyenv = python.withPackages(ps: with ps; [ pyrollbar twine mock pyramid ]);
 
 in
 
