@@ -252,7 +252,7 @@ SETTINGS = {
         'safe_repr': True,
         'scrub_varargs': True,
         'sizes': DEFAULT_LOCALS_SIZES,
-        'whitelisted_types': []
+        'safelisted_types': []
     },
     'verify_https': True,
     'shortener_keys': [],
@@ -337,7 +337,7 @@ def init(access_token, environment='production', scrub_fields=None, url_fields=N
     # 4. Optional - If local variable gathering is enabled, transform the
     #       trace frame values using the ShortReprTransform.
     _serialize_transform = SerializableTransform(safe_repr=SETTINGS['locals']['safe_repr'],
-                                                 whitelist_types=SETTINGS['locals']['whitelisted_types'])
+                                                 safelist_types=SETTINGS['locals']['safelisted_types'])
     _transforms = [
         ScrubRedactTransform(),
         _serialize_transform,
