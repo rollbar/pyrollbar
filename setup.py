@@ -20,7 +20,6 @@ with open(INIT_PATH) as fd:
 tests_require = [
     'webob',
     'blinker',
-    'unittest2'
 ]
 
 version = sys.version_info
