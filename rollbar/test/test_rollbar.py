@@ -861,6 +861,8 @@ class RollbarTest(BaseTest):
     def test_scrub_defaults(self, send_payload):
 
         def _raise(password='sensitive', clear='text'):
+            headers = { 'Authorization': 'bearer 123' }
+
             raise Exception()
 
         try:
@@ -878,6 +880,7 @@ class RollbarTest(BaseTest):
         self.assertEqual(2, len(payload['data']['body']['trace']['frames'][-1]['argspec']))
         self.assertEqual('password', payload['data']['body']['trace']['frames'][-1]['argspec'][0])
         self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['password'], r'\*+')
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['headers']['Authorization'], r'\*+')
         self.assertEqual('clear', payload['data']['body']['trace']['frames'][-1]['argspec'][1])
         self.assertEqual('text', payload['data']['body']['trace']['frames'][-1]['locals']['clear'])
 
