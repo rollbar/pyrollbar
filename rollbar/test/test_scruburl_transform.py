@@ -1,4 +1,5 @@
 import copy
+import six
 
 from rollbar.lib import map, transforms, string_types, urlparse, parse_qs, python_major_version
 from rollbar.lib.transforms.scruburl import ScrubUrlTransform, _starts_with_auth_re
@@ -146,5 +147,5 @@ class ScrubUrlTransformTest(BaseTest):
         self.assertNotIn('secret', result['url'][0]['link'])
         self.assertNotIn('secr3t', result['link'][0]['url'])
         self.assertNotIn('secret', result['link'][0]['url'])
-        self.assertNotRegex(result['url'][0]['link'], r'^-+$')
-        self.assertNotRegex(result['link'][0]['url'], r'^-+$')
+        six.assertNotRegex(self, result['url'][0]['link'], r'^-+$')
+        six.assertNotRegex(self, result['link'][0]['url'], r'^-+$')
