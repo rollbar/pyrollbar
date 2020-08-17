@@ -6,6 +6,7 @@ import six
 from rollbar import DEFAULT_LOCALS_SIZES
 from rollbar.lib import transforms
 from rollbar.lib.transforms.shortener import ShortenerTransform
+from rollbar.lib.traverse import Sequence
 from rollbar.test import BaseTest
 
 
@@ -106,7 +107,7 @@ class ShortenerTransformTest(BaseTest):
 
     def test_shorten_deque(self):
         expected = 'deque([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...])'
-        if sys.version_info >= (3, 5):
+        if issubclass(deque, Sequence):
             expected = '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...]'
         self._assert_shortened('deque', expected)
 
