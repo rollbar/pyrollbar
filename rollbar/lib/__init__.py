@@ -166,7 +166,7 @@ def is_builtin_type(obj):
 
 
 # http://www.xormedia.com/recursively-merge-dictionaries-in-python.html
-def dict_merge(a, b):
+def dict_merge(a, b, silence_errors=False):
     """
     Recursively merges dict's. not just simple a['key'] = b['key'], if
     both a and bhave a key who's value is a dict then dict_merge is called
@@ -179,11 +179,14 @@ def dict_merge(a, b):
     result = a
     for k, v in b.items():
         if k in result and isinstance(result[k], dict):
-            result[k] = dict_merge(result[k], v)
+            result[k] = dict_merge(result[k], v, silence_errors=silence_errors)
         else:
             try:
                 result[k] = copy.deepcopy(v)
             except:
+                if not silence_errors:
+                    raise six.reraise(*sys.exc_info())
+
                 result[k] = '<Uncopyable obj:(%s)>' % (v,)
 
     return result
