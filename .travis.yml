@@ -48,6 +48,22 @@ matrix:
       env: FLASK_VERSION=0.12.4
     - python: "3.6"
       env: FLASK_VERSION=1.0.2
+    - python: "3.7"
+      env: FLASK_VERSION=0.10.1
+    - python: "3.7"
+      env: FLASK_VERSION=0.11.1
+    - python: "3.7"
+      env: FLASK_VERSION=0.12.4
+    - python: "3.7"
+      env: FLASK_VERSION=1.0.2
+    - python: "3.8"
+      env: FLASK_VERSION=0.10.1
+    - python: "3.8"
+      env: FLASK_VERSION=0.11.1
+    - python: "3.8"
+      env: FLASK_VERSION=0.12.4
+    - python: "3.8"
+      env: FLASK_VERSION=1.0.2
 
     - python: "2.7"
       env: TWISTED_VERSION=15.5.0
@@ -129,8 +145,25 @@ matrix:
       env: DJANGO_VERSION=2.1.7
       dist: xenial
 
+    - python: "3.8"
+      env: DJANGO_VERSION=1.11.20
+      dist: xenial
+    - python: "3.8"
+      env: DJANGO_VERSION=2.0.13
+      dist: xenial
+    - python: "3.8"
+      env: DJANGO_VERSION=2.1.7
+      dist: xenial
+
     - python: "3.6"
       env: PYRAMID_VERSION=1.9.2
+
+    - python: "3.7"
+      env: PYRAMID_VERSION=1.9.2
+
+    - python: "3.8"
+      env: PYRAMID_VERSION=1.9.2
+
 
 install:
   - pip install setuptools==39.2.0 --force-reinstall
