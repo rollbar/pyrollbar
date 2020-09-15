@@ -1,7 +1,9 @@
 try:
     from django.core.exceptions import ImproperlyConfigured
+    from django.http import RawPostDataException
 except ImportError:
     ImproperlyConfigured = RuntimeError
+    RawPostDataException = Exception
 
 try:
     from rest_framework.views import exception_handler as _exception_handler
@@ -21,9 +23,17 @@ def post_exception_handler(exc, context):
         raise ImproperlyConfigured(
             'Could not import rest_framework.views.exception_handler')
 
+    # DRF wraps an original Django HTTP request by their own request and store
+    # a wrapped one in _request property. But DRF also can wrap their own
+    # request one more time. So we need to set POST on an original request
+    # object which is set on the very first DRF request as _request.
+    _request = context['request']._request
+    while hasattr(_request, '_request'):
+        _request = _request._request
     try:
-        context['request']._request.POST = context['request'].data
-    except Exception:
+        _request.POST = context['request'].data
+    except RawPostDataException:
+        # It happens when error is raised by reading request's body.
         pass
 
     return _exception_handler(exc, context)
