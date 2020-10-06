@@ -150,8 +150,8 @@ shortening is applied. This would lead to API rejections. See [#200](https://git
 - Fixed a bug when calling logging.exception() when not in an exception handler.  Now it correctly determines it doesn't have any exception info and uses report_message() instead of report_exc_info().
 
 **0.11.1**
-- Added a new configuration option to expose the serializer's `whitelisted_types` param
-  - Allows users to whitelist types to be serialized using `repr(obj)` instead of `str(type(obj))`
+- Added a new configuration option to expose the serializer's `safelisted_types` param
+  - Allows users to safelist types to be serialized using `repr(obj)` instead of `str(type(obj))`
 - Fixed a bug that was not taking the `safe_repr` option into account. See [#87](https://github.com/rollbar/pyrollbar/pull/87)
 
 **0.11.0**
@@ -236,7 +236,7 @@ New features:
 Note about upgrading from 0.8.x: unless you are using RollbarHandler, there are no breaking changes. If you are using RolbarHandler, then this will change the way your data appears in Rollbar (to the better, in our opinion).
 
 **0.8.3**
-- Provide a way to blacklist types from being repr()'d while gathering local variables.
+- Provide a way to blocklist types from being repr()'d while gathering local variables.
 
 **0.8.2**
 - Fix uncaught ImproperlyConfigured exception when importing Rollbar in a Django REST Framework environment without a settings module loaded ([#28](https://github.com/rollbar/pyrollbar/pull/28))
