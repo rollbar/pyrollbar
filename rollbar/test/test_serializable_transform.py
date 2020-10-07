@@ -224,16 +224,6 @@ class SerializableTransformTest(BaseTest):
         expected['custom'] = 'hello'
         self._assertSerialized(start, expected, safelist=[CustomRepr])
 
-    def test_encode_with_custom_repr_whitelist(self):
-        class CustomRepr(object):
-            def __repr__(self):
-                return 'hello'
-
-        start = {'hello': 'world', 'custom': CustomRepr()}
-        expected = copy.deepcopy(start)
-        expected['custom'] = 'hello'
-        self._assertSerialized(start, expected, whitelist=[CustomRepr])
-
     def test_encode_with_custom_repr_returns_bytes(self):
         class CustomRepr(object):
             def __repr__(self):
