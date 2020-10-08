@@ -468,7 +468,7 @@ def send_payload(payload, access_token):
     - 'agent': writes to a log file to be processed by rollbar-agent
     - 'tornado': calls _send_payload_tornado() (which makes an async HTTP request using tornado's AsyncHTTPClient)
     - 'gae': calls _send_payload_appengine() (which makes a blocking call to Google App Engine)
-    - 'twisted': calls _send_payload_twisted() (which makes an async HTTP reqeust using Twisted and Treq)
+    - 'twisted': calls _send_payload_twisted() (which makes an async HTTP request using Twisted and Treq)
     """
     payload = events.on_payload(payload)
     if payload is False:
