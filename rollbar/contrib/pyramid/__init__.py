@@ -21,14 +21,14 @@ BOOLEAN_SETTINGS = [
 log = logging.getLogger(__name__)
 
 
-EXCEPTION_BLACKLIST = (WSGIHTTPException,)
-EXCEPTION_WHITELIST = tuple()
+EXCEPTION_BLOCKLIST = (WSGIHTTPException,)
+EXCEPTION_SAFELIST = tuple()
 
 
 def handle_error(request, exception, exc_info):
     if(
-            isinstance(exception, EXCEPTION_BLACKLIST) and
-            not isinstance(exception, EXCEPTION_WHITELIST)
+            isinstance(exception, EXCEPTION_BLOCKLIST) and
+            not isinstance(exception, EXCEPTION_SAFELIST)
     ):
         return
     rollbar.report_exc_info(exc_info, request)

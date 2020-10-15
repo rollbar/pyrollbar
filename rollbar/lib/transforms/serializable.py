@@ -10,10 +10,10 @@ from rollbar.lib.transforms import Transform
 
 
 class SerializableTransform(Transform):
-    def __init__(self, safe_repr=True, whitelist_types=None):
+    def __init__(self, safe_repr=True, safelist_types=None):
         super(SerializableTransform, self).__init__()
         self.safe_repr = safe_repr
-        self.whitelist = set(whitelist_types or [])
+        self.safelist = set(safelist_types or [])
 
     def transform_circular_reference(self, o, key=None, ref_key=None):
         return circular_reference_label(o, ref_key)
@@ -87,7 +87,7 @@ class SerializableTransform(Transform):
         # Best to be very careful when we call user code in the middle of
         # preparing a stack trace. So we put a try/except around it all.
         try:
-            if any(filter(lambda x: isinstance(o, x), self.whitelist)):
+            if any(filter(lambda x: isinstance(o, x), self.safelist)):
                 try:
                     return repr(o)
                 except TypeError:

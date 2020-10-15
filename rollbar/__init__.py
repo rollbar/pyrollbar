@@ -18,6 +18,7 @@ import traceback
 import types
 import uuid
 import wsgiref.util
+import warnings
 
 import requests
 import six
@@ -252,6 +253,7 @@ SETTINGS = {
         'safe_repr': True,
         'scrub_varargs': True,
         'sizes': DEFAULT_LOCALS_SIZES,
+        'safelisted_types': [],
         'whitelisted_types': []
     },
     'verify_https': True,
@@ -330,6 +332,10 @@ def init(access_token, environment='production', scrub_fields=None, url_fields=N
     if SETTINGS.get('handler') == 'agent':
         agent_log = _create_agent_log()
 
+    if not SETTINGS['locals']['safelisted_types'] and SETTINGS['locals']['whitelisted_types']:
+        warnings.warn('whitelisted_types deprecated use safelisted_types instead', DeprecationWarning)
+        SETTINGS['locals']['safelisted_types'] = SETTINGS['locals']['whitelisted_types']
+
     # We will perform these transforms in order:
     # 1. Serialize the payload to be all python built-in objects
     # 2. Scrub the payloads based on the key suffixes in SETTINGS['scrub_fields']
@@ -337,7 +343,7 @@ def init(access_token, environment='production', scrub_fields=None, url_fields=N
     # 4. Optional - If local variable gathering is enabled, transform the
     #       trace frame values using the ShortReprTransform.
     _serialize_transform = SerializableTransform(safe_repr=SETTINGS['locals']['safe_repr'],
-                                                 whitelist_types=SETTINGS['locals']['whitelisted_types'])
+                                                 safelist_types=SETTINGS['locals']['safelisted_types'])
     _transforms = [
         ScrubRedactTransform(),
         _serialize_transform,
@@ -462,7 +468,7 @@ def send_payload(payload, access_token):
     - 'agent': writes to a log file to be processed by rollbar-agent
     - 'tornado': calls _send_payload_tornado() (which makes an async HTTP request using tornado's AsyncHTTPClient)
     - 'gae': calls _send_payload_appengine() (which makes a blocking call to Google App Engine)
-    - 'twisted': calls _send_payload_twisted() (which makes an async HTTP reqeust using Twisted and Treq)
+    - 'twisted': calls _send_payload_twisted() (which makes an async HTTP request using Twisted and Treq)
     """
     payload = events.on_payload(payload)
     if payload is False:

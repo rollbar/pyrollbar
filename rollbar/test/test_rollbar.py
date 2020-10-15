@@ -45,7 +45,7 @@ class RollbarTest(BaseTest):
         rollbar.init(_test_access_token, locals={'enabled': True}, dummy_key='asdf', handler='blocking', timeout=12345)
 
     def test_merged_settings(self):
-        expected = {'enabled': True, 'sizes': rollbar.DEFAULT_LOCALS_SIZES, 'safe_repr': True, 'scrub_varargs': True, 'whitelisted_types': []}
+        expected = {'enabled': True, 'sizes': rollbar.DEFAULT_LOCALS_SIZES, 'safe_repr': True, 'scrub_varargs': True, 'safelisted_types': [], 'whitelisted_types': []}
         self.assertDictEqual(rollbar.SETTINGS['locals'], expected)
         self.assertEqual(rollbar.SETTINGS['timeout'], 12345)
         self.assertEqual(rollbar.SETTINGS['dummy_key'], 'asdf')
