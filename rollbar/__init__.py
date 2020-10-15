@@ -333,7 +333,7 @@ def init(access_token, environment='production', scrub_fields=None, url_fields=N
         agent_log = _create_agent_log()
 
     if not SETTINGS['locals']['safelisted_types'] and SETTINGS['locals']['whitelisted_types']:
-        warnings.warn("whitelisted_types deprecated use safelisted_types instead", DeprecationWarning)
+        warnings.warn('whitelisted_types deprecated use safelisted_types instead', DeprecationWarning)
         SETTINGS['locals']['safelisted_types'] = SETTINGS['locals']['whitelisted_types']
 
     # We will perform these transforms in order:
