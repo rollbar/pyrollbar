@@ -704,7 +704,7 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
 
     global feature_flags_data
     data['feature_flags'] = feature_flags_data
-    feature_flags_data = {}
+    # feature_flags_data = {}
     
     request = _get_actual_request(request)
     _add_request_data(data, request)
@@ -794,7 +794,7 @@ def _report_message(message, level, request, extra_data, payload_data):
     
     global feature_flags_data
     data['feature_flags'] = feature_flags_data
-    feature_flags_data = {}
+    # feature_flags_data = {}
 
     if payload_data:
         data = dict_merge(data, payload_data, silence_errors=True)
