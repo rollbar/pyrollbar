@@ -1617,8 +1617,12 @@ def _wsgi_extract_user_ip(environ):
 
 
 class FeatureFlags(object):
-    def __init__(self, flag_key, default=False):
+    def __init__(self, flag_key, user=None, default=False):
+        if not user:
+            user = {}
+
         self.flag_key = flag_key
+        self.user = user
         self.default = default
     
     def __enter__(self):
@@ -1628,7 +1632,8 @@ class FeatureFlags(object):
             log.info('Launch Darkly not available')
             return
         
-        variation = ldclient.get().variation(self.flag_key, {}, self.default)
+        # use get to retrieve ld singleton
+        variation = ldclient.get().variation(self.flag_key, self.user, self.default)
 
         global feature_flags_data
         feature_flags_data = {
