@@ -1621,6 +1621,7 @@ def _wsgi_extract_user_ip(environ):
 class FeatureFlags(object):
     def __init__(self, flag_key, default=False):
         self.flag_key = flag_key
+        self.default = default
     
     def __enter__(self):
         try:
@@ -1629,7 +1630,7 @@ class FeatureFlags(object):
             log.info('Launch Darkly not available')
             return
         
-        variation = ldclient.get().variation(self.flag_key, {}, default)
+        variation = ldclient.get().variation(self.flag_key, {}, self.default)
 
         global feature_flags_data
         
