@@ -704,7 +704,6 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
 
     global feature_flags_data
     data['feature_flags'] = feature_flags_data
-    feature_flags_data = {}
     
     request = _get_actual_request(request)
     _add_request_data(data, request)
@@ -794,7 +793,6 @@ def _report_message(message, level, request, extra_data, payload_data):
     
     global feature_flags_data
     data['feature_flags'] = feature_flags_data
-    feature_flags_data = {}
 
     if payload_data:
         data = dict_merge(data, payload_data, silence_errors=True)
@@ -1633,10 +1631,11 @@ class FeatureFlags(object):
         variation = ldclient.get().variation(self.flag_key, {}, self.default)
 
         global feature_flags_data
-        
-        feature_flags_data[self.flag_key] = {
-            'variation': variation,
-            # maybe we could use some more data, leaving as placeholder
+        feature_flags_data = {
+            self.flag_key: {
+                'variation': variation,
+                # placeholder for more data
+            }
         }
 
         return  variation
