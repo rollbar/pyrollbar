@@ -702,8 +702,8 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     if extra_trace_data and not extra_data:
         data['custom'] = extra_trace_data
 
-    global feature_flags_data
-    data['feature_flags'] = feature_flags_data
+    if feature_flags_data:
+        data['feature_flags'] = feature_flags_data
     
     request = _get_actual_request(request)
     _add_request_data(data, request)
@@ -791,8 +791,8 @@ def _report_message(message, level, request, extra_data, payload_data):
     _add_lambda_context_data(data)
     data['server'] = _build_server_data()
     
-    global feature_flags_data
-    data['feature_flags'] = feature_flags_data
+    if feature_flags_data:
+        data['feature_flags'] = feature_flags_data
 
     if payload_data:
         data = dict_merge(data, payload_data, silence_errors=True)
@@ -1368,7 +1368,8 @@ def _serialize_payload(payload):
     return json.dumps(payload, default=defaultJSONEncode)
 
 
-feature_flags_data = {}
+feature_flags_data = None
+
 
 def _send_payload(payload_str, access_token):
     try:
@@ -1617,39 +1618,21 @@ def _wsgi_extract_user_ip(environ):
 
 
 class FeatureFlags(object):
-    def __init__(self, flag_key, user=None, default=False):
-        if not user:
-            user = {}
-
+    def __init__(self, flag_key):
         self.flag_key = flag_key
-        self.user = user
-        self.default = default
+        self.previous = feature_flags_data
     
     def __enter__(self):
-        try:
-            import ldclient
-        except ImportError:
-            log.info('Launch Darkly not available')
-            return
-        
-        # use get to retrieve ld singleton
-        variation = ldclient.get().variation(self.flag_key, self.user, self.default)
-
         global feature_flags_data
-        feature_flags_data = {
-            self.flag_key: {
-                'variation': variation,
-                # placeholder for more data
-            }
-        }
 
-        return  variation
-    
-    def __exit__(self, type, value, traceback):
-        if issubclass(type, Exception):
-            return
+        feature_flags_data = self.flag_key
 
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
         global feature_flags_data
-        del feature_flags_data[self.flag_key]
+
+        if not exc_type:
+            feature_flags_data = self.previous
 
 
