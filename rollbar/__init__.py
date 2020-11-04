@@ -536,6 +536,10 @@ def wait(f=None):
         return f()
 
 
+def watch(flag_key):
+    return _FeatureFlagContextManager(flag_key)
+
+
 class ApiException(Exception):
     """
     This exception will be raised if there was a problem decoding the
@@ -1617,7 +1621,7 @@ def _wsgi_extract_user_ip(environ):
     return environ['REMOTE_ADDR']
 
 
-class FeatureFlags(object):
+class _FeatureFlagContextManager(object):
     def __init__(self, flag_key):
         self.flag_key = flag_key
         self.previous = feature_flags_data
@@ -1634,5 +1638,3 @@ class FeatureFlags(object):
 
         if not exc_type:
             feature_flags_data = self.previous
-
-
