@@ -537,7 +537,7 @@ def wait(f=None):
 
 
 def watch(flag_key):
-    return _FeatureFlagContextManager(flag_key)
+    return FeatureFlags(flag_key)
 
 
 class ApiException(Exception):
@@ -1621,7 +1621,7 @@ def _wsgi_extract_user_ip(environ):
     return environ['REMOTE_ADDR']
 
 
-class _FeatureFlagContextManager(object):
+class FeatureFlags(object):
     def __init__(self, flag_key):
         self.flag_key = flag_key
         self.previous = feature_flags_data
