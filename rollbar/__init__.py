@@ -536,8 +536,20 @@ def wait(f=None):
         return f()
 
 
-def watch(flag_key):
-    return FeatureFlags(flag_key)
+def watch(key, extra_data=None):
+    """
+    Sets the scope for the code wrapped by this method.
+
+    key: key for the current scope.
+    extra_data: optional, will be included in the root level of the
+                `scope` object. If not a dict, key will be 'extra'.
+
+    Usage:
+
+        with Rollbar.watch('foobar'):
+            do_something_risky()
+    """
+    return _BigBrother(key, extra_data)
 
 
 class ApiException(Exception):
@@ -706,8 +718,8 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     if extra_trace_data and not extra_data:
         data['custom'] = extra_trace_data
 
-    if feature_flags_data:
-        data['feature_flags'] = feature_flags_data
+    if scopes:
+        data['scope'] = scopes[-1]
     
     request = _get_actual_request(request)
     _add_request_data(data, request)
@@ -795,8 +807,8 @@ def _report_message(message, level, request, extra_data, payload_data):
     _add_lambda_context_data(data)
     data['server'] = _build_server_data()
     
-    if feature_flags_data:
-        data['feature_flags'] = feature_flags_data
+    if scopes:
+        data['scope'] = scopes[-1]
 
     if payload_data:
         data = dict_merge(data, payload_data, silence_errors=True)
@@ -1372,9 +1384,6 @@ def _serialize_payload(payload):
     return json.dumps(payload, default=defaultJSONEncode)
 
 
-feature_flags_data = None
-
-
 def _send_payload(payload_str, access_token):
     try:
         _post_api('item/', payload_str, access_token=access_token)
@@ -1621,20 +1630,32 @@ def _wsgi_extract_user_ip(environ):
     return environ['REMOTE_ADDR']
 
 
-class FeatureFlags(object):
-    def __init__(self, flag_key):
-        self.flag_key = flag_key
-        self.previous = feature_flags_data
+scopes = []
+
+
+class _BigBrother(object):
+    """
+    Context manager object that interfaces with the `scopes` stack:
     
+        On enter, puts current scope object on top of stack.
+        On exit and there is no exception, pops off top element from stack.
+    """
+    def __init__(self, key, extra_data):
+        scope = {'key': key}
+
+        if extra_data:
+            extra_data = extra_data
+            if not isinstance(extra_data, dict):
+                extra_data = {'extra': extra_data}
+
+            scope = dict_merge(scope, extra_data, silence_errors=True)
+
+        self.scope = scope
+
     def __enter__(self):
-        global feature_flags_data
-
-        feature_flags_data = self.flag_key
-
+        scopes.append(self.scope)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        global feature_flags_data
-
         if not exc_type:
-            feature_flags_data = self.previous
+            scopes.pop()
