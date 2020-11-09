@@ -1644,7 +1644,6 @@ class _BigBrother(object):
         scope = {'key': key}
 
         if extra_data:
-            extra_data = extra_data
             if not isinstance(extra_data, dict):
                 extra_data = {'extra': extra_data}
 
