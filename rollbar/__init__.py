@@ -541,8 +541,9 @@ def watch(key, extra_data=None):
     Sets the scope for the code wrapped by this method.
 
     key: key for the current scope.
-    extra_data: optional, will be included in the root level of the
-                `scope` object. If not a dict, key will be 'extra'.
+    extra_data: optional, will be included in the root level of the 'scope' object. If not
+                a dict, the value can be found under the 'extra' key in the 'scope' object.
+                The keyword 'key' is reserved.
 
     Usage:
 
@@ -720,7 +721,10 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
 
     if scopes:
         data['scope'] = scopes[-1]
-    
+
+        global scopes
+        scopes = []
+
     request = _get_actual_request(request)
     _add_request_data(data, request)
     _add_person_data(data, request)
@@ -1647,7 +1651,8 @@ class _BigBrother(object):
             if not isinstance(extra_data, dict):
                 extra_data = {'extra': extra_data}
 
-            scope = dict_merge(scope, extra_data, silence_errors=True)
+            extra_data.update(scope)
+            scope = extra_data
 
         self.scope = scope
 
