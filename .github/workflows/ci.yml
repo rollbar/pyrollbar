@@ -1,0 +1,120 @@
+name: Pyrollbar CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        python-version: [2.7, 3.4, 3.5, 3.6, 3.7, 3.8]
+        framework:
+          - FLASK_VERSION=0.10.1
+          - FLASK_VERSION=0.11.1
+          - FLASK_VERSION=0.12.4
+          - FLASK_VERSION=1.0.2
+          - TWISTED_VERSION=15.5.0
+          - TWISTED_VERSION=16.1.0
+          - TWISTED_VERSION=16.2.0
+          - TWISTED_VERSION=16.3.0
+          - TWISTED_VERSION=16.4.0
+          - TWISTED_VERSION=16.5.0
+          - TWISTED_VERSION=16.6.0
+          - TWISTED_VERSION=17.1.0
+          - DJANGO_VERSION=1.11.20
+          - DJANGO_VERSION=2.0.13
+          - DJANGO_VERSION=2.1.7
+          - DJANGO_VERSION=2.1.15
+          - PYRAMID_VERSION=1.9.2
+          - PYRAMID_VERSION=1.10.4
+        exclude:
+          - python-version: 2.7
+            framework: DJANGO_VERSION=2.0.13
+          - python-version: 2.7
+            framework: DJANGO_VERSION=2.1.7
+          - python-version: 2.7
+            framework: DJANGO_VERSION=2.1.15
+          - python-version: 3.4
+            framework: DJANGO_VERSION=2.1.7
+          - python-version: 3.4
+            framework: DJANGO_VERSION=2.1.15
+          - python-version: 3.5
+            framework: DJANGO_VERSION=2.1.15
+          - python-version: 3.6
+            framework: DJANGO_VERSION=2.1.15
+          - python-version: 3.7
+            framework: DJANGO_VERSION=2.1.15
+        include:
+          - python-version: 2.7
+            framework: FLASK_VERSION=0.9
+          - python-version: 3.3
+            framework: FLASK_VERSION=0.10.1
+          - python-version: 3.3
+            framework: FLASK_VERSION=0.11.1
+          - python-version: 3.3
+            framework: FLASK_VERSION=0.12.4
+          - python-version: 3.3
+            framework: FLASK_VERSION=1.0.2
+          - python-version: 3.3
+            framework: DJANGO_VERSION=1.6.11
+          - python-version: 3.3
+            framework: DJANGO_VERSION=1.8.19
+          - python-version: 3.4
+            framework: DJANGO_VERSION=1.7.11
+          - python-version: 3.4
+            framework: DJANGO_VERSION=1.8.19
+          - python-version: 3.4
+            framework: DJANGO_VERSION=1.9.13
+          - python-version: 3.4
+            framework: DJANGO_VERSION=1.10.8
+          - python-version: 3.5
+            framework: DJANGO_VERSION=1.8.19
+          - python-version: 3.5
+            framework: DJANGO_VERSION=1.9.13
+          - python-version: 3.5
+            framework: DJANGO_VERSION=1.10.8
+          - python-version: 3.8
+            framework: TWISTED_VERSION=20.3.0
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: pip install setuptools==39.2.0 --force-reinstall
+
+      - name: Python 3.3 dependencies
+        if: ${{ matrix.python-version == '3.3' }}
+        run: pip install Werkzeug==0.14.1 --force-reinstall
+
+      - name: Set the framework
+        run: echo ${{ matrix.framework }} >> $GITHUB_ENV
+
+      - name: Install Flask
+        if: ${{ contains(matrix.framework, 'FLASK_VERSION') }}
+        run: pip install Flask==$FLASK_VERSION
+
+      - name: Install Twisted
+        if: ${{ contains(matrix.framework, 'TWISTED_VERSION') }}
+        run: pip install Twisted==$TWISTED_VERSION treq==20.4.1
+
+      - name: Install Django
+        if: ${{ contains(matrix.framework, 'DJANGO_VERSION') }}
+        run: pip install Django==$DJANGO_VERSION
+
+      - name: Install Pyramid
+        if: ${{ contains(matrix.framework, 'PYRAMID_VERSION') }}
+        run: pip install pyramid==$PYRAMID_VERSION
+
+      - name: Run tests
+        run: python setup.py test
