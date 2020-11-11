@@ -722,9 +722,6 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     if scopes:
         data['scope'] = scopes[-1]
 
-        global scopes
-        scopes = []
-
     request = _get_actual_request(request)
     _add_request_data(data, request)
     _add_person_data(data, request)
@@ -1661,5 +1658,4 @@ class _BigBrother(object):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if not exc_type:
-            scopes.pop()
+        scopes.pop()
