@@ -536,21 +536,20 @@ def wait(f=None):
         return f()
 
 
-def watch(key, extra_data=None):
+def watch(tag_name, extra_data=None):
     """
-    Sets the scope for the code wrapped by this method.
+    Sets the tag for the code wrapped by this method.
 
-    key: key for the current scope.
-    extra_data: optional, will be included in the root level of the 'scope' object. If not
-                a dict, the value can be found under the 'extra' key in the 'scope' object.
-                The keyword 'key' is reserved.
+    tag_name: name of the tag.
+    extra_data: optional, dictionary of params will be included in the 'tag' object.
+                'name' is reserved for the tag_name.
 
     Usage:
 
         with Rollbar.watch('foobar'):
             do_something_risky()
     """
-    return _BigBrother(key, extra_data)
+    return _TagManager(tag_name, extra_data)
 
 
 class ApiException(Exception):
@@ -719,8 +718,8 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     if extra_trace_data and not extra_data:
         data['custom'] = extra_trace_data
 
-    if scopes:
-        data['scope'] = scopes[-1]
+    if tags:
+        data['tag'] = tags[-1]
 
     request = _get_actual_request(request)
     _add_request_data(data, request)
@@ -808,8 +807,8 @@ def _report_message(message, level, request, extra_data, payload_data):
     _add_lambda_context_data(data)
     data['server'] = _build_server_data()
     
-    if scopes:
-        data['scope'] = scopes[-1]
+    if tags:
+        data['tag'] = tags[-1]
 
     if payload_data:
         data = dict_merge(data, payload_data, silence_errors=True)
@@ -1631,31 +1630,30 @@ def _wsgi_extract_user_ip(environ):
     return environ['REMOTE_ADDR']
 
 
-scopes = []
+tags = []
 
 
-class _BigBrother(object):
+class _TagManager(object):
     """
-    Context manager object that interfaces with the `scopes` stack:
+    Context manager object that interfaces with the `tags` stack:
     
-        On enter, puts current scope object on top of stack.
-        On exit and there is no exception, pops off top element from stack.
+        On enter, puts current tag object at top of the stack.
+        On exit, pops off top element of the stack.
     """
-    def __init__(self, key, extra_data):
-        scope = {'key': key}
+    def __init__(self, name, extra_data):
+        self.tag = {}
 
         if extra_data:
             if not isinstance(extra_data, dict):
-                extra_data = {'extra': extra_data}
+                raise TypeError('expected \'extra_data\' to be a dictonary')
 
-            extra_data.update(scope)
-            scope = extra_data
+            self.tag.update(extra_data)
 
-        self.scope = scope
+        self.tag['name'] = name
 
     def __enter__(self):
-        scopes.append(self.scope)
+        tags.append(self.tag)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        scopes.pop()
+        tags.pop()
