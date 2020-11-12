@@ -718,7 +718,14 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     if extra_trace_data and not extra_data:
         data['custom'] = extra_trace_data
 
-    if tags:
+    attached_tags = getattr(exc_info[1], '_rollbar_tags', None)
+    if attached_tags:
+        # if there are tags attached to the exception, take the first one as that's
+        # the deepest tag where the exception occurred
+        data['tag'] = attached_tags[0]
+    elif tags:
+        # if there are no tags attached to the exception and there are `tags`, that
+        # means we haven't exited yet - in this case, take the top tag of the stack.
         data['tag'] = tags[-1]
 
     request = _get_actual_request(request)
@@ -1639,6 +1646,7 @@ class _TagManager(object):
     
         On enter, puts current tag object at top of the stack.
         On exit, pops off top element of the stack.
+          - If there is an exception, append the tag to exception._rollbar_tags.
     """
     def __init__(self, name, extra_data):
         self.tag = {}
@@ -1656,4 +1664,10 @@ class _TagManager(object):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+        if exc_value:
+            if not hasattr(exc_value, '_rollbar_tags'):
+                exc_value._rollbar_tags = []
+
+            exc_value._rollbar_tags.append(self.tag)
+
         tags.pop()
