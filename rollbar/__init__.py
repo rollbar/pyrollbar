@@ -547,7 +547,9 @@ def watch_feature_flag(key):
         with rollbar.watch_feature_flag('feature_flag_a'):
             do_something_risky()
     """
-    return _FeatureFlagManager(key)
+    feature_flag_obj = {'key': key}
+
+    return _FeatureFlagManager(feature_flag_obj)
 
 
 
@@ -1644,8 +1646,8 @@ class _FeatureFlagManager(object):
           - If there is an exception, attach the feature flag object to the exception
             for rebuilding of the `_feature_flags` stack before reporting.
     """
-    def __init__(self, key):
-        self.feature_flag = {'key': key}
+    def __init__(self, feature_flag_obj):
+        self.feature_flag = feature_flag_obj
 
     def __enter__(self):
         _feature_flags.append(self.feature_flag)
