@@ -718,15 +718,13 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     if extra_trace_data and not extra_data:
         data['custom'] = extra_trace_data
 
-    attached_tags = getattr(exc_info[1], '_rollbar_tags', None)
-    if attached_tags:
-        # if there are tags attached to the exception, take the first one as that's
-        # the deepest tag where the exception occurred
-        data['tag'] = attached_tags[0]
-    elif tags:
-        # if there are no tags attached to the exception and there are `tags`, that
-        # means we haven't exited yet - in this case, take the top tag of the stack.
-        data['tag'] = tags[-1]
+    # if there are tags attached to the exception, use that; else use _tags on the singleton
+    tags = getattr(exc_info[1], '_rollbar_tags', None)[::-1] or _tags
+    if tags:
+        if 'custom' in data:
+            data['custom'].update(tags[-1])
+        else:
+            data['custom'] = tags[-1]
 
     request = _get_actual_request(request)
     _add_request_data(data, request)
@@ -813,9 +811,9 @@ def _report_message(message, level, request, extra_data, payload_data):
     _add_person_data(data, request)
     _add_lambda_context_data(data)
     data['server'] = _build_server_data()
-    
-    if tags:
-        data['tag'] = tags[-1]
+
+    if _tags:
+        data['tag'] = _tags[-1]
 
     if payload_data:
         data = dict_merge(data, payload_data, silence_errors=True)
@@ -1637,13 +1635,13 @@ def _wsgi_extract_user_ip(environ):
     return environ['REMOTE_ADDR']
 
 
-tags = []
+_tags = []
 
 
 class _TagManager(object):
     """
     Context manager object that interfaces with the `tags` stack:
-    
+
         On enter, puts current tag object at top of the stack.
         On exit, pops off top element of the stack.
           - If there is an exception, append the tag to exception._rollbar_tags.
@@ -1657,10 +1655,10 @@ class _TagManager(object):
 
             self.tag.update(extra_data)
 
-        self.tag['name'] = name
+        self.tag['tag_name'] = name
 
     def __enter__(self):
-        tags.append(self.tag)
+        _tags.append(self.tag)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -1670,4 +1668,4 @@ class _TagManager(object):
 
             exc_value._rollbar_tags.append(self.tag)
 
-        tags.pop()
+        _tags.pop()
