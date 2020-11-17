@@ -536,20 +536,19 @@ def wait(f=None):
         return f()
 
 
-def watch(tag_name, extra_data=None):
+def watch_feature_flag(key):
     """
-    Sets the tag for the code wrapped by this method.
+    Sets the feature flag payload for the code wrapped by this method.
 
-    tag_name: name of the tag.
-    extra_data: optional, dictionary of params will be included in the 'tag' object.
-                'name' is reserved for the tag_name.
+    key: key of the feature flag.
 
     Usage:
 
-        with Rollbar.watch('foobar'):
+        with rollbar.watch_feature_flag('feature_flag_a'):
             do_something_risky()
     """
-    return _TagManager(tag_name, extra_data)
+    return _FeatureFlagManager(key)
+
 
 
 class ApiException(Exception):
@@ -718,13 +717,11 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     if extra_trace_data and not extra_data:
         data['custom'] = extra_trace_data
 
-    # if there are tags attached to the exception, use that; else use _tags on the singleton
-    tags = getattr(exc_info[1], '_rollbar_tags', None)[::-1] or _tags
-    if tags:
-        if 'custom' in data:
-            data['custom'].update(tags[-1])
-        else:
-            data['custom'] = tags[-1]
+    # if there are feature flags attached to the exception, append that to the feature flags on
+    # singleton to create the full feature flags stack.
+    feature_flags = _feature_flags + getattr(exc_info[1], '_rollbar_feature_flags', [])[::-1]
+    if feature_flags:
+        data['feature_flags'] = feature_flags
 
     request = _get_actual_request(request)
     _add_request_data(data, request)
@@ -812,8 +809,8 @@ def _report_message(message, level, request, extra_data, payload_data):
     _add_lambda_context_data(data)
     data['server'] = _build_server_data()
 
-    if _tags:
-        data['tag'] = _tags[-1]
+    if _feature_flags:
+        data['feature_flags'] = _feature_flags
 
     if payload_data:
         data = dict_merge(data, payload_data, silence_errors=True)
@@ -1635,37 +1632,30 @@ def _wsgi_extract_user_ip(environ):
     return environ['REMOTE_ADDR']
 
 
-_tags = []
+_feature_flags = []
 
 
-class _TagManager(object):
+class _FeatureFlagManager(object):
     """
-    Context manager object that interfaces with the `tags` stack:
+    Context manager object that interfaces with the `_feature_flags` stack:
 
-        On enter, puts current tag object at top of the stack.
-        On exit, pops off top element of the stack.
-          - If there is an exception, append the tag to exception._rollbar_tags.
+        On enter, puts the feature flag object at top of the stack.
+        On exit, pops off the top element of the stack.
+          - If there is an exception, attach the feature flag object to the exception
+            for rebuilding of the `_feature_flags` stack before reporting.
     """
-    def __init__(self, name, extra_data):
-        self.tag = {}
-
-        if extra_data:
-            if not isinstance(extra_data, dict):
-                raise TypeError('expected \'extra_data\' to be a dictonary')
-
-            self.tag.update(extra_data)
-
-        self.tag['tag_name'] = name
+    def __init__(self, key):
+        self.feature_flag = {'key': key}
 
     def __enter__(self):
-        _tags.append(self.tag)
-        return self
+        _feature_flags.append(self.feature_flag)
 
     def __exit__(self, exc_type, exc_value, traceback):
+
         if exc_value:
-            if not hasattr(exc_value, '_rollbar_tags'):
-                exc_value._rollbar_tags = []
+            if not hasattr(exc_value, '_rollbar_feature_flags'):
+                exc_value._rollbar_feature_flags = []
 
-            exc_value._rollbar_tags.append(self.tag)
+            exc_value._rollbar_feature_flags.append(self.feature_flag)
 
-        _tags.pop()
+        _feature_flags.pop()
