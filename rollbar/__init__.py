@@ -721,7 +721,7 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
 
     # if there are feature flags attached to the exception, append that to the feature flags on
     # singleton to create the full feature flags stack.
-    feature_flags = _feature_flags + getattr(exc_info[1], '_rollbar_feature_flags', [])[::-1]
+    feature_flags = _feature_flags.value + getattr(exc_info[1], '_rollbar_feature_flags', [])[::-1]
     if feature_flags:
         data['feature_flags'] = feature_flags
 
@@ -811,8 +811,8 @@ def _report_message(message, level, request, extra_data, payload_data):
     _add_lambda_context_data(data)
     data['server'] = _build_server_data()
 
-    if _feature_flags:
-        data['feature_flags'] = _feature_flags
+    if _feature_flags.value:
+        data['feature_flags'] = _feature_flags.value
 
     if payload_data:
         data = dict_merge(data, payload_data, silence_errors=True)
@@ -1634,7 +1634,23 @@ def _wsgi_extract_user_ip(environ):
     return environ['REMOTE_ADDR']
 
 
-_feature_flags = []
+class _LocalFeatureFlagsStack(object):
+    def __init__(self):
+        self._registry = threading.local()
+        self._registry.feature_flags = []
+
+    def append(self, value):
+        self._registry.feature_flags.append(value)
+
+    def pop(self):
+        self._registry.feature_flags.pop()
+
+    @property
+    def value(self):
+        return self._registry.feature_flags
+
+
+_feature_flags = _LocalFeatureFlagsStack()
 
 
 class _FeatureFlagManager(object):
