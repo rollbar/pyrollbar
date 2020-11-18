@@ -1648,7 +1648,10 @@ class _LocalTags(object):
 
     @property
     def value(self):
-        return self._registry.tags
+        if hasattr(self._registry, 'tags'):
+            return self._registry.tags
+
+        return []
 
 
 _tags = _LocalTags()
