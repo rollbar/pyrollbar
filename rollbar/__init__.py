@@ -536,21 +536,19 @@ def wait(f=None):
         return f()
 
 
-def watch_feature_flag(key):
+def watch(key, value):
     """
-    Sets the feature flag payload for the code wrapped by this method.
+    Sets a tag for the code wrapped by this method.
 
-    key: key of the feature flag.
+    key: key to look up the tag.
+    value: value associated with tag.
 
     Usage:
 
-        with rollbar.watch_feature_flag('feature_flag_a'):
+        with rollbar.watch('feature_flag', 'feature_flag_a'):
             do_something_risky()
     """
-    feature_flag_obj = {'key': key}
-
-    return _FeatureFlagManager(feature_flag_obj)
-
+    return _TagManager({'key': key, 'value': value})
 
 
 class ApiException(Exception):
@@ -719,11 +717,11 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     if extra_trace_data and not extra_data:
         data['custom'] = extra_trace_data
 
-    # if there are feature flags attached to the exception, append that to the feature flags on
-    # singleton to create the full feature flags stack.
-    feature_flags = _feature_flags.value + getattr(exc_info[1], '_rollbar_feature_flags', [])[::-1]
-    if feature_flags:
-        data['feature_flags'] = feature_flags
+    # if there are tags attached to the exception, reverse the order, and append to `_tags`
+    # stack to send the full chain of tags to Rollbar.
+    tags = _tags.value + getattr(exc_info[1], '_rollbar_tags', [])[::-1]
+    if tags:
+        data['tags'] = tags
 
     request = _get_actual_request(request)
     _add_request_data(data, request)
@@ -811,8 +809,8 @@ def _report_message(message, level, request, extra_data, payload_data):
     _add_lambda_context_data(data)
     data['server'] = _build_server_data()
 
-    if _feature_flags.value:
-        data['feature_flags'] = _feature_flags.value
+    if _tags.value:
+        data['tags'] = _tags.value
 
     if payload_data:
         data = dict_merge(data, payload_data, silence_errors=True)
@@ -1634,46 +1632,49 @@ def _wsgi_extract_user_ip(environ):
     return environ['REMOTE_ADDR']
 
 
-class _LocalFeatureFlagsStack(object):
+class _LocalTags(object):
+    """
+    An object to ensure thread safety.
+    """
     def __init__(self):
         self._registry = threading.local()
-        self._registry.feature_flags = []
+        self._registry.tags = []
 
     def append(self, value):
-        self._registry.feature_flags.append(value)
+        self._registry.tags.append(value)
 
     def pop(self):
-        self._registry.feature_flags.pop()
+        self._registry.tags.pop()
 
     @property
     def value(self):
-        return self._registry.feature_flags
+        return self._registry.tags
 
 
-_feature_flags = _LocalFeatureFlagsStack()
+_tags = _LocalTags()
 
 
-class _FeatureFlagManager(object):
+class _TagManager(object):
     """
-    Context manager object that interfaces with the `_feature_flags` stack:
+    Context manager object that interfaces with the `_tags` stack:
 
-        On enter, puts the feature flag object at top of the stack.
+        On enter, puts the tag object at top of the stack.
         On exit, pops off the top element of the stack.
-          - If there is an exception, attach the feature flag object to the exception
-            for rebuilding of the `_feature_flags` stack before reporting.
+          - If there is an exception, attach the tag object to the exception
+            for rebuilding of the `_tags` stack before reporting.
     """
-    def __init__(self, feature_flag_obj):
-        self.feature_flag = feature_flag_obj
+    def __init__(self, tag):
+        self.tag = tag
 
     def __enter__(self):
-        _feature_flags.append(self.feature_flag)
+        _tags.append(self.tag)
 
     def __exit__(self, exc_type, exc_value, traceback):
 
         if exc_value:
-            if not hasattr(exc_value, '_rollbar_feature_flags'):
-                exc_value._rollbar_feature_flags = []
+            if not hasattr(exc_value, '_rollbar_tags'):
+                exc_value._rollbar_tags = []
 
-            exc_value._rollbar_feature_flags.append(self.feature_flag)
+            exc_value._rollbar_tags.append(self.tag)
 
-        _feature_flags.pop()
+        _tags.pop()
