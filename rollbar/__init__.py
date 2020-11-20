@@ -536,19 +536,47 @@ def wait(f=None):
         return f()
 
 
-def watch(key, value):
+def feature_flag(flag_key, variation=None, user=None):
     """
-    Sets a tag for the code wrapped by this method.
+    A context manager interface that sets the tags used to model a feature flag.
 
-    key: key to look up the tag.
-    value: value associated with tag.
+    key: the key of the feature flag.
+    variation: (optional) the evaluated feature flag variation.
+    user: (optional) the user being evaluated.
 
-    Usage:
+    Example usage:
 
-        with rollbar.watch('feature_flag', 'feature_flag_a'):
-            do_something_risky()
+        with rollbar.featureflag('flag1', variation=True, user='foobar@rollbar.com'):
+            code()
+
+    Tags generated from the above example:
+
+    [
+        {'key': feature_flag.key', 'value': 'flag1'},
+        {'key': feature_flag.data.flag1.order', 'value': 0},
+        {'key': feature_flag.data.flag1.variation', 'value': True},
+        {'key': feature_flag.data.flag1.user, 'value': 'foobar@rollbar.com'}
+    ]
     """
-    return _TagManager({'key': key, 'value': value})
+    flag_key_tag = _create_tag('feature_flag.key', flag_key)
+
+    # create the feature flag order tag
+    order_key = _feature_flag_data_key(flag_key, 'order')
+    order_tag = _create_tag(order_key, len(_tags.value))
+
+    tags = [flag_key_tag, order_tag]
+
+    if variation is not None:
+        variation_key = _feature_flag_data_key(flag_key, 'variation')
+        variation_tag = _create_tag(variation_key, variation)
+        tags.append(variation_tag)
+
+    if user is not None:
+        user_key = _feature_flag_data_key(flag_key, 'user')
+        user_tag = _create_tag(user_key, user)
+        tags.append(user_tag)
+
+    return _TagManager(tags)
 
 
 class ApiException(Exception):
@@ -721,7 +749,7 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     # stack to send the full chain of tags to Rollbar.
     tags = _tags.value + getattr(exc_info[1], '_rollbar_tags', [])[::-1]
     if tags:
-        data['tags'] = tags
+        data['tags'] = _flatten_nested_lists(tags)
 
     request = _get_actual_request(request)
     _add_request_data(data, request)
@@ -810,7 +838,7 @@ def _report_message(message, level, request, extra_data, payload_data):
     data['server'] = _build_server_data()
 
     if _tags.value:
-        data['tags'] = _tags.value
+        data['tags'] = _flatten_nested_lists(_tags.value)
 
     if payload_data:
         data = dict_merge(data, payload_data, silence_errors=True)
@@ -1630,6 +1658,14 @@ def _wsgi_extract_user_ip(environ):
     if real_ip:
         return real_ip
     return environ['REMOTE_ADDR']
+
+
+def _create_tag(key, value):
+    return {'key': key, 'value': value}
+
+
+def _feature_flag_data_key(flag_key, attribute):
+    return 'feature_flag.data.%s.%s' % (flag_key, attribute)
 
 
 class _LocalTags(object):
