@@ -546,7 +546,7 @@ def feature_flag(flag_key, variation=None, user=None):
 
     Example usage:
 
-        with rollbar.featureflag('flag1', variation=True, user='foobar@rollbar.com'):
+        with rollbar.feature_flag('flag1', variation=True, user='foobar@rollbar.com'):
             code()
 
     Tags generated from the above example:
