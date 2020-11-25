@@ -553,18 +553,13 @@ def feature_flag(flag_key, variation=None, user=None):
 
     [
         {'key': feature_flag.key', 'value': 'flag1'},
-        {'key': feature_flag.data.flag1.order', 'value': 0},
         {'key': feature_flag.data.flag1.variation', 'value': True},
         {'key': feature_flag.data.flag1.user, 'value': 'foobar@rollbar.com'}
     ]
     """
     flag_key_tag = _create_tag('feature_flag.key', flag_key)
 
-    # create the feature flag order tag
-    order_key = _feature_flag_data_key(flag_key, 'order')
-    order_tag = _create_tag(order_key, len(_tags.value))
-
-    tags = [flag_key_tag, order_tag]
+    tags = [flag_key_tag]
 
     if variation is not None:
         variation_key = _feature_flag_data_key(flag_key, 'variation')

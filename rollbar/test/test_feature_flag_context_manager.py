@@ -24,15 +24,12 @@ class FeatureFlagContextManagerTest(BaseTest):
         cm = rollbar.feature_flag('feature-foo', variation=True, user='atran@rollbar.com')
 
         tags = cm.tag
-        self.assertEqual(len(tags), 4)
+        self.assertEqual(len(tags), 3)
 
-        key, order, variation, user = tags
+        key, variation, user = tags
 
         self.assertEqual(key['key'], 'feature_flag.key')
         self.assertEqual(key['value'], 'feature-foo')
-
-        self.assertEqual(order['key'], 'feature_flag.data.feature-foo.order')
-        self.assertEqual(order['value'], 0)
 
         self.assertEqual(variation['key'], 'feature_flag.data.feature-foo.variation')
         self.assertEqual(variation['value'], True)
@@ -53,10 +50,9 @@ class FeatureFlagContextManagerTest(BaseTest):
         self.assertIn('tags', payload_data)
 
         tags = payload_data['tags']
-        self.assertEquals(len(tags), 2)
+        self.assertEquals(len(tags), 1)
 
         self._assert_tag_equals(tags[0], 'feature_flag.key', 'feature-foo')
-        self._assert_tag_equals(tags[1], 'feature_flag.data.feature-foo.order', 0)
 
         self._report_message_and_assert_no_tags(send_payload)
 
@@ -74,10 +70,9 @@ class FeatureFlagContextManagerTest(BaseTest):
         self.assertIn('tags', payload_data)
 
         tags = payload_data['tags']
-        self.assertEquals(len(tags), 2)
+        self.assertEquals(len(tags), 1)
 
         self._assert_tag_equals(tags[0], 'feature_flag.key', 'feature-foo')
-        self._assert_tag_equals(tags[1], 'feature_flag.data.feature-foo.order', 0)
 
         self._report_message_and_assert_no_tags(send_payload)
 
@@ -95,10 +90,9 @@ class FeatureFlagContextManagerTest(BaseTest):
         self.assertIn('tags', payload_data)
 
         tags = payload_data['tags']
-        self.assertEquals(len(tags), 2)
+        self.assertEquals(len(tags), 1)
 
         self._assert_tag_equals(tags[0], 'feature_flag.key', 'feature-foo')
-        self._assert_tag_equals(tags[1], 'feature_flag.data.feature-foo.order', 0)
 
         self._report_message_and_assert_no_tags(send_payload)
 
@@ -117,12 +111,10 @@ class FeatureFlagContextManagerTest(BaseTest):
         self.assertIn('tags', payload_data)
 
         tags = payload_data['tags']
-        self.assertEquals(len(tags), 4)
+        self.assertEquals(len(tags), 2)
 
         self._assert_tag_equals(tags[0], 'feature_flag.key', 'feature-foo')
-        self._assert_tag_equals(tags[1], 'feature_flag.data.feature-foo.order', 0)
-        self._assert_tag_equals(tags[2], 'feature_flag.key', 'feature-bar')
-        self._assert_tag_equals(tags[3], 'feature_flag.data.feature-bar.order', 1)
+        self._assert_tag_equals(tags[1], 'feature_flag.key', 'feature-bar')
 
         self._report_message_and_assert_no_tags(send_payload)
 
