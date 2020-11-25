@@ -47,7 +47,9 @@ class FeatureFlagContextManagerTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload_data = send_payload.call_args.args[0]['data']
+        # [0][0] is used here to index into the mocked objects `call_args` and get the
+        # right payload for comparison.
+        payload_data = send_payload.call_args[0][0]['data']
         self.assertIn('tags', payload_data)
 
         tags = payload_data['tags']
@@ -68,7 +70,7 @@ class FeatureFlagContextManagerTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload_data = send_payload.call_args.args[0]['data']
+        payload_data = send_payload.call_args[0][0]['data']
         self.assertIn('tags', payload_data)
 
         tags = payload_data['tags']
@@ -89,7 +91,7 @@ class FeatureFlagContextManagerTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload_data = send_payload.call_args.args[0]['data']
+        payload_data = send_payload.call_args[0][0]['data']
         self.assertIn('tags', payload_data)
 
         tags = payload_data['tags']
@@ -111,7 +113,7 @@ class FeatureFlagContextManagerTest(BaseTest):
 
         self.assertEqual(send_payload.called, True)
 
-        payload_data = send_payload.call_args.args[0]['data']
+        payload_data = send_payload.call_args[0][0]['data']
         self.assertIn('tags', payload_data)
 
         tags = payload_data['tags']
@@ -131,5 +133,5 @@ class FeatureFlagContextManagerTest(BaseTest):
         rollbar.report_message('this report message is to check that there are no tags')
         self.assertEqual(mocked_send.called, True)
 
-        payload_data = mocked_send.call_args.args[0]['data']
+        payload_data = mocked_send.call_args[0][0]['data']
         self.assertNotIn('tags', payload_data)
