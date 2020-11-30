@@ -23,7 +23,7 @@ class FeatureFlagContextManagerTest(BaseTest):
     def test_feature_flag_generates_correct_tag_payload(self):
         cm = rollbar.feature_flag('feature-foo', variation=True, user='atran@rollbar.com')
 
-        tags = cm.tag
+        tags = cm.tags
         self.assertEqual(len(tags), 3)
 
         key, variation, user = tags

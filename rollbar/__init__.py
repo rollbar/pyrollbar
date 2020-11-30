@@ -1692,16 +1692,16 @@ class _TagManager(object):
     """
     Context manager object that interfaces with the `_tags` stack:
 
-        On enter, puts the tag object at top of the stack.
+        On enter, puts the tags at top of the stack.
         On exit, pops off the top element of the stack.
-          - If there is an exception, attach the tag object to the exception
+          - If there is an exception, attach the tags to the exception
             for rebuilding of the `_tags` stack before reporting.
     """
-    def __init__(self, tag):
-        self.tag = tag
+    def __init__(self, tags):
+        self.tags = tags
 
     def __enter__(self):
-        _tags.append(self.tag)
+        _tags.append(self.tags)
 
     def __exit__(self, exc_type, exc_value, traceback):
 
@@ -1709,6 +1709,6 @@ class _TagManager(object):
             if not hasattr(exc_value, '_rollbar_tags'):
                 exc_value._rollbar_tags = []
 
-            exc_value._rollbar_tags.append(self.tag)
+            exc_value._rollbar_tags.append(self.tags)
 
         _tags.pop()
