@@ -1669,9 +1669,11 @@ class _LocalTags(object):
     """
     def __init__(self):
         self._registry = threading.local()
-        self._registry.tags = []
 
     def append(self, value):
+        if not hasattr(self._registry, 'tags'):
+            self._registry.tags = []
+
         self._registry.tags.append(value)
 
     def pop(self):
@@ -1679,11 +1681,10 @@ class _LocalTags(object):
 
     @property
     def value(self):
-        if hasattr(self._registry, 'tags'):
-            return self._registry.tags
+        if not hasattr(self._registry, 'tags'):
+            self._registry.tags = []
 
-        return []
-
+        return self._registry.tags
 
 _tags = _LocalTags()
 
