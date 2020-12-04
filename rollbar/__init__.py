@@ -538,7 +538,7 @@ def wait(f=None):
 
 def feature_flag(flag_key, variation=None, user=None):
     """
-    A context manager interface that sets the tags used to model a feature flag.
+    A context manager interface that creates a list of tags to represent a feature flag.
 
     key: the key of the feature flag.
     variation: (optional) the evaluated feature flag variation.
@@ -740,11 +740,15 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     if extra_trace_data and not extra_data:
         data['custom'] = extra_trace_data
 
-    # if there are tags attached to the exception, reverse the order, and append to `_tags`
-    # stack to send the full chain of tags to Rollbar.
-    tags = _tags.value + getattr(exc_info[1], '_rollbar_tags', [])[::-1]
+    tags = _in_context_tags.to_list()
+
+    # if there are tags attached to the exception, reverse the order, and append to `tags`
+    # to send the full chain of tags to Rollbar.
+    if hasattr(exc_info[1], '_rollbar_tags'):
+        tags += getattr(exc_info[1], '_rollbar_tags').to_list(reverse=True)
+
     if tags:
-        data['tags'] = _flatten_nested_lists(tags)
+        data['tags'] = tags
 
     request = _get_actual_request(request)
     _add_request_data(data, request)
@@ -832,8 +836,8 @@ def _report_message(message, level, request, extra_data, payload_data):
     _add_lambda_context_data(data)
     data['server'] = _build_server_data()
 
-    if _tags.value:
-        data['tags'] = _flatten_nested_lists(_tags.value)
+    if _in_context_tags.to_list():
+        data['tags'] = _in_context_tags.to_list()
 
     if payload_data:
         data = dict_merge(data, payload_data, silence_errors=True)
@@ -1679,37 +1683,40 @@ class _LocalTags(object):
     def pop(self):
         self._registry.tags.pop()
 
-    @property
-    def value(self):
+    def to_list(self, reverse=False):
         if not hasattr(self._registry, 'tags'):
             self._registry.tags = []
 
-        return self._registry.tags
+        if reverse:
+            return _flatten_nested_lists(self._registry.tags[::-1])
 
-_tags = _LocalTags()
+        return _flatten_nested_lists(self._registry.tags)
+
+
+_in_context_tags = _LocalTags()
 
 
 class _TagManager(object):
     """
-    Context manager object that interfaces with the `_tags` stack:
+    Context manager object that interfaces with the `_in_context_tags` stack:
 
         On enter, puts the tags at top of the stack.
         On exit, pops off the top element of the stack.
           - If there is an exception, attach the tags to the exception
-            for rebuilding of the `_tags` stack before reporting.
+            for rebuilding the tags in the context before reporting.
     """
     def __init__(self, tags):
         self.tags = tags
 
     def __enter__(self):
-        _tags.append(self.tags)
+        _in_context_tags.append(self.tags)
 
     def __exit__(self, exc_type, exc_value, traceback):
 
         if exc_value:
             if not hasattr(exc_value, '_rollbar_tags'):
-                exc_value._rollbar_tags = []
+                exc_value._rollbar_tags = _LocalTags()
 
             exc_value._rollbar_tags.append(self.tags)
 
-        _tags.pop()
+        _in_context_tags.pop()
