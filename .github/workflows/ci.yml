@@ -11,26 +11,16 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        python-version: [2.7, 3.4, 3.5, 3.6, 3.7, 3.8]
+        python-version: [2.7, 3.5, 3.6]
         framework:
-          - FLASK_VERSION=0.10.1
-          - FLASK_VERSION=0.11.1
-          - FLASK_VERSION=0.12.4
-          - FLASK_VERSION=1.0.2
-          - TWISTED_VERSION=15.5.0
-          - TWISTED_VERSION=16.1.0
-          - TWISTED_VERSION=16.2.0
-          - TWISTED_VERSION=16.3.0
-          - TWISTED_VERSION=16.4.0
-          - TWISTED_VERSION=16.5.0
-          - TWISTED_VERSION=16.6.0
-          - TWISTED_VERSION=17.1.0
-          - DJANGO_VERSION=1.11.20
-          - DJANGO_VERSION=2.0.13
-          - DJANGO_VERSION=2.1.7
-          - DJANGO_VERSION=2.1.15
-          - PYRAMID_VERSION=1.9.2
-          - PYRAMID_VERSION=1.10.4
+          - TWISTED_VERSION=15.5.0 treq==15.1.0
+          - TWISTED_VERSION=16.1.0 treq==16.12.0
+          - TWISTED_VERSION=16.2.0 treq==16.12.0
+          - TWISTED_VERSION=16.3.0 treq==16.12.0
+          - TWISTED_VERSION=16.4.0 treq==17.8.0
+          - TWISTED_VERSION=16.5.0 treq==17.8.0
+          - TWISTED_VERSION=16.6.0 treq==17.8.0
+          - TWISTED_VERSION=17.1.0 treq==20.4.1
         exclude:
           - python-version: 2.7
             framework: DJANGO_VERSION=2.0.13
@@ -77,8 +67,18 @@ jobs:
             framework: DJANGO_VERSION=1.9.13
           - python-version: 3.5
             framework: DJANGO_VERSION=1.10.8
+          - python-version: 3.7
+            framework: TWISTED_VERSION=18.9.0 treq==20.4.1
+          - python-version: 3.7
+            framework: TWISTED_VERSION=19.10.0 treq==20.4.1
+          - python-version: 3.7
+            framework: TWISTED_VERSION=20.3.0 treq==20.4.1
           - python-version: 3.8
-            framework: TWISTED_VERSION=20.3.0
+            framework: TWISTED_VERSION=18.9.0 treq==20.4.1
+          - python-version: 3.8
+            framework: TWISTED_VERSION=19.10.0 treq==20.4.1
+          - python-version: 3.8
+            framework: TWISTED_VERSION=20.3.0 treq==20.4.1
 
     steps:
       - uses: actions/checkout@v2
@@ -106,7 +106,7 @@ jobs:
 
       - name: Install Twisted
         if: ${{ contains(matrix.framework, 'TWISTED_VERSION') }}
-        run: pip install Twisted==$TWISTED_VERSION treq==20.4.1
+        run: pip install Twisted==$TWISTED_VERSION idna==2.10
 
       - name: Install Django
         if: ${{ contains(matrix.framework, 'DJANGO_VERSION') }}
