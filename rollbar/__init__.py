@@ -474,9 +474,11 @@ def send_payload(payload, access_token):
     if payload is False:
         return
 
-    payload_str = _serialize_payload(payload)
-
     handler = SETTINGS.get('handler')
+    if handler == 'twisted':
+        payload['data']['framework'] = 'twisted'
+
+    payload_str = _serialize_payload(payload)
     if handler == 'blocking':
         _send_payload(payload_str, access_token)
     elif handler == 'agent':
