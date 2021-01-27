@@ -106,7 +106,12 @@ except ImportError:
 try:
     import treq
     from twisted.python import log as twisted_log
-
+    from twisted.web.iweb import IPolicyForHTTPS
+    from twisted.web.client import BrowserLikePolicyForHTTPS, Agent
+    from twisted.internet.ssl import CertificateOptions
+    from twisted.internet import task, defer, ssl, reactor
+    from zope.interface import implementer
+    
     def log_handler(event):
         """
         Default uncaught error handler
@@ -1475,6 +1480,17 @@ def _send_payload_twisted(payload_str, access_token):
     except Exception as e:
         log.exception('Exception while posting item %r', e)
 
+@implementer(IPolicyForHTTPS)
+class VerifyHTTPS(object):
+    def __init__(self):
+        # by default, handle requests like a browser would
+        self.default_policy = BrowserLikePolicyForHTTPS()
+
+    def creatorForNetloc(self, hostname, port):
+        # check if the hostname is in the the whitelist, otherwise return the default policy
+        if not SETTINGS['verify_https']:
+             return ssl.CertificateOptions(verify=False)
+        return self.default_policy.creatorForNetloc(hostname, port)
 
 def _post_api_twisted(path, payload_str, access_token=None):
     def post_data_cb(data, resp):
@@ -1496,7 +1512,9 @@ def _post_api_twisted(path, payload_str, access_token=None):
         encoded_payload = payload_str.encode('utf8')
     except (UnicodeDecodeError, UnicodeEncodeError):
         encoded_payload = payload_str
-    d = treq.post(url, encoded_payload, headers=headers,
+
+    treq_client = treq.client.HTTPClient(Agent(reactor, contextFactory=VerifyHTTPS()))
+    d = treq_client.post(url, encoded_payload, headers=headers,
                   timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT))
     d.addCallback(post_cb)
 
