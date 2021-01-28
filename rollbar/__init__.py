@@ -112,6 +112,18 @@ try:
     from twisted.internet import task, defer, ssl, reactor
     from zope.interface import implementer
     
+    @implementer(IPolicyForHTTPS)
+    class VerifyHTTPS(object):
+        def __init__(self):
+            # by default, handle requests like a browser would
+            self.default_policy = BrowserLikePolicyForHTTPS()
+
+        def creatorForNetloc(self, hostname, port):
+            # check if the hostname is in the the whitelist, otherwise return the default policy
+            if not SETTINGS['verify_https']:
+                return ssl.CertificateOptions(verify=False)
+            return self.default_policy.creatorForNetloc(hostname, port)
+
     def log_handler(event):
         """
         Default uncaught error handler
@@ -1479,18 +1491,6 @@ def _send_payload_twisted(payload_str, access_token):
         _post_api_twisted('item/', payload_str, access_token=access_token)
     except Exception as e:
         log.exception('Exception while posting item %r', e)
-
-@implementer(IPolicyForHTTPS)
-class VerifyHTTPS(object):
-    def __init__(self):
-        # by default, handle requests like a browser would
-        self.default_policy = BrowserLikePolicyForHTTPS()
-
-    def creatorForNetloc(self, hostname, port):
-        # check if the hostname is in the the whitelist, otherwise return the default policy
-        if not SETTINGS['verify_https']:
-             return ssl.CertificateOptions(verify=False)
-        return self.default_policy.creatorForNetloc(hostname, port)
 
 def _post_api_twisted(path, payload_str, access_token=None):
     def post_data_cb(data, resp):
