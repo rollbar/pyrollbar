@@ -17,14 +17,14 @@ jobs:
           - FLASK_VERSION=0.11.1
           - FLASK_VERSION=0.12.4
           - FLASK_VERSION=1.0.2
-          - TWISTED_VERSION=15.5.0 treq==15.1.0
-          - TWISTED_VERSION=16.1.0 treq==16.12.0
-          - TWISTED_VERSION=16.2.0 treq==16.12.0
-          - TWISTED_VERSION=16.3.0 treq==16.12.0
-          - TWISTED_VERSION=16.4.0 treq==17.8.0
-          - TWISTED_VERSION=16.5.0 treq==17.8.0
-          - TWISTED_VERSION=16.6.0 treq==17.8.0
-          - TWISTED_VERSION=17.1.0 treq==20.4.1
+          - TWISTED_VERSION=15.5.0 treq==15.1.0 zope.interface=4.1.3
+          - TWISTED_VERSION=16.1.0 treq==16.12.0 zope.interface=4.1.3
+          - TWISTED_VERSION=16.2.0 treq==16.12.0 zope.interface=4.1.3
+          - TWISTED_VERSION=16.3.0 treq==16.12.0 zope.interface=4.2.0
+          - TWISTED_VERSION=16.4.0 treq==17.8.0 zope.interface=4.2.0
+          - TWISTED_VERSION=16.5.0 treq==17.8.0 zope.interface=4.3.0
+          - TWISTED_VERSION=16.6.0 treq==17.8.0 zope.interface=4.3.0
+          - TWISTED_VERSION=17.1.0 treq==20.4.1 zope.interface=4.4.0
           - DJANGO_VERSION=1.11.20
           - DJANGO_VERSION=2.0.13
           - DJANGO_VERSION=2.1.7
@@ -55,37 +55,37 @@ jobs:
           # So we put twisted < 18.x in the matrix
           # and disallow python 3.7 and 3.8 here.
           - python-version: 3.7
-            framework: TWISTED_VERSION=15.5.0 treq==15.1.0
+            framework: TWISTED_VERSION=15.5.0 treq==15.1.0 zope.interface=4.1.3
           - python-version: 3.7
-            framework: TWISTED_VERSION=16.1.0 treq==16.12.0
+            framework: TWISTED_VERSION=16.1.0 treq==16.12.0 zope.interface=4.1.3
           - python-version: 3.7
-            framework: TWISTED_VERSION=16.2.0 treq==16.12.0
+            framework: TWISTED_VERSION=16.2.0 treq==16.12.0 zope.interface=4.1.3
           - python-version: 3.7
-            framework: TWISTED_VERSION=16.3.0 treq==16.12.0
+            framework: TWISTED_VERSION=16.3.0 treq==16.12.0 zope.interface=4.2.0
           - python-version: 3.7
-            framework: TWISTED_VERSION=16.4.0 treq==17.8.0
+            framework: TWISTED_VERSION=16.4.0 treq==17.8.0 zope.interface=4.2.0
           - python-version: 3.7
-            framework: TWISTED_VERSION=16.5.0 treq==17.8.0
+            framework: TWISTED_VERSION=16.5.0 treq==17.8.0 zope.interface=4.2.0
           - python-version: 3.7
-            framework: TWISTED_VERSION=16.6.0 treq==17.8.0
+            framework: TWISTED_VERSION=16.6.0 treq==17.8.0 zope.interface=4.3.0
           - python-version: 3.7
-            framework: TWISTED_VERSION=17.1.0 treq==20.4.1
+            framework: TWISTED_VERSION=17.1.0 treq==20.4.1 zope.interface=4.3.0
           - python-version: 3.8
-            framework: TWISTED_VERSION=15.5.0 treq==15.1.0
+            framework: TWISTED_VERSION=15.5.0 treq==15.1.0 zope.interface=4.1.3
           - python-version: 3.8
-            framework: TWISTED_VERSION=16.1.0 treq==16.12.0
+            framework: TWISTED_VERSION=16.1.0 treq==16.12.0 zope.interface=4.1.3
           - python-version: 3.8
-            framework: TWISTED_VERSION=16.2.0 treq==16.12.0
+            framework: TWISTED_VERSION=16.2.0 treq==16.12.0 zope.interface=4.1.3
           - python-version: 3.8
-            framework: TWISTED_VERSION=16.3.0 treq==16.12.0
+            framework: TWISTED_VERSION=16.3.0 treq==16.12.0 zope.interface=4.2.0
           - python-version: 3.8
-            framework: TWISTED_VERSION=16.4.0 treq==17.8.0
+            framework: TWISTED_VERSION=16.4.0 treq==17.8.0 zope.interface=4.2.0
           - python-version: 3.8
-            framework: TWISTED_VERSION=16.5.0 treq==17.8.0
+            framework: TWISTED_VERSION=16.5.0 treq==17.8.0 zope.interface=4.3.0
           - python-version: 3.8
-            framework: TWISTED_VERSION=16.6.0 treq==17.8.0
+            framework: TWISTED_VERSION=16.6.0 treq==17.8.0 zope.interface=4.3.0
           - python-version: 3.8
-            framework: TWISTED_VERSION=17.1.0 treq==20.4.1
+            framework: TWISTED_VERSION=17.1.0 treq==20.4.1 zope.interface=4.3.0
         include:
           - python-version: 2.7
             framework: FLASK_VERSION=0.9
@@ -116,17 +116,17 @@ jobs:
           - python-version: 3.5
             framework: DJANGO_VERSION=1.10.8
           - python-version: 3.7
-            framework: TWISTED_VERSION=18.9.0 treq==20.4.1
+            framework: TWISTED_VERSION=18.9.0 treq==20.4.1 zope.interface=4.5.0
           - python-version: 3.7
-            framework: TWISTED_VERSION=19.10.0 treq==20.4.1
+            framework: TWISTED_VERSION=19.10.0 treq==20.4.1 zope.interface=4.6.0
           - python-version: 3.7
-            framework: TWISTED_VERSION=20.3.0 treq==20.4.1
+            framework: TWISTED_VERSION=20.3.0 treq==20.4.1 zope.interface=4.7.0
           - python-version: 3.8
-            framework: TWISTED_VERSION=18.9.0 treq==20.4.1
+            framework: TWISTED_VERSION=18.9.0 treq==20.4.1 zope.interface=4.5.0
           - python-version: 3.8
-            framework: TWISTED_VERSION=19.10.0 treq==20.4.1
+            framework: TWISTED_VERSION=19.10.0 treq==20.4.1 zope.interface=4.6.0
           - python-version: 3.8
-            framework: TWISTED_VERSION=20.3.0 treq==20.4.1
+            framework: TWISTED_VERSION=20.3.0 treq==20.4.1 zope.interface=4.7.0
     steps:
       - uses: actions/checkout@v2
         with:
