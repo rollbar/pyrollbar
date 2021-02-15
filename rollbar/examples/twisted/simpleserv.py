@@ -4,6 +4,7 @@
 #
 # From https://twistedmatrix.com/documents/current/_downloads/simpleserv.py
 
+# NOTE: pyrollbar requires both `Twisted` and `treq` packages to be installed
 
 from twisted.internet import reactor, protocol
 
