@@ -1,39 +1,23 @@
-import logging
-
+# NOTE: pyrollbar requires both `Flask` and `blinker` packages to be installed first
 from flask import Flask
+from flask import got_request_exception
 
 import rollbar
-from rollbar.logger import RollbarHandler
-
-ACCESS_TOKEN = 'ACCESS_TOKEN'
-ENVIRONMENT = 'development'
-
-rollbar.init(ACCESS_TOKEN, ENVIRONMENT)
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-# report WARNING and above to Rollbar
-rollbar_handler = RollbarHandler(history_size=3)
-rollbar_handler.setLevel(logging.WARNING)
-
-# gather history for DEBUG+ log messages
-rollbar_handler.setHistoryLevel(logging.DEBUG)
-
-# attach the history handler to the root logger
-logger.addHandler(rollbar_handler)
+import rollbar.contrib.flask
 
 
 app = Flask(__name__)
 
+
+@app.before_first_request
+def init_rollbar():
+    rollbar.init('ACCESS_TOKEN', environment='development')
+    # send exceptions from `app` to rollbar, using flask's signal system.
+    got_request_exception.connect(rollbar.contrib.flask.report_exception, app)
+
 @app.route('/')
 def root():
-    logger.info('about to call foo()')
-    try:
-        foo()
-    except:
-        logger.exception('Caught exception')
-
+    foo()
     return '<html><body>Hello World</body></html>'
 
 if __name__ == '__main__':
