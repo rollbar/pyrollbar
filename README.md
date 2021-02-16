@@ -1,5 +1,5 @@
 # Pyrollbar
-![Build Status](https://github.com/rollbar/pyrollbar/workflows/Pyrollbar%20CI/badge.svg?branch=v0.15.1)
+![Build Status](https://github.com/rollbar/pyrollbar/workflows/Pyrollbar%20CI/badge.svg?tag=latest)
 
 Python notifier for reporting exceptions, errors, and log messages to [Rollbar](https://rollbar.com).
 
