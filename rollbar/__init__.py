@@ -1,6 +1,3 @@
-"""
-Plugin for Pyramid apps to submit errors to Rollbar
-"""
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
