@@ -1,7 +1,8 @@
-import re
 import os.path
+import re
 import sys
-from setuptools import setup, find_packages
+
+from setuptools import find_packages, setup
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
@@ -65,6 +66,7 @@ setup(
         "Framework :: Bottle",
         "Framework :: Django",
         "Framework :: Flask",
+        "Framework :: Fastapi",
         "Framework :: Pylons",
         "Framework :: Pyramid",
         "Framework :: Twisted",
@@ -81,5 +83,11 @@ setup(
         'requests>=0.12.1',
         'six>=1.9.0'
     ],
+    extra_requires={
+        "fastapi": [
+            "fastapi",
+            "uvicorn",
+        ],
+    },
     tests_require=tests_require,
     )
