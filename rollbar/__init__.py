@@ -85,6 +85,11 @@ except ImportError:
     SanicRequest = None
 
 try:
+    from fastapi import Request as FastapiRequest
+except ImportError:
+    FastapiRequest = None
+
+try:
     from google.appengine.api.urlfetch import fetch as AppEngineFetch
 except ImportError:
     AppEngineFetch = None
@@ -1117,6 +1122,10 @@ def _build_request_data(request):
     if FalconRequest and isinstance(request, FalconRequest):
         return _build_falcon_request_data(request)
 
+    # fastapi
+    if FastapiRequest and isinstance(request, FastapiRequest):
+        return _build_fastapi_request_data(request)
+
     # Plain wsgi (should be last)
     if isinstance(request, dict) and 'wsgi.version' in request:
         return _build_wsgi_request_data(request)
@@ -1183,6 +1192,24 @@ def _build_django_request_data(request):
             pass
 
     request_data['headers'] = _extract_wsgi_headers(request.META.items())
+
+    return request_data
+
+
+def _build_fastapi_request_data(request):
+    """Fastapi relies on starlette which uses async functions to retrieve the request data and body.
+
+    So skipping for now since function callers are synchronous...
+    """
+    request_data = {
+        'url': str(request.url),
+        'method': request.method,
+        'GET': None,
+        'POST': None,
+        'user_ip': _asgi_extract_user_ip(request)
+    }
+
+    request_data['headers'] = request.headers
 
     return request_data
 
@@ -1623,3 +1650,13 @@ def _wsgi_extract_user_ip(environ):
     if real_ip:
         return real_ip
     return environ['REMOTE_ADDR']
+
+
+def _asgi_extract_user_ip(request):
+    forwarded_for = request.headers.get('x-forwarded-for')
+    if forwarded_for:
+        return forwarded_for
+    real_ip = request.headers.get('x-real-ip')
+    if real_ip:
+        return real_ip
+    return request.client.host
