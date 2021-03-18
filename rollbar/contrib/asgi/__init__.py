@@ -11,3 +11,10 @@ class ASGIMiddleware:
         except Exception:
             rollbar.report_exc_info()
             raise
+
+
+def _hook(request, data):
+    data["framework"] = "asgi"
+
+
+rollbar.BASE_DATA_HOOK = _hook
