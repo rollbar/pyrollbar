@@ -1,7 +1,7 @@
 import rollbar
 
 try:
-    from starlette.types import ASGIApp, Scope, Receive, Send
+    from starlette.types import ASGIApp, Receive, Scope, Send
 except ImportError:
     STARLETTE_INSTALLED = False
 else:
@@ -9,6 +9,7 @@ else:
 
 
 if STARLETTE_INSTALLED is True:
+
     class ASGIMiddleware:
         def __init__(self, app: ASGIApp) -> None:
             self.app = app
@@ -19,7 +20,10 @@ if STARLETTE_INSTALLED is True:
             except Exception:
                 rollbar.report_exc_info()
                 raise
+
+
 else:
+
     class ASGIMiddleware:
         def __init__(self, app):
             self.app = app
