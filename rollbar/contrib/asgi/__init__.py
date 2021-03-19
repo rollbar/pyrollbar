@@ -1,3 +1,5 @@
+__all__ = ["ASGIMiddleware"]
+
 import rollbar
 
 try:
