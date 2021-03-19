@@ -47,3 +47,12 @@ class FastAPIMiddlewareTest(BaseTest):
             exc_type, exc_value, exc_tb = exc_info
             self.assertEqual(exc_type, ZeroDivisionError)
             self.assertIsInstance(exc_value, ZeroDivisionError)
+
+    def test_should_support_type_hints(self):
+        from starlette.types import ASGIApp, Receive, Scope, Send
+        import rollbar.contrib.fastapi
+
+        self.assertDictEqual(
+            rollbar.contrib.fastapi.FastAPIMiddleware.__call__.__annotations__,
+            {"scope": Scope, "receive": Receive, "send": Send, "return": None},
+        )
