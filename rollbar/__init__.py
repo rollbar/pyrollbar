@@ -1605,13 +1605,12 @@ def _parse_response(path, access_token, params, resp, endpoint=None):
 
 
 def _extract_user_ip(request):
-    # some common things passed by load balancers... will need more of these.
-    real_ip = request.headers.get('X-Real-Ip')
-    if real_ip:
-        return real_ip
     forwarded_for = request.headers.get('X-Forwarded-For')
     if forwarded_for:
         return forwarded_for
+    real_ip = request.headers.get('X-Real-Ip')
+    if real_ip:
+        return real_ip
     return request.remote_addr
 
 
