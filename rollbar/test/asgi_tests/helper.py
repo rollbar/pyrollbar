@@ -1,31 +1,38 @@
 import asyncio
 import functools
+import inspect
+import sys
 
 from rollbar.contrib.asgi import ASGIApp
 
 
-def async_test_func_wrapper(asyncfunc):
+def run(coro):
+    if sys.version_info >= (3, 7):
+        return asyncio.run(coro)
+
+    assert inspect.iscoroutine(coro)
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        return loop.run_until_complete(coro)
+    finally:
+        loop.close()
+        asyncio.set_event_loop(None)
+
+
+def wrap_async(asyncfunc):
     @functools.wraps(asyncfunc)
     def wrapper(*args, **kwargs):
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+        run(asyncfunc(*args, **kwargs))
 
-            try:
-                loop.run_until_complete(asyncfunc(*args, **kwargs))
-            finally:
-                loop.close()
-        else:
-            loop.run_until_complete(asyncfunc(*args, **kwargs))
     return wrapper
 
 
 @ASGIApp
 class FailingTestASGIApp:
     def __init__(self):
-        self.asgi_app = async_test_func_wrapper(self.asgi_app)
+        self.asgi_app = wrap_async(self.asgi_app)
 
     async def app(self, scope, receive, send):
         raise RuntimeError("Invoked only for testing")
