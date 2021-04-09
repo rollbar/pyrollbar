@@ -9,7 +9,7 @@ import unittest2
 
 from rollbar.test import BaseTest
 
-ALLOWED_PYTHON_VERSION = sys.version_info[0] >= 3 and sys.version_info[1] >= 6
+ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
 
 
 @unittest2.skipUnless(ALLOWED_PYTHON_VERSION, "FastAPI requires Python3.6+")
