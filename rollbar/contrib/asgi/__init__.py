@@ -17,7 +17,8 @@ def ASGIApp(cls):
         try:
             await self.app(scope, receive, send)
         except Exception:
-            rollbar.report_exc_info()
+            if scope["type"] == "http":
+                rollbar.report_exc_info()
             raise
 
     cls.asgi_app = asgi_app
