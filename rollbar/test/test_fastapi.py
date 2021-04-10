@@ -1,3 +1,4 @@
+import importlib
 import sys
 
 try:
@@ -7,6 +8,8 @@ except ImportError:
 
 import unittest2
 
+import rollbar
+import rollbar.contrib.fastapi
 from rollbar.test import BaseTest
 
 ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
@@ -14,16 +17,14 @@ ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
 
 @unittest2.skipUnless(ALLOWED_PYTHON_VERSION, "FastAPI requires Python3.6+")
 class FastAPIMiddlewareTest(BaseTest):
-    def test_should_set_fastapi_hook(self):
-        import rollbar
-        import rollbar.contrib.fastapi
+    def setUp(self):
+        importlib.reload(rollbar.contrib.fastapi)
 
+    def test_should_set_fastapi_hook(self):
         self.assertEqual(rollbar.BASE_DATA_HOOK, rollbar.contrib.fastapi._hook)
 
     def test_should_add_fastapi_version_to_payload(self):
         import fastapi
-        import rollbar
-        import rollbar.contrib.fastapi
 
         with mock.patch("rollbar._check_config", return_value=True):
             with mock.patch("rollbar.send_payload") as mock_send_payload:
@@ -64,7 +65,6 @@ class FastAPIMiddlewareTest(BaseTest):
 
     def test_should_support_type_hints(self):
         from starlette.types import ASGIApp, Receive, Scope, Send
-        import rollbar.contrib.fastapi
 
         self.assertDictEqual(
             rollbar.contrib.fastapi.FastAPIMiddleware.__call__.__annotations__,

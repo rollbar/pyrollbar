@@ -1,3 +1,4 @@
+import importlib
 import sys
 
 try:
@@ -7,6 +8,8 @@ except ImportError:
 
 import unittest2
 
+import rollbar
+import rollbar.contrib.starlette
 from rollbar.test import BaseTest
 
 ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
@@ -14,16 +17,14 @@ ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
 
 @unittest2.skipUnless(ALLOWED_PYTHON_VERSION, "Starlette requires Python3.6+")
 class StarletteMiddlewareTest(BaseTest):
-    def test_should_set_starlette_hook(self):
-        import rollbar
-        import rollbar.contrib.starlette
+    def setUp(self):
+        importlib.reload(rollbar.contrib.starlette)
 
+    def test_should_set_starlette_hook(self):
         self.assertEqual(rollbar.BASE_DATA_HOOK, rollbar.contrib.starlette._hook)
 
     def test_should_add_starlette_version_to_payload(self):
         import starlette
-        import rollbar
-        import rollbar.contrib.starlette
 
         with mock.patch("rollbar._check_config", return_value=True):
             with mock.patch("rollbar.send_payload") as mock_send_payload:
@@ -66,7 +67,6 @@ class StarletteMiddlewareTest(BaseTest):
 
     def test_should_support_type_hints(self):
         from starlette.types import ASGIApp, Receive, Scope, Send
-        import rollbar.contrib.starlette
 
         self.assertDictEqual(
             rollbar.contrib.starlette.StarletteMiddleware.__call__.__annotations__,

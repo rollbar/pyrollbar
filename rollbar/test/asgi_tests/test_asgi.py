@@ -1,3 +1,4 @@
+import importlib
 import sys
 
 try:
@@ -7,6 +8,8 @@ except ImportError:
 
 import unittest2
 
+import rollbar
+import rollbar.contrib.asgi
 from rollbar.test import BaseTest
 
 ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 5)
@@ -14,10 +17,10 @@ ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 5)
 
 @unittest2.skipUnless(ALLOWED_PYTHON_VERSION, "ASGI implementation requires Python3.5+")
 class ASGIMiddlewareTest(BaseTest):
-    def test_should_set_asgi_hook(self):
-        import rollbar
-        import rollbar.contrib.asgi
+    def setUp(self):
+        importlib.reload(rollbar.contrib.asgi)
 
+    def test_should_set_asgi_hook(self):
         self.assertEqual(rollbar.BASE_DATA_HOOK, rollbar.contrib.asgi._hook)
 
     def test_should_support_http_only(self):
@@ -43,8 +46,6 @@ class ASGIMiddlewareTest(BaseTest):
             from starlette.types import ASGIApp, Receive, Scope, Send
         except ImportError:
             self.skipTest("Support for type hints requires Starlette to be installed")
-
-        import rollbar.contrib.asgi
 
         self.assertDictEqual(
             rollbar.contrib.asgi.ASGIMiddleware.__call__.__annotations__,
