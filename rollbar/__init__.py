@@ -1082,7 +1082,6 @@ def _get_actual_request(request):
 def _build_request_data(request):
     """
     Returns a dictionary containing data from the request.
-    Can handle webob or werkzeug-based request objects.
     """
 
     # webob (pyramid)
