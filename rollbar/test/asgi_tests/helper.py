@@ -32,7 +32,7 @@ def wrap_async(asyncfunc):
 @ASGIApp
 class FailingTestASGIApp:
     def __init__(self):
-        self.asgi_app = wrap_async(self.asgi_app)
+        self._asgi_app = wrap_async(self._asgi_app)
 
     async def app(self, scope, receive, send):
         raise RuntimeError("Invoked only for testing")

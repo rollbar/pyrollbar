@@ -13,7 +13,7 @@ else:
 # Optional class annotations must be statically declared because
 # IDEs cannot infer type hinting for arbitrary dynamic code
 def ASGIApp(cls):
-    async def asgi_app(self, scope, receive, send):
+    async def _asgi_app(self, scope, receive, send):
         try:
             await self.app(scope, receive, send)
         except Exception:
@@ -21,7 +21,7 @@ def ASGIApp(cls):
                 rollbar.report_exc_info()
             raise
 
-    cls.asgi_app = asgi_app
+    cls._asgi_app = _asgi_app
     return cls
 
 
@@ -33,7 +33,7 @@ if STARLETTE_INSTALLED is True:
             self.app = app
 
         async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-            await self.asgi_app(scope, receive, send)
+            await self._asgi_app(scope, receive, send)
 
 
 else:
@@ -44,7 +44,7 @@ else:
             self.app = app
 
         async def __call__(self, scope, receive, send):
-            await self.asgi_app(scope, receive, send)
+            await self._asgi_app(scope, receive, send)
 
 
 def _hook(request, data):
