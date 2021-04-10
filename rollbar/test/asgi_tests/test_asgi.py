@@ -30,13 +30,13 @@ class ASGIMiddlewareTest(BaseTest):
             with self.assertRaises(RuntimeError):
                 testapp.asgi_app({"type": "http"}, None, None)
 
-            self.assertEqual(mock_report.call_count, 1)
+            mock_report.assert_called_once()
 
         with mock.patch("rollbar.report_exc_info") as mock_report:
             with self.assertRaises(RuntimeError):
                 testapp.asgi_app({"type": "websocket"}, None, None)
 
-            self.assertEqual(mock_report.call_count, 0)
+            mock_report.assert_not_called()
 
     def test_should_support_type_hints_if_starlette_installed(self):
         try:

@@ -51,14 +51,14 @@ class FastAPIMiddlewareTest(BaseTest):
             with self.assertRaises(ZeroDivisionError):
                 client.get("/")
 
-            self.assertEqual(mock_report.call_count, 1)
+            mock_report.assert_called_once()
 
             args, kwargs = mock_report.call_args
             self.assertEqual(kwargs, {})
 
             exc_info, request = args
-
             exc_type, exc_value, exc_tb = exc_info
+
             self.assertEqual(exc_type, ZeroDivisionError)
             self.assertIsInstance(exc_value, ZeroDivisionError)
 
