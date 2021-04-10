@@ -31,13 +31,13 @@ class ASGIMiddlewareTest(BaseTest):
 
         with mock.patch("rollbar.report_exc_info") as mock_report:
             with self.assertRaises(RuntimeError):
-                testapp._asgi_app({"type": "http"}, None, None)
+                testapp({"type": "http"}, None, None)
 
             mock_report.assert_called_once()
 
         with mock.patch("rollbar.report_exc_info") as mock_report:
             with self.assertRaises(RuntimeError):
-                testapp._asgi_app({"type": "websocket"}, None, None)
+                testapp({"type": "websocket"}, None, None)
 
             mock_report.assert_not_called()
 

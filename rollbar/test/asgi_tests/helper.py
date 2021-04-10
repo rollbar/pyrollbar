@@ -1,5 +1,4 @@
 import asyncio
-import functools
 import inspect
 import sys
 
@@ -21,18 +20,10 @@ def run(coro):
         asyncio.set_event_loop(None)
 
 
-def wrap_async(asyncfunc):
-    @functools.wraps(asyncfunc)
-    def wrapper(*args, **kwargs):
-        run(asyncfunc(*args, **kwargs))
-
-    return wrapper
-
-
 @ASGIApp
 class FailingTestASGIApp:
-    def __init__(self):
-        self._asgi_app = wrap_async(self._asgi_app)
+    def __call__(self, scope, receive, send):
+        run(self._asgi_app(scope, receive, send))
 
     async def app(self, scope, receive, send):
         raise RuntimeError("Invoked only for testing")
