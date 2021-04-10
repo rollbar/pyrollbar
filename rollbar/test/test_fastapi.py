@@ -20,6 +20,20 @@ class FastAPIMiddlewareTest(BaseTest):
 
         self.assertEqual(rollbar.BASE_DATA_HOOK, rollbar.contrib.fastapi._hook)
 
+    def test_should_add_fastapi_version_to_payload(self):
+        import fastapi
+        import rollbar
+        import rollbar.contrib.fastapi
+
+        with mock.patch("rollbar._check_config", return_value=True):
+            with mock.patch("rollbar.send_payload") as mock_send_payload:
+                rollbar.report_exc_info()
+
+                mock_send_payload.assert_called_once()
+                payload = mock_send_payload.call_args[0][0]
+
+        self.assertIn(fastapi.__version__, payload["data"]["framework"])
+
     def test_should_catch_and_report_errors(self):
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
