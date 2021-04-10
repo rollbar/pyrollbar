@@ -1,10 +1,10 @@
 from fastapi import __version__
 
 import rollbar
-from rollbar.contrib.asgi import ASGIMiddleware
+from rollbar.contrib.starlette import StarletteMiddleware
 
 
-class FastAPIMiddleware(ASGIMiddleware):
+class FastAPIMiddleware(StarletteMiddleware):
     ...
 
 
