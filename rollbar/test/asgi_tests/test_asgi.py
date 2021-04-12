@@ -25,7 +25,7 @@ class ASGIMiddlewareTest(BaseTest):
 
     def test_should_support_http_only(self):
         from rollbar.contrib.asgi import ASGIApp
-        from rollbar.test.asgi_tests.helper import FailingTestASGIApp
+        from rollbar.test.async_helper import FailingTestASGIApp
 
         testapp = FailingTestASGIApp()
 
