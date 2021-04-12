@@ -1429,6 +1429,61 @@ class RollbarTest(BaseTest):
             self.assertNotEqual(ip, request_data['user_ip'])
             self.assertNotEqual(None, request_data['user_ip'])
 
+    def test_starlette_extract_user_ip_from_client_host(self):
+        try:
+            from starlette.requests import Request
+        except ImportError:
+            self.skipTest("Requires Starlette to be installed")
+
+        client_host = ("127.0.0.1", 1453)
+        ip_forwarded_for = b"192.168.10.10"
+        ip_real_ip = b"1.2.3.4"
+        scope = {
+            "type": "http",
+            "client": client_host,
+            "headers": [
+                (b"x-forwarded-for", ip_forwarded_for),
+                (b"x-real-ip", ip_real_ip),
+            ],
+        }
+        request = Request(scope)
+
+        user_ip = rollbar._starlette_extract_user_ip(request)
+
+        self.assertEqual(user_ip, client_host[0])
+
+    def test_starlette_extract_user_ip_from_headers(self):
+        try:
+            from starlette.requests import Request
+        except ImportError:
+            self.skipTest("Requires Starlette to be installed")
+
+        ip_forwarded_for = b"192.168.10.10"
+        ip_real_ip = b"1.2.3.4"
+
+        # Headers contain only X-Forwarded-For
+        scope = {"type": "http", "headers": [(b"x-forwarded-for", ip_forwarded_for)]}
+        request = Request(scope)
+        user_ip = rollbar._starlette_extract_user_ip(request)
+        self.assertEqual(user_ip, ip_forwarded_for.decode())
+
+        # Headers contain only X-Real-Ip
+        scope = {"type": "http", "headers": [(b"x-real-ip", ip_real_ip)]}
+        request = Request(scope)
+        user_ip = rollbar._starlette_extract_user_ip(request)
+        self.assertEqual(user_ip, ip_real_ip.decode())
+
+        # Headers contain both X-Forwarded-For and X-Real-Ip
+        scope = {
+            "type": "http",
+            "headers": [
+                (b"x-forwarded-for", ip_forwarded_for),
+                (b"x-real-ip", ip_real_ip),
+            ],
+        }
+        request = Request(scope)
+        user_ip = rollbar._starlette_extract_user_ip(request)
+        self.assertEqual(user_ip, ip_forwarded_for.decode())
 
 ### Helpers
 

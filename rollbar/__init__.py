@@ -1635,14 +1635,18 @@ def _parse_response(path, access_token, params, resp, endpoint=None):
             return Result(access_token, path, params, result)
 
 
-def _extract_user_ip(request):
+def _extract_user_ip_from_headers(request):
     forwarded_for = request.headers.get('X-Forwarded-For')
     if forwarded_for:
         return forwarded_for
     real_ip = request.headers.get('X-Real-Ip')
     if real_ip:
         return real_ip
-    return request.remote_addr
+    return None
+
+
+def _extract_user_ip(request):
+    return _extract_user_ip_from_headers(request) or request.remote_addr
 
 
 def _wsgi_extract_user_ip(environ):
@@ -1653,3 +1657,7 @@ def _wsgi_extract_user_ip(environ):
     if real_ip:
         return real_ip
     return environ['REMOTE_ADDR']
+
+
+def _starlette_extract_user_ip(request):
+    return request.client.host or _extract_user_ip_from_headers(request)
