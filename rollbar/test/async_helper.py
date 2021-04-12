@@ -20,6 +20,14 @@ def run(coro):
         asyncio.set_event_loop(None)
 
 
+def async_receive(message):
+    async def receive():
+        return message
+
+    assert message["type"] == "http.request"
+    return receive
+
+
 @ASGIApp
 class FailingTestASGIApp:
     def __call__(self, scope, receive, send):
