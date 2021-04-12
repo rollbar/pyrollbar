@@ -3,7 +3,7 @@ __all__ = ["ASGIMiddleware"]
 import rollbar
 
 try:
-    from starlette.types import ASGIApp, Receive, Scope, Send
+    from starlette.types import ASGIApp as ASGIAppType, Receive, Scope, Send
 except ImportError:
     STARLETTE_INSTALLED = False
 else:
@@ -29,7 +29,7 @@ if STARLETTE_INSTALLED is True:
 
     @ASGIApp
     class ASGIMiddleware:
-        def __init__(self, app: ASGIApp) -> None:
+        def __init__(self, app: ASGIAppType) -> None:
             self.app = app
 
         async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
