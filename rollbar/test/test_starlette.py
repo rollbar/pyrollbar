@@ -65,6 +65,31 @@ class StarletteMiddlewareTest(BaseTest):
             self.assertEqual(exc_type, ZeroDivisionError)
             self.assertIsInstance(exc_value, ZeroDivisionError)
 
+    def test_should_report_with_request_data(self):
+        from starlette.applications import Starlette
+        from starlette.middleware import Middleware
+        from starlette.requests import Request
+        from starlette.routing import Route
+        from starlette.testclient import TestClient
+        from rollbar.contrib.starlette import StarletteMiddleware
+
+        def root(request):
+            1 / 0
+
+        routes = [ Route("/", root) ]
+        middleware = [ Middleware(StarletteMiddleware) ]
+        app = Starlette(routes=routes, middleware=middleware)
+
+        client = TestClient(app)
+        with mock.patch("rollbar.report_exc_info") as mock_report:
+            with self.assertRaises(ZeroDivisionError):
+                client.get("/")
+
+            mock_report.assert_called_once()
+            request = mock_report.call_args[0][1]
+
+            self.assertIsInstance(request, Request)
+
     def test_should_support_type_hints(self):
         from starlette.types import ASGIApp, Receive, Scope, Send
 

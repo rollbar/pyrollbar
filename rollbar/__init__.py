@@ -89,6 +89,11 @@ try:
 except ImportError:
     AppEngineFetch = None
 
+try:
+    from starlette.requests import Request as StarletteRequest
+except ImportError:
+    StarletteRequest = None
+
 
 def passthrough_decorator(func):
     def wrap(*args, **kwargs):
@@ -877,7 +882,8 @@ def _build_person_data(request):
         else:
             return None
 
-    if hasattr(request, 'user'):
+    # TODO: Check if AuthenticationMiddlawre installed for Startlette
+    if not StarletteRequest and hasattr(request, 'user'):
         user_prop = request.user
         user = user_prop() if callable(user_prop) else user_prop
         if not user:
@@ -1120,6 +1126,10 @@ def _build_request_data(request):
     if isinstance(request, dict) and 'wsgi.version' in request:
         return _build_wsgi_request_data(request)
 
+    # Starlette
+    if StarletteRequest and isinstance(request, StarletteRequest):
+        return _build_starlette_request_data(request)
+
     return None
 
 
@@ -1296,6 +1306,16 @@ def _build_wsgi_request_data(request):
         input.seek(0, 0)
         request_data['body'] = input.read(length)
         input.seek(pos, 0)
+
+    return request_data
+
+def _build_starlette_request_data(request):
+    request_data = {
+        'url': str(request.url),
+        'GET': dict(request.query_params),
+        'headers': dict(request.headers),
+        'method': request.method,
+    }
 
     return request_data
 
