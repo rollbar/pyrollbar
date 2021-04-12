@@ -24,7 +24,6 @@ class ASGIMiddlewareTest(BaseTest):
         self.assertEqual(rollbar.BASE_DATA_HOOK, rollbar.contrib.asgi._hook)
 
     def test_should_support_http_only(self):
-        from rollbar.contrib.asgi import ASGIApp
         from rollbar.test.async_helper import FailingTestASGIApp
 
         testapp = FailingTestASGIApp()
@@ -43,7 +42,7 @@ class ASGIMiddlewareTest(BaseTest):
 
     def test_should_support_type_hints_if_starlette_installed(self):
         try:
-            from starlette.types import ASGIApp, Receive, Scope, Send
+            from starlette.types import Receive, Scope, Send
         except ImportError:
             self.skipTest("Support for type hints requires Starlette to be installed")
 

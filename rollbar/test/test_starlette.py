@@ -91,7 +91,7 @@ class StarletteMiddlewareTest(BaseTest):
             self.assertIsInstance(request, Request)
 
     def test_should_support_type_hints(self):
-        from starlette.types import ASGIApp, Receive, Scope, Send
+        from starlette.types import Receive, Scope, Send
 
         self.assertDictEqual(
             rollbar.contrib.starlette.StarletteMiddleware.__call__.__annotations__,
