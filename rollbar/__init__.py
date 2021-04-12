@@ -94,6 +94,11 @@ try:
 except ImportError:
     StarletteRequest = None
 
+try:
+    from fastapi.requests import Request as FastAPIRequest
+except ImportError:
+    FastAPIRequest = None
+
 
 def passthrough_decorator(func):
     def wrap(*args, **kwargs):
@@ -1126,7 +1131,11 @@ def _build_request_data(request):
     if isinstance(request, dict) and 'wsgi.version' in request:
         return _build_wsgi_request_data(request)
 
-    # Starlette
+    # FastAPI (built on top of Starlette, so keep the order)
+    if FastAPIRequest and isinstance(request, FastAPIRequest):
+        return _build_fastapi_request_data(request)
+
+    # Starlette (should be last for Starlette based frameworks)
     if StarletteRequest and isinstance(request, StarletteRequest):
         return _build_starlette_request_data(request)
 
@@ -1318,6 +1327,9 @@ def _build_starlette_request_data(request):
     }
 
     return request_data
+
+def _build_fastapi_request_data(request):
+    return _build_starlette_request_data(request)
 
 
 def _filter_ip(request_data, capture_ip):

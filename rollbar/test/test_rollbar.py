@@ -161,6 +161,50 @@ class RollbarTest(BaseTest):
             },
         )
 
+    def test_fastapi_request_data(self):
+        try:
+            from fastapi.requests import Request
+        except ImportError:
+            self.skipTest("Requires FastAPI to be installed")
+
+        scope = {
+            "type": "http",
+            "client": ("127.0.0.1", 1453),
+            "headers": [
+                (b"accept", b"*/*"),
+                (b"content-type", b"application/x-www-form-urlencoded"),
+                (b"host", b"example.com"),
+                (b"user-agent", b"Agent"),
+            ],
+            "http_version": "1.1",
+            "method": "GET",
+            "path": "/api/test",
+            "query_params": {
+                "format": "json",
+                "param1": "value1",
+                "param2": "value2",
+            },
+            "query_string": b"format=json&param1=value1&param2=value2",
+            "scheme": "http",
+            "server": ("example.com", 80),
+            "url": {"path": "example.com", "root_path": "xxxx"},
+        }
+        request = Request(scope)
+        data = rollbar._build_fastapi_request_data(request)
+
+        self.assertEqual(data["url"], "http://example.com/api/test?format=json&param1=value1&param2=value2")
+        self.assertEqual(data["method"], "GET")
+        self.assertDictEqual(data["GET"], {"format": "json", "param1": "value1", "param2": "value2"})
+        self.assertDictEqual(
+            data["headers"],
+            {
+                "accept": "*/*",
+                "content-type": "application/x-www-form-urlencoded",
+                "host": "example.com",
+                "user-agent": "Agent",
+            },
+        )
+
     @mock.patch('rollbar.send_payload')
     def test_report_exception(self, send_payload):
 

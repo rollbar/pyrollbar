@@ -63,6 +63,29 @@ class FastAPIMiddlewareTest(BaseTest):
             self.assertEqual(exc_type, ZeroDivisionError)
             self.assertIsInstance(exc_value, ZeroDivisionError)
 
+    def test_should_report_with_request_data(self):
+        from fastapi import FastAPI
+        from fastapi.requests import Request
+        from fastapi.testclient import TestClient
+        from rollbar.contrib.fastapi import FastAPIMiddleware
+
+        app = FastAPI()
+        app.add_middleware(FastAPIMiddleware)
+
+        @app.get("/")
+        def read_root():
+            1 / 0
+
+        client = TestClient(app)
+        with mock.patch("rollbar.report_exc_info") as mock_report:
+            with self.assertRaises(ZeroDivisionError):
+                client.get("/")
+
+            mock_report.assert_called_once()
+            request = mock_report.call_args[0][1]
+
+            self.assertIsInstance(request, Request)
+
     def test_should_support_type_hints(self):
         from starlette.types import ASGIApp, Receive, Scope, Send
 
