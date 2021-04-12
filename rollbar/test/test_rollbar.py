@@ -149,6 +149,7 @@ class RollbarTest(BaseTest):
         data = rollbar._build_starlette_request_data(request)
 
         self.assertEqual(data["url"], "http://example.com/api/test?format=json&param1=value1&param2=value2")
+        self.assertEqual(data['user_ip'], '127.0.0.1')
         self.assertEqual(data["method"], "GET")
         self.assertDictEqual(data["GET"], {"format": "json", "param1": "value1", "param2": "value2"})
         self.assertDictEqual(
@@ -193,6 +194,7 @@ class RollbarTest(BaseTest):
         data = rollbar._build_fastapi_request_data(request)
 
         self.assertEqual(data["url"], "http://example.com/api/test?format=json&param1=value1&param2=value2")
+        self.assertEqual(data['user_ip'], '127.0.0.1')
         self.assertEqual(data["method"], "GET")
         self.assertDictEqual(data["GET"], {"format": "json", "param1": "value1", "param2": "value2"})
         self.assertDictEqual(

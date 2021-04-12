@@ -1324,6 +1324,7 @@ def _build_starlette_request_data(request):
         'GET': dict(request.query_params),
         'headers': dict(request.headers),
         'method': request.method,
+        'user_ip': _starlette_extract_user_ip(request),
     }
 
     return request_data
