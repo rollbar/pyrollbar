@@ -143,7 +143,7 @@ class RollbarTest(BaseTest):
             "query_string": b"format=json&param1=value1&param2=value2",
             "scheme": "http",
             "server": ("example.com", 80),
-            "url": {"path": "example.com", "root_path": "xxxx"},
+            "url": {"path": "example.com"},
         }
         request = Request(scope)
         data = rollbar._build_starlette_request_data(request)
@@ -188,7 +188,7 @@ class RollbarTest(BaseTest):
             "query_string": b"format=json&param1=value1&param2=value2",
             "scheme": "http",
             "server": ("example.com", 80),
-            "url": {"path": "example.com", "root_path": "xxxx"},
+            "url": {"path": "example.com"},
         }
         request = Request(scope)
         data = rollbar._build_fastapi_request_data(request)
