@@ -99,6 +99,12 @@ try:
 except ImportError:
     FastAPIRequest = None
 
+try:
+    import httpx
+except ImportError:
+    httpx = None
+
+AsyncHTTPClient = httpx
 
 def passthrough_decorator(func):
     def wrap(*args, **kwargs):
@@ -522,6 +528,16 @@ def send_payload(payload, access_token):
             log.error('Unable to find Treq')
             return
         _send_payload_twisted(payload_str, access_token)
+    elif handler == 'httpx':
+        if httpx is None:
+            log.error('Unable to find HTTPX')
+            return
+        _send_payload_httpx(payload_str, access_token)
+    elif handler == 'async':
+        if AsyncHTTPClient is None:
+            log.error('Unable to find async handler')
+            return
+        _send_payload_async(payload_str, access_token)
     else:
         # default to 'thread'
         thread = threading.Thread(target=_send_payload, args=(payload_str, access_token))
@@ -1546,6 +1562,23 @@ def _post_api_twisted(path, payload_str, access_token=None):
     d = treq_client.post(url, encoded_payload, headers=headers,
                   timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT))
     d.addCallback(post_cb)
+
+def _send_payload_httpx(payload_str, access_token):
+    import asyncio
+    from rollbar.lib._async import _post_api_httpx
+    try:
+        asyncio.create_task(_post_api_httpx('item/', payload_str,
+                                            access_token=access_token))
+    except Exception as e:
+        log.exception('Exception while posting item %r', e)
+
+
+
+def _send_payload_async(payload_str, access_token):
+    try:
+        _send_payload_httpx(payload_str, access_token=access_token)
+    except Exception as e:
+        log.exception('Exception while posting item %r', e)
 
 
 def _send_failsafe(message, uuid, host):

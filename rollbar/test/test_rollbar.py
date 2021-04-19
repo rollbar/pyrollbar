@@ -648,6 +648,36 @@ class RollbarTest(BaseTest):
         rollbar._send_failsafe('test message', test_uuid, test_host)
         self.assertEqual(mock_log.call_count, 1)
 
+    @unittest.skipIf(rollbar.AsyncHTTPClient is None,
+                     'Requires async handler to be installed')
+    @mock.patch('rollbar._send_payload_async')
+    def test_async_handler(self, send_payload_async):
+        def _raise():
+            try:
+                raise Exception('foo')
+            except:
+                rollbar.report_exc_info()
+
+        rollbar.SETTINGS['handler'] = 'async'
+        _raise()
+
+        send_payload_async.assert_called_once()
+
+    @unittest.skipIf(rollbar.httpx is None,
+                     'Requires HTTPX to be installed')
+    @mock.patch('rollbar._send_payload_httpx')
+    def test_httpx_handler(self, send_payload_httpx):
+        def _raise():
+            try:
+                raise Exception('foo')
+            except:
+                rollbar.report_exc_info()
+
+        rollbar.SETTINGS['handler'] = 'async'
+        _raise()
+
+        send_payload_httpx.assert_called_once()
+
     @mock.patch('rollbar.send_payload')
     def test_args_constructor(self, send_payload):
 
