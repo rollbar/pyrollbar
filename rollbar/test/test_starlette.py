@@ -59,8 +59,7 @@ class StarletteMiddlewareTest(BaseTest):
             args, kwargs = mock_report.call_args
             self.assertEqual(kwargs, {})
 
-            exc_info, request = args
-            exc_type, exc_value, exc_tb = exc_info
+            exc_type, exc_value, exc_tb = args[0]
 
             self.assertEqual(exc_type, ZeroDivisionError)
             self.assertIsInstance(exc_value, ZeroDivisionError)
