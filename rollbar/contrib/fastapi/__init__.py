@@ -9,7 +9,7 @@ class FastAPIMiddleware(StarletteMiddleware):
 
 
 def _hook(request, data):
-    data["framework"] = f"fastapi {__version__}"
+    data['framework'] = f'fastapi {__version__}'
 
 
 rollbar.BASE_DATA_HOOK = _hook

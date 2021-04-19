@@ -24,7 +24,7 @@ def async_receive(message):
     async def receive():
         return message
 
-    assert message["type"] == "http.request"
+    assert message['type'] == 'http.request'
     return receive
 
 
@@ -34,4 +34,4 @@ class FailingTestASGIApp:
         run(self._asgi_app(scope, receive, send))
 
     async def app(self, scope, receive, send):
-        raise RuntimeError("Invoked only for testing")
+        raise RuntimeError('Invoked only for testing')

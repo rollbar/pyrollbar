@@ -15,7 +15,7 @@ from rollbar.test import BaseTest
 ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
 
 
-@unittest2.skipUnless(ALLOWED_PYTHON_VERSION, "Starlette requires Python3.6+")
+@unittest2.skipUnless(ALLOWED_PYTHON_VERSION, 'Starlette requires Python3.6+')
 class StarletteMiddlewareTest(BaseTest):
     def setUp(self):
         importlib.reload(rollbar.contrib.starlette)
@@ -26,14 +26,14 @@ class StarletteMiddlewareTest(BaseTest):
     def test_should_add_starlette_version_to_payload(self):
         import starlette
 
-        with mock.patch("rollbar._check_config", return_value=True):
-            with mock.patch("rollbar.send_payload") as mock_send_payload:
+        with mock.patch('rollbar._check_config', return_value=True):
+            with mock.patch('rollbar.send_payload') as mock_send_payload:
                 rollbar.report_exc_info()
 
                 mock_send_payload.assert_called_once()
                 payload = mock_send_payload.call_args[0][0]
 
-        self.assertIn(starlette.__version__, payload["data"]["framework"])
+        self.assertIn(starlette.__version__, payload['data']['framework'])
 
     def test_should_catch_and_report_errors(self):
         from starlette.applications import Starlette
@@ -45,14 +45,14 @@ class StarletteMiddlewareTest(BaseTest):
         def root(request):
             1 / 0
 
-        routes = [ Route("/", root) ]
+        routes = [ Route('/', root) ]
         middleware = [ Middleware(StarletteMiddleware) ]
         app = Starlette(routes=routes, middleware=middleware)
 
         client = TestClient(app)
-        with mock.patch("rollbar.report_exc_info") as mock_report:
+        with mock.patch('rollbar.report_exc_info') as mock_report:
             with self.assertRaises(ZeroDivisionError):
-                client.get("/")
+                client.get('/')
 
             mock_report.assert_called_once()
 
@@ -76,14 +76,14 @@ class StarletteMiddlewareTest(BaseTest):
         def root(request):
             1 / 0
 
-        routes = [ Route("/", root) ]
+        routes = [ Route('/', root) ]
         middleware = [ Middleware(StarletteMiddleware) ]
         app = Starlette(routes=routes, middleware=middleware)
 
         client = TestClient(app)
-        with mock.patch("rollbar.report_exc_info") as mock_report:
+        with mock.patch('rollbar.report_exc_info') as mock_report:
             with self.assertRaises(ZeroDivisionError):
-                client.get("/")
+                client.get('/')
 
             mock_report.assert_called_once()
             request = mock_report.call_args[0][1]
@@ -95,5 +95,5 @@ class StarletteMiddlewareTest(BaseTest):
 
         self.assertDictEqual(
             rollbar.contrib.starlette.StarletteMiddleware.__call__.__annotations__,
-            {"scope": Scope, "receive": Receive, "send": Send, "return": None},
+            {'scope': Scope, 'receive': Receive, 'send': Send, 'return': None},
         )

@@ -15,7 +15,7 @@ from rollbar.test import BaseTest
 ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 5)
 
 
-@unittest2.skipUnless(ALLOWED_PYTHON_VERSION, "ASGI implementation requires Python3.5+")
+@unittest2.skipUnless(ALLOWED_PYTHON_VERSION, 'ASGI implementation requires Python3.5+')
 class ASGIMiddlewareTest(BaseTest):
     def setUp(self):
         importlib.reload(rollbar.contrib.asgi)
@@ -28,15 +28,15 @@ class ASGIMiddlewareTest(BaseTest):
 
         testapp = FailingTestASGIApp()
 
-        with mock.patch("rollbar.report_exc_info") as mock_report:
+        with mock.patch('rollbar.report_exc_info') as mock_report:
             with self.assertRaises(RuntimeError):
-                testapp({"type": "http"}, None, None)
+                testapp({'type': 'http'}, None, None)
 
             mock_report.assert_called_once()
 
-        with mock.patch("rollbar.report_exc_info") as mock_report:
+        with mock.patch('rollbar.report_exc_info') as mock_report:
             with self.assertRaises(RuntimeError):
-                testapp({"type": "websocket"}, None, None)
+                testapp({'type': 'websocket'}, None, None)
 
             mock_report.assert_not_called()
 
@@ -44,9 +44,9 @@ class ASGIMiddlewareTest(BaseTest):
         try:
             from starlette.types import Receive, Scope, Send
         except ImportError:
-            self.skipTest("Support for type hints requires Starlette to be installed")
+            self.skipTest('Support for type hints requires Starlette to be installed')
 
         self.assertDictEqual(
             rollbar.contrib.asgi.ASGIMiddleware.__call__.__annotations__,
-            {"scope": Scope, "receive": Receive, "send": Send, "return": None},
+            {'scope': Scope, 'receive': Receive, 'send': Send, 'return': None},
         )

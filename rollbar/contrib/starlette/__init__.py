@@ -13,7 +13,7 @@ class StarletteMiddleware(ASGIMiddleware):
         try:
             await self.app(scope, receive, send)
         except Exception:
-            if scope["type"] == "http":
+            if scope['type'] == 'http':
                 request = Request(scope, receive, send)
                 exc_info = sys.exc_info()
                 rollbar.report_exc_info(exc_info, request)
@@ -21,7 +21,7 @@ class StarletteMiddleware(ASGIMiddleware):
 
 
 def _hook(request, data):
-    data["framework"] = f"starlette {__version__}"
+    data['framework'] = f'starlette {__version__}'
 
 
 rollbar.BASE_DATA_HOOK = _hook

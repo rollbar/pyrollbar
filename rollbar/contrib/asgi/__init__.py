@@ -1,4 +1,4 @@
-__all__ = ["ASGIMiddleware"]
+__all__ = ['ASGIMiddleware']
 
 import rollbar
 
@@ -12,12 +12,13 @@ else:
 
 # Optional class annotations must be statically declared because
 # IDEs cannot infer type hinting for arbitrary dynamic code
+# TODO: Use typing directly, avoid Starlette
 def ASGIApp(cls):
     async def _asgi_app(self, scope, receive, send):
         try:
             await self.app(scope, receive, send)
         except Exception:
-            if scope["type"] == "http":
+            if scope['type'] == 'http':
                 rollbar.report_exc_info()
             raise
 
@@ -48,7 +49,7 @@ else:
 
 
 def _hook(request, data):
-    data["framework"] = "asgi"
+    data['framework'] = 'asgi'
 
 
 rollbar.BASE_DATA_HOOK = _hook

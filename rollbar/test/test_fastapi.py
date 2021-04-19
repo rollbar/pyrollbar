@@ -15,7 +15,7 @@ from rollbar.test import BaseTest
 ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
 
 
-@unittest2.skipUnless(ALLOWED_PYTHON_VERSION, "FastAPI requires Python3.6+")
+@unittest2.skipUnless(ALLOWED_PYTHON_VERSION, 'FastAPI requires Python3.6+')
 class FastAPIMiddlewareTest(BaseTest):
     def setUp(self):
         importlib.reload(rollbar.contrib.fastapi)
@@ -26,14 +26,14 @@ class FastAPIMiddlewareTest(BaseTest):
     def test_should_add_fastapi_version_to_payload(self):
         import fastapi
 
-        with mock.patch("rollbar._check_config", return_value=True):
-            with mock.patch("rollbar.send_payload") as mock_send_payload:
+        with mock.patch('rollbar._check_config', return_value=True):
+            with mock.patch('rollbar.send_payload') as mock_send_payload:
                 rollbar.report_exc_info()
 
                 mock_send_payload.assert_called_once()
                 payload = mock_send_payload.call_args[0][0]
 
-        self.assertIn(fastapi.__version__, payload["data"]["framework"])
+        self.assertIn(fastapi.__version__, payload['data']['framework'])
 
     def test_should_catch_and_report_errors(self):
         from fastapi import FastAPI
@@ -43,14 +43,14 @@ class FastAPIMiddlewareTest(BaseTest):
         app = FastAPI()
         app.add_middleware(FastAPIMiddleware)
 
-        @app.get("/")
+        @app.get('/')
         async def read_root():
             1 / 0
 
         client = TestClient(app)
-        with mock.patch("rollbar.report_exc_info") as mock_report:
+        with mock.patch('rollbar.report_exc_info') as mock_report:
             with self.assertRaises(ZeroDivisionError):
-                client.get("/")
+                client.get('/')
 
             mock_report.assert_called_once()
 
@@ -72,14 +72,14 @@ class FastAPIMiddlewareTest(BaseTest):
         app = FastAPI()
         app.add_middleware(FastAPIMiddleware)
 
-        @app.get("/")
+        @app.get('/')
         def read_root():
             1 / 0
 
         client = TestClient(app)
-        with mock.patch("rollbar.report_exc_info") as mock_report:
+        with mock.patch('rollbar.report_exc_info') as mock_report:
             with self.assertRaises(ZeroDivisionError):
-                client.get("/")
+                client.get('/')
 
             mock_report.assert_called_once()
             request = mock_report.call_args[0][1]
@@ -91,5 +91,5 @@ class FastAPIMiddlewareTest(BaseTest):
 
         self.assertDictEqual(
             rollbar.contrib.fastapi.FastAPIMiddleware.__call__.__annotations__,
-            {"scope": Scope, "receive": Receive, "send": Send, "return": None},
+            {'scope': Scope, 'receive': Receive, 'send': Send, 'return': None},
         )

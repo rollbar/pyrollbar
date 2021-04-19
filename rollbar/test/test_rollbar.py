@@ -121,44 +121,44 @@ class RollbarTest(BaseTest):
         try:
             from starlette.requests import Request
         except ImportError:
-            self.skipTest("Requires Starlette to be installed")
+            self.skipTest('Requires Starlette to be installed')
 
         scope = {
-            "type": "http",
-            "client": ("127.0.0.1", 1453),
-            "headers": [
-                (b"accept", b"*/*"),
-                (b"content-type", b"application/x-www-form-urlencoded"),
-                (b"host", b"example.com"),
-                (b"user-agent", b"Agent"),
+            'type': 'http',
+            'client': ('127.0.0.1', 1453),
+            'headers': [
+                (b'accept', b'*/*'),
+                (b'content-type', b'application/x-www-form-urlencoded'),
+                (b'host', b'example.com'),
+                (b'user-agent', b'Agent'),
             ],
-            "http_version": "1.1",
-            "method": "GET",
-            "path": "/api/test",
-            "query_params": {
-                "format": "json",
-                "param1": "value1",
-                "param2": "value2",
+            'http_version': '1.1',
+            'method': 'GET',
+            'path': '/api/test',
+            'query_params': {
+                'format': 'json',
+                'param1': 'value1',
+                'param2': 'value2',
             },
-            "query_string": b"format=json&param1=value1&param2=value2",
-            "scheme": "http",
-            "server": ("example.com", 80),
-            "url": {"path": "example.com"},
+            'query_string': b'format=json&param1=value1&param2=value2',
+            'scheme': 'http',
+            'server': ('example.com', 80),
+            'url': {'path': 'example.com'},
         }
         request = Request(scope)
         data = rollbar._build_starlette_request_data(request)
 
-        self.assertEqual(data["url"], "http://example.com/api/test?format=json&param1=value1&param2=value2")
+        self.assertEqual(data['url'], 'http://example.com/api/test?format=json&param1=value1&param2=value2')
         self.assertEqual(data['user_ip'], '127.0.0.1')
-        self.assertEqual(data["method"], "GET")
-        self.assertDictEqual(data["GET"], {"format": "json", "param1": "value1", "param2": "value2"})
+        self.assertEqual(data['method'], 'GET')
+        self.assertDictEqual(data['GET'], {'format': 'json', 'param1': 'value1', 'param2': 'value2'})
         self.assertDictEqual(
-            data["headers"],
+            data['headers'],
             {
-                "accept": "*/*",
-                "content-type": "application/x-www-form-urlencoded",
-                "host": "example.com",
-                "user-agent": "Agent",
+                'accept': '*/*',
+                'content-type': 'application/x-www-form-urlencoded',
+                'host': 'example.com',
+                'user-agent': 'Agent',
             },
         )
 
@@ -166,44 +166,44 @@ class RollbarTest(BaseTest):
         try:
             from fastapi.requests import Request
         except ImportError:
-            self.skipTest("Requires FastAPI to be installed")
+            self.skipTest('Requires FastAPI to be installed')
 
         scope = {
-            "type": "http",
-            "client": ("127.0.0.1", 1453),
-            "headers": [
-                (b"accept", b"*/*"),
-                (b"content-type", b"application/x-www-form-urlencoded"),
-                (b"host", b"example.com"),
-                (b"user-agent", b"Agent"),
+            'type': 'http',
+            'client': ('127.0.0.1', 1453),
+            'headers': [
+                (b'accept', b'*/*'),
+                (b'content-type', b'application/x-www-form-urlencoded'),
+                (b'host', b'example.com'),
+                (b'user-agent', b'Agent'),
             ],
-            "http_version": "1.1",
-            "method": "GET",
-            "path": "/api/test",
-            "query_params": {
-                "format": "json",
-                "param1": "value1",
-                "param2": "value2",
+            'http_version': '1.1',
+            'method': 'GET',
+            'path': '/api/test',
+            'query_params': {
+                'format': 'json',
+                'param1': 'value1',
+                'param2': 'value2',
             },
-            "query_string": b"format=json&param1=value1&param2=value2",
-            "scheme": "http",
-            "server": ("example.com", 80),
-            "url": {"path": "example.com"},
+            'query_string': b'format=json&param1=value1&param2=value2',
+            'scheme': 'http',
+            'server': ('example.com', 80),
+            'url': {'path': 'example.com'},
         }
         request = Request(scope)
         data = rollbar._build_fastapi_request_data(request)
 
-        self.assertEqual(data["url"], "http://example.com/api/test?format=json&param1=value1&param2=value2")
+        self.assertEqual(data['url'], 'http://example.com/api/test?format=json&param1=value1&param2=value2')
         self.assertEqual(data['user_ip'], '127.0.0.1')
-        self.assertEqual(data["method"], "GET")
-        self.assertDictEqual(data["GET"], {"format": "json", "param1": "value1", "param2": "value2"})
+        self.assertEqual(data['method'], 'GET')
+        self.assertDictEqual(data['GET'], {'format': 'json', 'param1': 'value1', 'param2': 'value2'})
         self.assertDictEqual(
-            data["headers"],
+            data['headers'],
             {
-                "accept": "*/*",
-                "content-type": "application/x-www-form-urlencoded",
-                "host": "example.com",
-                "user-agent": "Agent",
+                'accept': '*/*',
+                'content-type': 'application/x-www-form-urlencoded',
+                'host': 'example.com',
+                'user-agent': 'Agent',
             },
         )
 
@@ -1465,17 +1465,17 @@ class RollbarTest(BaseTest):
         try:
             from starlette.requests import Request
         except ImportError:
-            self.skipTest("Requires Starlette to be installed")
+            self.skipTest('Requires Starlette to be installed')
 
-        client_host = ("127.0.0.1", 1453)
-        ip_forwarded_for = b"192.168.10.10"
-        ip_real_ip = b"1.2.3.4"
+        client_host = ('127.0.0.1', 1453)
+        ip_forwarded_for = b'192.168.10.10'
+        ip_real_ip = b'1.2.3.4'
         scope = {
-            "type": "http",
-            "client": client_host,
-            "headers": [
-                (b"x-forwarded-for", ip_forwarded_for),
-                (b"x-real-ip", ip_real_ip),
+            'type': 'http',
+            'client': client_host,
+            'headers': [
+                (b'x-forwarded-for', ip_forwarded_for),
+                (b'x-real-ip', ip_real_ip),
             ],
         }
         request = Request(scope)
@@ -1488,29 +1488,29 @@ class RollbarTest(BaseTest):
         try:
             from starlette.requests import Request
         except ImportError:
-            self.skipTest("Requires Starlette to be installed")
+            self.skipTest('Requires Starlette to be installed')
 
-        ip_forwarded_for = b"192.168.10.10"
-        ip_real_ip = b"1.2.3.4"
+        ip_forwarded_for = b'192.168.10.10'
+        ip_real_ip = b'1.2.3.4'
 
         # Headers contain only X-Forwarded-For
-        scope = {"type": "http", "headers": [(b"x-forwarded-for", ip_forwarded_for)]}
+        scope = {'type': 'http', 'headers': [(b'x-forwarded-for', ip_forwarded_for)]}
         request = Request(scope)
         user_ip = rollbar._starlette_extract_user_ip(request)
         self.assertEqual(user_ip, ip_forwarded_for.decode())
 
         # Headers contain only X-Real-Ip
-        scope = {"type": "http", "headers": [(b"x-real-ip", ip_real_ip)]}
+        scope = {'type': 'http', 'headers': [(b'x-real-ip', ip_real_ip)]}
         request = Request(scope)
         user_ip = rollbar._starlette_extract_user_ip(request)
         self.assertEqual(user_ip, ip_real_ip.decode())
 
         # Headers contain both X-Forwarded-For and X-Real-Ip
         scope = {
-            "type": "http",
-            "headers": [
-                (b"x-forwarded-for", ip_forwarded_for),
-                (b"x-real-ip", ip_real_ip),
+            'type': 'http',
+            'headers': [
+                (b'x-forwarded-for', ip_forwarded_for),
+                (b'x-real-ip', ip_real_ip),
             ],
         }
         request = Request(scope)
