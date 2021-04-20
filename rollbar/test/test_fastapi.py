@@ -23,19 +23,20 @@ class FastAPIMiddlewareTest(BaseTest):
     def test_should_set_fastapi_hook(self):
         self.assertEqual(rollbar.BASE_DATA_HOOK, rollbar.contrib.fastapi._hook)
 
-    def test_should_add_fastapi_version_to_payload(self):
+    @mock.patch('rollbar._check_config', return_value=True)
+    @mock.patch('rollbar.send_payload')
+    def test_should_add_fastapi_version_to_payload(self, mock_send_payload, *mocks):
         import fastapi
 
-        with mock.patch('rollbar._check_config', return_value=True):
-            with mock.patch('rollbar.send_payload') as mock_send_payload:
-                rollbar.report_exc_info()
+        rollbar.report_exc_info()
 
-                mock_send_payload.assert_called_once()
-                payload = mock_send_payload.call_args[0][0]
+        mock_send_payload.assert_called_once()
+        payload = mock_send_payload.call_args[0][0]
 
         self.assertIn(fastapi.__version__, payload['data']['framework'])
 
-    def test_should_catch_and_report_errors(self):
+    @mock.patch('rollbar.report_exc_info')
+    def test_should_catch_and_report_errors(self, mock_report):
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
         from rollbar.contrib.fastapi import FastAPIMiddleware
@@ -48,23 +49,22 @@ class FastAPIMiddlewareTest(BaseTest):
             1 / 0
 
         client = TestClient(app)
-        with mock.patch('rollbar.report_exc_info') as mock_report:
-            with self.assertRaises(ZeroDivisionError):
-                client.get('/')
+        with self.assertRaises(ZeroDivisionError):
+            client.get('/')
 
-            mock_report.assert_called_once()
+        mock_report.assert_called_once()
 
-            args, kwargs = mock_report.call_args
-            self.assertEqual(kwargs, {})
+        args, kwargs = mock_report.call_args
+        self.assertEqual(kwargs, {})
 
-            exc_type, exc_value, exc_tb = args[0]
+        exc_type, exc_value, exc_tb = args[0]
 
-            self.assertEqual(exc_type, ZeroDivisionError)
-            self.assertIsInstance(exc_value, ZeroDivisionError)
+        self.assertEqual(exc_type, ZeroDivisionError)
+        self.assertIsInstance(exc_value, ZeroDivisionError)
 
-    def test_should_report_with_request_data(self):
-        from fastapi import FastAPI
-        from fastapi.requests import Request
+    @mock.patch('rollbar.report_exc_info')
+    def test_should_report_with_request_data(self, mock_report):
+        from fastapi import FastAPI, Request
         from fastapi.testclient import TestClient
         from rollbar.contrib.fastapi import FastAPIMiddleware
 
@@ -76,16 +76,18 @@ class FastAPIMiddlewareTest(BaseTest):
             1 / 0
 
         client = TestClient(app)
-        with mock.patch('rollbar.report_exc_info') as mock_report:
-            with self.assertRaises(ZeroDivisionError):
-                client.get('/')
+        with self.assertRaises(ZeroDivisionError):
+            client.get('/')
 
-            mock_report.assert_called_once()
-            request = mock_report.call_args[0][1]
+        mock_report.assert_called_once()
+        request = mock_report.call_args[0][1]
 
-            self.assertIsInstance(request, Request)
+        self.assertIsInstance(request, Request)
 
-    def test_should_send_payload_with_request_data(self):
+    @mock.patch('rollbar._check_config', return_value=True)
+    @mock.patch('rollbar._serialize_frame_data')
+    @mock.patch('rollbar.send_payload')
+    def test_should_send_payload_with_request_data(self, mock_send_payload, *mocks):
         from fastapi import FastAPI, Request
         from fastapi.testclient import TestClient
         from rollbar.contrib.fastapi import FastAPIMiddleware
@@ -98,35 +100,32 @@ class FastAPIMiddlewareTest(BaseTest):
             1 / 0
 
         client = TestClient(app)
-        with mock.patch('rollbar._check_config', return_value=True):
-            with mock.patch('rollbar._serialize_frame_data'):
-                with mock.patch('rollbar.send_payload') as mock_send_payload:
-                    with self.assertRaises(ZeroDivisionError):
-                        client.get('/test?param1=value1&param2=value2')
+        with self.assertRaises(ZeroDivisionError):
+            client.get('/test?param1=value1&param2=value2')
 
-                    mock_send_payload.assert_called_once()
-                    payload = mock_send_payload.call_args[0][0]
-                    payload_request = payload['data']['request']
+        mock_send_payload.assert_called_once()
+        payload = mock_send_payload.call_args[0][0]
+        payload_request = payload['data']['request']
 
-                    self.assertEqual(payload_request['method'], 'GET')
-                    self.assertEqual(payload_request['user_ip'], 'testclient')
-                    self.assertEqual(
-                        payload_request['url'],
-                        'http://testserver/test?param1=value1&param2=value2',
-                    )
-                    self.assertDictEqual(
-                        payload_request['GET'], {'param1': 'value1', 'param2': 'value2'}
-                    )
-                    self.assertDictEqual(
-                        payload_request['headers'],
-                        {
-                            'accept': '*/*',
-                            'accept-encoding': 'gzip, deflate',
-                            'connection': 'keep-alive',
-                            'host': 'testserver',
-                            'user-agent': 'testclient',
-                        },
-                    )
+        self.assertEqual(payload_request['method'], 'GET')
+        self.assertEqual(payload_request['user_ip'], 'testclient')
+        self.assertEqual(
+            payload_request['url'],
+            'http://testserver/test?param1=value1&param2=value2',
+        )
+        self.assertDictEqual(
+            payload_request['GET'], {'param1': 'value1', 'param2': 'value2'}
+        )
+        self.assertDictEqual(
+            payload_request['headers'],
+            {
+                'accept': '*/*',
+                'accept-encoding': 'gzip, deflate',
+                'connection': 'keep-alive',
+                'host': 'testserver',
+                'user-agent': 'testclient',
+            },
+        )
 
     def test_should_support_type_hints(self):
         from starlette.types import Receive, Scope, Send
