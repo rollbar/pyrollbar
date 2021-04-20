@@ -85,6 +85,49 @@ class FastAPIMiddlewareTest(BaseTest):
 
             self.assertIsInstance(request, Request)
 
+    def test_should_send_payload_with_request_data(self):
+        from fastapi import FastAPI, Request
+        from fastapi.testclient import TestClient
+        from rollbar.contrib.fastapi import FastAPIMiddleware
+
+        app = FastAPI()
+        app.add_middleware(FastAPIMiddleware)
+
+        @app.get('/{path}')
+        def read_root(path):
+            1 / 0
+
+        client = TestClient(app)
+        with mock.patch('rollbar._check_config', return_value=True):
+            with mock.patch('rollbar._serialize_frame_data'):
+                with mock.patch('rollbar.send_payload') as mock_send_payload:
+                    with self.assertRaises(ZeroDivisionError):
+                        client.get('/test?param1=value1&param2=value2')
+
+                    mock_send_payload.assert_called_once()
+                    payload = mock_send_payload.call_args[0][0]
+                    payload_request = payload['data']['request']
+
+                    self.assertEqual(payload_request['method'], 'GET')
+                    self.assertEqual(payload_request['user_ip'], 'testclient')
+                    self.assertEqual(
+                        payload_request['url'],
+                        'http://testserver/test?param1=value1&param2=value2',
+                    )
+                    self.assertDictEqual(
+                        payload_request['GET'], {'param1': 'value1', 'param2': 'value2'}
+                    )
+                    self.assertDictEqual(
+                        payload_request['headers'],
+                        {
+                            'accept': '*/*',
+                            'accept-encoding': 'gzip, deflate',
+                            'connection': 'keep-alive',
+                            'host': 'testserver',
+                            'user-agent': 'testclient',
+                        },
+                    )
+
     def test_should_support_type_hints(self):
         from starlette.types import Receive, Scope, Send
 
