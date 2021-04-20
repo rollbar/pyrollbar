@@ -1,3 +1,5 @@
+__all__ = ['FastAPIMiddleware']
+
 from fastapi import __version__
 
 import rollbar

@@ -1,3 +1,5 @@
+__all__ = ['StarletteMiddleware']
+
 import sys
 
 from starlette import __version__
