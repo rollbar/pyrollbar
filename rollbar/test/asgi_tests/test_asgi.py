@@ -40,11 +40,8 @@ class ASGIMiddlewareTest(BaseTest):
 
             mock_report.assert_not_called()
 
-    def test_should_support_type_hints_if_starlette_installed(self):
-        try:
-            from starlette.types import Receive, Scope, Send
-        except ImportError:
-            self.skipTest('Support for type hints requires Starlette to be installed')
+    def test_should_support_type_hints(self):
+        from rollbar.contrib.asgi.types import Receive, Scope, Send
 
         self.assertDictEqual(
             rollbar.contrib.asgi.ASGIMiddleware.__call__.__annotations__,

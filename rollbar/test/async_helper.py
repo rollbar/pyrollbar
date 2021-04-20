@@ -2,7 +2,7 @@ import asyncio
 import inspect
 import sys
 
-from rollbar.contrib.asgi import ASGIApp
+import rollbar
 
 
 def run(coro):
@@ -28,10 +28,14 @@ def async_receive(message):
     return receive
 
 
-@ASGIApp
 class FailingTestASGIApp:
     def __call__(self, scope, receive, send):
-        run(self._asgi_app(scope, receive, send))
+        try:
+            run(self.app(scope, receive, send))
+        except Exception:
+            if scope['type'] == 'http':
+                rollbar.report_exc_info()
+            raise
 
     async def app(self, scope, receive, send):
         raise RuntimeError('Invoked only for testing')
