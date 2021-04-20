@@ -162,6 +162,37 @@ class RollbarTest(BaseTest):
             },
         )
 
+    def test_starlette_request_data_with_consumed_body(self):
+        try:
+            from starlette.requests import Request
+        except ImportError:
+            self.skipTest('Requires Starlette to be installed')
+        from rollbar.test.async_helper import async_receive, run
+
+        rollbar.SETTINGS['include_request_body'] = True
+        body = b'body body body'
+        scope = {
+            'type': 'http',
+            'headers': [
+                (b'content-type', b'text/html'),
+                (b'content-length', str(len(body)).encode('latin-1')),
+            ],
+            'method': 'GET',
+            'path': '/api/test',
+            'query_string': b'',
+        }
+        receive = async_receive(
+            {'type': 'http.request', 'body': body, 'mode_body': False}
+        )
+        request = Request(scope, receive)
+
+        # Consuming body in StarletteMiddleware is currently disabled
+        run(request.body()) # await request.body()
+
+        data = rollbar._build_starlette_request_data(request)
+
+        self.assertEqual(data['body'], body.decode('latin-1'))
+
     def test_fastapi_request_data(self):
         try:
             from fastapi.requests import Request
@@ -206,6 +237,37 @@ class RollbarTest(BaseTest):
                 'user-agent': 'Agent',
             },
         )
+
+    def test_fastapi_request_data_with_consumed_body(self):
+        try:
+            from fastapi import Request
+        except ImportError:
+            self.skipTest('Requires FastAPI to be installed')
+        from rollbar.test.async_helper import async_receive, run
+
+        rollbar.SETTINGS['include_request_body'] = True
+        body = b'body body body'
+        scope = {
+            'type': 'http',
+            'headers': [
+                (b'content-type', b'text/html'),
+                (b'content-length', str(len(body)).encode('latin-1')),
+            ],
+            'method': 'GET',
+            'path': '/api/test',
+            'query_string': b'',
+        }
+        receive = async_receive(
+            {'type': 'http.request', 'body': body, 'mode_body': False}
+        )
+        request = Request(scope, receive)
+
+        # Consuming body in FastAPI middlewares is currently disabled
+        run(request.body()) # await request.body()
+
+        data = rollbar._build_fastapi_request_data(request)
+
+        self.assertEqual(data['body'], body.decode('latin-1'))
 
     @mock.patch('rollbar.send_payload')
     def test_report_exception(self, send_payload):
