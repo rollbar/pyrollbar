@@ -329,6 +329,26 @@ class FastAPILoggingRouteTest(BaseTest):
         self.assertEqual(router3.route_class, old_router3_route_class)
         self.assertEqual(len(app.routes), 7)
 
+    @mock.patch('logging.Logger.warning')
+    def test_should_warn_if_middleware_in_use(self, mock_log):
+        from fastapi import FastAPI
+        import rollbar.contrib.fastapi
+        from rollbar.contrib.fastapi import FastAPIMiddleware
+        from rollbar.contrib.starlette import StarletteMiddleware
+        from rollbar.contrib.asgi import ASGIMiddleware
+
+        for middleware in (FastAPIMiddleware, StarletteMiddleware, ASGIMiddleware):
+            app = FastAPI()
+            app.add_middleware(middleware)
+
+            rollbar.contrib.fastapi.add_to(app)
+
+            mock_log.assert_called_with(
+                f'Detected installed {middleware.__name__}'
+                ' while loading Rollbar route handler.'
+                ' This can cause duplicated occurrences.'
+            )
+
     def test_should_support_type_hints(self):
         from typing import Type
         from fastapi.routing import APIRoute
