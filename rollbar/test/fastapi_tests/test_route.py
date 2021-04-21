@@ -6,16 +6,54 @@ try:
 except ImportError:
     import mock
 
+import fastapi
 import unittest2
 
 import rollbar
 import rollbar.contrib.fastapi
 from rollbar.test import BaseTest
 
+
 ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
+ALLOWED_FASTAPI_VERSION = fastapi.__version__ >= '0.41.0'
 
 
 @unittest2.skipUnless(ALLOWED_PYTHON_VERSION, 'FastAPI requires Python3.6+')
+class FastAPILoggingRouteUnsupportedFastAPIVersionTest(BaseTest):
+    def test_should_disable_loading_route_handler_if_fastapi_is_too_old(self):
+        import logging
+        import fastapi
+        from fastapi import FastAPI
+        from fastapi.routing import APIRoute
+        from rollbar.contrib.fastapi.utils import FastAPIVersionError
+
+        logging.disable()  # silent logger for tests
+        fastapi_version = fastapi.__version__
+
+        app = FastAPI()
+        old_route_class = app.router.route_class
+        self.assertEqual(old_route_class, APIRoute)
+
+        fastapi.__version__ = '0'
+        with self.assertRaises(FastAPIVersionError):
+            rollbar.contrib.fastapi.add_to(app)
+
+        fastapi.__version__ = '0.30.3'
+        with self.assertRaises(FastAPIVersionError):
+            rollbar.contrib.fastapi.add_to(app)
+
+        fastapi.__version__ = '0.40.10'
+        with self.assertRaises(FastAPIVersionError):
+            rollbar.contrib.fastapi.add_to(app)
+
+        self.assertEqual(app.router.route_class, old_route_class)
+
+        logging.disable(logging.NOTSET)  # make sure logger is re-enabled
+        fastapi.__version__ = fastapi_version
+
+
+@unittest2.skipUnless(ALLOWED_PYTHON_VERSION, 'FastAPI requires Python3.6+')
+@unittest2.skipUnless(ALLOWED_FASTAPI_VERSION, 'FastAPI v0.41.0+ is required')
 class FastAPILoggingRouteTest(BaseTest):
     def setUp(self):
         importlib.reload(rollbar.contrib.fastapi)
@@ -113,14 +151,11 @@ class FastAPILoggingRouteTest(BaseTest):
         )
 
     def test_should_enable_loading_route_handler_if_fastapi_version_is_sufficient(self):
-        import fastapi
         from fastapi import FastAPI
         from fastapi.routing import APIRoute
         import rollbar.contrib.fastapi
 
-        if fastapi.__version__ < '0.41.0':
-            self.skipTest('FastAPI v0.41.0+ is required')
-
+        self.assertTrue(ALLOWED_FASTAPI_VERSION)
         app = FastAPI()
         old_route_class = app.router.route_class
         self.assertEqual(old_route_class, APIRoute)
@@ -129,37 +164,6 @@ class FastAPILoggingRouteTest(BaseTest):
 
         self.assertNotEqual(new_route_class, old_route_class)
         self.assertEqual(app.router.route_class, new_route_class)
-
-    def test_should_disable_loading_route_handler_if_fastapi_is_too_old(self):
-        import logging
-        import fastapi
-        from fastapi import FastAPI
-        from fastapi.routing import APIRoute
-        from rollbar.contrib.fastapi.utils import FastAPIVersionError
-
-        logging.disable()  # silent logger for tests
-        fastapi_version = fastapi.__version__
-
-        app = FastAPI()
-        old_route_class = app.router.route_class
-        self.assertEqual(old_route_class, APIRoute)
-
-        fastapi.__version__ = '0'
-        with self.assertRaises(FastAPIVersionError):
-            rollbar.contrib.fastapi.add_to(app)
-
-        fastapi.__version__ = '0.30.3'
-        with self.assertRaises(FastAPIVersionError):
-            rollbar.contrib.fastapi.add_to(app)
-
-        fastapi.__version__ = '0.40.10'
-        with self.assertRaises(FastAPIVersionError):
-            rollbar.contrib.fastapi.add_to(app)
-
-        self.assertEqual(app.router.route_class, old_route_class)
-
-        logging.disable(logging.NOTSET)  # make sure logger is re-enabled
-        fastapi.__version__ = fastapi_version
 
     def test_should_enable_loading_route_handler_before_adding_routes_to_app(self):
         from fastapi import FastAPI
