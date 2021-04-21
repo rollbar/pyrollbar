@@ -154,6 +154,7 @@ class FastAPILoggingRouteTest(BaseTest):
         from fastapi import FastAPI
         from fastapi.routing import APIRoute
         import rollbar.contrib.fastapi
+        from rollbar.contrib.fastapi.route import RollbarLoggingRoute
 
         self.assertTrue(ALLOWED_FASTAPI_VERSION)
         app = FastAPI()
@@ -164,10 +165,12 @@ class FastAPILoggingRouteTest(BaseTest):
 
         self.assertNotEqual(new_route_class, old_route_class)
         self.assertEqual(app.router.route_class, new_route_class)
+        self.assertEqual(app.router.route_class, RollbarLoggingRoute)
 
     def test_should_enable_loading_route_handler_before_adding_routes_to_app(self):
         from fastapi import FastAPI
         import rollbar.contrib.fastapi
+        from rollbar.contrib.fastapi.route import RollbarLoggingRoute
 
         app = FastAPI()
         old_route_class = app.router.route_class
@@ -184,6 +187,7 @@ class FastAPILoggingRouteTest(BaseTest):
             ...
 
         self.assertEqual(app.router.route_class, new_route_class)
+        self.assertEqual(app.router.route_class, RollbarLoggingRoute)
         self.assertEqual(len(app.routes), 5)
 
     @mock.patch('logging.Logger.error')
@@ -209,13 +213,14 @@ class FastAPILoggingRouteTest(BaseTest):
         self.assertIsNone(new_route_class)
         self.assertEqual(app.router.route_class, old_route_class)
         mock_log.assert_called_with(
-            'RollbarLoggingRoute has to be added to a bare router.'
-            ' See docs for more details.'
+            'RollbarLoggingRoute must be added to a bare router'
+            ' (before adding routes). See docs for more details.'
         )
 
     def test_should_enable_loading_route_handler_before_adding_routes_to_router(self):
         from fastapi import APIRouter, FastAPI
         import rollbar.contrib.fastapi
+        from rollbar.contrib.fastapi.route import RollbarLoggingRoute
 
         app = FastAPI()
         router = APIRouter()
@@ -230,6 +235,7 @@ class FastAPILoggingRouteTest(BaseTest):
 
         self.assertNotEqual(new_route_class, old_router_route_class)
         self.assertEqual(router.route_class, new_route_class)
+        self.assertEqual(router.route_class, RollbarLoggingRoute)
         self.assertEqual(app.router.route_class, old_app_route_class)
         self.assertEqual(len(app.routes), 4)
         self.assertEqual(len(router.routes), 0)
@@ -275,13 +281,14 @@ class FastAPILoggingRouteTest(BaseTest):
         self.assertEqual(app.router.route_class, old_app_route_class)
         self.assertEqual(router.route_class, old_router_route_class)
         mock_log.assert_called_with(
-            'RollbarLoggingRoute has to be added to a bare router.'
-            ' See docs for more details.'
+            'RollbarLoggingRoute must be added to a bare router'
+            ' (before adding routes). See docs for more details.'
         )
 
     def test_should_enable_loading_route_handler_for_multiple_routers(self):
         from fastapi import APIRouter, FastAPI
         import rollbar.contrib.fastapi
+        from rollbar.contrib.fastapi.route import RollbarLoggingRoute
 
         app = FastAPI()
         router1 = APIRouter()
@@ -303,6 +310,8 @@ class FastAPILoggingRouteTest(BaseTest):
 
         self.assertNotEqual(new_router1_route_class, old_router1_route_class)
         self.assertNotEqual(new_router2_route_class, old_router2_route_class)
+        self.assertEqual(router1.route_class, RollbarLoggingRoute)
+        self.assertEqual(router2.route_class, RollbarLoggingRoute)
         self.assertEqual(router1.route_class, new_router1_route_class)
         self.assertEqual(router2.route_class, new_router2_route_class)
         self.assertEqual(router3.route_class, old_router3_route_class)
@@ -333,6 +342,75 @@ class FastAPILoggingRouteTest(BaseTest):
         self.assertEqual(router3.route_class, old_router3_route_class)
         self.assertEqual(len(app.routes), 7)
 
+    def test_should_enable_loading_route_handler_for_fastapi_app(self):
+        from fastapi import FastAPI
+        from fastapi.routing import APIRoute
+        import rollbar.contrib.fastapi
+        from rollbar.contrib.fastapi.route import RollbarLoggingRoute
+
+        app = FastAPI()
+        old_route_class = app.router.route_class
+        self.assertEqual(old_route_class, APIRoute)
+
+        new_route_class = rollbar.contrib.fastapi.add_to(app)
+
+        self.assertNotEqual(new_route_class, old_route_class)
+        self.assertEqual(app.router.route_class, RollbarLoggingRoute)
+        self.assertEqual(app.router.route_class, new_route_class)
+
+    def test_should_enable_loading_route_handler_for_fastapi_router(self):
+        from fastapi import APIRouter
+        from fastapi.routing import APIRoute
+        import rollbar.contrib.fastapi
+        from rollbar.contrib.fastapi.route import RollbarLoggingRoute
+
+        router = APIRouter()
+        old_route_class = router.route_class
+        self.assertEqual(old_route_class, APIRoute)
+
+        new_route_class = rollbar.contrib.fastapi.add_to(router)
+
+        self.assertNotEqual(new_route_class, old_route_class)
+        self.assertEqual(router.route_class, RollbarLoggingRoute)
+        self.assertEqual(router.route_class, new_route_class)
+
+    @mock.patch('logging.Logger.error')
+    def test_should_disable_loading_route_handler_for_unknown_app(self, mock_log):
+        import rollbar.contrib.fastapi
+
+        class UnkownRouter:
+            route_class = None
+
+        class UnknownApp:
+            routes = []
+            router = UnkownRouter()
+
+        app = UnknownApp()
+        old_route_class = app.router.route_class
+
+        new_route_class = rollbar.contrib.fastapi.add_to(app)
+
+        self.assertIsNone(new_route_class)
+        self.assertEqual(app.router.route_class, old_route_class)
+        mock_log.assert_called_with('Error while adding RollbarLoggingRoute to application')
+
+    @mock.patch('logging.Logger.error')
+    def test_should_disable_loading_route_handler_for_unknown_router(self, mock_log):
+        import rollbar.contrib.fastapi
+
+        class UnknownRouter:
+            routes = []
+            route_class = None
+
+        router = UnknownRouter()
+        old_route_class = router.route_class
+
+        new_route_class = rollbar.contrib.fastapi.add_to(router)
+
+        self.assertIsNone(new_route_class)
+        self.assertEqual(router.route_class, old_route_class)
+        mock_log.assert_called_with('Error while adding RollbarLoggingRoute to application')
+
     @mock.patch('logging.Logger.warning')
     def test_should_warn_if_middleware_in_use(self, mock_log):
         from fastapi import FastAPI
@@ -354,12 +432,15 @@ class FastAPILoggingRouteTest(BaseTest):
             )
 
     def test_should_support_type_hints(self):
-        from typing import Type
+        from typing import Optional, Type, Union
+        from fastapi import APIRouter, FastAPI
         from fastapi.routing import APIRoute
-        from starlette.types import ASGIApp
         import rollbar.contrib.fastapi
 
         self.assertDictEqual(
             rollbar.contrib.fastapi.add_to.__annotations__,
-            {'app': ASGIApp, 'return': Type[APIRoute]},
+            {
+                'app_or_router': Union[FastAPI, APIRouter],
+                'return': Optional[Type[APIRoute]],
+            },
         )
