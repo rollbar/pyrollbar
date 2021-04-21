@@ -112,7 +112,7 @@ class FastAPILoggingRouteTest(BaseTest):
             },
         )
 
-    def test_should_allow_loading_route_handler_if_fastapi_version_is_sufficient(self):
+    def test_should_enable_loading_route_handler_if_fastapi_version_is_sufficient(self):
         import fastapi
         from fastapi import FastAPI
         from fastapi.routing import APIRoute
@@ -130,7 +130,7 @@ class FastAPILoggingRouteTest(BaseTest):
         self.assertNotEqual(new_route_class, old_route_class)
         self.assertEqual(app.router.route_class, new_route_class)
 
-    def test_should_not_allow_loading_route_handler_if_fastapi_is_too_old(self):
+    def test_should_disable_loading_route_handler_if_fastapi_is_too_old(self):
         import logging
         import fastapi
         from fastapi import FastAPI
@@ -161,7 +161,7 @@ class FastAPILoggingRouteTest(BaseTest):
         logging.disable(logging.NOTSET)  # make sure logger is re-enabled
         fastapi.__version__ = fastapi_version
 
-    def test_should_allow_loading_route_handler_before_adding_routes(self):
+    def test_should_enable_loading_route_handler_before_adding_routes_to_app(self):
         from fastapi import FastAPI
         import rollbar.contrib.fastapi
 
@@ -176,15 +176,17 @@ class FastAPILoggingRouteTest(BaseTest):
         self.assertEqual(len(app.routes), 4)
 
         @app.get('/')
-        async def read_roo(): ...
+        async def read_root():
+            ...
 
         self.assertEqual(app.router.route_class, new_route_class)
         self.assertEqual(len(app.routes), 5)
 
     @mock.patch('logging.Logger.error')
-    def test_should_not_allow_loading_route_handler_after_adding_routes(self, mock_log):
+    def test_should_disable_loading_route_handler_after_adding_routes_to_app(
+        self, mock_log
+    ):
         from fastapi import FastAPI
-        from fastapi.routing import APIRoute
         import rollbar.contrib.fastapi
 
         app = FastAPI()
@@ -192,7 +194,8 @@ class FastAPILoggingRouteTest(BaseTest):
         self.assertEqual(len(app.routes), 4)
 
         @app.get('/')
-        async def read_root(): ...
+        async def read_root():
+            ...
 
         self.assertEqual(len(app.routes), 5)
 
