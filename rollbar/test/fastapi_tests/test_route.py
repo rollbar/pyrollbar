@@ -112,6 +112,55 @@ class FastAPILoggingRouteTest(BaseTest):
             },
         )
 
+    def test_should_allow_loading_route_handler_if_fastapi_version_is_sufficient(self):
+        import fastapi
+        from fastapi import FastAPI
+        from fastapi.routing import APIRoute
+        import rollbar.contrib.fastapi
+
+        if fastapi.__version__ < '0.41.0':
+            self.skipTest('FastAPI v0.41.0+ is required')
+
+        app = FastAPI()
+        old_route_class = app.router.route_class
+        self.assertEqual(old_route_class, APIRoute)
+
+        new_route_class = rollbar.contrib.fastapi.add_to(app)
+
+        self.assertNotEqual(app.router.route_class, old_route_class)
+        self.assertEqual(app.router.route_class, new_route_class)
+
+    def test_should_not_allow_loading_route_handler_if_fastapi_is_too_old(self):
+        import logging
+        import fastapi
+        from fastapi import FastAPI
+        from fastapi.routing import APIRoute
+        from rollbar.contrib.fastapi.utils import FastAPIVersionError
+
+        logging.disable()  # silent logger for tests
+        fastapi_version = fastapi.__version__
+
+        app = FastAPI()
+        old_route_class = app.router.route_class
+        self.assertEqual(old_route_class, APIRoute)
+
+        fastapi.__version__ = '0'
+        with self.assertRaises(FastAPIVersionError):
+            rollbar.contrib.fastapi.add_to(app)
+
+        fastapi.__version__ = '0.30.3'
+        with self.assertRaises(FastAPIVersionError):
+            rollbar.contrib.fastapi.add_to(app)
+
+        fastapi.__version__ = '0.40.10'
+        with self.assertRaises(FastAPIVersionError):
+            rollbar.contrib.fastapi.add_to(app)
+
+        self.assertEqual(old_route_class, APIRoute)
+
+        logging.disable(logging.NOTSET)  # make sure logger is re-enabled
+        fastapi.__version__ = fastapi_version
+
     def test_should_support_type_hints(self):
         from typing import Type
         from fastapi.routing import APIRoute

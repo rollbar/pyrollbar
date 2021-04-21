@@ -8,6 +8,7 @@ from fastapi.routing import APIRoute
 from starlette.types import ASGIApp
 
 import rollbar
+from rollbar.contrib.fastapi.utils import fastapi_min_version
 from rollbar.contrib.starlette import StarletteMiddleware
 
 
@@ -15,6 +16,7 @@ class FastAPIMiddleware(StarletteMiddleware):
     ...
 
 
+@fastapi_min_version('0.41.0')
 def add_to(app: ASGIApp) -> Type[APIRoute]:
     class RollbarLoggingRoute(app.router.route_class):
         def get_route_handler(self) -> Callable:
