@@ -22,6 +22,7 @@ class FastAPITest(BaseTest):
 
     def test_should_set_fastapi_hook(self):
         import rollbar.contrib.fastapi
+
         self.assertEqual(rollbar.BASE_DATA_HOOK, rollbar.contrib.fastapi._hook)
 
     @mock.patch('rollbar._check_config', return_value=True)

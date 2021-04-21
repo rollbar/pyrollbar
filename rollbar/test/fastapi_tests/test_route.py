@@ -127,7 +127,7 @@ class FastAPILoggingRouteTest(BaseTest):
 
         new_route_class = rollbar.contrib.fastapi.add_to(app)
 
-        self.assertNotEqual(app.router.route_class, old_route_class)
+        self.assertNotEqual(new_route_class, old_route_class)
         self.assertEqual(app.router.route_class, new_route_class)
 
     def test_should_not_allow_loading_route_handler_if_fastapi_is_too_old(self):
@@ -156,7 +156,7 @@ class FastAPILoggingRouteTest(BaseTest):
         with self.assertRaises(FastAPIVersionError):
             rollbar.contrib.fastapi.add_to(app)
 
-        self.assertEqual(old_route_class, APIRoute)
+        self.assertEqual(app.router.route_class, old_route_class)
 
         logging.disable(logging.NOTSET)  # make sure logger is re-enabled
         fastapi.__version__ = fastapi_version
