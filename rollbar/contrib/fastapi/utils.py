@@ -3,6 +3,10 @@ import logging
 
 import fastapi
 
+from rollbar.contrib.fastapi import FastAPIMiddleware
+from rollbar.contrib.starlette import StarletteMiddleware
+from rollbar.contrib.asgi import ASGIMiddleware
+
 log = logging.getLogger(__name__)
 
 
@@ -31,3 +35,16 @@ class fastapi_min_version:
             return func(*args, **kwargs)
 
         return wrapper
+
+
+def get_installed_middlewares(app):
+    candidates = (FastAPIMiddleware, StarletteMiddleware, ASGIMiddleware)
+
+    if not hasattr(app, 'user_middleware'):
+        return []
+
+    return [
+        middleware.cls
+        for middleware in app.user_middleware
+        if middleware.cls in candidates
+    ]
