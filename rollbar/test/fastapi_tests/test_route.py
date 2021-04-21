@@ -348,7 +348,7 @@ class FastAPILoggingRouteTest(BaseTest):
             rollbar.contrib.fastapi.add_to(app)
 
             mock_log.assert_called_with(
-                f'Detected installed {middleware.__name__}'
+                f'Detected installed middlewares {[middleware]}'
                 ' while loading Rollbar route handler.'
                 ' This can cause duplicated occurrences.'
             )

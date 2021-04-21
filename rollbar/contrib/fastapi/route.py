@@ -10,22 +10,20 @@ from starlette.types import ASGIApp
 
 import rollbar
 from rollbar.contrib.fastapi.utils import fastapi_min_version
-from rollbar.contrib.fastapi import FastAPIMiddleware
-from rollbar.contrib.starlette import StarletteMiddleware
-from rollbar.contrib.asgi import ASGIMiddleware
+from rollbar.contrib.fastapi.utils import get_installed_middlewares
 
 log = logging.getLogger(__name__)
 
 
 @fastapi_min_version('0.41.0')
 def add_to(app: ASGIApp) -> Type[APIRoute]:
-    if hasattr(app, 'user_middleware'):
-        for middleware in (FastAPIMiddleware, StarletteMiddleware, ASGIMiddleware):
-            if middleware in (md.cls for md in app.user_middleware):
-                log.warn(
-                    f'Detected installed {middleware.__name__} while loading Rollbar route handler.'
-                    ' This can cause duplicated occurrences.'
-                )
+    installed_middlewares = get_installed_middlewares(app)
+    if installed_middlewares:
+        log.warn(
+            f'Detected installed middlewares {installed_middlewares}'
+            ' while loading Rollbar route handler.'
+            ' This can cause duplicated occurrences.'
+        )
 
     # Route handler must be added before adding routes
     if len(app.routes) == 4:
