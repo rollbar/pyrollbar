@@ -20,21 +20,6 @@ class FastAPIMiddlewareTest(BaseTest):
     def setUp(self):
         importlib.reload(rollbar.contrib.fastapi)
 
-    def test_should_set_fastapi_hook(self):
-        self.assertEqual(rollbar.BASE_DATA_HOOK, rollbar.contrib.fastapi._hook)
-
-    @mock.patch('rollbar._check_config', return_value=True)
-    @mock.patch('rollbar.send_payload')
-    def test_should_add_fastapi_version_to_payload(self, mock_send_payload, *mocks):
-        import fastapi
-
-        rollbar.report_exc_info()
-
-        mock_send_payload.assert_called_once()
-        payload = mock_send_payload.call_args[0][0]
-
-        self.assertIn(fastapi.__version__, payload['data']['framework'])
-
     @mock.patch('rollbar.report_exc_info')
     def test_should_catch_and_report_errors(self, mock_report):
         from fastapi import FastAPI
@@ -129,6 +114,7 @@ class FastAPIMiddlewareTest(BaseTest):
 
     def test_should_support_type_hints(self):
         from starlette.types import Receive, Scope, Send
+        import rollbar.contrib.fastapi
 
         self.assertDictEqual(
             rollbar.contrib.fastapi.FastAPIMiddleware.__call__.__annotations__,
