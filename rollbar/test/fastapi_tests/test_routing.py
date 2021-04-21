@@ -154,7 +154,7 @@ class FastAPILoggingRouteTest(BaseTest):
         from fastapi import FastAPI
         from fastapi.routing import APIRoute
         import rollbar.contrib.fastapi
-        from rollbar.contrib.fastapi.route import RollbarLoggingRoute
+        from rollbar.contrib.fastapi.routing import RollbarLoggingRoute
 
         self.assertTrue(ALLOWED_FASTAPI_VERSION)
         app = FastAPI()
@@ -170,7 +170,7 @@ class FastAPILoggingRouteTest(BaseTest):
     def test_should_enable_loading_route_handler_before_adding_routes_to_app(self):
         from fastapi import FastAPI
         import rollbar.contrib.fastapi
-        from rollbar.contrib.fastapi.route import RollbarLoggingRoute
+        from rollbar.contrib.fastapi.routing import RollbarLoggingRoute
 
         app = FastAPI()
         old_route_class = app.router.route_class
@@ -220,7 +220,7 @@ class FastAPILoggingRouteTest(BaseTest):
     def test_should_enable_loading_route_handler_before_adding_routes_to_router(self):
         from fastapi import APIRouter, FastAPI
         import rollbar.contrib.fastapi
-        from rollbar.contrib.fastapi.route import RollbarLoggingRoute
+        from rollbar.contrib.fastapi.routing import RollbarLoggingRoute
 
         app = FastAPI()
         router = APIRouter()
@@ -288,7 +288,7 @@ class FastAPILoggingRouteTest(BaseTest):
     def test_should_enable_loading_route_handler_for_multiple_routers(self):
         from fastapi import APIRouter, FastAPI
         import rollbar.contrib.fastapi
-        from rollbar.contrib.fastapi.route import RollbarLoggingRoute
+        from rollbar.contrib.fastapi.routing import RollbarLoggingRoute
 
         app = FastAPI()
         router1 = APIRouter()
@@ -346,7 +346,7 @@ class FastAPILoggingRouteTest(BaseTest):
         from fastapi import FastAPI
         from fastapi.routing import APIRoute
         import rollbar.contrib.fastapi
-        from rollbar.contrib.fastapi.route import RollbarLoggingRoute
+        from rollbar.contrib.fastapi.routing import RollbarLoggingRoute
 
         app = FastAPI()
         old_route_class = app.router.route_class
@@ -362,7 +362,7 @@ class FastAPILoggingRouteTest(BaseTest):
         from fastapi import APIRouter
         from fastapi.routing import APIRoute
         import rollbar.contrib.fastapi
-        from rollbar.contrib.fastapi.route import RollbarLoggingRoute
+        from rollbar.contrib.fastapi.routing import RollbarLoggingRoute
 
         router = APIRouter()
         old_route_class = router.route_class
