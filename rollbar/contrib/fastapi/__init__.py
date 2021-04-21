@@ -22,14 +22,18 @@ class FastAPIMiddleware(StarletteMiddleware):
 @fastapi_min_version('0.41.0')
 def add_to(app: ASGIApp) -> Type[APIRoute]:
     # Route handler must be added before adding routes
-    if len(app.routes) != 4:
+    if len(app.routes) == 4:
+        route_class = app.router.route_class
+    elif len(app.routes) == 0:
+        route_class = app.route_class
+    else:
         log.error(
-            'RollbarLoggingRoute has to be added to a clean router. '
+            'RollbarLoggingRoute has to be added to a bare router. '
             'See docs for more details.'
         )
         return
 
-    class RollbarLoggingRoute(app.router.route_class):
+    class RollbarLoggingRoute(route_class):
         def get_route_handler(self) -> Callable:
             original_router_handler = super().get_route_handler()
 
@@ -44,7 +48,10 @@ def add_to(app: ASGIApp) -> Type[APIRoute]:
 
             return custom_route_handler
 
-    app.router.route_class = RollbarLoggingRoute
+    if len(app.routes) == 4:
+        app.router.route_class = RollbarLoggingRoute
+    elif len(app.routes) == 0:
+        app.route_class = RollbarLoggingRoute
     return RollbarLoggingRoute
 
 
