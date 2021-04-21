@@ -275,6 +275,60 @@ class FastAPILoggingRouteTest(BaseTest):
             ' See docs for more details.'
         )
 
+    def test_should_enable_loading_route_handler_for_multiple_routers(self):
+        from fastapi import APIRouter, FastAPI
+        import rollbar.contrib.fastapi
+
+        app = FastAPI()
+        router1 = APIRouter()
+        router2 = APIRouter()
+        router3 = APIRouter()
+
+        old_app_route_class = app.router.route_class
+        old_router1_route_class = router1.route_class
+        old_router2_route_class = router2.route_class
+        old_router3_route_class = router3.route_class
+
+        self.assertEqual(len(app.routes), 4)
+        self.assertEqual(len(router1.routes), 0)
+        self.assertEqual(len(router2.routes), 0)
+        self.assertEqual(len(router3.routes), 0)
+
+        new_router1_route_class = rollbar.contrib.fastapi.add_to(router1)
+        new_router2_route_class = rollbar.contrib.fastapi.add_to(router2)
+
+        self.assertNotEqual(new_router1_route_class, old_router1_route_class)
+        self.assertNotEqual(new_router2_route_class, old_router2_route_class)
+        self.assertEqual(router1.route_class, new_router1_route_class)
+        self.assertEqual(router2.route_class, new_router2_route_class)
+        self.assertEqual(router3.route_class, old_router3_route_class)
+        self.assertEqual(app.router.route_class, old_app_route_class)
+        self.assertEqual(len(app.routes), 4)
+        self.assertEqual(len(router1.routes), 0)
+        self.assertEqual(len(router2.routes), 0)
+        self.assertEqual(len(router3.routes), 0)
+
+        @router1.get('/')
+        async def read1():
+            ...
+
+        @router2.get('/')
+        async def read2():
+            ...
+
+        @router3.get('/')
+        async def read3():
+            ...
+
+        app.include_router(router1)
+        app.include_router(router2)
+        app.include_router(router3)
+
+        self.assertEqual(router1.route_class, new_router1_route_class)
+        self.assertEqual(router2.route_class, new_router2_route_class)
+        self.assertEqual(router3.route_class, old_router3_route_class)
+        self.assertEqual(len(app.routes), 7)
+
     def test_should_support_type_hints(self):
         from typing import Type
         from fastapi.routing import APIRoute
