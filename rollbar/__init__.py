@@ -1341,6 +1341,7 @@ def _build_starlette_request_data(request):
         'headers': dict(request.headers),
         'method': request.method,
         'user_ip': _starlette_extract_user_ip(request),
+        'params': dict(request.path_params),
     }
     if SETTINGS['include_request_body'] and hasattr(request, '_body'):
         request_data['body'] = request._body.decode()

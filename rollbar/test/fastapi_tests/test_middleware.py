@@ -98,6 +98,7 @@ class FastAPIMiddlewareTest(BaseTest):
             payload_request['url'],
             'http://testserver/test?param1=value1&param2=value2',
         )
+        self.assertDictEqual(payload_request['params'], {'path': 'test'})
         self.assertDictEqual(
             payload_request['GET'], {'param1': 'value1', 'param2': 'value2'}
         )

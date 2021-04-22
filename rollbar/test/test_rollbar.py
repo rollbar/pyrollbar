@@ -135,6 +135,7 @@ class RollbarTest(BaseTest):
             'http_version': '1.1',
             'method': 'GET',
             'path': '/api/test',
+            'path_params': {'param': 'test'},
             'query_params': {
                 'format': 'json',
                 'param1': 'value1',
@@ -151,6 +152,7 @@ class RollbarTest(BaseTest):
         self.assertEqual(data['url'], 'http://example.com/api/test?format=json&param1=value1&param2=value2')
         self.assertEqual(data['user_ip'], '127.0.0.1')
         self.assertEqual(data['method'], 'GET')
+        self.assertDictEqual(data['params'], {'param': 'test'})
         self.assertDictEqual(data['GET'], {'format': 'json', 'param1': 'value1', 'param2': 'value2'})
         self.assertDictEqual(
             data['headers'],
@@ -211,6 +213,7 @@ class RollbarTest(BaseTest):
             'http_version': '1.1',
             'method': 'GET',
             'path': '/api/test',
+            'path_params': {'param': 'test'},
             'query_params': {
                 'format': 'json',
                 'param1': 'value1',
@@ -227,6 +230,7 @@ class RollbarTest(BaseTest):
         self.assertEqual(data['url'], 'http://example.com/api/test?format=json&param1=value1&param2=value2')
         self.assertEqual(data['user_ip'], '127.0.0.1')
         self.assertEqual(data['method'], 'GET')
+        self.assertDictEqual(data['params'], {'param': 'test'})
         self.assertDictEqual(data['GET'], {'format': 'json', 'param1': 'value1', 'param2': 'value2'})
         self.assertDictEqual(
             data['headers'],
