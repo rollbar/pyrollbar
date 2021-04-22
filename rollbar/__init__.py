@@ -1343,6 +1343,8 @@ def _build_starlette_request_data(request):
         'user_ip': _starlette_extract_user_ip(request),
         'params': dict(request.path_params),
     }
+    # Filter out empty values
+    request_data = { k: v for k, v in request_data.items() if v }
     if SETTINGS['include_request_body'] and hasattr(request, '_body'):
         request_data['body'] = request._body.decode()
 

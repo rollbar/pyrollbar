@@ -195,6 +195,33 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(data['body'], body.decode('latin-1'))
 
+    def test_starlette_request_data_empty_values(self):
+        try:
+            from starlette.requests import Request
+        except ImportError:
+            self.skipTest('Requires Starlette to be installed')
+
+        scope = {
+            'type': 'http',
+            'client': ('127.0.0.1', 1453),
+            'headers': [
+                (b'content-type', b'text/html'),
+            ],
+            'method': 'GET',
+            'query_string': b'',
+            'path': '',
+        }
+        request = Request(scope)
+
+        data = rollbar._build_starlette_request_data(request)
+
+        self.assertFalse('GET' in data)
+        self.assertFalse('url' in data)
+        self.assertFalse('params' in data)
+        self.assertTrue('headers' in data)
+        self.assertEqual(data['user_ip'], scope['client'][0])
+        self.assertEqual(data['method'], scope['method'])
+
     def test_fastapi_request_data(self):
         try:
             from fastapi.requests import Request
@@ -272,6 +299,33 @@ class RollbarTest(BaseTest):
         data = rollbar._build_fastapi_request_data(request)
 
         self.assertEqual(data['body'], body.decode('latin-1'))
+
+    def test_fastapi_request_data_empty_values(self):
+        try:
+            from fastapi import Request
+        except ImportError:
+            self.skipTest('Requires FastAPI to be installed')
+
+        scope = {
+            'type': 'http',
+            'client': ('127.0.0.1', 1453),
+            'headers': [
+                (b'content-type', b'text/html'),
+            ],
+            'method': 'GET',
+            'query_string': b'',
+            'path': '',
+        }
+        request = Request(scope)
+
+        data = rollbar._build_fastapi_request_data(request)
+
+        self.assertFalse('GET' in data)
+        self.assertFalse('url' in data)
+        self.assertFalse('params' in data)
+        self.assertTrue('headers' in data)
+        self.assertEqual(data['user_ip'], scope['client'][0])
+        self.assertEqual(data['method'], scope['method'])
 
     @mock.patch('rollbar.send_payload')
     def test_report_exception(self, send_payload):
