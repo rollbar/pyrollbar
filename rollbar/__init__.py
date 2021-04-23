@@ -235,10 +235,15 @@ def _get_starlette_request():
 
 
 def _get_fastapi_request():
+    """
+    Do not modify the returned object.
+    """
+
     if FastAPIRequest is None:
         return None
 
-    return _get_starlette_request()
+    from rollbar.contrib.fastapi import get_current_request
+    return get_current_request()
 
 
 BASE_DATA_HOOK = None
