@@ -328,7 +328,7 @@ class RollbarTest(BaseTest):
         self.assertEqual(data['method'], scope['method'])
 
     @unittest.skipUnless(sys.version_info >= (3, 7), 'Python3.7+ required')
-    def test_get_request_starlette(self):
+    def test_get_request_starlette_middleware(self):
         from starlette.applications import Starlette
         from starlette.middleware import Middleware
         from starlette.responses import PlainTextResponse
