@@ -178,7 +178,8 @@ def get_request():
     # TODO(cory): add in a generic _get_locals_request() which
     # will iterate up through the call stack and look for a variable
     # that appears to be valid request object.
-    for fn in (_get_starlette_request,
+    for fn in (_get_fastapi_request,
+               _get_starlette_request,
                _get_bottle_request,
                _get_flask_request,
                _get_pyramid_request,
@@ -231,6 +232,13 @@ def _get_starlette_request():
 
     from rollbar.contrib.starlette import get_current_request
     return get_current_request()
+
+
+def _get_fastapi_request():
+    if FastAPIRequest is None:
+        return None
+
+    return _get_starlette_request()
 
 
 BASE_DATA_HOOK = None
