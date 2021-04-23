@@ -43,7 +43,7 @@ class StarletteMiddlewareTest(BaseTest):
         from starlette.testclient import TestClient
         from rollbar.contrib.starlette import StarletteMiddleware
 
-        def root(request):
+        async def root(request):
             1 / 0
 
         routes = [Route('/', root)]
@@ -73,7 +73,7 @@ class StarletteMiddlewareTest(BaseTest):
         from starlette.testclient import TestClient
         from rollbar.contrib.starlette import StarletteMiddleware
 
-        def root(request):
+        async def root(request):
             1 / 0
 
         routes = [Route('/', root)]
@@ -100,7 +100,7 @@ class StarletteMiddlewareTest(BaseTest):
         from starlette.testclient import TestClient
         from rollbar.contrib.starlette import StarletteMiddleware
 
-        def root(request):
+        async def root(request):
             1 / 0
 
         routes = [Route('/{path}', root)]
