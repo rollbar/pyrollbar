@@ -393,7 +393,9 @@ class FastAPILoggingRouteTest(BaseTest):
 
         self.assertIsNone(new_route_class)
         self.assertEqual(app.router.route_class, old_route_class)
-        mock_log.assert_called_with('Error while adding RollbarLoggingRoute to application')
+        mock_log.assert_called_with(
+            'Error while adding RollbarLoggingRoute to application'
+        )
 
     @mock.patch('logging.Logger.error')
     def test_should_disable_loading_route_handler_for_unknown_router(self, mock_log):
@@ -410,7 +412,9 @@ class FastAPILoggingRouteTest(BaseTest):
 
         self.assertIsNone(new_route_class)
         self.assertEqual(router.route_class, old_route_class)
-        mock_log.assert_called_with('Error while adding RollbarLoggingRoute to application')
+        mock_log.assert_called_with(
+            'Error while adding RollbarLoggingRoute to application'
+        )
 
     @mock.patch('logging.Logger.warning')
     def test_should_warn_if_middleware_in_use(self, mock_log):
