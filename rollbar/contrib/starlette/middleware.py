@@ -5,11 +5,13 @@ from starlette.types import Receive, Scope, Send
 
 import rollbar
 from rollbar.contrib.asgi import ASGIMiddleware
+from rollbar.contrib.starlette.requests import store_current_request
 
 
 class StarletteMiddleware(ASGIMiddleware):
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         try:
+            store_current_request(scope, receive)
             await self.app(scope, receive, send)
         except Exception:
             if scope['type'] == 'http':

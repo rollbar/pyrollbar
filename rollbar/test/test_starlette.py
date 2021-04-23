@@ -143,3 +143,97 @@ class StarletteMiddlewareTest(BaseTest):
             rollbar.contrib.starlette.StarletteMiddleware.__call__.__annotations__,
             {'scope': Scope, 'receive': Receive, 'send': Send, 'return': None},
         )
+
+    @unittest2.skipUnless(
+        sys.version_info >= (3, 7), 'Global request access requires Python 3.7+'
+    )
+    @mock.patch('rollbar.contrib.starlette.middleware.store_current_request')
+    def test_should_store_current_request(self, store_current_request):
+        from starlette.applications import Starlette
+        from starlette.middleware import Middleware
+        from starlette.responses import PlainTextResponse
+        from starlette.routing import Route
+        from starlette.testclient import TestClient
+        from rollbar.contrib.starlette import StarletteMiddleware
+
+        expected_scope = {
+            'client': ['testclient', 50000],
+            'headers': [
+                (b'host', b'testserver'),
+                (b'user-agent', b'testclient'),
+                (b'accept-encoding', b'gzip, deflate'),
+                (b'accept', b'*/*'),
+                (b'connection', b'keep-alive'),
+            ],
+            'http_version': '1.1',
+            'method': 'GET',
+            'path': '/',
+            'query_string': b'',
+            'root_path': '',
+            'scheme': 'http',
+            'server': ['testserver', 80],
+            'type': 'http',
+        }
+
+        async def root(request):
+            return PlainTextResponse('OK')
+
+        routes = [Route('/{param}', root)]
+        middleware = [Middleware(StarletteMiddleware)]
+        app = Starlette(routes=routes, middleware=middleware)
+
+        client = TestClient(app)
+        client.get('/')
+
+        store_current_request.assert_called_once()
+
+        scope = store_current_request.call_args[0][0]
+        self.assertDictContainsSubset(expected_scope, scope)
+
+    @unittest2.skipUnless(
+        sys.version_info >= (3, 7), 'Global request access is supported in Python 3.7+'
+    )
+    def test_should_return_current_request(self):
+        from starlette.applications import Starlette
+        from starlette.middleware import Middleware
+        from starlette.responses import PlainTextResponse
+        from starlette.routing import Route
+        from starlette.testclient import TestClient
+        from rollbar.contrib.starlette import StarletteMiddleware
+        from rollbar.contrib.starlette import get_current_request
+
+        async def root(request):
+            self.assertIsNotNone(get_current_request())
+
+            return PlainTextResponse('OK')
+
+        routes = [Route('/', root)]
+        middleware = [Middleware(StarletteMiddleware)]
+        app = Starlette(routes=routes, middleware=middleware)
+
+        client = TestClient(app)
+        client.get('/')
+
+    @unittest2.skipIf(
+        sys.version_info >= (3, 7), 'Global request access is supported in Python 3.7+'
+    )
+    def test_should_not_return_current_request_for_older_python(self):
+        from starlette.applications import Starlette
+        from starlette.middleware import Middleware
+        from starlette.responses import PlainTextResponse
+        from starlette.routing import Route
+        from starlette.testclient import TestClient
+        from rollbar.contrib.starlette import StarletteMiddleware
+        from rollbar.contrib.starlette import get_current_request
+
+        async def root(request):
+            self.assertIsNone(get_current_request())
+
+            return PlainTextResponse('OK')
+
+        routes = [Route('/', root)]
+        middleware = [Middleware(StarletteMiddleware)]
+        app = Starlette(routes=routes, middleware=middleware)
+
+        client = TestClient(app)
+        client.get('/')
