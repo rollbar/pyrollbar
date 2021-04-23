@@ -178,7 +178,8 @@ def get_request():
     # TODO(cory): add in a generic _get_locals_request() which
     # will iterate up through the call stack and look for a variable
     # that appears to be valid request object.
-    for fn in (_get_bottle_request,
+    for fn in (_get_starlette_request,
+               _get_bottle_request,
                _get_flask_request,
                _get_pyramid_request,
                _get_pylons_request):
@@ -218,6 +219,18 @@ def _get_pylons_request():
         return None
     from pylons import request
     return request
+
+
+def _get_starlette_request():
+    """
+    Do not modify the returned object.
+    """
+
+    if StarletteRequest is None:
+        return None
+
+    from rollbar.contrib.starlette import get_current_request
+    return get_current_request()
 
 
 BASE_DATA_HOOK = None

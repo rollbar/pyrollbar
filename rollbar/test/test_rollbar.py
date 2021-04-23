@@ -327,6 +327,28 @@ class RollbarTest(BaseTest):
         self.assertEqual(data['user_ip'], scope['client'][0])
         self.assertEqual(data['method'], scope['method'])
 
+    @unittest.skipUnless(sys.version_info >= (3, 7), 'Python3.7+ required')
+    def test_get_request_starlette(self):
+        from starlette.applications import Starlette
+        from starlette.middleware import Middleware
+        from starlette.responses import PlainTextResponse
+        from starlette.routing import Route
+        from starlette.testclient import TestClient
+        from rollbar.contrib.starlette import StarletteMiddleware
+
+        def root(starlette_request):
+            current_request = rollbar.get_request()
+
+            self.assertEqual(current_request, starlette_request)
+
+            return PlainTextResponse("bye bye")
+
+        routes = [Route('/{param}', root)]
+        middleware = [Middleware(StarletteMiddleware)]
+        app = Starlette(routes=routes, middleware=middleware)
+        client = TestClient(app)
+        client.get('/test?param1=value1&param2=value2')
+
     @mock.patch('rollbar.send_payload')
     def test_report_exception(self, send_payload):
 
