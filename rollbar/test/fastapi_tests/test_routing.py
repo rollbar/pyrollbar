@@ -449,3 +449,88 @@ class FastAPILoggingRouteTest(BaseTest):
                 'return': Optional[Type[APIRoute]],
             },
         )
+
+    @unittest2.skipUnless(
+        sys.version_info >= (3, 7), 'Global request access requires Python 3.7+'
+    )
+    @mock.patch('rollbar.contrib.fastapi.routing.store_current_request')
+    def test_should_store_current_request(self, store_current_request):
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+        from rollbar.contrib.fastapi import add_to as rollbar_add_to
+
+        expected_scope = {
+            'client': ['testclient', 50000],
+            'headers': [
+                (b'host', b'testserver'),
+                (b'user-agent', b'testclient'),
+                (b'accept-encoding', b'gzip, deflate'),
+                (b'accept', b'*/*'),
+                (b'connection', b'keep-alive'),
+            ],
+            'http_version': '1.1',
+            'method': 'GET',
+            'path': '/',
+            'query_string': b'',
+            'root_path': '',
+            'scheme': 'http',
+            'server': ['testserver', 80],
+            'type': 'http',
+        }
+
+        app = FastAPI()
+        rollbar_add_to(app)
+
+        @app.get('/')
+        async def read_root():
+            return {'hello': 'world'}
+
+        client = TestClient(app)
+        client.get('/')
+
+        store_current_request.assert_called_once()
+
+        scope = store_current_request.call_args[0][0]
+        self.assertDictContainsSubset(expected_scope, scope)
+
+    @unittest2.skipUnless(
+        sys.version_info >= (3, 7), 'Global request access is supported in Python 3.7+'
+    )
+    def test_should_return_current_request(self):
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+        from rollbar.contrib.fastapi import add_to as rollbar_add_to
+        from rollbar.contrib.fastapi import get_current_request
+
+        app = FastAPI()
+        rollbar_add_to(app)
+
+        @app.get('/')
+        async def read_root():
+            self.assertIsNotNone(get_current_request())
+
+            return 'ok'
+
+        client = TestClient(app)
+        client.get('/')
+
+    @unittest2.skipIf(
+        sys.version_info >= (3, 7), 'Global request access is supported in Python 3.7+'
+    )
+    def test_should_not_return_current_request_for_older_python(self):
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+        from rollbar.contrib.fastapi import add_to as rollbar_add_to
+        from rollbar.contrib.fastapi import get_current_request
+
+        app = FastAPI()
+        rollbar_add_to(app)
+
+        @app.get('/')
+        async def read_root():
+            self.assertIsNone(get_current_request())
+
+            return 'ok'
+
+        client = TestClient(app)
+        client.get('/')

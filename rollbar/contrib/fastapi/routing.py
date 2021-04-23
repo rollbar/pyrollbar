@@ -10,6 +10,7 @@ from fastapi.routing import APIRoute
 import rollbar
 from rollbar.contrib.fastapi.utils import fastapi_min_version
 from rollbar.contrib.fastapi.utils import get_installed_middlewares
+from rollbar.contrib.starlette.requests import store_current_request
 
 log = logging.getLogger(__name__)
 
@@ -54,6 +55,7 @@ class RollbarLoggingRoute(APIRoute):
 
         async def rollbar_route_handler(request: Request) -> Response:
             try:
+                store_current_request(request)
                 return await router_handler(request)
             except Exception:
                 await request.body()

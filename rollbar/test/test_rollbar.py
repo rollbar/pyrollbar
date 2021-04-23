@@ -350,13 +350,33 @@ class RollbarTest(BaseTest):
         client.get('/test?param1=value1&param2=value2')
 
     @unittest.skipUnless(sys.version_info >= (3, 7), 'Python3.7+ required')
-    def test_get_request_fastapi(self):
+    def test_get_request_fastapi_middleware(self):
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
         from rollbar.contrib.fastapi import FastAPIMiddleware
 
         app = FastAPI()
         app.add_middleware(FastAPIMiddleware)
+
+        @app.get('/{param}')
+        def root(fastapi_request):
+            current_request = rollbar.get_request()
+
+            self.assertEqual(current_request, fastapi_request)
+
+            return PlainTextResponse("bye bye")
+
+        client = TestClient(app)
+        client.get('/test?param1=value1&param2=value2')
+
+    @unittest.skipUnless(sys.version_info >= (3, 7), 'Python3.7+ required')
+    def test_get_request_fastapi_router(self):
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+        from rollbar.contrib.fastapi import add_to as rollbar_add_to
+
+        app = FastAPI()
+        rollbar_add_to(app)
 
         @app.get('/{param}')
         def root(fastapi_request):
