@@ -5,7 +5,7 @@ try:
 except ImportError:
     ContextVar = None
 import logging
-from typing import Optional
+from typing import Optional, Union
 
 from starlette.requests import Request
 from starlette.types import Receive, Scope
@@ -35,10 +35,16 @@ def get_current_request() -> Optional[Request]:
     return request
 
 
-def store_current_request(scope: Scope, receive: Receive) -> Optional[Request]:
+def store_current_request(
+    request_or_scope: Union[Request, Scope], receive: Optional[Receive] = None
+) -> Optional[Request]:
     if ContextVar is None:
         return None
 
-    request = Request(scope, receive)
+    if receive is None:
+        request = Request(request_or_scope, receive)
+    else:
+        request = request_or_scope
+
     _current_request.set(request)
     return request
