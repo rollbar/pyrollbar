@@ -350,6 +350,28 @@ class RollbarTest(BaseTest):
         client.get('/test?param1=value1&param2=value2')
 
     @unittest.skipUnless(sys.version_info >= (3, 7), 'Python3.7+ required')
+    def test_get_request_starlette_logger(self):
+        from starlette.applications import Starlette
+        from starlette.middleware import Middleware
+        from starlette.responses import PlainTextResponse
+        from starlette.routing import Route
+        from starlette.testclient import TestClient
+        from rollbar.contrib.starlette import LoggerMiddleware
+
+        def root(starlette_request):
+            current_request = rollbar.get_request()
+
+            self.assertEqual(current_request, starlette_request)
+
+            return PlainTextResponse("bye bye")
+
+        routes = [Route('/{param}', root)]
+        middleware = [Middleware(LoggerMiddleware)]
+        app = Starlette(routes=routes, middleware=middleware)
+        client = TestClient(app)
+        client.get('/test?param1=value1&param2=value2')
+
+    @unittest.skipUnless(sys.version_info >= (3, 7), 'Python3.7+ required')
     def test_get_request_fastapi_middleware(self):
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
