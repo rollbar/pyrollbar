@@ -3,7 +3,7 @@ __all__ = ['LoggerMiddleware']
 import logging
 import sys
 
-from rollbar.contrib.starlette.logger import LoggerMiddleware as StarletteLoggerMiddleware
+from rollbar.contrib.starlette import LoggerMiddleware as StarletteLoggerMiddleware
 
 log = logging.getLogger(__name__)
 

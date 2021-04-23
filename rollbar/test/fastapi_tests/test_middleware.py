@@ -24,7 +24,7 @@ class FastAPIMiddlewareTest(BaseTest):
     def test_should_catch_and_report_errors(self, mock_report):
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
-        from rollbar.contrib.fastapi import FastAPIMiddleware
+        from rollbar.contrib.fastapi.middleware import FastAPIMiddleware
 
         app = FastAPI()
         app.add_middleware(FastAPIMiddleware)
@@ -51,7 +51,7 @@ class FastAPIMiddlewareTest(BaseTest):
     def test_should_report_with_request_data(self, mock_report):
         from fastapi import FastAPI, Request
         from fastapi.testclient import TestClient
-        from rollbar.contrib.fastapi import FastAPIMiddleware
+        from rollbar.contrib.fastapi.middleware import FastAPIMiddleware
 
         app = FastAPI()
         app.add_middleware(FastAPIMiddleware)
@@ -75,7 +75,7 @@ class FastAPIMiddlewareTest(BaseTest):
     def test_should_send_payload_with_request_data(self, mock_send_payload, *mocks):
         from fastapi import FastAPI, Request
         from fastapi.testclient import TestClient
-        from rollbar.contrib.fastapi import FastAPIMiddleware
+        from rollbar.contrib.fastapi.middleware import FastAPIMiddleware
 
         app = FastAPI()
         app.add_middleware(FastAPIMiddleware)
@@ -115,10 +115,10 @@ class FastAPIMiddlewareTest(BaseTest):
 
     def test_should_support_type_hints(self):
         from starlette.types import Receive, Scope, Send
-        import rollbar.contrib.fastapi
+        import rollbar.contrib.fastapi.middleware
 
         self.assertDictEqual(
-            rollbar.contrib.fastapi.FastAPIMiddleware.__call__.__annotations__,
+            rollbar.contrib.fastapi.middleware.FastAPIMiddleware.__call__.__annotations__,
             {'scope': Scope, 'receive': Receive, 'send': Send, 'return': None},
         )
 
@@ -129,7 +129,7 @@ class FastAPIMiddlewareTest(BaseTest):
     def test_should_store_current_request(self, store_current_request):
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
-        from rollbar.contrib.fastapi import FastAPIMiddleware
+        from rollbar.contrib.fastapi.middleware import FastAPIMiddleware
 
         expected_scope = {
             'client': ['testclient', 50000],
@@ -172,7 +172,7 @@ class FastAPIMiddlewareTest(BaseTest):
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
         from starlette.requests import Request
-        from rollbar.contrib.fastapi import FastAPIMiddleware
+        from rollbar.contrib.fastapi.middleware import FastAPIMiddleware
         from rollbar.contrib.fastapi import get_current_request
 
         app = FastAPI()
@@ -194,7 +194,7 @@ class FastAPIMiddlewareTest(BaseTest):
     def test_should_not_return_current_request_for_older_python(self):
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
-        from rollbar.contrib.fastapi import FastAPIMiddleware
+        from rollbar.contrib.fastapi.middleware import FastAPIMiddleware
         from rollbar.contrib.fastapi import get_current_request
 
         app = FastAPI()

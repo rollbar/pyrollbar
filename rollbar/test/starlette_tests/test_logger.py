@@ -79,8 +79,8 @@ class StarletteLoggerTest(BaseTest):
         from starlette.responses import PlainTextResponse
         from starlette.routing import Route
         from starlette.testclient import TestClient
-        from rollbar.contrib.starlette.logger import LoggerMiddleware
         from rollbar.contrib.starlette import get_current_request
+        from rollbar.contrib.starlette.logger import LoggerMiddleware
 
         async def root(request):
             self.assertIsNotNone(get_current_request())
@@ -105,8 +105,8 @@ class StarletteLoggerUnsupportedTest(BaseTest):
         from starlette.responses import PlainTextResponse
         from starlette.routing import Route
         from starlette.testclient import TestClient
-        from rollbar.contrib.starlette.logger import LoggerMiddleware
         from rollbar.contrib.starlette import get_current_request
+        from rollbar.contrib.starlette.logger import LoggerMiddleware
 
         async def root(request):
             self.assertIsNone(get_current_request())

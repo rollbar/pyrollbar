@@ -62,10 +62,10 @@ class FastAPILoggingRouteTest(BaseTest):
     def test_should_catch_and_report_errors(self, mock_report):
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
-        import rollbar.contrib.fastapi
+        from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
 
         app = FastAPI()
-        rollbar.contrib.fastapi.add_to(app)
+        rollbar_add_to(app)
 
         @app.get('/')
         async def read_root():
@@ -89,10 +89,10 @@ class FastAPILoggingRouteTest(BaseTest):
     def test_should_report_with_request_data(self, mock_report):
         from fastapi import FastAPI, Request
         from fastapi.testclient import TestClient
-        import rollbar.contrib.fastapi
+        from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
 
         app = FastAPI()
-        rollbar.contrib.fastapi.add_to(app)
+        rollbar_add_to(app)
 
         @app.get('/')
         def read_root():
@@ -113,10 +113,10 @@ class FastAPILoggingRouteTest(BaseTest):
     def test_should_send_payload_with_request_data(self, mock_send_payload, *mocks):
         from fastapi import FastAPI, Request
         from fastapi.testclient import TestClient
-        import rollbar.contrib.fastapi
+        from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
 
         app = FastAPI()
-        rollbar.contrib.fastapi.add_to(app)
+        rollbar_add_to(app)
 
         @app.get('/{path}')
         def read_root(path):
@@ -154,7 +154,7 @@ class FastAPILoggingRouteTest(BaseTest):
     def test_should_enable_loading_route_handler_if_fastapi_version_is_sufficient(self):
         from fastapi import FastAPI
         from fastapi.routing import APIRoute
-        import rollbar.contrib.fastapi
+        from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
         from rollbar.contrib.fastapi.routing import RollbarLoggingRoute
 
         self.assertTrue(ALLOWED_FASTAPI_VERSION)
@@ -170,14 +170,14 @@ class FastAPILoggingRouteTest(BaseTest):
 
     def test_should_enable_loading_route_handler_before_adding_routes_to_app(self):
         from fastapi import FastAPI
-        import rollbar.contrib.fastapi
+        from rollbar.contrib.fastapi import add_to as rollbar_add_to
         from rollbar.contrib.fastapi.routing import RollbarLoggingRoute
 
         app = FastAPI()
         old_route_class = app.router.route_class
         self.assertEqual(len(app.routes), 4)
 
-        new_route_class = rollbar.contrib.fastapi.add_to(app)
+        new_route_class = rollbar_add_to(app)
 
         self.assertNotEqual(new_route_class, old_route_class)
         self.assertEqual(app.router.route_class, new_route_class)
@@ -196,7 +196,7 @@ class FastAPILoggingRouteTest(BaseTest):
         self, mock_log
     ):
         from fastapi import FastAPI
-        import rollbar.contrib.fastapi
+        from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
 
         app = FastAPI()
         old_route_class = app.router.route_class
@@ -208,7 +208,7 @@ class FastAPILoggingRouteTest(BaseTest):
 
         self.assertEqual(len(app.routes), 5)
 
-        new_route_class = rollbar.contrib.fastapi.add_to(app)
+        new_route_class = rollbar_add_to(app)
 
         self.assertEqual(len(app.routes), 5)
         self.assertIsNone(new_route_class)
@@ -220,7 +220,7 @@ class FastAPILoggingRouteTest(BaseTest):
 
     def test_should_enable_loading_route_handler_before_adding_routes_to_router(self):
         from fastapi import APIRouter, FastAPI
-        import rollbar.contrib.fastapi
+        from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
         from rollbar.contrib.fastapi.routing import RollbarLoggingRoute
 
         app = FastAPI()
@@ -232,7 +232,7 @@ class FastAPILoggingRouteTest(BaseTest):
         self.assertEqual(len(app.routes), 4)
         self.assertEqual(len(router.routes), 0)
 
-        new_route_class = rollbar.contrib.fastapi.add_to(router)
+        new_route_class = rollbar_add_to(router)
 
         self.assertNotEqual(new_route_class, old_router_route_class)
         self.assertEqual(router.route_class, new_route_class)
@@ -255,7 +255,7 @@ class FastAPILoggingRouteTest(BaseTest):
         self, mock_log
     ):
         from fastapi import APIRouter, FastAPI
-        import rollbar.contrib.fastapi
+        from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
 
         app = FastAPI()
         router = APIRouter()
@@ -274,7 +274,7 @@ class FastAPILoggingRouteTest(BaseTest):
         self.assertEqual(len(app.routes), 5)
         self.assertEqual(len(router.routes), 1)
 
-        new_route_class = rollbar.contrib.fastapi.add_to(app)
+        new_route_class = rollbar_add_to(app)
 
         self.assertEqual(len(app.routes), 5)
         self.assertEqual(len(router.routes), 1)
@@ -288,7 +288,7 @@ class FastAPILoggingRouteTest(BaseTest):
 
     def test_should_enable_loading_route_handler_for_multiple_routers(self):
         from fastapi import APIRouter, FastAPI
-        import rollbar.contrib.fastapi
+        from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
         from rollbar.contrib.fastapi.routing import RollbarLoggingRoute
 
         app = FastAPI()
@@ -306,8 +306,8 @@ class FastAPILoggingRouteTest(BaseTest):
         self.assertEqual(len(router2.routes), 0)
         self.assertEqual(len(router3.routes), 0)
 
-        new_router1_route_class = rollbar.contrib.fastapi.add_to(router1)
-        new_router2_route_class = rollbar.contrib.fastapi.add_to(router2)
+        new_router1_route_class = rollbar_add_to(router1)
+        new_router2_route_class = rollbar_add_to(router2)
 
         self.assertNotEqual(new_router1_route_class, old_router1_route_class)
         self.assertNotEqual(new_router2_route_class, old_router2_route_class)
@@ -346,14 +346,14 @@ class FastAPILoggingRouteTest(BaseTest):
     def test_should_enable_loading_route_handler_for_fastapi_app(self):
         from fastapi import FastAPI
         from fastapi.routing import APIRoute
-        import rollbar.contrib.fastapi
+        from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
         from rollbar.contrib.fastapi.routing import RollbarLoggingRoute
 
         app = FastAPI()
         old_route_class = app.router.route_class
         self.assertEqual(old_route_class, APIRoute)
 
-        new_route_class = rollbar.contrib.fastapi.add_to(app)
+        new_route_class = rollbar_add_to(app)
 
         self.assertNotEqual(new_route_class, old_route_class)
         self.assertEqual(app.router.route_class, RollbarLoggingRoute)
@@ -362,14 +362,14 @@ class FastAPILoggingRouteTest(BaseTest):
     def test_should_enable_loading_route_handler_for_fastapi_router(self):
         from fastapi import APIRouter
         from fastapi.routing import APIRoute
-        import rollbar.contrib.fastapi
+        from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
         from rollbar.contrib.fastapi.routing import RollbarLoggingRoute
 
         router = APIRouter()
         old_route_class = router.route_class
         self.assertEqual(old_route_class, APIRoute)
 
-        new_route_class = rollbar.contrib.fastapi.add_to(router)
+        new_route_class = rollbar_add_to(router)
 
         self.assertNotEqual(new_route_class, old_route_class)
         self.assertEqual(router.route_class, RollbarLoggingRoute)
@@ -377,7 +377,7 @@ class FastAPILoggingRouteTest(BaseTest):
 
     @mock.patch('logging.Logger.error')
     def test_should_disable_loading_route_handler_for_unknown_app(self, mock_log):
-        import rollbar.contrib.fastapi
+        from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
 
         class UnkownRouter:
             route_class = None
@@ -389,7 +389,7 @@ class FastAPILoggingRouteTest(BaseTest):
         app = UnknownApp()
         old_route_class = app.router.route_class
 
-        new_route_class = rollbar.contrib.fastapi.add_to(app)
+        new_route_class = rollbar_add_to(app)
 
         self.assertIsNone(new_route_class)
         self.assertEqual(app.router.route_class, old_route_class)
@@ -399,7 +399,7 @@ class FastAPILoggingRouteTest(BaseTest):
 
     @mock.patch('logging.Logger.error')
     def test_should_disable_loading_route_handler_for_unknown_router(self, mock_log):
-        import rollbar.contrib.fastapi
+        from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
 
         class UnknownRouter:
             routes = []
@@ -408,7 +408,7 @@ class FastAPILoggingRouteTest(BaseTest):
         router = UnknownRouter()
         old_route_class = router.route_class
 
-        new_route_class = rollbar.contrib.fastapi.add_to(router)
+        new_route_class = rollbar_add_to(router)
 
         self.assertIsNone(new_route_class)
         self.assertEqual(router.route_class, old_route_class)
@@ -419,7 +419,7 @@ class FastAPILoggingRouteTest(BaseTest):
     @mock.patch('logging.Logger.warning')
     def test_should_warn_if_middleware_in_use(self, mock_log):
         from fastapi import FastAPI
-        import rollbar.contrib.fastapi
+        from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
         from rollbar.contrib.fastapi import FastAPIMiddleware
         from rollbar.contrib.starlette import StarletteMiddleware
         from rollbar.contrib.asgi import ASGIMiddleware
@@ -428,7 +428,7 @@ class FastAPILoggingRouteTest(BaseTest):
             app = FastAPI()
             app.add_middleware(middleware)
 
-            rollbar.contrib.fastapi.add_to(app)
+            rollbar_add_to(app)
 
             mock_log.assert_called_with(
                 f'Detected installed middlewares {[middleware]}'
@@ -440,10 +440,10 @@ class FastAPILoggingRouteTest(BaseTest):
         from typing import Optional, Type, Union
         from fastapi import APIRouter, FastAPI
         from fastapi.routing import APIRoute
-        import rollbar.contrib.fastapi
+        import rollbar.contrib.fastapi.routing
 
         self.assertDictEqual(
-            rollbar.contrib.fastapi.add_to.__annotations__,
+            rollbar.contrib.fastapi.routing.add_to.__annotations__,
             {
                 'app_or_router': Union[FastAPI, APIRouter],
                 'return': Optional[Type[APIRoute]],
@@ -457,7 +457,7 @@ class FastAPILoggingRouteTest(BaseTest):
     def test_should_store_current_request(self, store_current_request):
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
-        from rollbar.contrib.fastapi import add_to as rollbar_add_to
+        from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
 
         expected_scope = {
             'client': ['testclient', 50000],
@@ -499,8 +499,8 @@ class FastAPILoggingRouteTest(BaseTest):
     def test_should_return_current_request(self):
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
-        from rollbar.contrib.fastapi import add_to as rollbar_add_to
         from rollbar.contrib.fastapi import get_current_request
+        from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
 
         app = FastAPI()
         rollbar_add_to(app)
@@ -520,8 +520,8 @@ class FastAPILoggingRouteTest(BaseTest):
     def test_should_not_return_current_request_for_older_python(self):
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
-        from rollbar.contrib.fastapi import add_to as rollbar_add_to
         from rollbar.contrib.fastapi import get_current_request
+        from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
 
         app = FastAPI()
         rollbar_add_to(app)

@@ -26,7 +26,7 @@ class StarletteMiddlewareTest(BaseTest):
         from starlette.middleware import Middleware
         from starlette.routing import Route
         from starlette.testclient import TestClient
-        from rollbar.contrib.starlette import StarletteMiddleware
+        from rollbar.contrib.starlette.middleware import StarletteMiddleware
 
         async def root(request):
             1 / 0
@@ -56,7 +56,7 @@ class StarletteMiddlewareTest(BaseTest):
         from starlette.requests import Request
         from starlette.routing import Route
         from starlette.testclient import TestClient
-        from rollbar.contrib.starlette import StarletteMiddleware
+        from rollbar.contrib.starlette.middleware import StarletteMiddleware
 
         async def root(request):
             1 / 0
@@ -83,7 +83,7 @@ class StarletteMiddlewareTest(BaseTest):
         from starlette.requests import Request
         from starlette.routing import Route
         from starlette.testclient import TestClient
-        from rollbar.contrib.starlette import StarletteMiddleware
+        from rollbar.contrib.starlette.middleware import StarletteMiddleware
 
         async def root(request):
             1 / 0
@@ -139,7 +139,7 @@ class StarletteMiddlewareTest(BaseTest):
         from starlette.responses import PlainTextResponse
         from starlette.routing import Route
         from starlette.testclient import TestClient
-        from rollbar.contrib.starlette import StarletteMiddleware
+        from rollbar.contrib.starlette.middleware import StarletteMiddleware
 
         expected_scope = {
             'client': ['testclient', 50000],
@@ -184,7 +184,7 @@ class StarletteMiddlewareTest(BaseTest):
         from starlette.responses import PlainTextResponse
         from starlette.routing import Route
         from starlette.testclient import TestClient
-        from rollbar.contrib.starlette import StarletteMiddleware
+        from rollbar.contrib.starlette.middleware import StarletteMiddleware
         from rollbar.contrib.starlette import get_current_request
 
         async def root(request):
@@ -208,7 +208,7 @@ class StarletteMiddlewareTest(BaseTest):
         from starlette.responses import PlainTextResponse
         from starlette.routing import Route
         from starlette.testclient import TestClient
-        from rollbar.contrib.starlette import StarletteMiddleware
+        from rollbar.contrib.starlette.middleware import StarletteMiddleware
         from rollbar.contrib.starlette import get_current_request
 
         async def root(request):
