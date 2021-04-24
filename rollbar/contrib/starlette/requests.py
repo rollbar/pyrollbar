@@ -48,3 +48,10 @@ def store_current_request(
 
     _current_request.set(request)
     return request
+
+
+def hasuser(request: Request) -> bool:
+    try:
+        return hasattr(request, 'user')
+    except AssertionError:
+        return False

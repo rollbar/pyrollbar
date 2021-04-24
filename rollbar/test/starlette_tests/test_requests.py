@@ -74,3 +74,14 @@ class StarletteRequestTest(BaseTest):
         request = store_current_request(scope, receive)
 
         self.assertEqual(request, expected_request)
+
+    def test_hasuser(self):
+        from starlette.requests import Request
+        from rollbar.contrib.starlette.requests import hasuser
+
+        request = Request({'type': 'http'}, {})
+        self.assertFalse(hasuser(request))
+
+        request = Request({'type': 'http', 'user': 'testuser'}, {})
+        self.assertTrue(hasuser(request))
+        self.assertEqual(request.user, 'testuser')

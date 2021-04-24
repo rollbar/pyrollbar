@@ -929,8 +929,12 @@ def _build_person_data(request):
         else:
             return None
 
-    # TODO: Check if AuthenticationMiddlawre installed for Startlette
-    if not StarletteRequest and hasattr(request, 'user'):
+    if StarletteRequest:
+        from rollbar.contrib.starlette.requests import hasuser
+    else:
+        hasuser = lambda request: False
+
+    if hasuser(request) and hasattr(request, 'user'):
         user_prop = request.user
         user = user_prop() if callable(user_prop) else user_prop
         if not user:
