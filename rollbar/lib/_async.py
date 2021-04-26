@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 import httpx
@@ -7,6 +8,41 @@ from rollbar import DEFAULT_TIMEOUT, SETTINGS
 from rollbar.lib import transport, urljoin
 
 log = logging.getLogger(__name__)
+
+async def report_exc_info(
+    exc_info=None, request=None, extra_data=None, payload_data=None, level=None, **kw
+):
+    try:
+        return await asyncio.create_task(
+            _report_exc_info(exc_info, request, extra_data, payload_data, level, **kw)
+        )
+    except Exception as e:
+        log.exception("Exception while reporting exc_info to Rollbar. %r", e)
+
+
+async def _report_exc_info(
+    exc_info=None, request=None, extra_data=None, payload_data=None, level=None, **kw
+):
+    return rollbar.report_exc_info(
+        exc_info, request, extra_data, payload_data, level, **kw
+    )
+
+
+async def report_message(
+    message, level="error", request=None, extra_data=None, payload_data=None, **kw
+):
+    try:
+        return await asyncio.create_task(
+            _report_message(message, level, request, extra_data, payload_data)
+        )
+    except Exception as e:
+        log.exception("Exception while reporting message to Rollbar. %r", e)
+
+
+async def _report_message(
+    message, level="error", request=None, extra_data=None, payload_data=None, **kw
+):
+    return rollbar.report_message(message, level, request, extra_data, payload_data)
 
 
 async def _post_api_httpx(path, payload_str, access_token=None):
