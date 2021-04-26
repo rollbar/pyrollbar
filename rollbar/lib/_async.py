@@ -39,7 +39,7 @@ async def _report_exc_info(
 
 
 async def report_message(
-    message, level="error", request=None, extra_data=None, payload_data=None, **kw
+    message, level='error', request=None, extra_data=None, payload_data=None, **kw
 ):
     with async_handler():
         try:
@@ -51,7 +51,7 @@ async def report_message(
 
 
 async def _report_message(
-    message, level="error", request=None, extra_data=None, payload_data=None, **kw
+    message, level='error', request=None, extra_data=None, payload_data=None, **kw
 ):
     return rollbar.report_message(message, level, request, extra_data, payload_data)
 
