@@ -279,7 +279,7 @@ SETTINGS = {
     'root': None,  # root path to your code
     'branch': None,  # git branch name
     'code_version': None,
-    'handler': 'thread',  # 'blocking', 'thread', 'agent', 'tornado', 'gae' or 'twisted'
+    'handler': 'default',  # 'blocking', 'thread' (default), 'agent', 'tornado', 'gae' or 'twisted'
     'endpoint': DEFAULT_ENDPOINT,
     'timeout': DEFAULT_TIMEOUT,
     'agent.log_file': 'log.rollbar',
@@ -564,11 +564,11 @@ def send_payload(payload, access_token):
             log.error('Unable to find async handler')
             return
         _send_payload_async(payload_str, access_token)
+    elif handler == 'thread':
+        _send_payload_thread(payload_str, access_token)
     else:
         # default to 'thread'
-        thread = threading.Thread(target=_send_payload, args=(payload_str, access_token))
-        _threads.put(thread)
-        thread.start()
+        _send_payload_thread(payload_str, access_token)
 
 
 def search_items(title, return_fields=None, access_token=None, endpoint=None, **search_fields):
@@ -1471,6 +1471,12 @@ def _send_payload(payload_str, access_token):
         _threads.task_done()
     except queue.Empty:
         pass
+
+
+def _send_payload_thread(payload_str, access_token):
+    thread = threading.Thread(target=_send_payload, args=(payload_str, access_token))
+    _threads.put(thread)
+    thread.start()
 
 
 def _send_payload_appengine(payload_str, access_token):
