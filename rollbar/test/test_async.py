@@ -113,3 +113,99 @@ class AsyncLibTest(BaseTest):
         rollbar_report_message.assert_called_with(
             'message', 'level', 'request', 'extra_data', 'payload_data'
         )
+
+    @mock.patch('logging.Logger.warn')
+    @mock.patch('rollbar._send_payload_async')
+    def test_report_exc_info_should_use_async_handler_regardless_of_settings(
+        self, mock__send_payload_async, mock_log
+    ):
+        import rollbar
+        from rollbar.lib._async import report_exc_info
+        from rollbar.test.async_helper import run
+
+        rollbar.SETTINGS['handler'] = 'default'
+        self.assertEqual(rollbar.SETTINGS['handler'], 'default')
+
+        run(report_exc_info())
+
+        self.assertEqual(rollbar.SETTINGS['handler'], 'default')
+        mock__send_payload_async.assert_called_once()
+        mock_log.assert_called_with(
+            'Running coroutines requires async compatible handler. Switching to default async handler.'
+        )
+
+    @mock.patch('logging.Logger.warn')
+    @mock.patch('rollbar._send_payload_async')
+    def test_report_message_should_use_async_handler_regardless_of_settings(
+        self, mock__send_payload_async, mock_log
+    ):
+        import rollbar
+        from rollbar.lib._async import report_message
+        from rollbar.test.async_helper import run
+
+        rollbar.SETTINGS['handler'] = 'default'
+        self.assertEqual(rollbar.SETTINGS['handler'], 'default')
+
+        run(report_message('foo'))
+
+        self.assertEqual(rollbar.SETTINGS['handler'], 'default')
+        mock__send_payload_async.assert_called_once()
+        mock_log.assert_called_with(
+            'Running coroutines requires async compatible handler. Switching to default async handler.'
+        )
+
+    @mock.patch('rollbar._send_payload_async')
+    def test_report_exc_info_should_allow_async_handler(self, mock__send_payload_async):
+        import rollbar
+        from rollbar.lib._async import report_exc_info
+        from rollbar.test.async_helper import run
+
+        rollbar.SETTINGS['handler'] = 'async'
+        self.assertEqual(rollbar.SETTINGS['handler'], 'async')
+
+        run(report_exc_info())
+
+        self.assertEqual(rollbar.SETTINGS['handler'], 'async')
+        mock__send_payload_async.assert_called_once()
+
+    @mock.patch('rollbar._send_payload_async')
+    def test_report_message_should_allow_async_handler(self, mock__send_payload_async):
+        import rollbar
+        from rollbar.lib._async import report_message
+        from rollbar.test.async_helper import run
+
+        rollbar.SETTINGS['handler'] = 'async'
+        self.assertEqual(rollbar.SETTINGS['handler'], 'async')
+
+        run(report_message('foo'))
+
+        self.assertEqual(rollbar.SETTINGS['handler'], 'async')
+        mock__send_payload_async.assert_called_once()
+
+    @mock.patch('rollbar._send_payload_httpx')
+    def test_report_exc_info_should_allow_httpx_handler(self, mock__send_payload_httpx):
+        import rollbar
+        from rollbar.lib._async import report_exc_info
+        from rollbar.test.async_helper import run
+
+        rollbar.SETTINGS['handler'] = 'httpx'
+        self.assertEqual(rollbar.SETTINGS['handler'], 'httpx')
+
+        run(report_exc_info())
+
+        self.assertEqual(rollbar.SETTINGS['handler'], 'httpx')
+        mock__send_payload_httpx.assert_called_once()
+
+    @mock.patch('rollbar._send_payload_httpx')
+    def test_report_message_should_allow_httpx_handler(self, mock__send_payload_httpx):
+        import rollbar
+        from rollbar.lib._async import report_message
+        from rollbar.test.async_helper import run
+
+        rollbar.SETTINGS['handler'] = 'httpx'
+        self.assertEqual(rollbar.SETTINGS['handler'], 'httpx')
+
+        run(report_message('foo', 'error'))
+
+        self.assertEqual(rollbar.SETTINGS['handler'], 'httpx')
+        mock__send_payload_httpx.assert_called_once()
