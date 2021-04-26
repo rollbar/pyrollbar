@@ -1,3 +1,4 @@
+import copy
 import sys
 
 try:
@@ -15,8 +16,11 @@ ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
 
 @unittest2.skipUnless(ALLOWED_PYTHON_VERSION, 'Async support requires Python3.6+')
 class AsyncLibTest(BaseTest):
+    default_settings = copy.deepcopy(rollbar.SETTINGS)
+
     def setUp(self):
         self.access_token = 'aaaabbbbccccddddeeeeffff00001111'
+        rollbar.SETTINGS = copy.deepcopy(self.default_settings)
         rollbar._initialized = False
         rollbar.init(self.access_token, handler='async')
 
