@@ -2,6 +2,7 @@ import functools
 import logging
 
 import fastapi
+from fastapi import APIRouter, FastAPI
 
 from rollbar.contrib.fastapi import FastAPIMiddleware
 from rollbar.contrib.starlette import StarletteMiddleware
@@ -48,3 +49,19 @@ def get_installed_middlewares(app):
         for middleware in app.user_middleware
         if middleware.cls in candidates
     ]
+
+
+def has_bare_routing(app_or_router):
+    expected_app_routes = 4
+    expected_router_routes = 0
+
+    if (
+        isinstance(app_or_router, FastAPI)
+        and expected_app_routes != len(app_or_router.routes)
+    ) or (
+        isinstance(app_or_router, APIRouter)
+        and expected_router_routes != len(app_or_router.routes)
+    ):
+        return False
+
+    return True
