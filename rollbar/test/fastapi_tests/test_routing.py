@@ -151,6 +151,114 @@ class FastAPILoggingRouteTest(BaseTest):
             },
         )
 
+    @mock.patch('rollbar.lib._async.report_exc_info')
+    @mock.patch('rollbar.report_exc_info')
+    def test_should_use_async_report_exc_info_if_default_handler(
+        self, sync_report_exc_info, async_report_exc_info
+    ):
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+        import rollbar
+        from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
+
+        rollbar.SETTINGS['handler'] = 'default'
+
+        app = FastAPI()
+        rollbar_add_to(app)
+
+        @app.get('/')
+        async def root():
+            1 / 0
+
+        client = TestClient(app)
+        with self.assertRaises(ZeroDivisionError):
+            client.get('/')
+
+        async_report_exc_info.assert_called_once()
+        sync_report_exc_info.assert_not_called()
+
+    @mock.patch('rollbar.lib._async.report_exc_info')
+    @mock.patch('rollbar.report_exc_info')
+    def test_should_use_async_report_exc_info_if_any_async_handler(
+        self, sync_report_exc_info, async_report_exc_info
+    ):
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+        import rollbar
+        from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
+
+        rollbar.SETTINGS['handler'] = 'httpx'
+
+        app = FastAPI()
+        rollbar_add_to(app)
+
+        @app.get('/')
+        async def root():
+            1 / 0
+
+        client = TestClient(app)
+        with self.assertRaises(ZeroDivisionError):
+            client.get('/')
+
+        async_report_exc_info.assert_called_once()
+        sync_report_exc_info.assert_not_called()
+
+    @mock.patch('rollbar.lib._async.report_exc_info')
+    @mock.patch('rollbar.report_exc_info')
+    def test_should_use_sync_report_exc_info_if_non_async_handlers(
+        self, sync_report_exc_info, async_report_exc_info
+    ):
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+        import rollbar
+        from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
+
+        rollbar.SETTINGS['handler'] = 'threading'
+
+        app = FastAPI()
+        rollbar_add_to(app)
+
+        @app.get('/')
+        async def root():
+            1 / 0
+
+        client = TestClient(app)
+        with self.assertRaises(ZeroDivisionError):
+            client.get('/')
+
+        sync_report_exc_info.assert_called_once()
+        async_report_exc_info.assert_not_called()
+
+    @mock.patch('logging.Logger.warn')
+    @mock.patch('rollbar.report_exc_info')
+    def test_should_warn_if_using_sync_report_exc_info(
+        self, sync_report_exc_info, mock_log
+    ):
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+        import rollbar
+        from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
+
+        rollbar.SETTINGS['handler'] = 'threading'
+
+        app = FastAPI()
+        rollbar_add_to(app)
+
+        @app.get('/')
+        async def root():
+            1 / 0
+
+        client = TestClient(app)
+        with self.assertRaises(ZeroDivisionError):
+            client.get('/')
+
+        sync_report_exc_info.assert_called_once()
+
+        mock_log.assert_called_once_with(
+            'Detected threading handler while reporting via RollbarLoggingRoute. '
+            'Recommended handler settings: default or async.'
+        )
+
     def test_should_enable_loading_route_handler_if_fastapi_version_is_sufficient(self):
         from fastapi import FastAPI
         from fastapi.routing import APIRoute

@@ -12,6 +12,7 @@ from rollbar.contrib.fastapi.utils import fastapi_min_version
 from rollbar.contrib.fastapi.utils import get_installed_middlewares
 from rollbar.contrib.fastapi.utils import has_bare_routing
 from rollbar.contrib.starlette.requests import store_current_request
+from rollbar.lib import _async
 
 log = logging.getLogger(__name__)
 
@@ -56,7 +57,21 @@ class RollbarLoggingRoute(APIRoute):
             except Exception:
                 await request.body()
                 exc_info = sys.exc_info()
-                rollbar.report_exc_info(exc_info, request)
+
+                current_handler = rollbar.SETTINGS.get('handler')
+                if (
+                    current_handler in _async.ALLOWED_HANDLERS
+                    or current_handler == 'default'
+                ):
+                    await _async.report_exc_info(exc_info, request)
+                else:
+                    log.warn(
+                        f'Detected {current_handler} handler while'
+                        f' reporting via {self.__class__.__name__}.'
+                        ' Recommended handler settings: default or async.'
+                    )
+
+                    rollbar.report_exc_info(exc_info, request)
                 raise
 
         return rollbar_route_handler
@@ -64,6 +79,7 @@ class RollbarLoggingRoute(APIRoute):
 
 def _add_to_app(app):
     app.router.route_class = RollbarLoggingRoute
+
 
 def _add_to_router(router):
     router.route_class = RollbarLoggingRoute
