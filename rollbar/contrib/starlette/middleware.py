@@ -7,7 +7,7 @@ from starlette.types import Receive, Scope, Send
 import rollbar
 from rollbar.contrib.asgi import ASGIMiddleware
 from rollbar.contrib.starlette.requests import store_current_request
-from rollbar.lib import _async
+from rollbar.lib._async import RollbarAsyncError, try_report
 
 log = logging.getLogger(__name__)
 
@@ -28,17 +28,14 @@ class StarletteMiddleware(ASGIMiddleware):
 
                 exc_info = sys.exc_info()
 
-                current_handler = rollbar.SETTINGS.get('handler')
-                if (
-                    current_handler in _async.ALLOWED_HANDLERS
-                    or current_handler == 'default'
-                ):
-                    await _async.report_exc_info(exc_info, request)
-                else:
-                    log.warn(f'Detected {current_handler} handler while'
-                             f' reporting via {self.__class__.__name__}.'
-                             ' Recommended handler settings: default or async.')
+                try:
+                    await try_report(exc_info, request)
+                except RollbarAsyncError:
+                    log.warn(
+                        f'Detected {rollbar.SETTINGS["handler"]} handler while'
+                        f' reporting via {self.__class__.__name__}.'
+                        ' Recommended handler settings: default or async.'
+                    )
 
                     rollbar.report_exc_info(exc_info, request)
-
             raise

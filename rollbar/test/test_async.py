@@ -248,3 +248,29 @@ class AsyncLibTest(BaseTest):
             self.assertEqual(rollbar.SETTINGS['handler'], handler)
 
         self.assertEqual(rollbar.SETTINGS['handler'], 'httpx')
+
+    @mock.patch('rollbar.lib._async.report_exc_info')
+    def test_should_try_report_with_async_handler(self, async_report_exc_info):
+        import rollbar
+        from rollbar.lib._async import try_report
+        from rollbar.test.async_helper import run
+
+        self.assertEqual(rollbar.SETTINGS['handler'], 'async')
+
+        run(try_report())
+
+        async_report_exc_info.assert_called_once()
+
+    @mock.patch('rollbar.lib._async.report_exc_info')
+    def test_should_not_try_report_with_async_handler_if_non_async_handler(self, async_report_exc_info):
+        import rollbar
+        from rollbar.lib._async import RollbarAsyncError, try_report
+        from rollbar.test.async_helper import run
+
+        rollbar.SETTINGS['handler'] = 'threading'
+        self.assertEqual(rollbar.SETTINGS['handler'], 'threading')
+
+        with self.assertRaises(RollbarAsyncError):
+            run(try_report())
+
+        async_report_exc_info.assert_not_called()
