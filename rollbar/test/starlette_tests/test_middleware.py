@@ -125,6 +125,122 @@ class StarletteMiddlewareTest(BaseTest):
             },
         )
 
+    @mock.patch('rollbar.lib._async.report_exc_info')
+    @mock.patch('rollbar.report_exc_info')
+    def test_should_use_async_report_exc_info_if_default_handler(
+        self, sync_report_exc_info, async_report_exc_info
+    ):
+        from starlette.applications import Starlette
+        from starlette.middleware import Middleware
+        from starlette.routing import Route
+        from starlette.testclient import TestClient
+        import rollbar
+        from rollbar.contrib.starlette.middleware import StarletteMiddleware
+
+        rollbar.SETTINGS['handler'] = 'default'
+
+        async def root(request):
+            1 / 0
+
+        routes = [Route('/', root)]
+        middleware = [Middleware(StarletteMiddleware)]
+        app = Starlette(routes=routes, middleware=middleware)
+
+        client = TestClient(app)
+        with self.assertRaises(ZeroDivisionError):
+            client.get('/')
+
+        async_report_exc_info.assert_called_once()
+        sync_report_exc_info.assert_not_called()
+
+    @mock.patch('rollbar.lib._async.report_exc_info')
+    @mock.patch('rollbar.report_exc_info')
+    def test_should_use_async_report_exc_info_if_any_async_handler(
+        self, sync_report_exc_info, async_report_exc_info
+    ):
+        from starlette.applications import Starlette
+        from starlette.middleware import Middleware
+        from starlette.routing import Route
+        from starlette.testclient import TestClient
+        import rollbar
+        from rollbar.contrib.starlette.middleware import StarletteMiddleware
+
+        rollbar.SETTINGS['handler'] = 'httpx'
+
+        async def root(request):
+            1 / 0
+
+        routes = [Route('/', root)]
+        middleware = [Middleware(StarletteMiddleware)]
+        app = Starlette(routes=routes, middleware=middleware)
+
+        client = TestClient(app)
+        with self.assertRaises(ZeroDivisionError):
+            client.get('/')
+
+        async_report_exc_info.assert_called_once()
+        sync_report_exc_info.assert_not_called()
+
+    @mock.patch('rollbar.lib._async.report_exc_info')
+    @mock.patch('rollbar.report_exc_info')
+    def test_should_use_sync_report_exc_info_if_non_async_handlers(
+        self, sync_report_exc_info, async_report_exc_info
+    ):
+        from starlette.applications import Starlette
+        from starlette.middleware import Middleware
+        from starlette.routing import Route
+        from starlette.testclient import TestClient
+        import rollbar
+        from rollbar.contrib.starlette.middleware import StarletteMiddleware
+
+        rollbar.SETTINGS['handler'] = 'threading'
+
+        async def root(request):
+            1 / 0
+
+        routes = [Route('/', root)]
+        middleware = [Middleware(StarletteMiddleware)]
+        app = Starlette(routes=routes, middleware=middleware)
+
+        client = TestClient(app)
+        with self.assertRaises(ZeroDivisionError):
+            client.get('/')
+
+        sync_report_exc_info.assert_called_once()
+        async_report_exc_info.assert_not_called()
+
+    @mock.patch('logging.Logger.warn')
+    @mock.patch('rollbar.report_exc_info')
+    def test_should_warn_if_using_sync_report_exc_info(
+        self, sync_report_exc_info, mock_log
+    ):
+        from starlette.applications import Starlette
+        from starlette.middleware import Middleware
+        from starlette.routing import Route
+        from starlette.testclient import TestClient
+        import rollbar
+        from rollbar.contrib.starlette.middleware import StarletteMiddleware
+
+        rollbar.SETTINGS['handler'] = 'threading'
+
+        async def root(request):
+            1 / 0
+
+        routes = [Route('/', root)]
+        middleware = [Middleware(StarletteMiddleware)]
+        app = Starlette(routes=routes, middleware=middleware)
+
+        client = TestClient(app)
+        with self.assertRaises(ZeroDivisionError):
+            client.get('/')
+
+        sync_report_exc_info.assert_called_once()
+
+        mock_log.assert_called_with(
+            'Detected threading handler while reporting via StarletteMiddleware. '
+            'Recommended handler settings: default or async.'
+        )
+
     def test_should_support_type_hints(self):
         from starlette.types import Receive, Scope, Send
 
