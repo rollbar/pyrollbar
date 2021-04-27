@@ -1,6 +1,7 @@
 import asyncio
 import contextlib
 import logging
+import sys
 
 import httpx
 
@@ -118,3 +119,10 @@ async def try_report(
     return await report_exc_info(
         exc_info, request, extra_data, payload_data, level, **kw
     )
+
+
+def call_later(coro):
+    if sys.version_info < (3, 7):
+        return asyncio.ensure_future(coro)
+
+    return asyncio.create_task(coro)
