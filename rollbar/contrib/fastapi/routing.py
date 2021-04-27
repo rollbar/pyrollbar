@@ -10,6 +10,7 @@ from fastapi.routing import APIRoute
 import rollbar
 from rollbar.contrib.fastapi.utils import fastapi_min_version
 from rollbar.contrib.fastapi.utils import get_installed_middlewares
+from rollbar.contrib.fastapi.utils import has_bare_routing
 from rollbar.contrib.starlette.requests import store_current_request
 
 log = logging.getLogger(__name__)
@@ -18,12 +19,7 @@ log = logging.getLogger(__name__)
 @fastapi_min_version('0.41.0')
 def add_to(app_or_router: Union[FastAPI, APIRouter]) -> Optional[Type[APIRoute]]:
     # Route handler must be added before adding user routes
-    expected_middlewares_in_app = 4
-    expected_middlewares_in_router = 0
-    if len(app_or_router.routes) not in (
-        expected_middlewares_in_app,
-        expected_middlewares_in_router,
-    ):
+    if not has_bare_routing(app_or_router):
         log.error(
             'RollbarLoggingRoute must be added to a bare router'
             ' (before adding routes). See docs for more details.'
@@ -39,9 +35,9 @@ def add_to(app_or_router: Union[FastAPI, APIRouter]) -> Optional[Type[APIRoute]]
         )
 
     if isinstance(app_or_router, FastAPI):
-        app_or_router.router.route_class = RollbarLoggingRoute
+        _add_to_app(app_or_router)
     elif isinstance(app_or_router, APIRouter):
-        app_or_router.route_class = RollbarLoggingRoute
+        _add_to_router(app_or_router)
     else:
         log.error('Error while adding RollbarLoggingRoute to application')
         return None
@@ -64,3 +60,10 @@ class RollbarLoggingRoute(APIRoute):
                 raise
 
         return rollbar_route_handler
+
+
+def _add_to_app(app):
+    app.router.route_class = RollbarLoggingRoute
+
+def _add_to_router(router):
+    router.route_class = RollbarLoggingRoute
