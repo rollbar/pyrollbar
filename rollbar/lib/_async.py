@@ -98,7 +98,7 @@ def async_handler():
         rollbar.SETTINGS['handler'] = 'async'
 
     try:
-        yield
+        yield rollbar.SETTINGS['handler']
     finally:
         if original_handler is not None:
             rollbar.SETTINGS['handler'] = original_handler

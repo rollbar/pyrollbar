@@ -209,3 +209,42 @@ class AsyncLibTest(BaseTest):
 
         self.assertEqual(rollbar.SETTINGS['handler'], 'httpx')
         mock__send_payload_httpx.assert_called_once()
+
+    def test_ctx_manager_should_temporary_set_async_handler(self):
+        import rollbar
+        from rollbar.lib._async import async_handler
+
+        rollbar.SETTINGS['handler'] = 'threading'
+        self.assertEqual(rollbar.SETTINGS['handler'], 'threading')
+
+        with async_handler() as handler:
+            self.assertEqual(handler, 'async')
+            self.assertEqual(rollbar.SETTINGS['handler'], handler)
+
+        self.assertEqual(rollbar.SETTINGS['handler'], 'threading')
+
+    def test_ctx_manager_should_not_substitute_async_handler(self):
+        import rollbar
+        from rollbar.lib._async import async_handler
+
+        rollbar.SETTINGS['handler'] = 'async'
+        self.assertEqual(rollbar.SETTINGS['handler'], 'async')
+
+        with async_handler() as handler:
+            self.assertEqual(handler, 'async')
+            self.assertEqual(rollbar.SETTINGS['handler'], handler)
+
+        self.assertEqual(rollbar.SETTINGS['handler'], 'async')
+
+    def test_ctx_manager_should_not_substitute_httpx_handler(self):
+        import rollbar
+        from rollbar.lib._async import async_handler
+
+        rollbar.SETTINGS['handler'] = 'httpx'
+        self.assertEqual(rollbar.SETTINGS['handler'], 'httpx')
+
+        with async_handler() as handler:
+            self.assertEqual(handler, 'httpx')
+            self.assertEqual(rollbar.SETTINGS['handler'], handler)
+
+        self.assertEqual(rollbar.SETTINGS['handler'], 'httpx')
