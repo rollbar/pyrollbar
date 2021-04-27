@@ -213,7 +213,7 @@ class FastAPILoggingRouteTest(BaseTest):
         self.assertEqual(len(app.routes), 5)
         self.assertIsNone(new_route_class)
         self.assertEqual(app.router.route_class, old_route_class)
-        mock_log.assert_called_with(
+        mock_log.assert_called_once_with(
             'RollbarLoggingRoute must be added to a bare router'
             ' (before adding routes). See docs for more details.'
         )
@@ -281,7 +281,7 @@ class FastAPILoggingRouteTest(BaseTest):
         self.assertIsNone(new_route_class)
         self.assertEqual(app.router.route_class, old_app_route_class)
         self.assertEqual(router.route_class, old_router_route_class)
-        mock_log.assert_called_with(
+        mock_log.assert_called_once_with(
             'RollbarLoggingRoute must be added to a bare router'
             ' (before adding routes). See docs for more details.'
         )
@@ -393,7 +393,7 @@ class FastAPILoggingRouteTest(BaseTest):
 
         self.assertIsNone(new_route_class)
         self.assertEqual(app.router.route_class, old_route_class)
-        mock_log.assert_called_with(
+        mock_log.assert_called_once_with(
             'Error while adding RollbarLoggingRoute to application'
         )
 
@@ -412,12 +412,11 @@ class FastAPILoggingRouteTest(BaseTest):
 
         self.assertIsNone(new_route_class)
         self.assertEqual(router.route_class, old_route_class)
-        mock_log.assert_called_with(
+        mock_log.assert_called_once_with(
             'Error while adding RollbarLoggingRoute to application'
         )
 
-    @mock.patch('logging.Logger.warning')
-    def test_should_warn_if_middleware_in_use(self, mock_log):
+    def test_should_warn_if_middleware_in_use(self):
         from fastapi import FastAPI
         from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
         from rollbar.contrib.fastapi import FastAPIMiddleware
@@ -425,16 +424,17 @@ class FastAPILoggingRouteTest(BaseTest):
         from rollbar.contrib.asgi import ASGIMiddleware
 
         for middleware in (FastAPIMiddleware, StarletteMiddleware, ASGIMiddleware):
-            app = FastAPI()
-            app.add_middleware(middleware)
+            with mock.patch('logging.Logger.warning') as mock_log:
+                app = FastAPI()
+                app.add_middleware(middleware)
 
-            rollbar_add_to(app)
+                rollbar_add_to(app)
 
-            mock_log.assert_called_with(
-                f'Detected installed middlewares {[middleware]}'
-                ' while loading Rollbar route handler.'
-                ' This can cause duplicated occurrences.'
-            )
+                mock_log.assert_called_once_with(
+                    f'Detected installed middlewares {[middleware]}'
+                    ' while loading Rollbar route handler.'
+                    ' This can cause duplicated occurrences.'
+                )
 
     def test_should_support_type_hints(self):
         from typing import Optional, Type, Union

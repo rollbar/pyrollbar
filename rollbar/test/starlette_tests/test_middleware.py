@@ -236,7 +236,7 @@ class StarletteMiddlewareTest(BaseTest):
 
         sync_report_exc_info.assert_called_once()
 
-        mock_log.assert_called_with(
+        mock_log.assert_called_once_with(
             'Detected threading handler while reporting via StarletteMiddleware. '
             'Recommended handler settings: default or async.'
         )

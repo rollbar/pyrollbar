@@ -99,7 +99,7 @@ class AsyncLibTest(BaseTest):
                 )
             )
 
-        rollbar_report_exc_info.assert_called_with(
+        rollbar_report_exc_info.assert_called_once_with(
             'exc_info', 'request', 'extra_data', 'payload_data', 'level_data', foo='bar'
         )
 
@@ -110,7 +110,7 @@ class AsyncLibTest(BaseTest):
 
         run(report_message('message', 'level', 'request', 'extra_data', 'payload_data'))
 
-        rollbar_report_message.assert_called_with(
+        rollbar_report_message.assert_called_once_with(
             'message', 'level', 'request', 'extra_data', 'payload_data'
         )
 
@@ -130,7 +130,7 @@ class AsyncLibTest(BaseTest):
 
         self.assertEqual(rollbar.SETTINGS['handler'], 'default')
         mock__send_payload_async.assert_called_once()
-        mock_log.assert_called_with(
+        mock_log.assert_called_once_with(
             'Running coroutines requires async compatible handler. Switching to default async handler.'
         )
 
@@ -150,7 +150,7 @@ class AsyncLibTest(BaseTest):
 
         self.assertEqual(rollbar.SETTINGS['handler'], 'default')
         mock__send_payload_async.assert_called_once()
-        mock_log.assert_called_with(
+        mock_log.assert_called_once_with(
             'Running coroutines requires async compatible handler. Switching to default async handler.'
         )
 
