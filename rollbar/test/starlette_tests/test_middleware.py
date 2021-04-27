@@ -307,8 +307,10 @@ class StarletteMiddlewareTest(BaseTest):
         from rollbar.contrib.starlette.middleware import StarletteMiddleware
         from rollbar.contrib.starlette import get_current_request
 
-        async def root(request):
-            self.assertIsNotNone(get_current_request())
+        async def root(original_request):
+            request = get_current_request()
+
+            self.assertEqual(request, original_request)
 
             return PlainTextResponse('OK')
 
@@ -319,10 +321,9 @@ class StarletteMiddlewareTest(BaseTest):
         client = TestClient(app)
         client.get('/')
 
-    @unittest2.skipIf(
-        sys.version_info >= (3, 7), 'Global request access is supported in Python 3.7+'
-    )
-    def test_should_not_return_current_request_for_older_python(self):
+    @mock.patch('rollbar.contrib.starlette.requests.ContextVar', None)
+    @mock.patch('logging.Logger.error')
+    def test_should_not_return_current_request_for_older_python(self, mock_log):
         from starlette.applications import Starlette
         from starlette.middleware import Middleware
         from starlette.responses import PlainTextResponse
@@ -331,8 +332,14 @@ class StarletteMiddlewareTest(BaseTest):
         from rollbar.contrib.starlette.middleware import StarletteMiddleware
         from rollbar.contrib.starlette import get_current_request
 
-        async def root(request):
-            self.assertIsNone(get_current_request())
+        async def root(original_request):
+            request = get_current_request()
+
+            self.assertIsNone(request)
+            self.assertNotEqual(request, original_request)
+            mock_log.assert_called_once_with(
+                'To receive current request Python 3.7+ is required'
+            )
 
             return PlainTextResponse('OK')
 

@@ -60,7 +60,7 @@ class FastAPILoggerTest(BaseTest):
         app.add_middleware(LoggerMiddleware)
 
         @app.get('/')
-        async def read_root(request):
+        async def read_root():
             return 'ok'
 
         client = TestClient(app)
@@ -82,7 +82,7 @@ class FastAPILoggerTest(BaseTest):
         app.add_middleware(LoggerMiddleware)
 
         @app.get('/')
-        async def read_root(request):
+        async def read_root():
             request = get_current_request()
 
             self.assertIsNotNone(request)
@@ -91,12 +91,9 @@ class FastAPILoggerTest(BaseTest):
         client = TestClient(app)
         client.get('/')
 
-
-@unittest2.skipIf(
-    ALLOWED_PYTHON_VERSION, 'Global request access is supported in Python 3.7+'
-)
-class FastAPILoggerUnsupportedTest(BaseTest):
-    def test_should_not_return_current_request_for_older_python(self):
+    @mock.patch('rollbar.contrib.starlette.requests.ContextVar', None)
+    @mock.patch('logging.Logger.error')
+    def test_should_not_return_current_request_for_older_python(self, mock_log):
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
         from rollbar.contrib.fastapi.logger import LoggerMiddleware
@@ -106,10 +103,11 @@ class FastAPILoggerUnsupportedTest(BaseTest):
         app.add_middleware(LoggerMiddleware)
 
         @app.get('/')
-        async def read_root(request):
+        async def read_root():
             self.assertIsNone(get_current_request())
-
-            return 'ok'
+            mock_log.assert_called_once_with(
+                'To receive current request Python 3.7+ is required'
+            )
 
         client = TestClient(app)
         client.get('/')

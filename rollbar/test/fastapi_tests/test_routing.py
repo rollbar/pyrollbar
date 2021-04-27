@@ -591,7 +591,7 @@ class FastAPILoggingRouteTest(BaseTest):
 
         @app.get('/')
         async def read_root():
-            return {'hello': 'world'}
+            ...
 
         client = TestClient(app)
         client.get('/')
@@ -605,7 +605,7 @@ class FastAPILoggingRouteTest(BaseTest):
         sys.version_info >= (3, 7), 'Global request access is supported in Python 3.7+'
     )
     def test_should_return_current_request(self):
-        from fastapi import FastAPI
+        from fastapi import FastAPI, Request
         from fastapi.testclient import TestClient
         from rollbar.contrib.fastapi import get_current_request
         from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
@@ -614,19 +614,18 @@ class FastAPILoggingRouteTest(BaseTest):
         rollbar_add_to(app)
 
         @app.get('/')
-        async def read_root():
-            self.assertIsNotNone(get_current_request())
+        async def read_root(original_request: Request):
+            request = get_current_request()
 
-            return 'ok'
+            self.assertEqual(request, original_request)
 
         client = TestClient(app)
         client.get('/')
 
-    @unittest2.skipIf(
-        sys.version_info >= (3, 7), 'Global request access is supported in Python 3.7+'
-    )
-    def test_should_not_return_current_request_for_older_python(self):
-        from fastapi import FastAPI
+    @mock.patch('rollbar.contrib.starlette.requests.ContextVar', None)
+    @mock.patch('logging.Logger.error')
+    def test_should_not_return_current_request_for_older_python(self, mock_log):
+        from fastapi import FastAPI, Request
         from fastapi.testclient import TestClient
         from rollbar.contrib.fastapi import get_current_request
         from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
@@ -635,10 +634,14 @@ class FastAPILoggingRouteTest(BaseTest):
         rollbar_add_to(app)
 
         @app.get('/')
-        async def read_root():
-            self.assertIsNone(get_current_request())
+        async def read_root(original_request: Request):
+            request = get_current_request()
 
-            return 'ok'
+            self.assertIsNone(request)
+            self.assertNotEqual(request, original_request)
+            mock_log.assert_called_once_with(
+                'To receive current request Python 3.7+ is required'
+            )
 
         client = TestClient(app)
         client.get('/')

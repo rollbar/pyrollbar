@@ -77,7 +77,7 @@ class FastAPIMiddlewareTest(BaseTest):
     @mock.patch('rollbar._serialize_frame_data')
     @mock.patch('rollbar.send_payload')
     def test_should_send_payload_with_request_data(self, mock_send_payload, *mocks):
-        from fastapi import FastAPI, Request
+        from fastapi import FastAPI
         from fastapi.testclient import TestClient
         from rollbar.contrib.fastapi.middleware import FastAPIMiddleware
 
@@ -266,8 +266,8 @@ class FastAPIMiddlewareTest(BaseTest):
         app.add_middleware(FastAPIMiddleware)
 
         @app.get('/')
-        async def read_root(request):
-            return 'ok'
+        async def read_root():
+            ...
 
         client = TestClient(app)
         client.get('/')
@@ -281,9 +281,8 @@ class FastAPIMiddlewareTest(BaseTest):
         sys.version_info >= (3, 7), 'Global request access is supported in Python 3.7+'
     )
     def test_should_return_current_request(self):
-        from fastapi import FastAPI
+        from fastapi import FastAPI, Request
         from fastapi.testclient import TestClient
-        from starlette.requests import Request
         from rollbar.contrib.fastapi.middleware import FastAPIMiddleware
         from rollbar.contrib.fastapi import get_current_request
 
@@ -291,20 +290,18 @@ class FastAPIMiddlewareTest(BaseTest):
         app.add_middleware(FastAPIMiddleware)
 
         @app.get('/')
-        async def read_root(request):
+        async def read_root(original_request: Request):
             request = get_current_request()
 
-            self.assertIsNotNone(request)
-            self.assertIsInstance(request, Request)
+            self.assertEqual(request, original_request)
 
         client = TestClient(app)
         client.get('/')
 
-    @unittest2.skipIf(
-        sys.version_info >= (3, 7), 'Global request access is supported in Python 3.7+'
-    )
-    def test_should_not_return_current_request_for_older_python(self):
-        from fastapi import FastAPI
+    @mock.patch('rollbar.contrib.starlette.requests.ContextVar', None)
+    @mock.patch('logging.Logger.error')
+    def test_should_not_return_current_request_for_older_python(self, mock_log):
+        from fastapi import FastAPI, Request
         from fastapi.testclient import TestClient
         from rollbar.contrib.fastapi.middleware import FastAPIMiddleware
         from rollbar.contrib.fastapi import get_current_request
@@ -313,10 +310,14 @@ class FastAPIMiddlewareTest(BaseTest):
         app.add_middleware(FastAPIMiddleware)
 
         @app.get('/')
-        async def read_root(request):
-            self.assertIsNone(get_current_request())
+        async def read_root(original_request: Request):
+            request = get_current_request()
 
-            return 'ok'
+            self.assertIsNone(request)
+            self.assertNotEqual(request, original_request)
+            mock_log.assert_called_once_with(
+                'To receive current request Python 3.7+ is required'
+            )
 
         client = TestClient(app)
         client.get('/')

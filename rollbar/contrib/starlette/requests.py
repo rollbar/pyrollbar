@@ -31,6 +31,7 @@ def get_current_request() -> Optional[Request]:
 
     if request is None:
         log.error('No request available in the current context')
+        return None
 
     return request
 
@@ -42,9 +43,9 @@ def store_current_request(
         return None
 
     if receive is None:
-        request = Request(request_or_scope, receive)
-    else:
         request = request_or_scope
+    else:
+        request = Request(request_or_scope, receive)
 
     _current_request.set(request)
     return request

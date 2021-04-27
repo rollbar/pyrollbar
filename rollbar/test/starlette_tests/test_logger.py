@@ -94,12 +94,9 @@ class StarletteLoggerTest(BaseTest):
         client = TestClient(app)
         client.get('/')
 
-
-@unittest2.skipIf(
-    ALLOWED_PYTHON_VERSION, 'Global request access is supported in Python 3.7+'
-)
-class StarletteLoggerUnsupportedTest(BaseTest):
-    def test_should_not_return_current_request_for_older_python(self):
+    @mock.patch('rollbar.contrib.starlette.requests.ContextVar', None)
+    @mock.patch('logging.Logger.error')
+    def test_should_not_return_current_request_for_older_python(self, mock_log):
         from starlette.applications import Starlette
         from starlette.middleware import Middleware
         from starlette.responses import PlainTextResponse
@@ -110,6 +107,9 @@ class StarletteLoggerUnsupportedTest(BaseTest):
 
         async def root(request):
             self.assertIsNone(get_current_request())
+            mock_log.assert_called_once_with(
+                'To receive current request Python 3.7+ is required'
+            )
 
             return PlainTextResponse('OK')
 
