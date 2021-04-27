@@ -195,36 +195,6 @@ class FastAPIMiddlewareTest(BaseTest):
         sync_report_exc_info.assert_called_once()
         async_report_exc_info.assert_not_called()
 
-    @mock.patch('logging.Logger.warn')
-    @mock.patch('rollbar.report_exc_info')
-    def test_should_warn_if_using_sync_report_exc_info(
-        self, sync_report_exc_info, mock_log
-    ):
-        from fastapi import FastAPI
-        from fastapi.testclient import TestClient
-        import rollbar
-        from rollbar.contrib.fastapi import FastAPIMiddleware
-
-        rollbar.SETTINGS['handler'] = 'threading'
-
-        app = FastAPI()
-        app.add_middleware(FastAPIMiddleware)
-
-        @app.get('/')
-        async def root():
-            1 / 0
-
-        client = TestClient(app)
-        with self.assertRaises(ZeroDivisionError):
-            client.get('/')
-
-        sync_report_exc_info.assert_called_once()
-
-        mock_log.assert_called_once_with(
-            'Detected threading handler while reporting via FastAPIMiddleware. '
-            'Recommended handler settings: default or async.'
-        )
-
     def test_should_support_type_hints(self):
         from starlette.types import Receive, Scope, Send
         import rollbar.contrib.fastapi.middleware

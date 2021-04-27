@@ -31,11 +31,5 @@ class StarletteMiddleware(ASGIMiddleware):
                 try:
                     await try_report(exc_info, request)
                 except RollbarAsyncError:
-                    log.warn(
-                        f'Detected {rollbar.SETTINGS["handler"]} handler while'
-                        f' reporting via {self.__class__.__name__}.'
-                        ' Recommended handler settings: default or async.'
-                    )
-
                     rollbar.report_exc_info(exc_info, request)
             raise
