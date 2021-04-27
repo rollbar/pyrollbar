@@ -1605,11 +1605,10 @@ def _post_api_twisted(path, payload_str, access_token=None):
     d.addCallback(post_cb)
 
 def _send_payload_httpx(payload_str, access_token):
-    import asyncio
-    from rollbar.lib._async import _post_api_httpx
+    from rollbar.lib._async import call_later, _post_api_httpx
     try:
-        asyncio.create_task(_post_api_httpx('item/', payload_str,
-                                            access_token=access_token))
+        call_later(_post_api_httpx('item/', payload_str,
+                                   access_token=access_token))
     except Exception as e:
         log.exception('Exception while posting item %r', e)
 

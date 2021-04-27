@@ -26,7 +26,7 @@ async def report_exc_info(
 ):
     with async_handler():
         try:
-            return await asyncio.create_task(
+            return await call_later(
                 _report_exc_info(
                     exc_info, request, extra_data, payload_data, level, **kw
                 )
@@ -48,7 +48,7 @@ async def report_message(
 ):
     with async_handler():
         try:
-            return await asyncio.create_task(
+            return await call_later(
                 _report_message(message, level, request, extra_data, payload_data)
             )
         except Exception as e:
