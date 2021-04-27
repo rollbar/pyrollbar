@@ -1,3 +1,4 @@
+import copy
 import importlib
 import sys
 
@@ -17,7 +18,10 @@ ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
 
 @unittest2.skipUnless(ALLOWED_PYTHON_VERSION, 'Starlette requires Python3.6+')
 class StarletteMiddlewareTest(BaseTest):
+    default_settings = copy.deepcopy(rollbar.SETTINGS)
+
     def setUp(self):
+        rollbar.SETTINGS = copy.deepcopy(self.default_settings)
         importlib.reload(rollbar.contrib.starlette)
 
     @mock.patch('rollbar.report_exc_info')
