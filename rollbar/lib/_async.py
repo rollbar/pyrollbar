@@ -66,24 +66,24 @@ async def _post_api_httpx(path, payload_str, access_token=None):
     if access_token is not None:
         headers['X-Rollbar-Access-Token'] = access_token
     else:
-        headers['X-Rollbar-Access-Token'] = SETTINGS.get('access_token')
+        headers['X-Rollbar-Access-Token'] = rollbar.SETTINGS.get('access_token')
 
     proxy_cfg = {
-        'proxy': SETTINGS.get('http_proxy'),
-        'proxy_user': SETTINGS.get('http_proxy_user'),
-        'proxy_password': SETTINGS.get('http_proxy_password'),
+        'proxy': rollbar.SETTINGS.get('http_proxy'),
+        'proxy_user': rollbar.SETTINGS.get('http_proxy_user'),
+        'proxy_password': rollbar.SETTINGS.get('http_proxy_password'),
     }
     proxies = transport._get_proxy_cfg(proxy_cfg)
 
-    url = urljoin(SETTINGS['endpoint'], path)
+    url = urljoin(rollbar.SETTINGS['endpoint'], path)
     async with httpx.AsyncClient(
-        proxies=proxies, verify=SETTINGS.get('verify_https', True)
+        proxies=proxies, verify=rollbar.SETTINGS.get('verify_https', True)
     ) as client:
         resp = await client.post(
             url,
             data=payload_str,
             headers=headers,
-            timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT),
+            timeout=rollbar.SETTINGS.get('timeout', DEFAULT_TIMEOUT),
         )
 
     try:
