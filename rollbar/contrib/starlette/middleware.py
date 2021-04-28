@@ -5,8 +5,8 @@ from starlette.requests import Request
 from starlette.types import Receive, Scope, Send
 
 import rollbar
+from .requests import store_current_request
 from rollbar.contrib.asgi import ASGIMiddleware
-from rollbar.contrib.starlette.requests import store_current_request
 from rollbar.lib._async import RollbarAsyncError, try_report
 
 log = logging.getLogger(__name__)

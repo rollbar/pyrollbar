@@ -8,9 +8,7 @@ from fastapi import APIRouter, FastAPI, Request, Response
 from fastapi.routing import APIRoute
 
 import rollbar
-from rollbar.contrib.fastapi.utils import fastapi_min_version
-from rollbar.contrib.fastapi.utils import get_installed_middlewares
-from rollbar.contrib.fastapi.utils import has_bare_routing
+from .utils import fastapi_min_version, get_installed_middlewares, has_bare_routing
 from rollbar.contrib.starlette.requests import store_current_request
 from rollbar.lib._async import RollbarAsyncError, try_report
 

@@ -3,9 +3,9 @@ __all__ = ['FastAPIMiddleware', 'add_to', 'LoggerMiddleware', 'get_current_reque
 from fastapi import __version__
 
 import rollbar
-from rollbar.contrib.fastapi.middleware import FastAPIMiddleware
-from rollbar.contrib.fastapi.logger import LoggerMiddleware
-from rollbar.contrib.fastapi.routing import add_to
+from .middleware import FastAPIMiddleware
+from .logger import LoggerMiddleware
+from .routing import add_to
 
 # Do not modify returned request object
 from rollbar.contrib.starlette import get_current_request

@@ -1,5 +1,5 @@
 import rollbar
-from rollbar.contrib.asgi.types import ASGIApp, Receive, Scope, Send
+from .types import ASGIApp, Receive, Scope, Send
 
 
 class ASGIMiddleware:

@@ -4,7 +4,7 @@ import logging
 import fastapi
 from fastapi import APIRouter, FastAPI
 
-from rollbar.contrib.fastapi import FastAPIMiddleware
+from . import FastAPIMiddleware
 from rollbar.contrib.starlette import StarletteMiddleware
 from rollbar.contrib.asgi import ASGIMiddleware
 

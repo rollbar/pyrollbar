@@ -2,7 +2,7 @@ __all__ = ['ASGIMiddleware']
 
 import rollbar
 
-from rollbar.contrib.asgi.middleware import ASGIMiddleware
+from .middleware import ASGIMiddleware
 
 
 def _hook(request, data):
