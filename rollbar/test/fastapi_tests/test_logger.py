@@ -106,7 +106,7 @@ class LoggerMiddlewareTest(BaseTest):
         async def read_root():
             self.assertIsNone(get_current_request())
             mock_log.assert_called_once_with(
-                'To receive current request Python 3.7+ is required'
+                'Python 3.7+ is required to receive current request.'
             )
 
         client = TestClient(app)

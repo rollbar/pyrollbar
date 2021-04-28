@@ -18,9 +18,10 @@ class ReporterMiddleware(ASGIReporterMiddleware):
             if scope['type'] == 'http':
                 request = Request(scope, receive, send)
 
-                # Consuming the request body in Starlette middleware is problematic
+                # Consuming the request body in Starlette middleware is problematic.
                 # See: https://github.com/encode/starlette/issues/495#issuecomment-494008175
-                # Uncomment line below if you know the risk
+                # Uncomment the line below if you know the risks.
+                #
                 # await request.body()
 
                 exc_info = sys.exc_info()

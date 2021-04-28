@@ -293,7 +293,7 @@ class LoggingRouteTest(BaseTest):
         self.assertIsNone(new_route_class)
         self.assertEqual(app.router.route_class, old_route_class)
         mock_log.assert_called_once_with(
-            'RollbarLoggingRoute must be added to a bare router'
+            'RollbarLoggingRoute must to be added to a bare router'
             ' (before adding routes). See docs for more details.'
         )
 
@@ -361,7 +361,7 @@ class LoggingRouteTest(BaseTest):
         self.assertEqual(app.router.route_class, old_app_route_class)
         self.assertEqual(router.route_class, old_router_route_class)
         mock_log.assert_called_once_with(
-            'RollbarLoggingRoute must be added to a bare router'
+            'RollbarLoggingRoute must to be added to a bare router'
             ' (before adding routes). See docs for more details.'
         )
 
@@ -473,7 +473,7 @@ class LoggingRouteTest(BaseTest):
         self.assertIsNone(new_route_class)
         self.assertEqual(app.router.route_class, old_route_class)
         mock_log.assert_called_once_with(
-            'Error while adding RollbarLoggingRoute to application'
+            'Error adding RollbarLoggingRoute to application.'
         )
 
     @mock.patch('logging.Logger.error')
@@ -492,7 +492,7 @@ class LoggingRouteTest(BaseTest):
         self.assertIsNone(new_route_class)
         self.assertEqual(router.route_class, old_route_class)
         mock_log.assert_called_once_with(
-            'Error while adding RollbarLoggingRoute to application'
+            'Error adding RollbarLoggingRoute to application.'
         )
 
     def test_should_warn_if_middleware_in_use(self):
@@ -510,9 +510,9 @@ class LoggingRouteTest(BaseTest):
                 rollbar_add_to(app)
 
                 mock_log.assert_called_once_with(
-                    f'Detected installed middlewares {[middleware]}'
+                    f'Detected middleware installed {[middleware]}'
                     ' while loading Rollbar route handler.'
-                    ' This can cause duplicated occurrences.'
+                    ' This can cause in duplicate occurrences.'
                 )
 
     def test_should_support_type_hints(self):
@@ -611,7 +611,7 @@ class LoggingRouteTest(BaseTest):
             self.assertIsNone(request)
             self.assertNotEqual(request, original_request)
             mock_log.assert_called_once_with(
-                'To receive current request Python 3.7+ is required'
+                'Python 3.7+ is required to receive current request.'
             )
 
         client = TestClient(app)

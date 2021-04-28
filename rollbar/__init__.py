@@ -223,9 +223,7 @@ def _get_pylons_request():
 
 
 def _get_starlette_request():
-    """
-    Do not modify the returned object.
-    """
+    # Do not modify the returned object
 
     if StarletteRequest is None:
         return None
@@ -235,9 +233,7 @@ def _get_starlette_request():
 
 
 def _get_fastapi_request():
-    """
-    Do not modify the returned object.
-    """
+    # Do not modify the returned object
 
     if FastAPIRequest is None:
         return None
@@ -279,7 +275,7 @@ SETTINGS = {
     'root': None,  # root path to your code
     'branch': None,  # git branch name
     'code_version': None,
-    'handler': 'default',  # 'blocking', 'thread' (default), 'agent', 'tornado', 'gae' or 'twisted'
+    'handler': 'default',  # 'blocking', 'thread' (default), 'async', 'agent', 'tornado', 'gae', 'twisted' or 'httpx'
     'endpoint': DEFAULT_ENDPOINT,
     'timeout': DEFAULT_TIMEOUT,
     'agent.log_file': 'log.rollbar',
@@ -1181,7 +1177,7 @@ def _build_request_data(request):
     if FastAPIRequest and isinstance(request, FastAPIRequest):
         return _build_fastapi_request_data(request)
 
-    # Starlette (should be last for Starlette based frameworks)
+    # Starlette (should be the last one for Starlette based frameworks)
     if StarletteRequest and isinstance(request, StarletteRequest):
         return _build_starlette_request_data(request)
 

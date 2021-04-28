@@ -18,19 +18,19 @@ if ContextVar:
 
 def get_current_request() -> Optional[Request]:
     """
-    The request object is read-only.
+    Return current request.
 
     Do NOT modify the returned request object.
     """
 
     if ContextVar is None:
-        log.error('To receive current request Python 3.7+ is required')
+        log.error('Python 3.7+ is required to receive current request.')
         return None
 
     request = _current_request.get()
 
     if request is None:
-        log.error('No request available in the current context')
+        log.error('Request is not available in the present context.')
         return None
 
     return request

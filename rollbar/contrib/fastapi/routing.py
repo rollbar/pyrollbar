@@ -17,10 +17,31 @@ log = logging.getLogger(__name__)
 
 @fastapi_min_version('0.41.0')
 def add_to(app_or_router: Union[FastAPI, APIRouter]) -> Optional[Type[APIRoute]]:
-    # Route handler must be added before adding user routes
+    """
+    Adds RollbarLoggingRoute handler to the router app.
+
+    This is the recommended way for integration with FastAPI.
+    Alternatively to using middleware, the handler may fill
+    more data in the payload (e.g. request body).
+
+    app_or_router: FastAPI app or router
+
+    Note: The route handler must be added before adding user routes
+
+    Requirements: FastAPI v0.41.0+
+
+    Example usage:
+
+    from fastapi import FastAPI
+    from rollbar.contrib.fastapi import add_to as rollbar_add_to
+
+    app = FastAPI()
+    rollbar_add_to(app)
+
+    """
     if not has_bare_routing(app_or_router):
         log.error(
-            'RollbarLoggingRoute must be added to a bare router'
+            'RollbarLoggingRoute must to be added to a bare router'
             ' (before adding routes). See docs for more details.'
         )
         return None
@@ -28,9 +49,9 @@ def add_to(app_or_router: Union[FastAPI, APIRouter]) -> Optional[Type[APIRoute]]
     installed_middlewares = get_installed_middlewares(app_or_router)
     if installed_middlewares:
         log.warning(
-            f'Detected installed middlewares {installed_middlewares}'
+            f'Detected middleware installed {installed_middlewares}'
             ' while loading Rollbar route handler.'
-            ' This can cause duplicated occurrences.'
+            ' This can cause in duplicate occurrences.'
         )
 
     if isinstance(app_or_router, FastAPI):
@@ -38,7 +59,7 @@ def add_to(app_or_router: Union[FastAPI, APIRouter]) -> Optional[Type[APIRoute]]
     elif isinstance(app_or_router, APIRouter):
         _add_to_router(app_or_router)
     else:
-        log.error('Error while adding RollbarLoggingRoute to application')
+        log.error('Error adding RollbarLoggingRoute to application.')
         return None
 
     return RollbarLoggingRoute

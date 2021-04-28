@@ -24,6 +24,26 @@ class RollbarAsyncError(Exception):
 async def report_exc_info(
     exc_info=None, request=None, extra_data=None, payload_data=None, level=None, **kw
 ):
+    """
+    Asynchronously reports an exception to Rollbar, using exc_info (from calling sys.exc_info())
+
+    exc_info: optional, should be the result of calling sys.exc_info(). If omitted, sys.exc_info() will be called here.
+    request: optional, a Starlette, WebOb, Werkzeug-based or Sanic request object.
+    extra_data: optional, will be included in the 'custom' section of the payload
+    payload_data: optional, dict that will override values in the final payload
+                  (e.g. 'level' or 'fingerprint')
+    kw: provided for legacy purposes; unused.
+
+    Example usage:
+
+    rollbar.init(access_token='YOUR_PROJECT_ACCESS_TOKEN')
+
+    async def func():
+        try:
+            do_something()
+        except:
+            await report_exc_info(sys.exc_info(), request, {'foo': 'bar'}, {'level': 'warning'})
+    """
     with async_handler():
         try:
             return await call_later(
@@ -46,6 +66,16 @@ async def _report_exc_info(
 async def report_message(
     message, level='error', request=None, extra_data=None, payload_data=None, **kw
 ):
+    """
+    Asynchronously reports an arbitrary string message to Rollbar.
+
+    message: the string body of the message
+    level: level to report at. One of: 'critical', 'error', 'warning', 'info', 'debug'
+    request: the request object for the context of the message
+    extra_data: dictionary of params to include with the message. 'body' is reserved.
+    payload_data: param names to pass in the 'data' level of the payload; overrides defaults.
+    """
+
     with async_handler():
         try:
             return await call_later(
