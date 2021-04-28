@@ -1,4 +1,3 @@
-import logging
 import sys
 
 from starlette.requests import Request
@@ -8,8 +7,6 @@ import rollbar
 from .requests import store_current_request
 from rollbar.contrib.asgi import ASGIMiddleware
 from rollbar.lib._async import RollbarAsyncError, try_report
-
-log = logging.getLogger(__name__)
 
 
 class StarletteMiddleware(ASGIMiddleware):
