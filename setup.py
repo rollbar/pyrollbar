@@ -62,6 +62,7 @@ setup(
         "Operating System :: OS Independent",
         "Development Status :: 5 - Production/Stable",
         "Environment :: Web Environment",
+        "Framework :: AsyncIO",
         "Framework :: Bottle",
         "Framework :: Django",
         "Framework :: Flask",
