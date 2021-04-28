@@ -13,7 +13,9 @@ from starlette.types import Receive, Scope
 log = logging.getLogger(__name__)
 
 if ContextVar:
-    _current_request: ContextVar[Request] = ContextVar('request', default=None)
+    _current_request: ContextVar[Optional[Request]] = ContextVar(
+        'request', default=None
+    )
 
 
 def get_current_request() -> Optional[Request]:
