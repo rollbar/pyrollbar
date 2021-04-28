@@ -1,13 +1,13 @@
 from rollbar.test import BaseTest
 
 
-class FastAPIUtilsInstalledMiddlewaresTest(BaseTest):
+class UtilsMiddlewareTest(BaseTest):
     def test_should_return_installed_rollbar_middlewares(self):
         from fastapi import FastAPI
         from rollbar.contrib.fastapi.utils import get_installed_middlewares
-        from rollbar.contrib.fastapi import FastAPIMiddleware
-        from rollbar.contrib.starlette import StarletteMiddleware
-        from rollbar.contrib.asgi import ASGIMiddleware
+        from rollbar.contrib.fastapi import ReporterMiddleware as FastAPIMiddleware
+        from rollbar.contrib.starlette import ReporterMiddleware as StarletteMiddleware
+        from rollbar.contrib.asgi import ReporterMiddleware as ASGIMiddleware
 
         # single middleware
         app = FastAPI()
@@ -50,7 +50,7 @@ class FastAPIUtilsInstalledMiddlewaresTest(BaseTest):
         self.assertListEqual(middlewares, [])
 
 
-class FastAPIUtilsBareRoutingTest(BaseTest):
+class UtilsBareRoutingTest(BaseTest):
     def test_should_return_true_if_has_bare_routing(self):
         from fastapi import APIRouter, FastAPI
         from rollbar.contrib.fastapi.utils import has_bare_routing

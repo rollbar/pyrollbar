@@ -1,8 +1,8 @@
-__all__ = ['ASGIMiddleware']
+__all__ = ['ReporterMiddleware']
 
 import rollbar
 
-from .middleware import ASGIMiddleware
+from .middleware import ReporterMiddleware
 
 
 def _hook(request, data):

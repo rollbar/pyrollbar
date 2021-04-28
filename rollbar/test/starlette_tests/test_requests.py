@@ -10,7 +10,7 @@ ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 7)
 @unittest2.skipUnless(
     ALLOWED_PYTHON_VERSION, 'Global request access requires Python3.7+'
 )
-class StarletteRequestTest(BaseTest):
+class RequestTest(BaseTest):
     def test_should_accept_request_param(self):
         from starlette.requests import Request
         from rollbar.contrib.starlette.requests import store_current_request

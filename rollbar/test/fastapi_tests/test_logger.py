@@ -18,7 +18,7 @@ ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 7)
 @unittest2.skipUnless(
     ALLOWED_PYTHON_VERSION, 'FastAPI LoggerMiddleware requires Python3.7+'
 )
-class FastAPILoggerTest(BaseTest):
+class LoggerMiddlewareTest(BaseTest):
     def setUp(self):
         importlib.reload(rollbar.contrib.fastapi)
 

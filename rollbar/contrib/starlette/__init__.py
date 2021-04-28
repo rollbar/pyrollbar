@@ -1,9 +1,9 @@
-__all__ = ['StarletteMiddleware', 'LoggerMiddleware', 'get_current_request']
+__all__ = ['ReporterMiddleware', 'LoggerMiddleware', 'get_current_request']
 
 from starlette import __version__
 
 import rollbar
-from .middleware import StarletteMiddleware
+from .middleware import ReporterMiddleware
 from .logger import LoggerMiddleware
 
 # Do not modify returned request object

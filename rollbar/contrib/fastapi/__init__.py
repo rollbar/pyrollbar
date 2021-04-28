@@ -1,9 +1,9 @@
-__all__ = ['FastAPIMiddleware', 'add_to', 'LoggerMiddleware', 'get_current_request']
+__all__ = ['ReporterMiddleware', 'add_to', 'LoggerMiddleware', 'get_current_request']
 
 from fastapi import __version__
 
 import rollbar
-from .middleware import FastAPIMiddleware
+from .middleware import ReporterMiddleware
 from .logger import LoggerMiddleware
 from .routing import add_to
 

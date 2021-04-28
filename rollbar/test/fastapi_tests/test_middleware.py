@@ -17,7 +17,7 @@ ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
 
 
 @unittest2.skipUnless(ALLOWED_PYTHON_VERSION, 'FastAPI requires Python3.6+')
-class FastAPIMiddlewareTest(BaseTest):
+class ReporterMiddlewareTest(BaseTest):
     default_settings = copy.deepcopy(rollbar.SETTINGS)
 
     def setUp(self):
@@ -29,10 +29,10 @@ class FastAPIMiddlewareTest(BaseTest):
     def test_should_catch_and_report_errors(self, mock_report):
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
-        from rollbar.contrib.fastapi.middleware import FastAPIMiddleware
+        from rollbar.contrib.fastapi.middleware import ReporterMiddleware
 
         app = FastAPI()
-        app.add_middleware(FastAPIMiddleware)
+        app.add_middleware(ReporterMiddleware)
 
         @app.get('/')
         async def read_root():
@@ -56,10 +56,10 @@ class FastAPIMiddlewareTest(BaseTest):
     def test_should_report_with_request_data(self, mock_report):
         from fastapi import FastAPI, Request
         from fastapi.testclient import TestClient
-        from rollbar.contrib.fastapi.middleware import FastAPIMiddleware
+        from rollbar.contrib.fastapi.middleware import ReporterMiddleware
 
         app = FastAPI()
-        app.add_middleware(FastAPIMiddleware)
+        app.add_middleware(ReporterMiddleware)
 
         @app.get('/')
         def read_root():
@@ -80,10 +80,10 @@ class FastAPIMiddlewareTest(BaseTest):
     def test_should_send_payload_with_request_data(self, mock_send_payload, *mocks):
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
-        from rollbar.contrib.fastapi.middleware import FastAPIMiddleware
+        from rollbar.contrib.fastapi.middleware import ReporterMiddleware
 
         app = FastAPI()
-        app.add_middleware(FastAPIMiddleware)
+        app.add_middleware(ReporterMiddleware)
 
         @app.get('/{path}')
         def read_root(path):
@@ -126,12 +126,12 @@ class FastAPIMiddlewareTest(BaseTest):
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
         import rollbar
-        from rollbar.contrib.fastapi import FastAPIMiddleware
+        from rollbar.contrib.fastapi import ReporterMiddleware
 
         rollbar.SETTINGS['handler'] = 'default'
 
         app = FastAPI()
-        app.add_middleware(FastAPIMiddleware)
+        app.add_middleware(ReporterMiddleware)
 
         @app.get('/')
         async def root():
@@ -152,12 +152,12 @@ class FastAPIMiddlewareTest(BaseTest):
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
         import rollbar
-        from rollbar.contrib.fastapi import FastAPIMiddleware
+        from rollbar.contrib.fastapi import ReporterMiddleware
 
         rollbar.SETTINGS['handler'] = 'httpx'
 
         app = FastAPI()
-        app.add_middleware(FastAPIMiddleware)
+        app.add_middleware(ReporterMiddleware)
 
         @app.get('/')
         async def root():
@@ -178,12 +178,12 @@ class FastAPIMiddlewareTest(BaseTest):
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
         import rollbar
-        from rollbar.contrib.fastapi import FastAPIMiddleware
+        from rollbar.contrib.fastapi import ReporterMiddleware
 
         rollbar.SETTINGS['handler'] = 'threading'
 
         app = FastAPI()
-        app.add_middleware(FastAPIMiddleware)
+        app.add_middleware(ReporterMiddleware)
 
         @app.get('/')
         async def root():
@@ -201,7 +201,7 @@ class FastAPIMiddlewareTest(BaseTest):
         import rollbar.contrib.fastapi.middleware
 
         self.assertDictEqual(
-            rollbar.contrib.fastapi.middleware.FastAPIMiddleware.__call__.__annotations__,
+            rollbar.contrib.fastapi.middleware.ReporterMiddleware.__call__.__annotations__,
             {'scope': Scope, 'receive': Receive, 'send': Send, 'return': None},
         )
 
@@ -212,7 +212,7 @@ class FastAPIMiddlewareTest(BaseTest):
     def test_should_store_current_request(self, store_current_request):
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
-        from rollbar.contrib.fastapi.middleware import FastAPIMiddleware
+        from rollbar.contrib.fastapi.middleware import ReporterMiddleware
 
         expected_scope = {
             'client': ['testclient', 50000],
@@ -234,7 +234,7 @@ class FastAPIMiddlewareTest(BaseTest):
         }
 
         app = FastAPI()
-        app.add_middleware(FastAPIMiddleware)
+        app.add_middleware(ReporterMiddleware)
 
         @app.get('/')
         async def read_root():
@@ -254,11 +254,11 @@ class FastAPIMiddlewareTest(BaseTest):
     def test_should_return_current_request(self):
         from fastapi import FastAPI, Request
         from fastapi.testclient import TestClient
-        from rollbar.contrib.fastapi.middleware import FastAPIMiddleware
+        from rollbar.contrib.fastapi.middleware import ReporterMiddleware
         from rollbar.contrib.fastapi import get_current_request
 
         app = FastAPI()
-        app.add_middleware(FastAPIMiddleware)
+        app.add_middleware(ReporterMiddleware)
 
         @app.get('/')
         async def read_root(original_request: Request):
@@ -274,11 +274,11 @@ class FastAPIMiddlewareTest(BaseTest):
     def test_should_not_return_current_request_for_older_python(self, mock_log):
         from fastapi import FastAPI, Request
         from fastapi.testclient import TestClient
-        from rollbar.contrib.fastapi.middleware import FastAPIMiddleware
+        from rollbar.contrib.fastapi.middleware import ReporterMiddleware
         from rollbar.contrib.fastapi import get_current_request
 
         app = FastAPI()
-        app.add_middleware(FastAPIMiddleware)
+        app.add_middleware(ReporterMiddleware)
 
         @app.get('/')
         async def read_root(original_request: Request):

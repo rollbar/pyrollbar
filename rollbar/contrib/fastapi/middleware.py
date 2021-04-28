@@ -1,7 +1,7 @@
-__all__ = ['FastAPIMiddleware']
+__all__ = ['ReporterMiddleware']
 
-from rollbar.contrib.starlette import StarletteMiddleware
+from rollbar.contrib.starlette import ReporterMiddleware as StarletteReporterMiddleware
 
 
-class FastAPIMiddleware(StarletteMiddleware):
+class ReporterMiddleware(StarletteReporterMiddleware):
     ...

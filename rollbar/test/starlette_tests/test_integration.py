@@ -16,7 +16,7 @@ ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
 
 
 @unittest2.skipUnless(ALLOWED_PYTHON_VERSION, 'Starlette requires Python3.6+')
-class StarletteMiddlewareTest(BaseTest):
+class StarletteIntegrationTest(BaseTest):
     def setUp(self):
         importlib.reload(rollbar.contrib.starlette)
 

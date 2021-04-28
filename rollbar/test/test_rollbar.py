@@ -188,7 +188,7 @@ class RollbarTest(BaseTest):
         )
         request = Request(scope, receive)
 
-        # Consuming body in StarletteMiddleware is currently disabled
+        # Consuming body in Starlette middleware is currently disabled
         run(request.body()) # await request.body()
 
         data = rollbar._build_starlette_request_data(request)
@@ -334,7 +334,7 @@ class RollbarTest(BaseTest):
         from starlette.responses import PlainTextResponse
         from starlette.routing import Route
         from starlette.testclient import TestClient
-        from rollbar.contrib.starlette import StarletteMiddleware
+        from rollbar.contrib.starlette import ReporterMiddleware
 
         def root(starlette_request):
             current_request = rollbar.get_request()
@@ -344,7 +344,7 @@ class RollbarTest(BaseTest):
             return PlainTextResponse("bye bye")
 
         routes = [Route('/{param}', root)]
-        middleware = [Middleware(StarletteMiddleware)]
+        middleware = [Middleware(ReporterMiddleware)]
         app = Starlette(routes=routes, middleware=middleware)
         client = TestClient(app)
         client.get('/test?param1=value1&param2=value2')
@@ -356,7 +356,7 @@ class RollbarTest(BaseTest):
         from starlette.responses import PlainTextResponse
         from starlette.routing import Route
         from starlette.testclient import TestClient
-        from rollbar.contrib.starlette import LoggerMiddleware
+        from rollbar.contrib.starlette import ReporterMiddleware
 
         def root(starlette_request):
             current_request = rollbar.get_request()
@@ -366,7 +366,7 @@ class RollbarTest(BaseTest):
             return PlainTextResponse("bye bye")
 
         routes = [Route('/{param}', root)]
-        middleware = [Middleware(LoggerMiddleware)]
+        middleware = [Middleware(ReporterMiddleware)]
         app = Starlette(routes=routes, middleware=middleware)
         client = TestClient(app)
         client.get('/test?param1=value1&param2=value2')
@@ -375,10 +375,10 @@ class RollbarTest(BaseTest):
     def test_get_request_fastapi_middleware(self):
         from fastapi import FastAPI, Request
         from fastapi.testclient import TestClient
-        from rollbar.contrib.fastapi import FastAPIMiddleware
+        from rollbar.contrib.fastapi import ReporterMiddleware
 
         app = FastAPI()
-        app.add_middleware(FastAPIMiddleware)
+        app.add_middleware(ReporterMiddleware)
 
         @app.get('/{param}')
         def root(fastapi_request: Request):
@@ -393,10 +393,10 @@ class RollbarTest(BaseTest):
     def test_get_request_fastapi_logger(self):
         from fastapi import FastAPI, Request
         from fastapi.testclient import TestClient
-        from rollbar.contrib.fastapi import LoggerMiddleware
+        from rollbar.contrib.fastapi import ReporterMiddleware
 
         app = FastAPI()
-        app.add_middleware(LoggerMiddleware)
+        app.add_middleware(ReporterMiddleware)
 
         @app.get('/{param}')
         def root(fastapi_request: Request):

@@ -2,7 +2,7 @@ import rollbar
 from .types import ASGIApp, Receive, Scope, Send
 
 
-class ASGIMiddleware:
+class ReporterMiddleware:
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
 

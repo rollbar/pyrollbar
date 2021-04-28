@@ -17,7 +17,7 @@ ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
 
 
 @unittest2.skipUnless(ALLOWED_PYTHON_VERSION, 'Starlette requires Python3.6+')
-class StarletteMiddlewareTest(BaseTest):
+class ReporterMiddlewareTest(BaseTest):
     default_settings = copy.deepcopy(rollbar.SETTINGS)
 
     def setUp(self):
@@ -31,13 +31,13 @@ class StarletteMiddlewareTest(BaseTest):
         from starlette.middleware import Middleware
         from starlette.routing import Route
         from starlette.testclient import TestClient
-        from rollbar.contrib.starlette.middleware import StarletteMiddleware
+        from rollbar.contrib.starlette.middleware import ReporterMiddleware
 
         async def root(request):
             1 / 0
 
         routes = [Route('/', root)]
-        middleware = [Middleware(StarletteMiddleware)]
+        middleware = [Middleware(ReporterMiddleware)]
         app = Starlette(routes=routes, middleware=middleware)
 
         client = TestClient(app)
@@ -61,13 +61,13 @@ class StarletteMiddlewareTest(BaseTest):
         from starlette.requests import Request
         from starlette.routing import Route
         from starlette.testclient import TestClient
-        from rollbar.contrib.starlette.middleware import StarletteMiddleware
+        from rollbar.contrib.starlette.middleware import ReporterMiddleware
 
         async def root(request):
             1 / 0
 
         routes = [Route('/', root)]
-        middleware = [Middleware(StarletteMiddleware)]
+        middleware = [Middleware(ReporterMiddleware)]
         app = Starlette(routes=routes, middleware=middleware)
 
         client = TestClient(app)
@@ -88,13 +88,13 @@ class StarletteMiddlewareTest(BaseTest):
         from starlette.requests import Request
         from starlette.routing import Route
         from starlette.testclient import TestClient
-        from rollbar.contrib.starlette.middleware import StarletteMiddleware
+        from rollbar.contrib.starlette.middleware import ReporterMiddleware
 
         async def root(request):
             1 / 0
 
         routes = [Route('/{path}', root)]
-        middleware = [Middleware(StarletteMiddleware)]
+        middleware = [Middleware(ReporterMiddleware)]
         app = Starlette(routes=routes, middleware=middleware)
 
         client = TestClient(app)
@@ -136,7 +136,7 @@ class StarletteMiddlewareTest(BaseTest):
         from starlette.routing import Route
         from starlette.testclient import TestClient
         import rollbar
-        from rollbar.contrib.starlette.middleware import StarletteMiddleware
+        from rollbar.contrib.starlette.middleware import ReporterMiddleware
 
         rollbar.SETTINGS['handler'] = 'default'
 
@@ -144,7 +144,7 @@ class StarletteMiddlewareTest(BaseTest):
             1 / 0
 
         routes = [Route('/', root)]
-        middleware = [Middleware(StarletteMiddleware)]
+        middleware = [Middleware(ReporterMiddleware)]
         app = Starlette(routes=routes, middleware=middleware)
 
         client = TestClient(app)
@@ -164,7 +164,7 @@ class StarletteMiddlewareTest(BaseTest):
         from starlette.routing import Route
         from starlette.testclient import TestClient
         import rollbar
-        from rollbar.contrib.starlette.middleware import StarletteMiddleware
+        from rollbar.contrib.starlette.middleware import ReporterMiddleware
 
         rollbar.SETTINGS['handler'] = 'httpx'
 
@@ -172,7 +172,7 @@ class StarletteMiddlewareTest(BaseTest):
             1 / 0
 
         routes = [Route('/', root)]
-        middleware = [Middleware(StarletteMiddleware)]
+        middleware = [Middleware(ReporterMiddleware)]
         app = Starlette(routes=routes, middleware=middleware)
 
         client = TestClient(app)
@@ -192,7 +192,7 @@ class StarletteMiddlewareTest(BaseTest):
         from starlette.routing import Route
         from starlette.testclient import TestClient
         import rollbar
-        from rollbar.contrib.starlette.middleware import StarletteMiddleware
+        from rollbar.contrib.starlette.middleware import ReporterMiddleware
 
         rollbar.SETTINGS['handler'] = 'threading'
 
@@ -200,7 +200,7 @@ class StarletteMiddlewareTest(BaseTest):
             1 / 0
 
         routes = [Route('/', root)]
-        middleware = [Middleware(StarletteMiddleware)]
+        middleware = [Middleware(ReporterMiddleware)]
         app = Starlette(routes=routes, middleware=middleware)
 
         client = TestClient(app)
@@ -214,7 +214,7 @@ class StarletteMiddlewareTest(BaseTest):
         from starlette.types import Receive, Scope, Send
 
         self.assertDictEqual(
-            rollbar.contrib.starlette.StarletteMiddleware.__call__.__annotations__,
+            rollbar.contrib.starlette.ReporterMiddleware.__call__.__annotations__,
             {'scope': Scope, 'receive': Receive, 'send': Send, 'return': None},
         )
 
@@ -228,7 +228,7 @@ class StarletteMiddlewareTest(BaseTest):
         from starlette.responses import PlainTextResponse
         from starlette.routing import Route
         from starlette.testclient import TestClient
-        from rollbar.contrib.starlette.middleware import StarletteMiddleware
+        from rollbar.contrib.starlette.middleware import ReporterMiddleware
 
         expected_scope = {
             'client': ['testclient', 50000],
@@ -253,7 +253,7 @@ class StarletteMiddlewareTest(BaseTest):
             return PlainTextResponse('OK')
 
         routes = [Route('/{param}', root)]
-        middleware = [Middleware(StarletteMiddleware)]
+        middleware = [Middleware(ReporterMiddleware)]
         app = Starlette(routes=routes, middleware=middleware)
 
         client = TestClient(app)
@@ -273,7 +273,7 @@ class StarletteMiddlewareTest(BaseTest):
         from starlette.responses import PlainTextResponse
         from starlette.routing import Route
         from starlette.testclient import TestClient
-        from rollbar.contrib.starlette.middleware import StarletteMiddleware
+        from rollbar.contrib.starlette.middleware import ReporterMiddleware
         from rollbar.contrib.starlette import get_current_request
 
         async def root(original_request):
@@ -284,7 +284,7 @@ class StarletteMiddlewareTest(BaseTest):
             return PlainTextResponse('OK')
 
         routes = [Route('/', root)]
-        middleware = [Middleware(StarletteMiddleware)]
+        middleware = [Middleware(ReporterMiddleware)]
         app = Starlette(routes=routes, middleware=middleware)
 
         client = TestClient(app)
@@ -298,7 +298,7 @@ class StarletteMiddlewareTest(BaseTest):
         from starlette.responses import PlainTextResponse
         from starlette.routing import Route
         from starlette.testclient import TestClient
-        from rollbar.contrib.starlette.middleware import StarletteMiddleware
+        from rollbar.contrib.starlette.middleware import ReporterMiddleware
         from rollbar.contrib.starlette import get_current_request
 
         async def root(original_request):
@@ -313,7 +313,7 @@ class StarletteMiddlewareTest(BaseTest):
             return PlainTextResponse('OK')
 
         routes = [Route('/', root)]
-        middleware = [Middleware(StarletteMiddleware)]
+        middleware = [Middleware(ReporterMiddleware)]
         app = Starlette(routes=routes, middleware=middleware)
 
         client = TestClient(app)

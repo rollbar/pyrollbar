@@ -16,7 +16,7 @@ ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
 
 
 @unittest2.skipUnless(ALLOWED_PYTHON_VERSION, 'FastAPI requires Python3.6+')
-class FastAPITest(BaseTest):
+class FastAPIIntegrationTest(BaseTest):
     def setUp(self):
         importlib.reload(rollbar.contrib.fastapi)
 

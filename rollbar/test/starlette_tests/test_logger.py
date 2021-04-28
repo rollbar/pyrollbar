@@ -18,7 +18,7 @@ ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 7)
 @unittest2.skipUnless(
     ALLOWED_PYTHON_VERSION, 'Starlette LoggerMiddleware requires Python3.7+'
 )
-class StarletteLoggerTest(BaseTest):
+class LoggerMiddlewareTest(BaseTest):
     def setUp(self):
         importlib.reload(rollbar.contrib.starlette)
 
@@ -26,7 +26,7 @@ class StarletteLoggerTest(BaseTest):
         from starlette.types import Receive, Scope, Send
 
         self.assertDictEqual(
-            rollbar.contrib.starlette.StarletteMiddleware.__call__.__annotations__,
+            rollbar.contrib.starlette.logger.LoggerMiddleware.__call__.__annotations__,
             {'scope': Scope, 'receive': Receive, 'send': Send, 'return': None},
         )
 

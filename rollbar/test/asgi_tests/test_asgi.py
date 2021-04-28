@@ -16,7 +16,7 @@ ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 5)
 
 
 @unittest2.skipUnless(ALLOWED_PYTHON_VERSION, 'ASGI implementation requires Python3.5+')
-class ASGIMiddlewareTest(BaseTest):
+class ReporterMiddlewareTest(BaseTest):
     def setUp(self):
         importlib.reload(rollbar.contrib.asgi)
 
@@ -44,6 +44,6 @@ class ASGIMiddlewareTest(BaseTest):
         from rollbar.contrib.asgi.types import Receive, Scope, Send
 
         self.assertDictEqual(
-            rollbar.contrib.asgi.ASGIMiddleware.__call__.__annotations__,
+            rollbar.contrib.asgi.ReporterMiddleware.__call__.__annotations__,
             {'scope': Scope, 'receive': Receive, 'send': Send, 'return': None},
         )

@@ -4,9 +4,9 @@ import logging
 import fastapi
 from fastapi import APIRouter, FastAPI
 
-from . import FastAPIMiddleware
-from rollbar.contrib.starlette import StarletteMiddleware
-from rollbar.contrib.asgi import ASGIMiddleware
+from . import ReporterMiddleware as FastAPIReporterMiddleware
+from rollbar.contrib.starlette import ReporterMiddleware as StarletteReporterMiddleware
+from rollbar.contrib.asgi import ReporterMiddleware as ASGIReporterMiddleware
 
 log = logging.getLogger(__name__)
 
@@ -39,7 +39,11 @@ class fastapi_min_version:
 
 
 def get_installed_middlewares(app):
-    candidates = (FastAPIMiddleware, StarletteMiddleware, ASGIMiddleware)
+    candidates = (
+        FastAPIReporterMiddleware,
+        StarletteReporterMiddleware,
+        ASGIReporterMiddleware,
+    )
 
     if not hasattr(app, 'user_middleware'):
         return []
