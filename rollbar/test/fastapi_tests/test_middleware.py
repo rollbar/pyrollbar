@@ -22,6 +22,7 @@ class FastAPIMiddlewareTest(BaseTest):
 
     def setUp(self):
         rollbar.SETTINGS = copy.deepcopy(self.default_settings)
+        rollbar.SETTINGS['handler'] = 'async'
         importlib.reload(rollbar.contrib.fastapi)
 
     @mock.patch('rollbar.report_exc_info')

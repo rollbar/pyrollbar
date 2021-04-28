@@ -97,7 +97,7 @@ def async_handler():
     original_handler = rollbar.SETTINGS.get('handler')
 
     if original_handler not in ALLOWED_HANDLERS:
-        log.warn(
+        log.warning(
             'Running coroutines requires async compatible handler. Switching to default async handler.'
         )
         rollbar.SETTINGS['handler'] = 'async'

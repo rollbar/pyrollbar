@@ -114,7 +114,7 @@ class AsyncLibTest(BaseTest):
             'message', 'level', 'request', 'extra_data', 'payload_data'
         )
 
-    @mock.patch('logging.Logger.warn')
+    @mock.patch('logging.Logger.warning')
     @mock.patch('rollbar._send_payload_async')
     def test_report_exc_info_should_use_async_handler_regardless_of_settings(
         self, mock__send_payload_async, mock_log
@@ -134,7 +134,7 @@ class AsyncLibTest(BaseTest):
             'Running coroutines requires async compatible handler. Switching to default async handler.'
         )
 
-    @mock.patch('logging.Logger.warn')
+    @mock.patch('logging.Logger.warning')
     @mock.patch('rollbar._send_payload_async')
     def test_report_message_should_use_async_handler_regardless_of_settings(
         self, mock__send_payload_async, mock_log
@@ -210,7 +210,8 @@ class AsyncLibTest(BaseTest):
         self.assertEqual(rollbar.SETTINGS['handler'], 'httpx')
         mock__send_payload_httpx.assert_called_once()
 
-    def test_ctx_manager_should_temporary_set_async_handler(self):
+    @mock.patch('logging.Logger.warning')
+    def test_ctx_manager_should_temporary_set_async_handler(self, mock_log):
         import rollbar
         from rollbar.lib._async import async_handler
 
@@ -220,6 +221,10 @@ class AsyncLibTest(BaseTest):
         with async_handler() as handler:
             self.assertEqual(handler, 'async')
             self.assertEqual(rollbar.SETTINGS['handler'], handler)
+            mock_log.assert_called_once_with(
+                'Running coroutines requires async compatible handler.'
+                ' Switching to default async handler.'
+            )
 
         self.assertEqual(rollbar.SETTINGS['handler'], 'threading')
 

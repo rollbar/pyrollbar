@@ -29,7 +29,7 @@ def add_to(app_or_router: Union[FastAPI, APIRouter]) -> Optional[Type[APIRoute]]
 
     installed_middlewares = get_installed_middlewares(app_or_router)
     if installed_middlewares:
-        log.warn(
+        log.warning(
             f'Detected installed middlewares {installed_middlewares}'
             ' while loading Rollbar route handler.'
             ' This can cause duplicated occurrences.'
