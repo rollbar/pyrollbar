@@ -515,20 +515,6 @@ class LoggingRouteTest(BaseTest):
                     ' This can cause in duplicate occurrences.'
                 )
 
-    def test_should_support_type_hints(self):
-        from typing import Optional, Type, Union
-        from fastapi import APIRouter, FastAPI
-        from fastapi.routing import APIRoute
-        import rollbar.contrib.fastapi.routing
-
-        self.assertDictEqual(
-            rollbar.contrib.fastapi.routing.add_to.__annotations__,
-            {
-                'app_or_router': Union[FastAPI, APIRouter],
-                'return': Optional[Type[APIRoute]],
-            },
-        )
-
     @unittest2.skipUnless(
         sys.version_info >= (3, 7), 'Global request access requires Python 3.7+'
     )
@@ -616,3 +602,17 @@ class LoggingRouteTest(BaseTest):
 
         client = TestClient(app)
         client.get('/')
+
+    def test_should_support_type_hints(self):
+        from typing import Optional, Type, Union
+        from fastapi import APIRouter, FastAPI
+        from fastapi.routing import APIRoute
+        import rollbar.contrib.fastapi.routing
+
+        self.assertDictEqual(
+            rollbar.contrib.fastapi.routing.add_to.__annotations__,
+            {
+                'app_or_router': Union[FastAPI, APIRouter],
+                'return': Optional[Type[APIRoute]],
+            },
+        )

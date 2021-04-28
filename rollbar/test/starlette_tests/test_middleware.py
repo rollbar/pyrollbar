@@ -210,14 +210,6 @@ class ReporterMiddlewareTest(BaseTest):
         sync_report_exc_info.assert_called_once()
         async_report_exc_info.assert_not_called()
 
-    def test_should_support_type_hints(self):
-        from starlette.types import Receive, Scope, Send
-
-        self.assertDictEqual(
-            rollbar.contrib.starlette.ReporterMiddleware.__call__.__annotations__,
-            {'scope': Scope, 'receive': Receive, 'send': Send, 'return': None},
-        )
-
     @unittest2.skipUnless(
         sys.version_info >= (3, 7), 'Global request access requires Python 3.7+'
     )
@@ -318,3 +310,11 @@ class ReporterMiddlewareTest(BaseTest):
 
         client = TestClient(app)
         client.get('/')
+
+    def test_should_support_type_hints(self):
+        from starlette.types import Receive, Scope, Send
+
+        self.assertDictEqual(
+            rollbar.contrib.starlette.ReporterMiddleware.__call__.__annotations__,
+            {'scope': Scope, 'receive': Receive, 'send': Send, 'return': None},
+        )

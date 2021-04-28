@@ -122,6 +122,18 @@ async def _post_api_httpx(path, payload_str, access_token=None):
         log.exception('Exception while posting item %r', e)
 
 
+async def try_report(
+    exc_info=None, request=None, extra_data=None, payload_data=None, level=None, **kw
+):
+    current_handler = rollbar.SETTINGS.get('handler')
+    if not (current_handler in ALLOWED_HANDLERS or current_handler == 'default'):
+        raise RollbarAsyncError('No async handler set.')
+
+    return await report_exc_info(
+        exc_info, request, extra_data, payload_data, level, **kw
+    )
+
+
 @contextlib.contextmanager
 def async_handler():
     original_handler = rollbar.SETTINGS.get('handler')
@@ -137,18 +149,6 @@ def async_handler():
     finally:
         if original_handler is not None:
             rollbar.SETTINGS['handler'] = original_handler
-
-
-async def try_report(
-    exc_info=None, request=None, extra_data=None, payload_data=None, level=None, **kw
-):
-    current_handler = rollbar.SETTINGS.get('handler')
-    if not (current_handler in ALLOWED_HANDLERS or current_handler == 'default'):
-        raise RollbarAsyncError('No async handler set.')
-
-    return await report_exc_info(
-        exc_info, request, extra_data, payload_data, level, **kw
-    )
 
 
 def call_later(coro):
