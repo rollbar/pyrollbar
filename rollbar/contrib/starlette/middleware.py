@@ -20,9 +20,10 @@ class ReporterMiddleware(ASGIReporterMiddleware):
 
                 # Consuming the request body in Starlette middleware is problematic.
                 # See: https://github.com/encode/starlette/issues/495#issuecomment-494008175
-                # Uncomment the line below if you know the risks.
+                # Uncomment lines below if you know the risks.
                 #
                 # await request.body()
+                # await request.form()
 
                 exc_info = sys.exc_info()
 
