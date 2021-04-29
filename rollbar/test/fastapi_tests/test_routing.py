@@ -1,5 +1,6 @@
 import copy
 import importlib
+import json
 import sys
 
 try:
@@ -152,6 +153,102 @@ class LoggingRouteTest(BaseTest):
                 'accept': '*/*',
                 'accept-encoding': 'gzip, deflate',
                 'connection': 'keep-alive',
+                'host': 'testserver',
+                'user-agent': 'testclient',
+            },
+        )
+
+    @mock.patch('rollbar._check_config', return_value=True)
+    @mock.patch('rollbar._serialize_frame_data')
+    @mock.patch('rollbar.send_payload')
+    def test_should_send_payload_with_request_body(self, mock_send_payload, *mocks):
+        from fastapi import Body, FastAPI
+        from fastapi.testclient import TestClient
+        from pydantic import BaseModel
+        from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
+
+        rollbar.SETTINGS['include_request_body'] = True
+        expected_body = {'param1': 'value1', 'param2': 'value2'}
+
+        app = FastAPI()
+        rollbar_add_to(app)
+
+        class TestBody(BaseModel):
+            param1: str
+            param2: str
+
+        @app.post('/')
+        def read_root(body: TestBody = Body(...)):
+            1 / 0
+
+        client = TestClient(app)
+        with self.assertRaises(ZeroDivisionError):
+            client.post('/', json=expected_body)
+
+        mock_send_payload.assert_called_once()
+        payload = mock_send_payload.call_args[0][0]
+        payload_request = payload['data']['request']
+
+        self.assertEqual(payload_request['method'], 'POST')
+        self.assertEqual(payload_request['user_ip'], 'testclient')
+        self.assertEqual(payload_request['url'], 'http://testserver/')
+        self.assertEqual(payload_request['body'], json.dumps(expected_body))
+        self.assertDictEqual(
+            payload_request['headers'],
+            {
+                'accept': '*/*',
+                'accept-encoding': 'gzip, deflate',
+                'connection': 'keep-alive',
+                'content-length': str(len(json.dumps(expected_body))),
+                'content-type': 'application/json',
+                'host': 'testserver',
+                'user-agent': 'testclient',
+            },
+        )
+        print(payload_request['body'])
+
+    @mock.patch('rollbar._check_config', return_value=True)
+    @mock.patch('rollbar._serialize_frame_data')
+    @mock.patch('rollbar.send_payload')
+    def test_should_send_payload_with_form_data(self, mock_send_payload, *mocks):
+        from fastapi import FastAPI, Form
+        from fastapi.testclient import TestClient
+        from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
+
+        expected_form = {'param1': 'value1', 'param2': 'value2'}
+        expected_body = b'param1=value1&param2=value2'
+
+        app = FastAPI()
+        rollbar_add_to(app)
+
+        @app.post('/')
+        def read_root(param1: str = Form(...), param2: str = Form(...)):
+            1 / 0
+
+        client = TestClient(app)
+        with self.assertRaises(ZeroDivisionError):
+            r = client.post(
+                '/',
+                data=expected_body,
+                headers={'Content-Type': 'application/x-www-form-urlencoded'},
+            )
+
+        mock_send_payload.assert_called_once()
+        payload = mock_send_payload.call_args[0][0]
+        payload_request = payload['data']['request']
+
+        self.assertEqual(payload_request['method'], 'POST')
+        self.assertEqual(payload_request['user_ip'], 'testclient')
+        self.assertEqual(payload_request['url'], 'http://testserver/')
+        self.assertDictEqual(payload_request['POST'], expected_form)
+        self.assertDictEqual(
+            payload_request['headers'],
+            {
+                'accept': '*/*',
+                'accept-encoding': 'gzip, deflate',
+                'connection': 'keep-alive',
+                'content-length': str(len(expected_body)),
+                'content-type': 'application/x-www-form-urlencoded',
                 'host': 'testserver',
                 'user-agent': 'testclient',
             },

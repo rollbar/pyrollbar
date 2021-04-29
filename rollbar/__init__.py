@@ -1361,6 +1361,8 @@ def _build_wsgi_request_data(request):
     return request_data
 
 def _build_starlette_request_data(request):
+    from starlette.datastructures import UploadFile
+
     request_data = {
         'url': str(request.url),
         'GET': dict(request.query_params),
@@ -1369,10 +1371,36 @@ def _build_starlette_request_data(request):
         'user_ip': _starlette_extract_user_ip(request),
         'params': dict(request.path_params),
     }
+
+    if hasattr(request, '_form'):
+        request_data['POST'] = {
+            k: v.filename if isinstance(v, UploadFile) else v
+            for k, v in request._form.items()
+        }
+        request_data['files_keys'] = [
+            field.filename
+            for field in request._form.values()
+            if isinstance(field, UploadFile)
+        ]
+
+    if hasattr(request, '_body'):
+        body = request._body.decode()
+    else:
+        body = None
+
+    if body and SETTINGS['include_request_body']:
+        request_data['body'] = body
+
+    if hasattr(request, '_json'):
+        request_data['json'] = request._json
+    elif body:
+        try:
+            request_data['json'] = json.loads(body)
+        except json.JSONDecodeError:
+            pass
+
     # Filter out empty values
-    request_data = { k: v for k, v in request_data.items() if v }
-    if SETTINGS['include_request_body'] and hasattr(request, '_body'):
-        request_data['body'] = request._body.decode()
+    request_data = {k: v for k, v in request_data.items() if v}
 
     return request_data
 
