@@ -1,3 +1,4 @@
+import copy
 import importlib
 import sys
 
@@ -56,7 +57,11 @@ class LoggingRouteUnsupportedFastAPIVersionTest(BaseTest):
 @unittest2.skipUnless(ALLOWED_PYTHON_VERSION, 'FastAPI requires Python3.6+')
 @unittest2.skipUnless(ALLOWED_FASTAPI_VERSION, 'FastAPI v0.41.0+ is required')
 class LoggingRouteTest(BaseTest):
+    default_settings = copy.deepcopy(rollbar.SETTINGS)
+
     def setUp(self):
+        rollbar.SETTINGS = copy.deepcopy(self.default_settings)
+        rollbar.SETTINGS['handler'] = 'async'
         importlib.reload(rollbar.contrib.fastapi)
 
     @mock.patch('rollbar.report_exc_info')
