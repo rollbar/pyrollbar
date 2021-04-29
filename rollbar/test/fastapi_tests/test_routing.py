@@ -205,7 +205,6 @@ class LoggingRouteTest(BaseTest):
                 'user-agent': 'testclient',
             },
         )
-        print(payload_request['body'])
 
     @mock.patch('rollbar._check_config', return_value=True)
     @mock.patch('rollbar._serialize_frame_data')
