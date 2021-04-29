@@ -1,5 +1,8 @@
+import sys
+
 import rollbar
 from .types import ASGIApp, Receive, Scope, Send
+from rollbar.lib._async import RollbarAsyncError, try_report
 
 
 class ReporterMiddleware:
@@ -11,5 +14,10 @@ class ReporterMiddleware:
             await self.app(scope, receive, send)
         except Exception:
             if scope['type'] == 'http':
-                rollbar.report_exc_info()
+                exc_info = sys.exc_info()
+
+                try:
+                    await try_report(exc_info)
+                except RollbarAsyncError:
+                    rollbar.report_exc_info(exc_info)
             raise

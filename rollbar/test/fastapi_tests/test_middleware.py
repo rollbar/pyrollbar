@@ -284,6 +284,24 @@ class ReporterMiddlewareTest(BaseTest):
         client = TestClient(app)
         client.get('/')
 
+    def test_should_support_http_only(self):
+        from rollbar.contrib.fastapi.middleware import ReporterMiddleware
+        from rollbar.test.async_helper import FailingTestASGIApp, run
+
+        testapp = ReporterMiddleware(FailingTestASGIApp())
+
+        with mock.patch('rollbar.report_exc_info') as mock_report:
+            with self.assertRaises(RuntimeError):
+                run(testapp({'type': 'http'}, None, None))
+
+            mock_report.assert_called_once()
+
+        with mock.patch('rollbar.report_exc_info') as mock_report:
+            with self.assertRaises(RuntimeError):
+                run(testapp({'type': 'websocket'}, None, None))
+
+            mock_report.assert_not_called()
+
     def test_should_support_type_hints(self):
         from starlette.types import Receive, Scope, Send
         import rollbar.contrib.fastapi.middleware

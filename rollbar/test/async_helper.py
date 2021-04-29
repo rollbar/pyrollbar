@@ -3,6 +3,7 @@ import inspect
 import sys
 
 import rollbar
+from rollbar.lib._async import report_exc_info, RollbarAsyncError
 
 
 def run(coro):
@@ -29,13 +30,8 @@ def async_receive(message):
 
 
 class FailingTestASGIApp:
-    def __call__(self, scope, receive, send):
-        try:
-            run(self.app(scope, receive, send))
-        except Exception:
-            if scope['type'] == 'http':
-                rollbar.report_exc_info()
-            raise
+    async def __call__(self, scope, receive, send):
+        await self.app(scope, receive, send)
 
     async def app(self, scope, receive, send):
         raise RuntimeError('Invoked only for testing')
