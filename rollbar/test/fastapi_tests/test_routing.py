@@ -117,7 +117,7 @@ class LoggingRouteTest(BaseTest):
     @mock.patch('rollbar._serialize_frame_data')
     @mock.patch('rollbar.send_payload')
     def test_should_send_payload_with_request_data(self, mock_send_payload, *mocks):
-        from fastapi import FastAPI, Request
+        from fastapi import FastAPI
         from fastapi.testclient import TestClient
         from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
 
