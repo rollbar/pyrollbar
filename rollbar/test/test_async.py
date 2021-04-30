@@ -26,8 +26,7 @@ class AsyncLibTest(BaseTest):
 
     @mock.patch('rollbar.send_payload')
     def test_report_exception(self, send_payload):
-        from rollbar.lib._async import report_exc_info
-        from rollbar.test.async_helper import run
+        from rollbar.lib._async import report_exc_info, run
 
         def _raise():
             try:
@@ -61,8 +60,7 @@ class AsyncLibTest(BaseTest):
 
     @mock.patch('rollbar.send_payload')
     def test_report_messsage(self, send_payload):
-        from rollbar.lib._async import report_message
-        from rollbar.test.async_helper import run
+        from rollbar.lib._async import report_message, run
 
         uuid = run(report_message('foo'))
 
@@ -82,8 +80,7 @@ class AsyncLibTest(BaseTest):
 
     @mock.patch('rollbar.report_exc_info')
     def test_should_run_rollbar_report_exc_info(self, rollbar_report_exc_info):
-        from rollbar.lib._async import report_exc_info
-        from rollbar.test.async_helper import run
+        from rollbar.lib._async import report_exc_info, run
 
         try:
             raise Exception()
@@ -105,8 +102,7 @@ class AsyncLibTest(BaseTest):
 
     @mock.patch('rollbar.report_message')
     def test_should_run_rollbar_report_message(self, rollbar_report_message):
-        from rollbar.lib._async import report_message
-        from rollbar.test.async_helper import run
+        from rollbar.lib._async import report_message, run
 
         run(report_message('message', 'level', 'request', 'extra_data', 'payload_data'))
 
@@ -120,8 +116,7 @@ class AsyncLibTest(BaseTest):
         self, mock__send_payload_async, mock_log
     ):
         import rollbar
-        from rollbar.lib._async import report_exc_info
-        from rollbar.test.async_helper import run
+        from rollbar.lib._async import report_exc_info, run
 
         rollbar.SETTINGS['handler'] = 'default'
         self.assertEqual(rollbar.SETTINGS['handler'], 'default')
@@ -140,8 +135,7 @@ class AsyncLibTest(BaseTest):
         self, mock__send_payload_async, mock_log
     ):
         import rollbar
-        from rollbar.lib._async import report_message
-        from rollbar.test.async_helper import run
+        from rollbar.lib._async import report_message, run
 
         rollbar.SETTINGS['handler'] = 'default'
         self.assertEqual(rollbar.SETTINGS['handler'], 'default')
@@ -157,8 +151,7 @@ class AsyncLibTest(BaseTest):
     @mock.patch('rollbar._send_payload_async')
     def test_report_exc_info_should_allow_async_handler(self, mock__send_payload_async):
         import rollbar
-        from rollbar.lib._async import report_exc_info
-        from rollbar.test.async_helper import run
+        from rollbar.lib._async import report_exc_info, run
 
         rollbar.SETTINGS['handler'] = 'async'
         self.assertEqual(rollbar.SETTINGS['handler'], 'async')
@@ -171,8 +164,7 @@ class AsyncLibTest(BaseTest):
     @mock.patch('rollbar._send_payload_async')
     def test_report_message_should_allow_async_handler(self, mock__send_payload_async):
         import rollbar
-        from rollbar.lib._async import report_message
-        from rollbar.test.async_helper import run
+        from rollbar.lib._async import report_message, run
 
         rollbar.SETTINGS['handler'] = 'async'
         self.assertEqual(rollbar.SETTINGS['handler'], 'async')
@@ -185,8 +177,7 @@ class AsyncLibTest(BaseTest):
     @mock.patch('rollbar._send_payload_httpx')
     def test_report_exc_info_should_allow_httpx_handler(self, mock__send_payload_httpx):
         import rollbar
-        from rollbar.lib._async import report_exc_info
-        from rollbar.test.async_helper import run
+        from rollbar.lib._async import report_exc_info, run
 
         rollbar.SETTINGS['handler'] = 'httpx'
         self.assertEqual(rollbar.SETTINGS['handler'], 'httpx')
@@ -199,8 +190,7 @@ class AsyncLibTest(BaseTest):
     @mock.patch('rollbar._send_payload_httpx')
     def test_report_message_should_allow_httpx_handler(self, mock__send_payload_httpx):
         import rollbar
-        from rollbar.lib._async import report_message
-        from rollbar.test.async_helper import run
+        from rollbar.lib._async import report_message, run
 
         rollbar.SETTINGS['handler'] = 'httpx'
         self.assertEqual(rollbar.SETTINGS['handler'], 'httpx')
@@ -257,8 +247,7 @@ class AsyncLibTest(BaseTest):
     @mock.patch('rollbar.lib._async.report_exc_info')
     def test_should_try_report_with_async_handler(self, async_report_exc_info):
         import rollbar
-        from rollbar.lib._async import try_report
-        from rollbar.test.async_helper import run
+        from rollbar.lib._async import run, try_report
 
         self.assertEqual(rollbar.SETTINGS['handler'], 'async')
 
@@ -271,8 +260,7 @@ class AsyncLibTest(BaseTest):
         self, async_report_exc_info
     ):
         import rollbar
-        from rollbar.lib._async import RollbarAsyncError, try_report
-        from rollbar.test.async_helper import run
+        from rollbar.lib._async import RollbarAsyncError, run, try_report
 
         rollbar.SETTINGS['handler'] = 'threading'
         self.assertEqual(rollbar.SETTINGS['handler'], 'threading')

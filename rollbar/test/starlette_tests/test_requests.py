@@ -22,7 +22,7 @@ class RequestTest(BaseTest):
     def test_should_accept_request_param(self):
         from starlette.requests import Request
         from rollbar.contrib.starlette.requests import store_current_request
-        from rollbar.test.async_helper import async_receive
+        from rollbar.lib._async import async_receive
 
         scope = {
             'client': ['testclient', 50000],
@@ -54,7 +54,7 @@ class RequestTest(BaseTest):
     def test_should_accept_scope_and_receive_params(self):
         from starlette.requests import Request
         from rollbar.contrib.starlette.requests import store_current_request
-        from rollbar.test.async_helper import async_receive
+        from rollbar.lib._async import async_receive
 
         scope = {
             'client': ['testclient', 50000],

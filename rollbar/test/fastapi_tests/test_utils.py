@@ -48,7 +48,7 @@ class UtilsMiddlewareTest(BaseTest):
     def test_should_return_empty_list_if_rollbar_middlewares_not_installed(self):
         from fastapi import FastAPI
         from rollbar.contrib.fastapi.utils import get_installed_middlewares
-        from rollbar.test.async_helper import BareMiddleware
+        from rollbar.lib._async import BareMiddleware
 
         # no middlewares
         app = FastAPI()

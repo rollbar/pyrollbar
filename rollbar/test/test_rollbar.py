@@ -169,7 +169,7 @@ class RollbarTest(BaseTest):
             from starlette.requests import Request
         except ImportError:
             self.skipTest('Requires Starlette to be installed')
-        from rollbar.test.async_helper import async_receive, run
+        from rollbar.lib._async import async_receive, run
 
         rollbar.SETTINGS['include_request_body'] = True
         body = b'body body body'
@@ -274,7 +274,7 @@ class RollbarTest(BaseTest):
             from fastapi import Request
         except ImportError:
             self.skipTest('Requires FastAPI to be installed')
-        from rollbar.test.async_helper import async_receive, run
+        from rollbar.lib._async import async_receive, run
 
         rollbar.SETTINGS['include_request_body'] = True
         body = b'body body body'

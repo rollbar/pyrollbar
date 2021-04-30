@@ -295,7 +295,7 @@ class ReporterMiddlewareTest(BaseTest):
 
     def test_should_support_http_only(self):
         from rollbar.contrib.fastapi.middleware import ReporterMiddleware
-        from rollbar.test.async_helper import FailingTestASGIApp, run
+        from rollbar.lib._async import FailingTestASGIApp, run
 
         testapp = ReporterMiddleware(FailingTestASGIApp())
 

@@ -28,7 +28,7 @@ class ReporterMiddlewareTest(BaseTest):
     @mock.patch('rollbar.report_exc_info')
     def test_should_catch_and_report_errors(self, mock_report):
         from rollbar.contrib.asgi.middleware import ReporterMiddleware
-        from rollbar.test.async_helper import FailingTestASGIApp, run
+        from rollbar.lib._async import FailingTestASGIApp, run
 
         testapp = ReporterMiddleware(FailingTestASGIApp())
 
@@ -52,7 +52,7 @@ class ReporterMiddlewareTest(BaseTest):
     ):
         import rollbar
         from rollbar.contrib.asgi.middleware import ReporterMiddleware
-        from rollbar.test.async_helper import FailingTestASGIApp, run
+        from rollbar.lib._async import FailingTestASGIApp, run
 
         rollbar.SETTINGS['handler'] = 'default'
         testapp = ReporterMiddleware(FailingTestASGIApp())
@@ -70,7 +70,7 @@ class ReporterMiddlewareTest(BaseTest):
     ):
         import rollbar
         from rollbar.contrib.asgi.middleware import ReporterMiddleware
-        from rollbar.test.async_helper import FailingTestASGIApp, run
+        from rollbar.lib._async import FailingTestASGIApp, run
 
         rollbar.SETTINGS['handler'] = 'httpx'
         testapp = ReporterMiddleware(FailingTestASGIApp())
@@ -88,7 +88,7 @@ class ReporterMiddlewareTest(BaseTest):
     ):
         import rollbar
         from rollbar.contrib.asgi.middleware import ReporterMiddleware
-        from rollbar.test.async_helper import FailingTestASGIApp, run
+        from rollbar.lib._async import FailingTestASGIApp, run
 
         rollbar.SETTINGS['handler'] = 'threading'
         testapp = ReporterMiddleware(FailingTestASGIApp())
@@ -101,7 +101,7 @@ class ReporterMiddlewareTest(BaseTest):
 
     def test_should_support_http_only(self):
         from rollbar.contrib.asgi.middleware import ReporterMiddleware
-        from rollbar.test.async_helper import FailingTestASGIApp, run
+        from rollbar.lib._async import FailingTestASGIApp, run
 
         testapp = ReporterMiddleware(FailingTestASGIApp())
 
