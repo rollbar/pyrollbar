@@ -32,9 +32,9 @@ jobs:
           - DJANGO_VERSION=2.1.15
           - PYRAMID_VERSION=1.9.2
           - PYRAMID_VERSION=1.10.4
-          - STARLETTE_VERSION=0.14.2
-          - FASTAPI_VERSION=0.40.0
-          - FASTAPI_VERSION=0.63.0
+          - STARLETTE_VERSION=0.14.2 httpx==0.18.1 python-multipart==0.0.5
+          - FASTAPI_VERSION=0.40.0 httpx==0.18.1 python-multipart==0.0.5
+          - FASTAPI_VERSION=0.63.0 httpx==0.18.1 python-multipart==0.0.5
         exclude:
           - python-version: 2.7
             framework: DJANGO_VERSION=2.0.13
