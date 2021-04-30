@@ -1,6 +1,22 @@
+import sys
+
+try:
+    import fastapi
+
+    FASTAPI_INSTALLED = True
+except ImportError:
+    FASTAPI_INSTALLED = False
+
+import unittest2
+
 from rollbar.test import BaseTest
 
+ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
 
+
+@unittest2.skipUnless(
+    FASTAPI_INSTALLED and ALLOWED_PYTHON_VERSION, 'FastAPI requires Python3.6+'
+)
 class UtilsMiddlewareTest(BaseTest):
     def test_should_return_installed_rollbar_middlewares(self):
         from fastapi import FastAPI

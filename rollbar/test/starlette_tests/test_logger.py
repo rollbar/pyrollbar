@@ -6,6 +6,13 @@ try:
 except ImportError:
     import mock
 
+try:
+    import starlette
+
+    STARLETTE_INSTALLED = True
+except ImportError:
+    STARLETTE_INSTALLED = False
+
 import unittest2
 
 import rollbar
@@ -16,7 +23,8 @@ ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 7)
 
 
 @unittest2.skipUnless(
-    ALLOWED_PYTHON_VERSION, 'Starlette LoggerMiddleware requires Python3.7+'
+    STARLETTE_INSTALLED and ALLOWED_PYTHON_VERSION,
+    'Starlette LoggerMiddleware requires Python3.7+',
 )
 class LoggerMiddlewareTest(BaseTest):
     def setUp(self):

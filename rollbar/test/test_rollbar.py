@@ -8,14 +8,14 @@ import uuid
 import sys
 
 try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
+try:
     from unittest import mock
 except ImportError:
     import mock
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 import unittest
 
 import rollbar
@@ -329,11 +329,14 @@ class RollbarTest(BaseTest):
 
     @unittest.skipUnless(sys.version_info >= (3, 7), 'Python3.7+ required')
     def test_get_request_starlette_middleware(self):
-        from starlette.applications import Starlette
-        from starlette.middleware import Middleware
-        from starlette.responses import PlainTextResponse
-        from starlette.routing import Route
-        from starlette.testclient import TestClient
+        try:
+            from starlette.applications import Starlette
+            from starlette.middleware import Middleware
+            from starlette.responses import PlainTextResponse
+            from starlette.routing import Route
+            from starlette.testclient import TestClient
+        except ImportError:
+            self.skipTest('Requires Starlette package')
         from rollbar.contrib.starlette import ReporterMiddleware
 
         def root(starlette_request):
@@ -351,11 +354,14 @@ class RollbarTest(BaseTest):
 
     @unittest.skipUnless(sys.version_info >= (3, 7), 'Python3.7+ required')
     def test_get_request_starlette_logger(self):
-        from starlette.applications import Starlette
-        from starlette.middleware import Middleware
-        from starlette.responses import PlainTextResponse
-        from starlette.routing import Route
-        from starlette.testclient import TestClient
+        try:
+            from starlette.applications import Starlette
+            from starlette.middleware import Middleware
+            from starlette.responses import PlainTextResponse
+            from starlette.routing import Route
+            from starlette.testclient import TestClient
+        except ImportError:
+            self.skipTest('Requires Starlette package')
         from rollbar.contrib.starlette import ReporterMiddleware
 
         def root(starlette_request):
@@ -373,8 +379,11 @@ class RollbarTest(BaseTest):
 
     @unittest.skipUnless(sys.version_info >= (3, 7), 'Python3.7+ required')
     def test_get_request_fastapi_middleware(self):
-        from fastapi import FastAPI, Request
-        from fastapi.testclient import TestClient
+        try:
+            from fastapi import FastAPI, Request
+            from fastapi.testclient import TestClient
+        except ImportError:
+            self.skipTest('Requires FastaAPI package')
         from rollbar.contrib.fastapi import ReporterMiddleware
 
         app = FastAPI()
@@ -391,8 +400,11 @@ class RollbarTest(BaseTest):
 
     @unittest.skipUnless(sys.version_info >= (3, 7), 'Python3.7+ required')
     def test_get_request_fastapi_logger(self):
-        from fastapi import FastAPI, Request
-        from fastapi.testclient import TestClient
+        try:
+            from fastapi import FastAPI, Request
+            from fastapi.testclient import TestClient
+        except ImportError:
+            self.skipTest('Requires FastaAPI package')
         from rollbar.contrib.fastapi import ReporterMiddleware
 
         app = FastAPI()
@@ -410,9 +422,16 @@ class RollbarTest(BaseTest):
 
     @unittest.skipUnless(sys.version_info >= (3, 7), 'Python3.7+ required')
     def test_get_request_fastapi_router(self):
-        from fastapi import FastAPI, Request
-        from fastapi.testclient import TestClient
+        try:
+            import fastapi
+            from fastapi import FastAPI, Request
+            from fastapi.testclient import TestClient
+        except ImportError:
+            self.skipTest('Requires FastAPI package')
         from rollbar.contrib.fastapi import add_to as rollbar_add_to
+
+        if fastapi.__version__ < '0.41.0':
+            self.skipTest('Requires FastAPI 0.41.0+')
 
         app = FastAPI()
         rollbar_add_to(app)
@@ -867,8 +886,7 @@ class RollbarTest(BaseTest):
         rollbar._send_failsafe('test message', test_uuid, test_host)
         self.assertEqual(mock_log.call_count, 1)
 
-    @unittest.skipIf(rollbar.AsyncHTTPClient is None,
-                     'Requires async handler to be installed')
+    @unittest.skipUnless(rollbar.AsyncHTTPClient, 'Requires async handler to be installed')
     @mock.patch('rollbar._send_payload_async')
     def test_async_handler(self, send_payload_async):
         def _raise():
@@ -882,8 +900,7 @@ class RollbarTest(BaseTest):
 
         send_payload_async.assert_called_once()
 
-    @unittest.skipIf(rollbar.httpx is None,
-                     'Requires HTTPX to be installed')
+    @unittest.skipUnless(rollbar.httpx, 'Requires HTTPX to be installed')
     @mock.patch('rollbar._send_payload_httpx')
     def test_httpx_handler(self, send_payload_httpx):
         def _raise():
@@ -1684,7 +1701,7 @@ class RollbarTest(BaseTest):
         try:
             from starlette.requests import Request
         except ImportError:
-            self.skipTest('Requires Starlette to be installed')
+            self.skipTest('Requires Starlette package')
 
         client_host = ('127.0.0.1', 1453)
         ip_forwarded_for = b'192.168.10.10'
@@ -1707,7 +1724,7 @@ class RollbarTest(BaseTest):
         try:
             from starlette.requests import Request
         except ImportError:
-            self.skipTest('Requires Starlette to be installed')
+            self.skipTest('Requires Starlette package')
 
         ip_forwarded_for = b'192.168.10.10'
         ip_real_ip = b'1.2.3.4'

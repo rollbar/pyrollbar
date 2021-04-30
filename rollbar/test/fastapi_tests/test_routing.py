@@ -8,7 +8,15 @@ try:
 except ImportError:
     import mock
 
-import fastapi
+try:
+    import fastapi
+
+    FASTAPI_INSTALLED = True
+    ALLOWED_FASTAPI_VERSION = fastapi.__version__ >= '0.41.0'
+except ImportError:
+    FASTAPI_INSTALLED = False
+    ALLOWED_FASTAPI_VERSION = False
+
 import unittest2
 
 import rollbar
@@ -17,10 +25,11 @@ from rollbar.test import BaseTest
 
 
 ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
-ALLOWED_FASTAPI_VERSION = fastapi.__version__ >= '0.41.0'
 
 
-@unittest2.skipUnless(ALLOWED_PYTHON_VERSION, 'FastAPI requires Python3.6+')
+@unittest2.skipUnless(
+    FASTAPI_INSTALLED and ALLOWED_PYTHON_VERSION, 'FastAPI requires Python3.6+'
+)
 class LoggingRouteUnsupportedFastAPIVersionTest(BaseTest):
     def test_should_disable_loading_route_handler_if_fastapi_is_too_old(self):
         import logging
@@ -55,7 +64,9 @@ class LoggingRouteUnsupportedFastAPIVersionTest(BaseTest):
         fastapi.__version__ = fastapi_version
 
 
-@unittest2.skipUnless(ALLOWED_PYTHON_VERSION, 'FastAPI requires Python3.6+')
+@unittest2.skipUnless(
+    FASTAPI_INSTALLED and ALLOWED_PYTHON_VERSION, 'FastAPI requires Python3.6+'
+)
 @unittest2.skipUnless(ALLOWED_FASTAPI_VERSION, 'FastAPI v0.41.0+ is required')
 class LoggingRouteTest(BaseTest):
     default_settings = copy.deepcopy(rollbar.SETTINGS)
