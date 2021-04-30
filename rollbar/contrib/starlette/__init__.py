@@ -6,7 +6,7 @@ import rollbar
 from .middleware import ReporterMiddleware
 from .logger import LoggerMiddleware
 
-# Do not modify returned request object
+# Do not modify the returned request object
 from .requests import get_current_request
 
 

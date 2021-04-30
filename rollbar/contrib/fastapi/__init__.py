@@ -1,4 +1,4 @@
-__all__ = ['ReporterMiddleware', 'add_to', 'LoggerMiddleware', 'get_current_request']
+__all__ = ['add_to', 'ReporterMiddleware', 'LoggerMiddleware', 'get_current_request']
 
 from fastapi import __version__
 
