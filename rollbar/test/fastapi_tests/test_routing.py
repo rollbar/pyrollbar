@@ -40,7 +40,7 @@ class LoggingRouteUnsupportedFastAPIVersionTest(BaseTest):
         from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
         from rollbar.contrib.fastapi.utils import FastAPIVersionError
 
-        logging.disable()  # silent logger for tests
+        logging.disable(logging.ERROR)  # silent logger for tests
         fastapi_version = fastapi.__version__
 
         app = FastAPI()
