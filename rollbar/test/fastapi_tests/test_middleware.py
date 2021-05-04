@@ -18,6 +18,7 @@ import unittest2
 
 import rollbar
 import rollbar.contrib.fastapi
+from rollbar.lib._async import AsyncMock
 from rollbar.test import BaseTest
 
 ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
@@ -127,7 +128,7 @@ class ReporterMiddlewareTest(BaseTest):
             },
         )
 
-    @mock.patch('rollbar.lib._async.report_exc_info')
+    @mock.patch('rollbar.lib._async.report_exc_info', new_callable=AsyncMock)
     @mock.patch('rollbar.report_exc_info')
     def test_should_use_async_report_exc_info_if_default_handler(
         self, sync_report_exc_info, async_report_exc_info
@@ -153,7 +154,7 @@ class ReporterMiddlewareTest(BaseTest):
         async_report_exc_info.assert_called_once()
         sync_report_exc_info.assert_not_called()
 
-    @mock.patch('rollbar.lib._async.report_exc_info')
+    @mock.patch('rollbar.lib._async.report_exc_info', new_callable=AsyncMock)
     @mock.patch('rollbar.report_exc_info')
     def test_should_use_async_report_exc_info_if_any_async_handler(
         self, sync_report_exc_info, async_report_exc_info
@@ -179,7 +180,7 @@ class ReporterMiddlewareTest(BaseTest):
         async_report_exc_info.assert_called_once()
         sync_report_exc_info.assert_not_called()
 
-    @mock.patch('rollbar.lib._async.report_exc_info')
+    @mock.patch('rollbar.lib._async.report_exc_info', new_callable=AsyncMock)
     @mock.patch('rollbar.report_exc_info')
     def test_should_use_sync_report_exc_info_if_non_async_handlers(
         self, sync_report_exc_info, async_report_exc_info

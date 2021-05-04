@@ -3,6 +3,7 @@ import contextlib
 import inspect
 import logging
 import sys
+from unittest import mock
 
 import httpx
 
@@ -204,3 +205,9 @@ class FailingTestASGIApp:
 
     async def app(self, scope, receive, send):
         raise RuntimeError('Invoked only for testing')
+
+
+# for Python 3.7- compatibility
+class AsyncMock(mock.MagicMock):
+    async def __call__(self, *args, **kwargs):
+        return super().__call__(*args, **kwargs)

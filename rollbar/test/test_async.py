@@ -9,6 +9,7 @@ except ImportError:
 import unittest2
 
 import rollbar
+from rollbar.lib._async import AsyncMock
 from rollbar.test import BaseTest
 
 ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
@@ -244,7 +245,7 @@ class AsyncLibTest(BaseTest):
 
         self.assertEqual(rollbar.SETTINGS['handler'], 'httpx')
 
-    @mock.patch('rollbar.lib._async.report_exc_info')
+    @mock.patch('rollbar.lib._async.report_exc_info', new_callable=AsyncMock)
     def test_should_try_report_with_async_handler(self, async_report_exc_info):
         import rollbar
         from rollbar.lib._async import run, try_report
@@ -255,7 +256,7 @@ class AsyncLibTest(BaseTest):
 
         async_report_exc_info.assert_called_once()
 
-    @mock.patch('rollbar.lib._async.report_exc_info')
+    @mock.patch('rollbar.lib._async.report_exc_info', new_callable=AsyncMock)
     def test_should_not_try_report_with_async_handler_if_non_async_handler(
         self, async_report_exc_info
     ):
