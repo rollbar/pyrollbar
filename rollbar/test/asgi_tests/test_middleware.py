@@ -36,7 +36,7 @@ class ReporterMiddlewareTest(BaseTest):
         with self.assertRaises(RuntimeError):
             run(testapp({'type': 'http'}, None, None))
 
-        mock_report.assert_called_once()
+        self.assertTrue(mock_report.called)
 
         args, kwargs = mock_report.call_args
         self.assertEqual(kwargs, {})
@@ -61,8 +61,8 @@ class ReporterMiddlewareTest(BaseTest):
         with self.assertRaises(RuntimeError):
             run(testapp({'type': 'http'}, None, None))
 
-        async_report_exc_info.assert_called_once()
-        sync_report_exc_info.assert_not_called()
+        self.assertTrue(async_report_exc_info.called)
+        self.assertFalse(sync_report_exc_info.called)
 
     @mock.patch('rollbar.lib._async.report_exc_info', new_callable=AsyncMock)
     @mock.patch('rollbar.report_exc_info')
@@ -79,8 +79,8 @@ class ReporterMiddlewareTest(BaseTest):
         with self.assertRaises(RuntimeError):
             run(testapp({'type': 'http'}, None, None))
 
-        async_report_exc_info.assert_called_once()
-        sync_report_exc_info.assert_not_called()
+        self.assertTrue(async_report_exc_info.called)
+        self.assertFalse(sync_report_exc_info.called)
 
     @mock.patch('rollbar.lib._async.report_exc_info', new_callable=AsyncMock)
     @mock.patch('rollbar.report_exc_info')
@@ -97,8 +97,8 @@ class ReporterMiddlewareTest(BaseTest):
         with self.assertRaises(RuntimeError):
             run(testapp({'type': 'http'}, None, None))
 
-        sync_report_exc_info.assert_called_once()
-        async_report_exc_info.assert_not_called()
+        self.assertFalse(async_report_exc_info.called)
+        self.assertTrue(sync_report_exc_info.called)
 
     def test_should_support_http_only(self):
         from rollbar.contrib.asgi.middleware import ReporterMiddleware
@@ -110,13 +110,13 @@ class ReporterMiddlewareTest(BaseTest):
             with self.assertRaises(RuntimeError):
                 run(testapp({'type': 'http'}, None, None))
 
-            mock_report.assert_called_once()
+            self.assertTrue(mock_report.called)
 
         with mock.patch('rollbar.report_exc_info') as mock_report:
             with self.assertRaises(RuntimeError):
                 run(testapp({'type': 'websocket'}, None, None))
 
-            mock_report.assert_not_called()
+            self.assertFalse(mock_report.called)
 
     def test_should_support_type_hints(self):
         from rollbar.contrib.asgi.types import Receive, Scope, Send
