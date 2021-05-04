@@ -66,6 +66,9 @@ class UtilsMiddlewareTest(BaseTest):
         self.assertListEqual(middlewares, [])
 
 
+@unittest2.skipUnless(
+    FASTAPI_INSTALLED and ALLOWED_PYTHON_VERSION, 'FastAPI requires Python3.6+'
+)
 class UtilsBareRoutingTest(BaseTest):
     def test_should_return_true_if_has_bare_routing(self):
         from fastapi import APIRouter, FastAPI
