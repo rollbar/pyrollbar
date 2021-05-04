@@ -350,7 +350,9 @@ class RollbarTest(BaseTest):
         middleware = [Middleware(ReporterMiddleware)]
         app = Starlette(routes=routes, middleware=middleware)
         client = TestClient(app)
-        client.get('/test?param1=value1&param2=value2')
+        response = client.get('/test?param1=value1&param2=value2')
+
+        self.assertEqual(response.status_code, 200)
 
     @unittest.skipUnless(sys.version_info >= (3, 7), 'Python3.7+ required')
     def test_get_request_starlette_logger(self):
@@ -375,7 +377,9 @@ class RollbarTest(BaseTest):
         middleware = [Middleware(ReporterMiddleware)]
         app = Starlette(routes=routes, middleware=middleware)
         client = TestClient(app)
-        client.get('/test?param1=value1&param2=value2')
+        response = client.get('/test?param1=value1&param2=value2')
+
+        self.assertEqual(response.status_code, 200)
 
     @unittest.skipUnless(sys.version_info >= (3, 7), 'Python3.7+ required')
     def test_get_request_fastapi_middleware(self):
@@ -396,7 +400,9 @@ class RollbarTest(BaseTest):
             self.assertEqual(current_request, fastapi_request)
 
         client = TestClient(app)
-        client.get('/test?param1=value1&param2=value2')
+        response = client.get('/test?param1=value1&param2=value2')
+
+        self.assertEqual(response.status_code, 200)
 
     @unittest.skipUnless(sys.version_info >= (3, 7), 'Python3.7+ required')
     def test_get_request_fastapi_logger(self):
@@ -417,8 +423,9 @@ class RollbarTest(BaseTest):
             self.assertEqual(current_request, fastapi_request)
 
         client = TestClient(app)
-        client.get('/test?param1=value1&param2=value2')
+        response = client.get('/test?param1=value1&param2=value2')
 
+        self.assertEqual(response.status_code, 200)
 
     @unittest.skipUnless(sys.version_info >= (3, 7), 'Python3.7+ required')
     def test_get_request_fastapi_router(self):
@@ -443,7 +450,9 @@ class RollbarTest(BaseTest):
             self.assertEqual(current_request, fastapi_request)
 
         client = TestClient(app)
-        client.get('/test?param1=value1&param2=value2')
+        response = client.get('/test?param1=value1&param2=value2')
+
+        self.assertEqual(response.status_code, 200)
 
     @mock.patch('rollbar.send_payload')
     def test_report_exception(self, send_payload):
