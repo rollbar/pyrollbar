@@ -108,7 +108,6 @@ class ReporterMiddlewareTest(BaseTest):
             from starlette.requests import Request
             from starlette.testclient import TestClient
 
-
         app = FastAPI()
         app.add_middleware(ReporterMiddleware)
 
