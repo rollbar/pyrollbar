@@ -5,7 +5,10 @@ import logging
 import sys
 from unittest import mock
 
-import httpx
+try:
+    import httpx
+except ImportError:
+    httpx = None
 
 import rollbar
 from rollbar import DEFAULT_TIMEOUT
@@ -130,6 +133,9 @@ async def try_report(
     current_handler = rollbar.SETTINGS.get('handler')
     if not (current_handler in ALLOWED_HANDLERS or current_handler == 'default'):
         raise RollbarAsyncError('No async handler set.')
+
+    if httpx is None:
+        raise RollbarAsyncError('HTTPX is required')
 
     return await report_exc_info(
         exc_info, request, extra_data, payload_data, level, **kw
