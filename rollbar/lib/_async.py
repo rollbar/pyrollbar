@@ -160,6 +160,7 @@ def call_later(coro):
 
 
 # test helpers
+# TODO: move to rollbar.test.async_helper after migrating from unittest
 
 
 def run(coro):
@@ -183,6 +184,10 @@ def async_receive(message):
 
     assert message['type'] == 'http.request'
     return receive
+
+
+async def coroutine():
+    ...
 
 
 class BareMiddleware:

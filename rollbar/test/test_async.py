@@ -273,10 +273,7 @@ class AsyncLibTest(BaseTest):
     @mock.patch('asyncio.ensure_future')
     @mock.patch('asyncio.create_task')
     def test_should_schedule_task_in_event_loop(self, create_task, ensure_future):
-        from rollbar.lib._async import call_later
-
-        async def coroutine():
-            ...
+        from rollbar.lib._async import call_later, coroutine
 
         try:
             coro = coroutine()
