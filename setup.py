@@ -45,7 +45,7 @@ setup(
     long_description_content_type="text/markdown",
     author='Rollbar, Inc.',
     author_email='support@rollbar.com',
-    test_suite='rollbar.test',
+    test_suite='rollbar.test.discover',
     url='http://github.com/rollbar/pyrollbar',
     classifiers=[
         "Programming Language :: Python",
