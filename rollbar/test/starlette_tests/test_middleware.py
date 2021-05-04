@@ -48,7 +48,6 @@ class ReporterMiddlewareTest(BaseTest):
         async def root(request):
             1 / 0
 
-
         client = TestClient(app)
         with self.assertRaises(ZeroDivisionError):
             client.get('/')
