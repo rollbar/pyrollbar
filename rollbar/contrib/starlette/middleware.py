@@ -16,7 +16,7 @@ class ReporterMiddleware(ASGIReporterMiddleware):
             await self.app(scope, receive, send)
         except Exception:
             if scope['type'] == 'http':
-                request = Request(scope, receive, send)
+                request = Request(scope, receive)
 
                 # Consuming the request body in Starlette middleware is problematic.
                 # See: https://github.com/encode/starlette/issues/495#issuecomment-494008175
