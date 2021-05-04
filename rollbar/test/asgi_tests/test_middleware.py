@@ -15,6 +15,7 @@ from rollbar.lib._async import AsyncMock
 from rollbar.test import BaseTest
 
 ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 5)
+ASYNC_REPORT_ENABLED = sys.version_info >= (3, 6)
 
 
 @unittest2.skipUnless(ALLOWED_PYTHON_VERSION, 'ASGI implementation requires Python3.5+')
@@ -46,6 +47,7 @@ class ReporterMiddlewareTest(BaseTest):
         self.assertEqual(exc_type, RuntimeError)
         self.assertIsInstance(exc_value, RuntimeError)
 
+    @unittest2.skipUnless(ASYNC_REPORT_ENABLED, 'Requires Python 3.6+')
     @mock.patch('rollbar.lib._async.report_exc_info', new_callable=AsyncMock)
     @mock.patch('rollbar.report_exc_info')
     def test_should_use_async_report_exc_info_if_default_handler(
@@ -64,6 +66,7 @@ class ReporterMiddlewareTest(BaseTest):
         self.assertTrue(async_report_exc_info.called)
         self.assertFalse(sync_report_exc_info.called)
 
+    @unittest2.skipUnless(ASYNC_REPORT_ENABLED, 'Requires Python 3.6+')
     @mock.patch('rollbar.lib._async.report_exc_info', new_callable=AsyncMock)
     @mock.patch('rollbar.report_exc_info')
     def test_should_use_async_report_exc_info_if_any_async_handler(
@@ -82,6 +85,7 @@ class ReporterMiddlewareTest(BaseTest):
         self.assertTrue(async_report_exc_info.called)
         self.assertFalse(sync_report_exc_info.called)
 
+    @unittest2.skipUnless(ASYNC_REPORT_ENABLED, 'Requires Python 3.6+')
     @mock.patch('rollbar.lib._async.report_exc_info', new_callable=AsyncMock)
     @mock.patch('rollbar.report_exc_info')
     def test_should_use_sync_report_exc_info_if_non_async_handlers(
