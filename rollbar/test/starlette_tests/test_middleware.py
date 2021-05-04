@@ -322,7 +322,7 @@ class ReporterMiddlewareTest(BaseTest):
         client.get('/')
 
     def test_should_support_http_only(self):
-        from rollbar.contrib.fastapi.middleware import ReporterMiddleware
+        from rollbar.contrib.starlette.middleware import ReporterMiddleware
         from rollbar.lib._async import FailingTestASGIApp, run
 
         testapp = ReporterMiddleware(FailingTestASGIApp())
