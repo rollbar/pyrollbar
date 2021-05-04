@@ -23,9 +23,8 @@ tests_require = [
     'unittest2'
 ]
 
-version = sys.version_info
-if version[0] == 2 or (version[0] == 3 and version[1] < 4):
-    tests_require.append('mock<=3.0.5') # mock > 3.0.5 requires python >= 3.5
+if sys.version_info < (3, 4):
+    tests_require.append('mock<=3.0.5') # mock > 3.0.5 requires python >= 3.4
     tests_require.append('enum34')
 
 setup(
