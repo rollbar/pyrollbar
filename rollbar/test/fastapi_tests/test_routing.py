@@ -80,8 +80,12 @@ class LoggingRouteTest(BaseTest):
     @mock.patch('rollbar.report_exc_info')
     def test_should_catch_and_report_errors(self, mock_report):
         from fastapi import FastAPI
-        from fastapi.testclient import TestClient
         from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
+
+        try:
+            from fastapi.testclient import TestClient
+        except ImportError:  # Added in FastAPI v0.51.0+
+            from starlette.testclient import TestClient
 
         app = FastAPI()
         rollbar_add_to(app)
@@ -106,9 +110,15 @@ class LoggingRouteTest(BaseTest):
 
     @mock.patch('rollbar.report_exc_info')
     def test_should_report_with_request_data(self, mock_report):
-        from fastapi import FastAPI, Request
-        from fastapi.testclient import TestClient
+        from fastapi import FastAPI
         from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
+
+        try:
+            from fastapi import Request
+            from fastapi.testclient import TestClient
+        except ImportError:  # Added in FastAPI v0.51.0+
+            from starlette.requests import Request
+            from starlette.testclient import TestClient
 
         app = FastAPI()
         rollbar_add_to(app)
@@ -131,8 +141,12 @@ class LoggingRouteTest(BaseTest):
     @mock.patch('rollbar.send_payload')
     def test_should_send_payload_with_request_data(self, mock_send_payload, *mocks):
         from fastapi import FastAPI
-        from fastapi.testclient import TestClient
         from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
+
+        try:
+            from fastapi.testclient import TestClient
+        except ImportError:  # Added in FastAPI v0.51.0+
+            from starlette.testclient import TestClient
 
         app = FastAPI()
         rollbar_add_to(app)
@@ -175,9 +189,13 @@ class LoggingRouteTest(BaseTest):
     @mock.patch('rollbar.send_payload')
     def test_should_send_payload_with_request_body(self, mock_send_payload, *mocks):
         from fastapi import Body, FastAPI
-        from fastapi.testclient import TestClient
         from pydantic import BaseModel
         from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
+
+        try:
+            from fastapi.testclient import TestClient
+        except ImportError:  # Added in FastAPI v0.51.0+
+            from starlette.testclient import TestClient
 
         rollbar.SETTINGS['include_request_body'] = True
         expected_body = {'param1': 'value1', 'param2': 'value2'}
@@ -223,8 +241,12 @@ class LoggingRouteTest(BaseTest):
     @mock.patch('rollbar.send_payload')
     def test_should_send_payload_with_form_data(self, mock_send_payload, *mocks):
         from fastapi import FastAPI, Form
-        from fastapi.testclient import TestClient
         from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
+
+        try:
+            from fastapi.testclient import TestClient
+        except ImportError:  # Added in FastAPI v0.51.0+
+            from starlette.testclient import TestClient
 
         expected_form = {'param1': 'value1', 'param2': 'value2'}
         expected_body = b'param1=value1&param2=value2'
@@ -271,9 +293,13 @@ class LoggingRouteTest(BaseTest):
         self, sync_report_exc_info, async_report_exc_info
     ):
         from fastapi import FastAPI
-        from fastapi.testclient import TestClient
         import rollbar
         from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
+
+        try:
+            from fastapi.testclient import TestClient
+        except ImportError:  # Added in FastAPI v0.51.0+
+            from starlette.testclient import TestClient
 
         rollbar.SETTINGS['handler'] = 'default'
 
@@ -297,9 +323,13 @@ class LoggingRouteTest(BaseTest):
         self, sync_report_exc_info, async_report_exc_info
     ):
         from fastapi import FastAPI
-        from fastapi.testclient import TestClient
         import rollbar
         from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
+
+        try:
+            from fastapi.testclient import TestClient
+        except ImportError:  # Added in FastAPI v0.51.0+
+            from starlette.testclient import TestClient
 
         rollbar.SETTINGS['handler'] = 'httpx'
 
@@ -323,9 +353,13 @@ class LoggingRouteTest(BaseTest):
         self, sync_report_exc_info, async_report_exc_info
     ):
         from fastapi import FastAPI
-        from fastapi.testclient import TestClient
         import rollbar
         from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
+
+        try:
+            from fastapi.testclient import TestClient
+        except ImportError:  # Added in FastAPI v0.51.0+
+            from starlette.testclient import TestClient
 
         rollbar.SETTINGS['handler'] = 'threading'
 
@@ -634,8 +668,12 @@ class LoggingRouteTest(BaseTest):
     @mock.patch('rollbar.contrib.fastapi.routing.store_current_request')
     def test_should_store_current_request(self, store_current_request):
         from fastapi import FastAPI
-        from fastapi.testclient import TestClient
         from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
+
+        try:
+            from fastapi.testclient import TestClient
+        except ImportError:  # Added in FastAPI v0.51.0+
+            from starlette.testclient import TestClient
 
         expected_scope = {
             'client': ['testclient', 50000],
@@ -675,10 +713,16 @@ class LoggingRouteTest(BaseTest):
         sys.version_info >= (3, 7), 'Global request access is supported in Python 3.7+'
     )
     def test_should_return_current_request(self):
-        from fastapi import FastAPI, Request
-        from fastapi.testclient import TestClient
+        from fastapi import FastAPI
         from rollbar.contrib.fastapi import get_current_request
         from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
+
+        try:
+            from fastapi import Request
+            from fastapi.testclient import TestClient
+        except ImportError:  # Added in FastAPI v0.51.0+
+            from starlette.requests import Request
+            from starlette.testclient import TestClient
 
         app = FastAPI()
         rollbar_add_to(app)
@@ -695,10 +739,16 @@ class LoggingRouteTest(BaseTest):
     @mock.patch('rollbar.contrib.starlette.requests.ContextVar', None)
     @mock.patch('logging.Logger.error')
     def test_should_not_return_current_request_for_older_python(self, mock_log):
-        from fastapi import FastAPI, Request
-        from fastapi.testclient import TestClient
+        from fastapi import FastAPI
         from rollbar.contrib.fastapi import get_current_request
         from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
+
+        try:
+            from fastapi import Request
+            from fastapi.testclient import TestClient
+        except ImportError:  # Added in FastAPI v0.51.0+
+            from starlette.requests import Request
+            from starlette.testclient import TestClient
 
         app = FastAPI()
         rollbar_add_to(app)

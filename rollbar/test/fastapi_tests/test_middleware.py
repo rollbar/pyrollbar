@@ -38,8 +38,12 @@ class ReporterMiddlewareTest(BaseTest):
     @mock.patch('rollbar.report_exc_info')
     def test_should_catch_and_report_errors(self, mock_report):
         from fastapi import FastAPI
-        from fastapi.testclient import TestClient
         from rollbar.contrib.fastapi.middleware import ReporterMiddleware
+
+        try:
+            from fastapi.testclient import TestClient
+        except ImportError:  # Added in FastAPI v0.51.0+
+            from starlette.testclient import TestClient
 
         app = FastAPI()
         app.add_middleware(ReporterMiddleware)
@@ -65,14 +69,14 @@ class ReporterMiddlewareTest(BaseTest):
     @mock.patch('rollbar.report_exc_info')
     def test_should_report_with_request_data(self, mock_report):
         from fastapi import FastAPI
-        from fastapi.testclient import TestClient
         from rollbar.contrib.fastapi.middleware import ReporterMiddleware
 
         try:
             from fastapi import Request
-        except ImportError:
-            # FastAPI added Request in 0.51.0
-            from starlette import Request
+            from fastapi.testclient import TestClient
+        except ImportError:  # Added in FastAPI v0.51.0+
+            from starlette.requests import Request
+            from starlette.testclient import TestClient
 
         app = FastAPI()
         app.add_middleware(ReporterMiddleware)
@@ -260,15 +264,15 @@ class ReporterMiddlewareTest(BaseTest):
     )
     def test_should_return_current_request(self):
         from fastapi import FastAPI
-        from fastapi.testclient import TestClient
         from rollbar.contrib.fastapi.middleware import ReporterMiddleware
         from rollbar.contrib.fastapi import get_current_request
 
         try:
             from fastapi import Request
-        except ImportError:
-            # FastAPI added Request in 0.51.0
-            from starlette import Request
+            from fastapi.testclient import TestClient
+        except ImportError:  # Added in FastAPI v0.51.0+
+            from starlette.requests import Request
+            from starlette.testclient import TestClient
 
         app = FastAPI()
         app.add_middleware(ReporterMiddleware)
@@ -286,15 +290,15 @@ class ReporterMiddlewareTest(BaseTest):
     @mock.patch('logging.Logger.error')
     def test_should_not_return_current_request_for_older_python(self, mock_log):
         from fastapi import FastAPI
-        from fastapi.testclient import TestClient
         from rollbar.contrib.fastapi.middleware import ReporterMiddleware
         from rollbar.contrib.fastapi import get_current_request
 
         try:
             from fastapi import Request
-        except ImportError:
-            # FastAPI added Request in 0.51.0
-            from starlette import Request
+            from fastapi.testclient import TestClient
+        except ImportError:  # Added in FastAPI v0.51.0+
+            from starlette.requests import Request
+            from starlette.testclient import TestClient
 
         app = FastAPI()
         app.add_middleware(ReporterMiddleware)

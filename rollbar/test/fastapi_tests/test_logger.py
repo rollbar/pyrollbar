@@ -42,8 +42,12 @@ class LoggerMiddlewareTest(BaseTest):
     @mock.patch('rollbar.contrib.starlette.logger.store_current_request')
     def test_should_store_current_request(self, store_current_request):
         from fastapi import FastAPI
-        from fastapi.testclient import TestClient
         from rollbar.contrib.fastapi.logger import LoggerMiddleware
+
+        try:
+            from fastapi.testclient import TestClient
+        except ImportError:  # Added in FastAPI v0.51.0+
+            from starlette.testclient import TestClient
 
         expected_scope = {
             'client': ['testclient', 50000],
@@ -81,10 +85,14 @@ class LoggerMiddlewareTest(BaseTest):
 
     def test_should_return_current_request(self):
         from fastapi import FastAPI
-        from fastapi.testclient import TestClient
         from starlette.requests import Request
         from rollbar.contrib.fastapi.logger import LoggerMiddleware
         from rollbar.contrib.fastapi import get_current_request
+
+        try:
+            from fastapi.testclient import TestClient
+        except ImportError:  # Added in FastAPI v0.51.0+
+            from starlette.testclient import TestClient
 
         app = FastAPI()
         app.add_middleware(LoggerMiddleware)
@@ -103,9 +111,13 @@ class LoggerMiddlewareTest(BaseTest):
     @mock.patch('logging.Logger.error')
     def test_should_not_return_current_request_for_older_python(self, mock_log):
         from fastapi import FastAPI
-        from fastapi.testclient import TestClient
         from rollbar.contrib.fastapi.logger import LoggerMiddleware
         from rollbar.contrib.fastapi import get_current_request
+
+        try:
+            from fastapi.testclient import TestClient
+        except ImportError:  # Added in FastAPI v0.51.0+
+            from starlette.testclient import TestClient
 
         app = FastAPI()
         app.add_middleware(LoggerMiddleware)
