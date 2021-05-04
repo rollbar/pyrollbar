@@ -99,8 +99,15 @@ class ReporterMiddlewareTest(BaseTest):
     @mock.patch('rollbar.send_payload')
     def test_should_send_payload_with_request_data(self, mock_send_payload, *mocks):
         from fastapi import FastAPI
-        from fastapi.testclient import TestClient
         from rollbar.contrib.fastapi.middleware import ReporterMiddleware
+
+        try:
+            from fastapi import Request
+            from fastapi.testclient import TestClient
+        except ImportError:  # Added in FastAPI v0.51.0+
+            from starlette.requests import Request
+            from starlette.testclient import TestClient
+
 
         app = FastAPI()
         app.add_middleware(ReporterMiddleware)
@@ -144,9 +151,13 @@ class ReporterMiddlewareTest(BaseTest):
         self, sync_report_exc_info, async_report_exc_info
     ):
         from fastapi import FastAPI
-        from fastapi.testclient import TestClient
         import rollbar
         from rollbar.contrib.fastapi import ReporterMiddleware
+
+        try:
+            from fastapi.testclient import TestClient
+        except ImportError:  # Added in FastAPI v0.51.0+
+            from starlette.testclient import TestClient
 
         rollbar.SETTINGS['handler'] = 'default'
 
@@ -170,9 +181,13 @@ class ReporterMiddlewareTest(BaseTest):
         self, sync_report_exc_info, async_report_exc_info
     ):
         from fastapi import FastAPI
-        from fastapi.testclient import TestClient
         import rollbar
         from rollbar.contrib.fastapi import ReporterMiddleware
+
+        try:
+            from fastapi.testclient import TestClient
+        except ImportError:  # Added in FastAPI v0.51.0+
+            from starlette.testclient import TestClient
 
         rollbar.SETTINGS['handler'] = 'httpx'
 
@@ -196,9 +211,13 @@ class ReporterMiddlewareTest(BaseTest):
         self, sync_report_exc_info, async_report_exc_info
     ):
         from fastapi import FastAPI
-        from fastapi.testclient import TestClient
         import rollbar
         from rollbar.contrib.fastapi import ReporterMiddleware
+
+        try:
+            from fastapi.testclient import TestClient
+        except ImportError:  # Added in FastAPI v0.51.0+
+            from starlette.testclient import TestClient
 
         rollbar.SETTINGS['handler'] = 'threading'
 
@@ -222,8 +241,12 @@ class ReporterMiddlewareTest(BaseTest):
     @mock.patch('rollbar.contrib.starlette.middleware.store_current_request')
     def test_should_store_current_request(self, store_current_request):
         from fastapi import FastAPI
-        from fastapi.testclient import TestClient
         from rollbar.contrib.fastapi.middleware import ReporterMiddleware
+
+        try:
+            from fastapi.testclient import TestClient
+        except ImportError:  # Added in FastAPI v0.51.0+
+            from starlette.testclient import TestClient
 
         expected_scope = {
             'client': ['testclient', 50000],
