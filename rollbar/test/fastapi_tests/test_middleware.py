@@ -9,6 +9,7 @@ except ImportError:
 
 try:
     import fastapi
+    import rollbar.contrib.fastapi
 
     FASTAPI_INSTALLED = True
 except ImportError:
@@ -17,7 +18,6 @@ except ImportError:
 import unittest2
 
 import rollbar
-import rollbar.contrib.fastapi
 from rollbar.lib._async import AsyncMock
 from rollbar.test import BaseTest
 

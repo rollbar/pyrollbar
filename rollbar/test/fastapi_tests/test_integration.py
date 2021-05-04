@@ -8,6 +8,7 @@ except ImportError:
 
 try:
     import fastapi
+    import rollbar.contrib.fastapi
 
     FASTAPI_INSTALLED = True
 except ImportError:
@@ -16,7 +17,6 @@ except ImportError:
 import unittest2
 
 import rollbar
-import rollbar.contrib.fastapi
 from rollbar.test import BaseTest
 
 ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
