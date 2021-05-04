@@ -4,14 +4,15 @@ import logging
 import sys
 from typing import Callable, Optional, Type, Union
 
-from fastapi import APIRouter, FastAPI, Response
+from fastapi import APIRouter, FastAPI
 from fastapi.routing import APIRoute
 
 try:
-    from fastapi import Request
+    from fastapi import Request, Response
 except ImportError:
     # FastAPI added Request in 0.51.0
-    from starlette import Request
+    from starlette.requests import Request
+    from starlette.responses import Response
 
 import rollbar
 from .utils import fastapi_min_version, get_installed_middlewares, has_bare_routing
