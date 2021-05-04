@@ -45,14 +45,24 @@ def get_installed_middlewares(app):
         ASGIReporterMiddleware,
     )
 
-    if not hasattr(app, 'user_middleware'):
-        return []
+    if hasattr(app, 'user_middleware'):  # FastAPI v0.51.0+
+        return [
+            middleware.cls
+            for middleware in app.user_middleware
+            if middleware.cls in candidates
+        ]
+    elif hasattr(app, 'error_middleware'):
+        middleware = app.error_middleware
+        middlewares = []
 
-    return [
-        middleware.cls
-        for middleware in app.user_middleware
-        if middleware.cls in candidates
-    ]
+        while hasattr(middleware, 'app'):
+            if isinstance(middleware, candidates):
+                middlewares.append(middleware)
+            middleware = middleware.app
+
+        return [middleware.__class__ for middleware in middlewares]
+    else:
+        return []
 
 
 def has_bare_routing(app_or_router):
