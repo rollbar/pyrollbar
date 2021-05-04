@@ -34,6 +34,7 @@ jobs:
           - PYRAMID_VERSION=1.10.4
           - STARLETTE_VERSION=0.14.2 httpx==0.18.1 python-multipart==0.0.5
           - FASTAPI_VERSION=0.40.0 httpx==0.18.1 python-multipart==0.0.5
+          - FASTAPI_VERSION=0.50.0 httpx==0.18.1 python-multipart==0.0.5
           - FASTAPI_VERSION=0.63.0 httpx==0.18.1 python-multipart==0.0.5
         exclude:
           - python-version: 2.7
@@ -101,13 +102,19 @@ jobs:
           - python-version: 2.7
             framework: FASTAPI_VERSION=0.40.0 httpx==0.18.1 python-multipart==0.0.5
           - python-version: 2.7
+            framework: FASTAPI_VERSION=0.50.0 httpx==0.18.1 python-multipart==0.0.5
+          - python-version: 2.7
             framework: FASTAPI_VERSION=0.63.0 httpx==0.18.1 python-multipart==0.0.5
           - python-version: 3.4
             framework: FASTAPI_VERSION=0.40.0 httpx==0.18.1 python-multipart==0.0.5
+          - python-version: 3.4
+            framework: FASTAPI_VERSION=0.50.0 httpx==0.18.1 python-multipart==0.0.5
           - python-version: 3.4
             framework: FASTAPI_VERSION=0.63.0 httpx==0.18.1 python-multipart==0.0.5
           - python-version: 3.5
             framework: FASTAPI_VERSION=0.40.0 httpx==0.18.1 python-multipart==0.0.5
+          - python-version: 3.5
+            framework: FASTAPI_VERSION=0.50.0 httpx==0.18.1 python-multipart==0.0.5
           - python-version: 3.5
             framework: FASTAPI_VERSION=0.63.0 httpx==0.18.1 python-multipart==0.0.5
         include:
