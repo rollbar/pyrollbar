@@ -8,6 +8,7 @@ except ImportError:
 
 try:
     import starlette
+    import rollbar.contrib.starlette
 
     STARLETTE_INSTALLED = True
 except ImportError:
@@ -16,7 +17,6 @@ except ImportError:
 import unittest2
 
 import rollbar
-import rollbar.contrib.starlette
 from rollbar.test import BaseTest
 
 ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
