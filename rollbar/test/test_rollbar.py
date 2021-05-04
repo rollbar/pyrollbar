@@ -393,11 +393,23 @@ class RollbarTest(BaseTest):
         app = FastAPI()
         app.add_middleware(ReporterMiddleware)
 
-        @app.get('/{param}')
-        def root(fastapi_request: Request):
+        # Inject annotations and decorate endpoint dynamically
+        # to avoid SyntaxError for older Python
+        #
+        # @app.get('/{param}')
+        # def root(param, fastapi_request: Request):
+        #     current_request = rollbar.get_request()
+        #
+        #     self.assertEqual(current_request, fastapi_request)
+
+        def root(param, fastapi_request):
             current_request = rollbar.get_request()
 
             self.assertEqual(current_request, fastapi_request)
+
+        root = fastapi_add_route_with_request_param(
+            app, root, '/{param}', 'fastapi_request'
+        )
 
         client = TestClient(app)
         response = client.get('/test?param1=value1&param2=value2')
@@ -416,11 +428,23 @@ class RollbarTest(BaseTest):
         app = FastAPI()
         app.add_middleware(ReporterMiddleware)
 
-        @app.get('/{param}')
-        def root(fastapi_request: Request):
+        # Inject annotations and decorate endpoint dynamically
+        # to avoid SyntaxError for older Python
+        #
+        # @app.get('/{param}')
+        # def root(fastapi_request: Request):
+        #     current_request = rollbar.get_request()
+        #
+        #     self.assertEqual(current_request, fastapi_request)
+
+        def root(param, fastapi_request):
             current_request = rollbar.get_request()
 
             self.assertEqual(current_request, fastapi_request)
+
+        root = fastapi_add_route_with_request_param(
+            app, root, '/{param}', 'fastapi_request'
+        )
 
         client = TestClient(app)
         response = client.get('/test?param1=value1&param2=value2')
@@ -443,11 +467,23 @@ class RollbarTest(BaseTest):
         app = FastAPI()
         rollbar_add_to(app)
 
-        @app.get('/{param}')
-        def root(fastapi_request: Request):
+        # Inject annotations and decorate endpoint dynamically
+        # to avoid SyntaxError for older Python
+        #
+        # @app.get('/{param}')
+        # def root(fastapi_request: Request):
+        #     current_request = rollbar.get_request()
+        #
+        #     self.assertEqual(current_request, fastapi_request)
+
+        def root(param, fastapi_request):
             current_request = rollbar.get_request()
 
             self.assertEqual(current_request, fastapi_request)
+
+        root = fastapi_add_route_with_request_param(
+            app, root, '/{param}', 'fastapi_request'
+        )
 
         client = TestClient(app)
         response = client.get('/test?param1=value1&param2=value2')
@@ -1808,6 +1844,7 @@ class MockRawResponse:
     def json(self):
         return self.data
 
+
 class MockLambdaContext(object):
     def __init__(self, x):
         self.function_name = 1
@@ -1818,6 +1855,14 @@ class MockLambdaContext(object):
 
     def get_remaining_time_in_millis(self):
         42
+
+
+def fastapi_add_route_with_request_param(app, endpoint, path, request_param):
+    from fastapi import Request
+
+    endpoint.__annotations__[request_param] = Request
+
+    return app.get(path)(endpoint)
 
 if __name__ == '__main__':
     unittest.main()
