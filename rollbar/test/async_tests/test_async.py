@@ -272,19 +272,21 @@ class AsyncLibTest(BaseTest):
         async_report_exc_info.assert_not_called()
 
     @mock.patch('asyncio.ensure_future')
-    @mock.patch('asyncio.create_task')
-    def test_should_schedule_task_in_event_loop(self, create_task, ensure_future):
+    def test_should_schedule_task_in_event_loop(self, ensure_future):
         from rollbar.lib._async import call_later, coroutine
 
         try:
-            coro = coroutine()
-            call_later(coro)
-
             if sys.version_info >= (3, 7):
-                create_task.assert_called_once_with(coro)
-                ensure_future.assert_not_called()
+                with mock.patch('asyncio.create_task') as create_task:
+                    coro = coroutine()
+                    call_later(coro)
+
+                    create_task.assert_called_once_with(coro)
+                    ensure_future.assert_not_called()
             else:
-                create_task.assert_not_called()
+                coro = coroutine()
+                call_later(coro)
+
                 ensure_future.assert_called_once_with(coro)
         finally:
             # make sure the coroutine is closed to avoid RuntimeWarning by calling
