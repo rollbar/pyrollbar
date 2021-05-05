@@ -65,6 +65,7 @@ def get_installed_middlewares(app):
 
     return middlewares
 
+
 def has_bare_routing(app_or_router):
     expected_app_routes = 4
     expected_router_routes = 0
