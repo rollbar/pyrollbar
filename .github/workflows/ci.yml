@@ -143,7 +143,8 @@ jobs:
 
       - name: Python 3.3 dependencies
         if: ${{ matrix.python-version == '3.3' }}
-        run: pip install Werkzeug==0.14.1 --force-reinstall
+        run: pip install --force-reinstall \
+          Werkzeug==0.14.1 six>=1.9.0 requests>=0.12.1 enum34 unittest2 blinker webob
 
       - name: Set the framework
         run: echo ${{ matrix.framework }} >> $GITHUB_ENV
