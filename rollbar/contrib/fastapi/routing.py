@@ -81,6 +81,7 @@ class RollbarLoggingRoute(APIRoute):
                 store_current_request(request)
                 return await router_handler(request)
             except Exception:
+                # FastAPI requires the `python-multipart` package to parse the content
                 if not request._stream_consumed:
                     await request.body()
                 await request.form()

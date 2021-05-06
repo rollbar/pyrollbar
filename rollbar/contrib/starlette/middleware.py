@@ -20,8 +20,10 @@ class ReporterMiddleware(ASGIReporterMiddleware):
 
                 # Consuming the request body in Starlette middleware is problematic.
                 # See: https://github.com/encode/starlette/issues/495#issuecomment-494008175
+                #
                 # Uncomment lines below if you know the risks.
                 #
+                # Starlette requires the `python-multipart` package to parse the content
                 # await request.body()
                 # await request.form()
 
