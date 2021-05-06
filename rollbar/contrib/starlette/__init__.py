@@ -1,16 +1,10 @@
-__all__ = ['ReporterMiddleware', 'get_current_request']
-
-import sys
+__all__ = ['ReporterMiddleware', 'LoggerMiddleware', 'get_current_request']
 
 from starlette import __version__
 
 import rollbar
 from .middleware import ReporterMiddleware
-
-if sys.version_info >= (3, 7):
-    from .logger import LoggerMiddleware
-
-    __all__.append('LoggerMiddleware')
+from .logger import LoggerMiddleware
 
 # Do not modify the returned request object
 from .requests import get_current_request

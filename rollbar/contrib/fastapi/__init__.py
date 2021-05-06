@@ -1,17 +1,11 @@
-__all__ = ['add_to', 'ReporterMiddleware', 'get_current_request']
-
-import sys
+__all__ = ['add_to', 'ReporterMiddleware', 'LoggerMiddleware', 'get_current_request']
 
 from fastapi import __version__
 
 import rollbar
 from .middleware import ReporterMiddleware
+from .logger import LoggerMiddleware
 from .routing import add_to
-
-if sys.version_info >= (3, 7):
-    from .logger import LoggerMiddleware
-
-    __all__.append('LoggerMiddleware')
 
 # Do not modify the returned request object
 from rollbar.contrib.starlette import get_current_request
