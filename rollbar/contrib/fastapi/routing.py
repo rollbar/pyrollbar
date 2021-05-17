@@ -10,7 +10,7 @@ from fastapi.routing import APIRoute
 try:
     from fastapi import Request, Response
 except ImportError:
-    # FastAPI added Request in 0.51.0
+    # Added in FastAPI v0.51.0
     from starlette.requests import Request
     from starlette.responses import Response
 
@@ -48,6 +48,7 @@ def add_to(app_or_router: Union[FastAPI, APIRouter]) -> Optional[Type[APIRoute]]
     rollbar_add_to(app)
 
     """
+
     if not has_bare_routing(app_or_router):
         log.error(
             'RollbarLoggingRoute must to be added to a bare router'

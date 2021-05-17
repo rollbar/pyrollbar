@@ -913,7 +913,7 @@ def _add_person_data(data, request):
 
 def _build_person_data(request):
     """
-    Returns a dictionary describing the logged-in user using data from `request.
+    Returns a dictionary describing the logged-in user using data from `request`.
 
     Try request.rollbar_person first, then 'user', then 'user_id'
     """
