@@ -517,10 +517,12 @@ def send_payload(payload, access_token):
     Available handlers:
     - 'blocking': calls _send_payload() (which makes an HTTP request) immediately, blocks on it
     - 'thread': starts a single-use thread that will call _send_payload(). returns immediately.
+    - 'async': calls _send_payload_async() (which makes an async HTTP request using default async handler)
     - 'agent': writes to a log file to be processed by rollbar-agent
     - 'tornado': calls _send_payload_tornado() (which makes an async HTTP request using tornado's AsyncHTTPClient)
     - 'gae': calls _send_payload_appengine() (which makes a blocking call to Google App Engine)
     - 'twisted': calls _send_payload_twisted() (which makes an async HTTP request using Twisted and Treq)
+    - 'httpx': calls _send_payload_httpx() (which makes an async HTTP request using HTTPX)
     """
     payload = events.on_payload(payload)
     if payload is False:
