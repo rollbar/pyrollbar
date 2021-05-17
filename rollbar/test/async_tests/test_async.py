@@ -65,9 +65,6 @@ class AsyncLibTest(BaseTest):
 
         uuid = run(report_message('foo'))
 
-        def r(f):
-            x
-
         send_payload.assert_called_once()
 
         payload = send_payload.call_args[0][0]
