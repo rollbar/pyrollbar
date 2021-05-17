@@ -10,7 +10,6 @@ except ImportError:
 
 try:
     import fastapi
-    import rollbar.contrib.fastapi
 
     FASTAPI_INSTALLED = True
     ALLOWED_FASTAPI_VERSION = fastapi.__version__ >= '0.41.0'
@@ -73,9 +72,9 @@ class LoggingRouteTest(BaseTest):
     default_settings = copy.deepcopy(rollbar.SETTINGS)
 
     def setUp(self):
+        importlib.reload(rollbar)
         rollbar.SETTINGS = copy.deepcopy(self.default_settings)
         rollbar.SETTINGS['handler'] = 'async'
-        importlib.reload(rollbar.contrib.fastapi)
 
     @mock.patch('rollbar.report_exc_info')
     def test_should_catch_and_report_errors(self, mock_report):
@@ -286,6 +285,27 @@ class LoggingRouteTest(BaseTest):
                 'user-agent': 'testclient',
             },
         )
+
+    @mock.patch('rollbar._check_config', return_value=True)
+    @mock.patch('rollbar.send_payload')
+    def test_should_add_framework_version_to_payload(self, mock_send_payload, *mocks):
+        import fastapi
+        from fastapi import FastAPI
+        import rollbar
+        from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
+
+        self.assertIsNone(rollbar.BASE_DATA_HOOK)
+
+        app = FastAPI()
+        rollbar_add_to(app)
+
+        rollbar.report_exc_info()
+
+        mock_send_payload.assert_called_once()
+        payload = mock_send_payload.call_args[0][0]
+
+        self.assertIn('fastapi', payload['data']['framework'])
+        self.assertIn(fastapi.__version__, payload['data']['framework'])
 
     @mock.patch('rollbar.lib._async.report_exc_info', new_callable=AsyncMock)
     @mock.patch('rollbar.report_exc_info')

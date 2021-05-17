@@ -9,7 +9,6 @@ except ImportError:
 
 try:
     import starlette
-    import rollbar.contrib.starlette
 
     STARLETTE_INSTALLED = True
 except ImportError:
@@ -31,9 +30,9 @@ class ReporterMiddlewareTest(BaseTest):
     default_settings = copy.deepcopy(rollbar.SETTINGS)
 
     def setUp(self):
+        importlib.reload(rollbar)
         rollbar.SETTINGS = copy.deepcopy(self.default_settings)
         rollbar.SETTINGS['handler'] = 'async'
-        importlib.reload(rollbar.contrib.starlette)
 
     @mock.patch('rollbar.report_exc_info')
     def test_should_catch_and_report_errors(self, mock_report):
@@ -129,6 +128,27 @@ class ReporterMiddlewareTest(BaseTest):
                 'user-agent': 'testclient',
             },
         )
+
+    @mock.patch('rollbar._check_config', return_value=True)
+    @mock.patch('rollbar.send_payload')
+    def test_should_add_framework_version_to_payload(self, mock_send_payload, *mocks):
+        import starlette
+        from starlette.applications import Starlette
+        import rollbar
+        from rollbar.contrib.starlette.middleware import ReporterMiddleware
+
+        self.assertIsNone(rollbar.BASE_DATA_HOOK)
+
+        app = Starlette()
+        app.add_middleware(ReporterMiddleware)
+
+        rollbar.report_exc_info()
+
+        mock_send_payload.assert_called_once()
+        payload = mock_send_payload.call_args[0][0]
+
+        self.assertIn('starlette', payload['data']['framework'])
+        self.assertIn(starlette.__version__, payload['data']['framework'])
 
     @mock.patch('rollbar.lib._async.report_exc_info', new_callable=AsyncMock)
     @mock.patch('rollbar.report_exc_info')

@@ -10,7 +10,6 @@ except ImportError:
 import unittest2
 
 import rollbar
-import rollbar.contrib.asgi
 from rollbar.lib._async import AsyncMock
 from rollbar.test import BaseTest
 
@@ -23,9 +22,9 @@ class ReporterMiddlewareTest(BaseTest):
     default_settings = copy.deepcopy(rollbar.SETTINGS)
 
     def setUp(self):
+        importlib.reload(rollbar)
         rollbar.SETTINGS = copy.deepcopy(self.default_settings)
         rollbar.SETTINGS['handler'] = 'async'
-        importlib.reload(rollbar.contrib.asgi)
 
     @mock.patch('rollbar.report_exc_info')
     def test_should_catch_and_report_errors(self, mock_report):
@@ -46,6 +45,22 @@ class ReporterMiddlewareTest(BaseTest):
 
         self.assertEqual(exc_type, RuntimeError)
         self.assertIsInstance(exc_value, RuntimeError)
+
+    @mock.patch('rollbar._check_config', return_value=True)
+    @mock.patch('rollbar.send_payload')
+    def test_should_add_framework_name_to_payload(self, mock_send_payload, *mocks):
+        import rollbar
+        from rollbar.contrib.asgi.middleware import ReporterMiddleware
+
+        self.assertIsNone(rollbar.BASE_DATA_HOOK)
+
+        ReporterMiddleware(None)  # invoke integration
+        rollbar.report_exc_info()
+
+        mock_send_payload.assert_called_once()
+        payload = mock_send_payload.call_args[0][0]
+
+        self.assertIn('asgi', payload['data']['framework'])
 
     @unittest2.skipUnless(ASYNC_REPORT_ENABLED, 'Requires Python 3.6+')
     @mock.patch('rollbar.lib._async.report_exc_info', new_callable=AsyncMock)

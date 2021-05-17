@@ -4,7 +4,7 @@ import logging
 import sys
 from typing import Callable, Optional, Type, Union
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, FastAPI, __version__
 from fastapi.routing import APIRoute
 
 try:
@@ -16,6 +16,7 @@ except ImportError:
 
 import rollbar
 from .utils import fastapi_min_version, get_installed_middlewares, has_bare_routing
+from rollbar.contrib.asgi.integration import integrate
 from rollbar.contrib.starlette.requests import store_current_request
 from rollbar.lib._async import RollbarAsyncError, try_report
 
@@ -23,6 +24,7 @@ log = logging.getLogger(__name__)
 
 
 @fastapi_min_version('0.41.0')
+@integrate(framework_name=f'fastapi {__version__}')
 def add_to(app_or_router: Union[FastAPI, APIRouter]) -> Optional[Type[APIRoute]]:
     """
     Adds RollbarLoggingRoute handler to the router app.

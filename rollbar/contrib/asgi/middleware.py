@@ -1,12 +1,16 @@
 import sys
 
 import rollbar
+from .integration import IntegrationBase, integrate
 from .types import ASGIApp, Receive, Scope, Send
 from rollbar.lib._async import RollbarAsyncError, try_report
 
 
-class ReporterMiddleware:
+@integrate(framework_name='asgi')
+class ReporterMiddleware(IntegrationBase):
     def __init__(self, app: ASGIApp) -> None:
+        super().__init__()
+
         self.app = app
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:

@@ -1,14 +1,17 @@
 import sys
 
+from starlette import __version__
 from starlette.requests import Request
 from starlette.types import Receive, Scope, Send
 
 import rollbar
 from .requests import store_current_request
 from rollbar.contrib.asgi import ReporterMiddleware as ASGIReporterMiddleware
+from rollbar.contrib.asgi.integration import integrate
 from rollbar.lib._async import RollbarAsyncError, try_report
 
 
+@integrate(framework_name=f'starlette {__version__}')
 class ReporterMiddleware(ASGIReporterMiddleware):
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         try:

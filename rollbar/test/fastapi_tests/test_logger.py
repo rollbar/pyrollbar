@@ -8,7 +8,6 @@ except ImportError:
 
 try:
     import fastapi
-    import rollbar.contrib.fastapi
 
     FASTAPI_INSTALLED = True
 except ImportError:
@@ -28,7 +27,28 @@ ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 7)
 )
 class LoggerMiddlewareTest(BaseTest):
     def setUp(self):
-        importlib.reload(rollbar.contrib.fastapi)
+        importlib.reload(rollbar)
+
+    @mock.patch('rollbar._check_config', return_value=True)
+    @mock.patch('rollbar.send_payload')
+    def test_should_add_framework_version_to_payload(self, mock_send_payload, *mocks):
+        import fastapi
+        from fastapi import FastAPI
+        import rollbar
+        from rollbar.contrib.fastapi.logger import LoggerMiddleware
+
+        self.assertIsNone(rollbar.BASE_DATA_HOOK)
+
+        app = FastAPI()
+        app.add_middleware(LoggerMiddleware)
+
+        rollbar.report_exc_info()
+
+        mock_send_payload.assert_called_once()
+        payload = mock_send_payload.call_args[0][0]
+
+        self.assertIn('fastapi', payload['data']['framework'])
+        self.assertIn(fastapi.__version__, payload['data']['framework'])
 
     def test_should_support_type_hints(self):
         from starlette.types import Receive, Scope, Send
