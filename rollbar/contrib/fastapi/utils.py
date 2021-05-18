@@ -30,7 +30,7 @@ class fastapi_min_version:
         def wrapper(*args, **kwargs):
             if fastapi.__version__ < self.min_version:
                 raise FastAPIVersionError(
-                    '0.41.0', reason=f'to use {func.__name__}() function'
+                    self.min_version, reason=f'to use {func.__name__}() function'
                 )
 
             return func(*args, **kwargs)
