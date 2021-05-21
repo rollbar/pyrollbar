@@ -57,7 +57,7 @@ class ReporterMiddlewareTest(BaseTest):
         ReporterMiddleware(None)  # invoke integration
         rollbar.report_exc_info()
 
-        self.assertEqual(mock_send_payload.call_count, 1)
+        self.assertTrue(mock_send_payload.called)
         payload = mock_send_payload.call_args[0][0]
 
         self.assertIn('asgi', payload['data']['framework'])
