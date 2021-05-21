@@ -552,6 +552,44 @@ def wait(f=None):
         return f()
 
 
+def feature_flag(flag_key, variation=None, user=None):
+    """
+    A context manager interface that creates a list of tags to represent a feature flag.
+
+    key: the key of the feature flag.
+    variation: (optional) the evaluated feature flag variation.
+    user: (optional) the user being evaluated.
+
+    Example usage:
+
+        with rollbar.feature_flag('flag1', variation=True, user='foobar@rollbar.com'):
+            code()
+
+    Tags generated from the above example:
+
+    [
+        {'key': feature_flag.key', 'value': 'flag1'},
+        {'key': feature_flag.data.flag1.variation', 'value': True},
+        {'key': feature_flag.data.flag1.user, 'value': 'foobar@rollbar.com'}
+    ]
+    """
+    flag_key_tag = _create_tag('feature_flag.key', flag_key)
+
+    tags = [flag_key_tag]
+
+    if variation is not None:
+        variation_key = _feature_flag_data_key(flag_key, 'variation')
+        variation_tag = _create_tag(variation_key, variation)
+        tags.append(variation_tag)
+
+    if user is not None:
+        user_key = _feature_flag_data_key(flag_key, 'user')
+        user_tag = _create_tag(user_key, user)
+        tags.append(user_tag)
+
+    return _TagManager(tags)
+
+
 class ApiException(Exception):
     """
     This exception will be raised if there was a problem decoding the
@@ -718,6 +756,16 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     if extra_trace_data and not extra_data:
         data['custom'] = extra_trace_data
 
+    tags = _in_context_tags.to_list()
+
+    # if there are tags attached to the exception, reverse the order, and append to `tags`
+    # to send the full chain of tags to Rollbar.
+    if hasattr(exc_info[1], '_rollbar_tags'):
+        tags += getattr(exc_info[1], '_rollbar_tags').to_list(reverse=True)
+
+    if tags:
+        data['tags'] = tags
+
     request = _get_actual_request(request)
     _add_request_data(data, request)
     _add_person_data(data, request)
@@ -803,6 +851,9 @@ def _report_message(message, level, request, extra_data, payload_data):
     _add_person_data(data, request)
     _add_lambda_context_data(data)
     data['server'] = _build_server_data()
+
+    if _in_context_tags.to_list():
+        data['tags'] = _in_context_tags.to_list()
 
     if payload_data:
         data = dict_merge(data, payload_data, silence_errors=True)
@@ -1622,3 +1673,66 @@ def _wsgi_extract_user_ip(environ):
     if real_ip:
         return real_ip
     return environ['REMOTE_ADDR']
+
+
+def _create_tag(key, value):
+    return {'key': key, 'value': value}
+
+
+def _feature_flag_data_key(flag_key, attribute):
+    return 'feature_flag.data.%s.%s' % (flag_key, attribute)
+
+
+class _LocalTags(object):
+    """
+    An object to ensure thread safety.
+    """
+    def __init__(self):
+        self._registry = threading.local()
+
+    def append(self, value):
+        if not hasattr(self._registry, 'tags'):
+            self._registry.tags = []
+
+        self._registry.tags.append(value)
+
+    def pop(self):
+        self._registry.tags.pop()
+
+    def to_list(self, reverse=False):
+        if not hasattr(self._registry, 'tags'):
+            self._registry.tags = []
+
+        if reverse:
+            return _flatten_nested_lists(self._registry.tags[::-1])
+
+        return _flatten_nested_lists(self._registry.tags)
+
+
+_in_context_tags = _LocalTags()
+
+
+class _TagManager(object):
+    """
+    Context manager object that interfaces with the `_in_context_tags` stack:
+
+        On enter, puts the tags at top of the stack.
+        On exit, pops off the top element of the stack.
+          - If there is an exception, attach the tags to the exception
+            for rebuilding the tags in the context before reporting.
+    """
+    def __init__(self, tags):
+        self.tags = tags
+
+    def __enter__(self):
+        _in_context_tags.append(self.tags)
+
+    def __exit__(self, exc_type, exc_value, traceback):
+
+        if exc_value:
+            if not hasattr(exc_value, '_rollbar_tags'):
+                exc_value._rollbar_tags = _LocalTags()
+
+            exc_value._rollbar_tags.append(self.tags)
+
+        _in_context_tags.pop()
