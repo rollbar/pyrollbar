@@ -116,12 +116,12 @@ class AsyncLibTest(BaseTest):
         import rollbar
         from rollbar.lib._async import report_exc_info, run
 
-        rollbar.SETTINGS['handler'] = 'default'
-        self.assertEqual(rollbar.SETTINGS['handler'], 'default')
+        rollbar.SETTINGS['handler'] = 'thread'
+        self.assertEqual(rollbar.SETTINGS['handler'], 'thread')
 
         run(report_exc_info())
 
-        self.assertEqual(rollbar.SETTINGS['handler'], 'default')
+        self.assertEqual(rollbar.SETTINGS['handler'], 'thread')
         mock__send_payload_async.assert_called_once()
         mock_log.assert_called_once_with(
             'Running coroutines requires async compatible handler. Switching to default async handler.'
@@ -135,12 +135,12 @@ class AsyncLibTest(BaseTest):
         import rollbar
         from rollbar.lib._async import report_message, run
 
-        rollbar.SETTINGS['handler'] = 'default'
-        self.assertEqual(rollbar.SETTINGS['handler'], 'default')
+        rollbar.SETTINGS['handler'] = 'thread'
+        self.assertEqual(rollbar.SETTINGS['handler'], 'thread')
 
         run(report_message('foo'))
 
-        self.assertEqual(rollbar.SETTINGS['handler'], 'default')
+        self.assertEqual(rollbar.SETTINGS['handler'], 'thread')
         mock__send_payload_async.assert_called_once()
         mock_log.assert_called_once_with(
             'Running coroutines requires async compatible handler. Switching to default async handler.'
@@ -260,8 +260,8 @@ class AsyncLibTest(BaseTest):
         import rollbar
         from rollbar.lib._async import RollbarAsyncError, run, try_report
 
-        rollbar.SETTINGS['handler'] = 'threading'
-        self.assertEqual(rollbar.SETTINGS['handler'], 'threading')
+        rollbar.SETTINGS['handler'] = 'thread'
+        self.assertEqual(rollbar.SETTINGS['handler'], 'thread')
 
         with self.assertRaises(RollbarAsyncError):
             run(try_report())
