@@ -396,6 +396,8 @@ class RollbarTest(BaseTest):
         # Inject annotations and decorate endpoint dynamically
         # to avoid SyntaxError for older Python
         #
+        # This is the code we'd use if we had not loaded the test file on Python 2.
+        #
         # @app.get('/{param}')
         # def root(param, fastapi_request: Request):
         #     current_request = rollbar.get_request()
@@ -430,6 +432,8 @@ class RollbarTest(BaseTest):
 
         # Inject annotations and decorate endpoint dynamically
         # to avoid SyntaxError for older Python
+        #
+        # This is the code we'd use if we had not loaded the test file on Python 2.
         #
         # @app.get('/{param}')
         # def root(fastapi_request: Request):
@@ -469,6 +473,8 @@ class RollbarTest(BaseTest):
 
         # Inject annotations and decorate endpoint dynamically
         # to avoid SyntaxError for older Python
+        #
+        # This is the code we'd use if we had not loaded the test file on Python 2.
         #
         # @app.get('/{param}')
         # def root(fastapi_request: Request):
