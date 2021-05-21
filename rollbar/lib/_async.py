@@ -22,6 +22,28 @@ ALLOWED_HANDLERS = (
 )
 
 
+if sys.version_info[:2] == (3, 6):
+    # Backport PEP 567
+    try:
+        import aiocontextvars
+    except ImportError:
+        log.warning(
+            'Python3.6 does not provide the `contextvars` module.'
+            ' Some advanced features may not work as expected.'
+            ' Please upgrade Python or install `aiocontextvars`.'
+        )
+
+try:
+    from contextvars import ContextVar
+except ImportError:
+    ContextVar = None
+
+if ContextVar:
+    _ctx_handler = ContextVar('handler', default=None)
+else:
+    _ctx_handler = None
+
+
 class RollbarAsyncError(Exception):
     ...
 
@@ -142,21 +164,48 @@ async def try_report(
     )
 
 
-@contextlib.contextmanager
-def async_handler():
-    original_handler = rollbar.SETTINGS.get('handler')
+class async_handler:
+    def __init__(self):
+        self.global_handler = None
+        self.token = None
 
-    if original_handler not in ALLOWED_HANDLERS:
-        log.warning(
-            'Running coroutines requires async compatible handler. Switching to default async handler.'
-        )
-        rollbar.SETTINGS['handler'] = 'async'
+    def with_ctx_handler(self):
+        if self.global_handler in ALLOWED_HANDLERS:
+            self.token = _ctx_handler.set(self.global_handler)
+        else:
+            log.warning(
+                'Running coroutines requires async compatible handler. Switching to default async handler.'
+            )
+            self.token = _ctx_handler.set('async')
 
-    try:
-        yield rollbar.SETTINGS['handler']
-    finally:
-        if original_handler is not None:
-            rollbar.SETTINGS['handler'] = original_handler
+        return _ctx_handler.get()
+
+    def with_global_handler(self):
+        return self.global_handler
+
+    def __enter__(self):
+        self.global_handler = rollbar.SETTINGS.get('handler')
+
+        if _ctx_handler:
+            return self.with_ctx_handler()
+        else:
+            return self.with_global_handler()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if _ctx_handler and self.token:
+            _ctx_handler.reset(self.token)
+
+
+def get_current_handler():
+    if _ctx_handler is None:
+        return rollbar.SETTINGS.get('handler')
+
+    handler = _ctx_handler.get()
+
+    if handler is None:
+        return rollbar.SETTINGS.get('handler')
+
+    return handler
 
 
 def call_later(coro):

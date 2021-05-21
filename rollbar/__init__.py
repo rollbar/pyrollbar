@@ -528,7 +528,12 @@ def send_payload(payload, access_token):
     if payload is False:
         return
 
-    handler = SETTINGS.get('handler')
+    if sys.version_info >= (3, 6):
+        from rollbar.lib._async import get_current_handler
+        handler = get_current_handler()
+    else:
+        handler = SETTINGS.get('handler')
+
     if handler == 'twisted':
         payload['data']['framework'] = 'twisted'
 

@@ -29,6 +29,8 @@ if sys.version_info < (3, 4):
     tests_require.append('enum34')
 if sys.version_info >= (3, 6):
     tests_require.append('httpx')
+if sys.version_info[:2] == (3, 6):
+    tests_require.append('aiocontextvars')
 
 setup(
     name='rollbar',
