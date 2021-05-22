@@ -14,8 +14,11 @@ if sys.version_info[:2] == (3, 6):
     try:
         import aiocontextvars
     except ImportError:
+        # Do not raise an exception as the module is exported to package API
+        # but is still optional
         log.error(
-            'This module requires Python 3.7+ or aiocontextvars package installed'
+            'Python 3.6 requires `aiocontextvars` package to be installed'
+            ' to support global access to request objects'
         )
 
 try:
@@ -37,7 +40,10 @@ def get_current_request() -> Optional[Request]:
     """
 
     if ContextVar is None:
-        log.error('Python 3.7+ is required to receive current request.')
+        log.error(
+            'Python 3.7+ (or aiocontextvars package)'
+            ' is required to receive current request.'
+        )
         return None
 
     request = _current_request.get()

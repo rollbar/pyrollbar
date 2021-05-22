@@ -16,9 +16,13 @@ log = logging.getLogger(__name__)
 @integrate(framework_name=f'starlette {__version__}')
 class LoggerMiddleware(ASGIReporterMiddleware):
     def __init__(self, app: ASGIApp) -> None:
-        if sys.version_info < (3, 7):
-            log.error('LoggerMiddleware requires Python 3.7+')
-            raise RuntimeError('LoggerMiddleware requires Python 3.7+')
+        if sys.version_info < (3, 6):
+            log.error(
+                'LoggerMiddleware requires Python 3.7+ (or 3.6 with `aiocontextvars` package)'
+            )
+            raise RuntimeError(
+                'LoggerMiddleware requires Python 3.7+ (or 3.6 with `aiocontextvars` package)'
+            )
 
         super().__init__(app)
 

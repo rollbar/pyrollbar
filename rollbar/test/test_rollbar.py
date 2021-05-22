@@ -327,7 +327,7 @@ class RollbarTest(BaseTest):
         self.assertEqual(data['user_ip'], scope['client'][0])
         self.assertEqual(data['method'], scope['method'])
 
-    @unittest.skipUnless(sys.version_info >= (3, 7), 'Python3.7+ required')
+    @unittest.skipUnless(sys.version_info >= (3, 6), 'Python3.6+ required')
     def test_get_request_starlette_middleware(self):
         try:
             from starlette.applications import Starlette
@@ -354,7 +354,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(response.status_code, 200)
 
-    @unittest.skipUnless(sys.version_info >= (3, 7), 'Python3.7+ required')
+    @unittest.skipUnless(sys.version_info >= (3, 6), 'Python3.6+ required')
     def test_get_request_starlette_logger(self):
         try:
             from starlette.applications import Starlette
@@ -381,7 +381,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(response.status_code, 200)
 
-    @unittest.skipUnless(sys.version_info >= (3, 7), 'Python3.7+ required')
+    @unittest.skipUnless(sys.version_info >= (3, 6), 'Python3.6+ required')
     def test_get_request_fastapi_middleware(self):
         try:
             from fastapi import FastAPI, Request
@@ -418,7 +418,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(response.status_code, 200)
 
-    @unittest.skipUnless(sys.version_info >= (3, 7), 'Python3.7+ required')
+    @unittest.skipUnless(sys.version_info >= (3, 6), 'Python3.6+ required')
     def test_get_request_fastapi_logger(self):
         try:
             from fastapi import FastAPI, Request
@@ -455,7 +455,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(response.status_code, 200)
 
-    @unittest.skipUnless(sys.version_info >= (3, 7), 'Python3.7+ required')
+    @unittest.skipUnless(sys.version_info >= (3, 6), 'Python3.6+ required')
     def test_get_request_fastapi_router(self):
         try:
             import fastapi

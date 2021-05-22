@@ -255,7 +255,7 @@ class ReporterMiddlewareTest(BaseTest):
         async_report_exc_info.assert_not_called()
 
     @unittest2.skipUnless(
-        sys.version_info >= (3, 7), 'Global request access requires Python 3.7+'
+        sys.version_info >= (3, 6), 'Global request access requires Python 3.6+'
     )
     @mock.patch('rollbar.contrib.starlette.middleware.store_current_request')
     def test_should_store_current_request(self, store_current_request):
@@ -302,7 +302,7 @@ class ReporterMiddlewareTest(BaseTest):
         self.assertDictContainsSubset(expected_scope, scope)
 
     @unittest2.skipUnless(
-        sys.version_info >= (3, 7), 'Global request access is supported in Python 3.7+'
+        sys.version_info >= (3, 6), 'Global request access is supported in Python 3.6+'
     )
     def test_should_return_current_request(self):
         from fastapi import FastAPI
@@ -352,7 +352,8 @@ class ReporterMiddlewareTest(BaseTest):
             self.assertIsNone(request)
             self.assertNotEqual(request, original_request)
             mock_log.assert_called_once_with(
-                'Python 3.7+ is required to receive current request.'
+                'Python 3.7+ (or aiocontextvars package)'
+                ' is required to receive current request.'
             )
 
         client = TestClient(app)

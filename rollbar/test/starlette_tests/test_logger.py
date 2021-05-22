@@ -18,12 +18,12 @@ import unittest2
 import rollbar
 from rollbar.test import BaseTest
 
-ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 7)
+ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
 
 
 @unittest2.skipUnless(
     STARLETTE_INSTALLED and ALLOWED_PYTHON_VERSION,
-    'Starlette LoggerMiddleware requires Python3.7+',
+    'Starlette LoggerMiddleware requires Python3.6+',
 )
 class LoggerMiddlewareTest(BaseTest):
     def setUp(self):
@@ -135,7 +135,7 @@ class LoggerMiddlewareTest(BaseTest):
         async def root(request):
             self.assertIsNone(get_current_request())
             mock_log.assert_called_once_with(
-                'Python 3.7+ is required to receive current request.'
+                'Python 3.7+ (or aiocontextvars package) is required to receive current request.'
             )
 
             return PlainTextResponse('OK')
