@@ -1,16 +1,27 @@
 __all__ = ['get_current_request']
 
-try:
-    from contextvars import ContextVar
-except ImportError:
-    ContextVar = None
 import logging
+import sys
 from typing import Optional, Union
 
 from starlette.requests import Request
 from starlette.types import Receive, Scope
 
 log = logging.getLogger(__name__)
+
+if sys.version_info[:2] == (3, 6):
+    # Backport PEP 567
+    try:
+        import aiocontextvars
+    except ImportError:
+        log.error(
+            'This module requires Python 3.7+ or aiocontextvars package installed'
+        )
+
+try:
+    from contextvars import ContextVar
+except ImportError:
+    ContextVar = None
 
 if ContextVar:
     _current_request: ContextVar[Optional[Request]] = ContextVar(

@@ -11,12 +11,12 @@ import unittest2
 
 from rollbar.test import BaseTest
 
-ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 7)
+ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
 
 
 @unittest2.skipUnless(
     STARLETTE_INSTALLED and ALLOWED_PYTHON_VERSION,
-    'Global request access requires Python3.7+',
+    'Global request access requires Python3.6+',
 )
 class RequestTest(BaseTest):
     def test_should_accept_request_param(self):
