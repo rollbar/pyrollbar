@@ -217,10 +217,10 @@ class AsyncLibTest(BaseTest):
     @mock.patch('logging.Logger.warning')
     def test_ctx_manager_should_use_async_handler(self, mock_log):
         import rollbar
-        from rollbar.lib._async import async_handler
+        from rollbar.lib._async import AsyncHandler
 
         rollbar.SETTINGS['handler'] = 'thread'
-        with async_handler() as handler:
+        with AsyncHandler() as handler:
             self.assertEqual(handler, 'async')
             mock_log.assert_called_once_with(
                 'Running coroutines requires async compatible handler.'
@@ -234,7 +234,7 @@ class AsyncLibTest(BaseTest):
     ):
         import rollbar
         import rollbar.lib._async
-        from rollbar.lib._async import async_handler
+        from rollbar.lib._async import AsyncHandler
 
         try:
             # simulate missing `contextvars` module
@@ -244,7 +244,7 @@ class AsyncLibTest(BaseTest):
             rollbar.SETTINGS['handler'] = 'thread'
             self.assertEqual(rollbar.SETTINGS['handler'], 'thread')
 
-            with async_handler() as handler:
+            with AsyncHandler() as handler:
                 self.assertEqual(handler, 'thread')
                 mock_log.assert_not_called()
 
@@ -256,12 +256,12 @@ class AsyncLibTest(BaseTest):
     @mock.patch('logging.Logger.warning')
     def test_ctx_manager_should_not_substitute_global_handler(self, mock_log):
         import rollbar
-        from rollbar.lib._async import async_handler
+        from rollbar.lib._async import AsyncHandler
 
         rollbar.SETTINGS['handler'] = 'thread'
         self.assertEqual(rollbar.SETTINGS['handler'], 'thread')
 
-        with async_handler() as handler:
+        with AsyncHandler() as handler:
             self.assertEqual(handler, 'async')
             self.assertEqual(rollbar.SETTINGS['handler'], 'thread')
 

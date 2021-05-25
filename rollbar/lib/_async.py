@@ -71,7 +71,7 @@ async def report_exc_info(
         except:
             await report_exc_info(sys.exc_info(), request, {'foo': 'bar'}, {'level': 'warning'})
     """
-    with async_handler():
+    with AsyncHandler():
         try:
             return await call_later(
                 _report_exc_info(
@@ -95,7 +95,7 @@ async def report_message(
     payload_data: param names to pass in the 'data' level of the payload; overrides defaults.
     """
 
-    with async_handler():
+    with AsyncHandler():
         try:
             return await call_later(
                 _report_message(message, level, request, extra_data, payload_data)
@@ -164,7 +164,7 @@ async def try_report(
     )
 
 
-class async_handler:
+class AsyncHandler:
     def __init__(self):
         self.global_handler = None
         self.token = None
