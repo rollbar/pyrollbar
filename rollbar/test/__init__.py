@@ -7,3 +7,7 @@ SNOWMAN_UNICODE = SNOWMAN.decode('utf8')
 
 class BaseTest(unittest2.TestCase):
     pass
+
+
+def discover():
+    return unittest2.defaultTestLoader.discover(__name__)

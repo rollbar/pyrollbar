@@ -52,6 +52,7 @@ def create_app():
 
 def init_rollbar(app):
     from flask import got_request_exception
+    rollbar._initialized = False
     rollbar.init(TOKEN, 'flasktest',
                  root=os.path.dirname(os.path.realpath(__file__)),
                  allow_logging_basic_config=True,

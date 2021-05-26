@@ -27,6 +27,10 @@ if sys.version_info < (3, 3):
     tests_require.append('mock<=3.0.5') # mock > 3.0.5 requires python >= 3.6
 if sys.version_info < (3, 4):
     tests_require.append('enum34')
+if sys.version_info >= (3, 6):
+    tests_require.append('httpx')
+if sys.version_info[:2] == (3, 6):
+    tests_require.append('aiocontextvars')
 
 setup(
     name='rollbar',
@@ -45,7 +49,7 @@ setup(
     long_description_content_type="text/markdown",
     author='Rollbar, Inc.',
     author_email='support@rollbar.com',
-    test_suite='rollbar.test',
+    test_suite='rollbar.test.discover',
     url='http://github.com/rollbar/pyrollbar',
     classifiers=[
         "Programming Language :: Python",
@@ -62,6 +66,7 @@ setup(
         "Operating System :: OS Independent",
         "Development Status :: 5 - Production/Stable",
         "Environment :: Web Environment",
+        "Framework :: AsyncIO",
         "Framework :: Bottle",
         "Framework :: Django",
         "Framework :: Flask",

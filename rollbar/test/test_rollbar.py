@@ -8,14 +8,14 @@ import uuid
 import sys
 
 try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
+try:
     from unittest import mock
 except ImportError:
     import mock
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 import unittest
 
 import rollbar
@@ -116,6 +116,385 @@ class RollbarTest(BaseTest):
         self.assertEqual(data['body'], 'body body body')
         self.assertDictEqual(data['GET'], {'format': 'json', 'param1': 'value1', 'param2': 'value2'})
         self.assertDictEqual(data['headers'], {'Connection': 'close', 'Host': 'example.com', 'User-Agent': 'Agent'})
+
+    def test_starlette_request_data(self):
+        try:
+            from starlette.requests import Request
+        except ImportError:
+            self.skipTest('Requires Starlette to be installed')
+
+        scope = {
+            'type': 'http',
+            'client': ('127.0.0.1', 1453),
+            'headers': [
+                (b'accept', b'*/*'),
+                (b'content-type', b'application/x-www-form-urlencoded'),
+                (b'host', b'example.com'),
+                (b'user-agent', b'Agent'),
+            ],
+            'http_version': '1.1',
+            'method': 'GET',
+            'path': '/api/test',
+            'path_params': {'param': 'test'},
+            'query_params': {
+                'format': 'json',
+                'param1': 'value1',
+                'param2': 'value2',
+            },
+            'query_string': b'format=json&param1=value1&param2=value2',
+            'scheme': 'http',
+            'server': ('example.com', 80),
+            'url': {'path': 'example.com'},
+        }
+        request = Request(scope)
+        data = rollbar._build_starlette_request_data(request)
+
+        self.assertEqual(data['url'], 'http://example.com/api/test?format=json&param1=value1&param2=value2')
+        self.assertEqual(data['user_ip'], '127.0.0.1')
+        self.assertEqual(data['method'], 'GET')
+        self.assertDictEqual(data['params'], {'param': 'test'})
+        self.assertDictEqual(data['GET'], {'format': 'json', 'param1': 'value1', 'param2': 'value2'})
+        self.assertDictEqual(
+            data['headers'],
+            {
+                'accept': '*/*',
+                'content-type': 'application/x-www-form-urlencoded',
+                'host': 'example.com',
+                'user-agent': 'Agent',
+            },
+        )
+
+    def test_starlette_request_data_with_consumed_body(self):
+        try:
+            from starlette.requests import Request
+        except ImportError:
+            self.skipTest('Requires Starlette to be installed')
+        from rollbar.lib._async import async_receive, run
+
+        rollbar.SETTINGS['include_request_body'] = True
+        body = b'body body body'
+        scope = {
+            'type': 'http',
+            'headers': [
+                (b'content-type', b'text/html'),
+                (b'content-length', str(len(body)).encode('latin-1')),
+            ],
+            'method': 'GET',
+            'path': '/api/test',
+            'query_string': b'',
+        }
+        receive = async_receive(
+            {'type': 'http.request', 'body': body, 'mode_body': False}
+        )
+        request = Request(scope, receive)
+
+        # Consuming body in Starlette middleware is currently disabled
+        run(request.body()) # await request.body()
+
+        data = rollbar._build_starlette_request_data(request)
+
+        self.assertEqual(data['body'], body.decode('latin-1'))
+
+    def test_starlette_request_data_empty_values(self):
+        try:
+            from starlette.requests import Request
+        except ImportError:
+            self.skipTest('Requires Starlette to be installed')
+
+        scope = {
+            'type': 'http',
+            'client': ('127.0.0.1', 1453),
+            'headers': [
+                (b'content-type', b'text/html'),
+            ],
+            'method': 'GET',
+            'query_string': b'',
+            'path': '',
+        }
+        request = Request(scope)
+
+        data = rollbar._build_starlette_request_data(request)
+
+        self.assertFalse('GET' in data)
+        self.assertFalse('url' in data)
+        self.assertFalse('params' in data)
+        self.assertTrue('headers' in data)
+        self.assertEqual(data['user_ip'], scope['client'][0])
+        self.assertEqual(data['method'], scope['method'])
+
+    def test_fastapi_request_data(self):
+        try:
+            from fastapi.requests import Request
+        except ImportError:
+            self.skipTest('Requires FastAPI to be installed')
+
+        scope = {
+            'type': 'http',
+            'client': ('127.0.0.1', 1453),
+            'headers': [
+                (b'accept', b'*/*'),
+                (b'content-type', b'application/x-www-form-urlencoded'),
+                (b'host', b'example.com'),
+                (b'user-agent', b'Agent'),
+            ],
+            'http_version': '1.1',
+            'method': 'GET',
+            'path': '/api/test',
+            'path_params': {'param': 'test'},
+            'query_params': {
+                'format': 'json',
+                'param1': 'value1',
+                'param2': 'value2',
+            },
+            'query_string': b'format=json&param1=value1&param2=value2',
+            'scheme': 'http',
+            'server': ('example.com', 80),
+            'url': {'path': 'example.com'},
+        }
+        request = Request(scope)
+        data = rollbar._build_fastapi_request_data(request)
+
+        self.assertEqual(data['url'], 'http://example.com/api/test?format=json&param1=value1&param2=value2')
+        self.assertEqual(data['user_ip'], '127.0.0.1')
+        self.assertEqual(data['method'], 'GET')
+        self.assertDictEqual(data['params'], {'param': 'test'})
+        self.assertDictEqual(data['GET'], {'format': 'json', 'param1': 'value1', 'param2': 'value2'})
+        self.assertDictEqual(
+            data['headers'],
+            {
+                'accept': '*/*',
+                'content-type': 'application/x-www-form-urlencoded',
+                'host': 'example.com',
+                'user-agent': 'Agent',
+            },
+        )
+
+    def test_fastapi_request_data_with_consumed_body(self):
+        try:
+            from fastapi import Request
+        except ImportError:
+            self.skipTest('Requires FastAPI to be installed')
+        from rollbar.lib._async import async_receive, run
+
+        rollbar.SETTINGS['include_request_body'] = True
+        body = b'body body body'
+        scope = {
+            'type': 'http',
+            'headers': [
+                (b'content-type', b'text/html'),
+                (b'content-length', str(len(body)).encode('latin-1')),
+            ],
+            'method': 'GET',
+            'path': '/api/test',
+            'query_string': b'',
+        }
+        receive = async_receive(
+            {'type': 'http.request', 'body': body, 'mode_body': False}
+        )
+        request = Request(scope, receive)
+
+        # Consuming body in FastAPI middlewares is currently disabled
+        run(request.body()) # await request.body()
+
+        data = rollbar._build_fastapi_request_data(request)
+
+        self.assertEqual(data['body'], body.decode('latin-1'))
+
+    def test_fastapi_request_data_empty_values(self):
+        try:
+            from fastapi import Request
+        except ImportError:
+            self.skipTest('Requires FastAPI to be installed')
+
+        scope = {
+            'type': 'http',
+            'client': ('127.0.0.1', 1453),
+            'headers': [
+                (b'content-type', b'text/html'),
+            ],
+            'method': 'GET',
+            'query_string': b'',
+            'path': '',
+        }
+        request = Request(scope)
+
+        data = rollbar._build_fastapi_request_data(request)
+
+        self.assertFalse('GET' in data)
+        self.assertFalse('url' in data)
+        self.assertFalse('params' in data)
+        self.assertTrue('headers' in data)
+        self.assertEqual(data['user_ip'], scope['client'][0])
+        self.assertEqual(data['method'], scope['method'])
+
+    @unittest.skipUnless(sys.version_info >= (3, 6), 'Python3.6+ required')
+    def test_get_request_starlette_middleware(self):
+        try:
+            from starlette.applications import Starlette
+            from starlette.middleware import Middleware
+            from starlette.responses import PlainTextResponse
+            from starlette.routing import Route
+            from starlette.testclient import TestClient
+        except ImportError:
+            self.skipTest('Requires Starlette package')
+        from rollbar.contrib.starlette import ReporterMiddleware
+
+        def root(starlette_request):
+            current_request = rollbar.get_request()
+
+            self.assertEqual(current_request, starlette_request)
+
+            return PlainTextResponse("bye bye")
+
+        routes = [Route('/{param}', root)]
+        middleware = [Middleware(ReporterMiddleware)]
+        app = Starlette(routes=routes, middleware=middleware)
+        client = TestClient(app)
+        response = client.get('/test?param1=value1&param2=value2')
+
+        self.assertEqual(response.status_code, 200)
+
+    @unittest.skipUnless(sys.version_info >= (3, 6), 'Python3.6+ required')
+    def test_get_request_starlette_logger(self):
+        try:
+            from starlette.applications import Starlette
+            from starlette.middleware import Middleware
+            from starlette.responses import PlainTextResponse
+            from starlette.routing import Route
+            from starlette.testclient import TestClient
+        except ImportError:
+            self.skipTest('Requires Starlette package')
+        from rollbar.contrib.starlette import ReporterMiddleware
+
+        def root(starlette_request):
+            current_request = rollbar.get_request()
+
+            self.assertEqual(current_request, starlette_request)
+
+            return PlainTextResponse("bye bye")
+
+        routes = [Route('/{param}', root)]
+        middleware = [Middleware(ReporterMiddleware)]
+        app = Starlette(routes=routes, middleware=middleware)
+        client = TestClient(app)
+        response = client.get('/test?param1=value1&param2=value2')
+
+        self.assertEqual(response.status_code, 200)
+
+    @unittest.skipUnless(sys.version_info >= (3, 6), 'Python3.6+ required')
+    def test_get_request_fastapi_middleware(self):
+        try:
+            from fastapi import FastAPI, Request
+            from fastapi.testclient import TestClient
+        except ImportError:
+            self.skipTest('Requires FastaAPI package')
+        from rollbar.contrib.fastapi import ReporterMiddleware
+
+        app = FastAPI()
+        app.add_middleware(ReporterMiddleware)
+
+        # Inject annotations and decorate endpoint dynamically
+        # to avoid SyntaxError for older Python
+        #
+        # This is the code we'd use if we had not loaded the test file on Python 2.
+        #
+        # @app.get('/{param}')
+        # def root(param, fastapi_request: Request):
+        #     current_request = rollbar.get_request()
+        #
+        #     self.assertEqual(current_request, fastapi_request)
+
+        def root(param, fastapi_request):
+            current_request = rollbar.get_request()
+
+            self.assertEqual(current_request, fastapi_request)
+
+        root = fastapi_add_route_with_request_param(
+            app, root, '/{param}', 'fastapi_request'
+        )
+
+        client = TestClient(app)
+        response = client.get('/test?param1=value1&param2=value2')
+
+        self.assertEqual(response.status_code, 200)
+
+    @unittest.skipUnless(sys.version_info >= (3, 6), 'Python3.6+ required')
+    def test_get_request_fastapi_logger(self):
+        try:
+            from fastapi import FastAPI, Request
+            from fastapi.testclient import TestClient
+        except ImportError:
+            self.skipTest('Requires FastaAPI package')
+        from rollbar.contrib.fastapi import ReporterMiddleware
+
+        app = FastAPI()
+        app.add_middleware(ReporterMiddleware)
+
+        # Inject annotations and decorate endpoint dynamically
+        # to avoid SyntaxError for older Python
+        #
+        # This is the code we'd use if we had not loaded the test file on Python 2.
+        #
+        # @app.get('/{param}')
+        # def root(fastapi_request: Request):
+        #     current_request = rollbar.get_request()
+        #
+        #     self.assertEqual(current_request, fastapi_request)
+
+        def root(param, fastapi_request):
+            current_request = rollbar.get_request()
+
+            self.assertEqual(current_request, fastapi_request)
+
+        root = fastapi_add_route_with_request_param(
+            app, root, '/{param}', 'fastapi_request'
+        )
+
+        client = TestClient(app)
+        response = client.get('/test?param1=value1&param2=value2')
+
+        self.assertEqual(response.status_code, 200)
+
+    @unittest.skipUnless(sys.version_info >= (3, 6), 'Python3.6+ required')
+    def test_get_request_fastapi_router(self):
+        try:
+            import fastapi
+            from fastapi import FastAPI, Request
+            from fastapi.testclient import TestClient
+        except ImportError:
+            self.skipTest('Requires FastAPI package')
+        from rollbar.contrib.fastapi import add_to as rollbar_add_to
+
+        if fastapi.__version__ < '0.41.0':
+            self.skipTest('Requires FastAPI 0.41.0+')
+
+        app = FastAPI()
+        rollbar_add_to(app)
+
+        # Inject annotations and decorate endpoint dynamically
+        # to avoid SyntaxError for older Python
+        #
+        # This is the code we'd use if we had not loaded the test file on Python 2.
+        #
+        # @app.get('/{param}')
+        # def root(fastapi_request: Request):
+        #     current_request = rollbar.get_request()
+        #
+        #     self.assertEqual(current_request, fastapi_request)
+
+        def root(param, fastapi_request):
+            current_request = rollbar.get_request()
+
+            self.assertEqual(current_request, fastapi_request)
+
+        root = fastapi_add_route_with_request_param(
+            app, root, '/{param}', 'fastapi_request'
+        )
+
+        client = TestClient(app)
+        response = client.get('/test?param1=value1&param2=value2')
+
+        self.assertEqual(response.status_code, 200)
 
     @mock.patch('rollbar.send_payload')
     def test_report_exception(self, send_payload):
@@ -557,6 +936,34 @@ class RollbarTest(BaseTest):
         test_host = socket.gethostname()
         rollbar._send_failsafe('test message', test_uuid, test_host)
         self.assertEqual(mock_log.call_count, 1)
+
+    @unittest.skipUnless(rollbar.AsyncHTTPClient, 'Requires async handler to be installed')
+    @mock.patch('rollbar._send_payload_async')
+    def test_async_handler(self, send_payload_async):
+        def _raise():
+            try:
+                raise Exception('foo')
+            except:
+                rollbar.report_exc_info()
+
+        rollbar.SETTINGS['handler'] = 'async'
+        _raise()
+
+        send_payload_async.assert_called_once()
+
+    @unittest.skipUnless(rollbar.httpx, 'Requires HTTPX to be installed')
+    @mock.patch('rollbar._send_payload_httpx')
+    def test_httpx_handler(self, send_payload_httpx):
+        def _raise():
+            try:
+                raise Exception('foo')
+            except:
+                rollbar.report_exc_info()
+
+        rollbar.SETTINGS['handler'] = 'async'
+        _raise()
+
+        send_payload_httpx.assert_called_once()
 
     @mock.patch('rollbar.send_payload')
     def test_args_constructor(self, send_payload):
@@ -1341,6 +1748,61 @@ class RollbarTest(BaseTest):
             self.assertNotEqual(ip, request_data['user_ip'])
             self.assertNotEqual(None, request_data['user_ip'])
 
+    def test_starlette_extract_user_ip_from_client_host(self):
+        try:
+            from starlette.requests import Request
+        except ImportError:
+            self.skipTest('Requires Starlette package')
+
+        client_host = ('127.0.0.1', 1453)
+        ip_forwarded_for = b'192.168.10.10'
+        ip_real_ip = b'1.2.3.4'
+        scope = {
+            'type': 'http',
+            'client': client_host,
+            'headers': [
+                (b'x-forwarded-for', ip_forwarded_for),
+                (b'x-real-ip', ip_real_ip),
+            ],
+        }
+        request = Request(scope)
+
+        user_ip = rollbar._starlette_extract_user_ip(request)
+
+        self.assertEqual(user_ip, client_host[0])
+
+    def test_starlette_extract_user_ip_from_headers(self):
+        try:
+            from starlette.requests import Request
+        except ImportError:
+            self.skipTest('Requires Starlette package')
+
+        ip_forwarded_for = b'192.168.10.10'
+        ip_real_ip = b'1.2.3.4'
+
+        # Headers contain only X-Forwarded-For
+        scope = {'type': 'http', 'headers': [(b'x-forwarded-for', ip_forwarded_for)]}
+        request = Request(scope)
+        user_ip = rollbar._starlette_extract_user_ip(request)
+        self.assertEqual(user_ip, ip_forwarded_for.decode())
+
+        # Headers contain only X-Real-Ip
+        scope = {'type': 'http', 'headers': [(b'x-real-ip', ip_real_ip)]}
+        request = Request(scope)
+        user_ip = rollbar._starlette_extract_user_ip(request)
+        self.assertEqual(user_ip, ip_real_ip.decode())
+
+        # Headers contain both X-Forwarded-For and X-Real-Ip
+        scope = {
+            'type': 'http',
+            'headers': [
+                (b'x-forwarded-for', ip_forwarded_for),
+                (b'x-real-ip', ip_real_ip),
+            ],
+        }
+        request = Request(scope)
+        user_ip = rollbar._starlette_extract_user_ip(request)
+        self.assertEqual(user_ip, ip_forwarded_for.decode())
 
 ### Helpers
 
@@ -1388,6 +1850,7 @@ class MockRawResponse:
     def json(self):
         return self.data
 
+
 class MockLambdaContext(object):
     def __init__(self, x):
         self.function_name = 1
@@ -1398,6 +1861,14 @@ class MockLambdaContext(object):
 
     def get_remaining_time_in_millis(self):
         42
+
+
+def fastapi_add_route_with_request_param(app, endpoint, path, request_param):
+    from fastapi import Request
+
+    endpoint.__annotations__[request_param] = Request
+
+    return app.get(path)(endpoint)
 
 if __name__ == '__main__':
     unittest.main()

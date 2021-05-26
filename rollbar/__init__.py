@@ -89,6 +89,22 @@ try:
 except ImportError:
     AppEngineFetch = None
 
+try:
+    from starlette.requests import Request as StarletteRequest
+except ImportError:
+    StarletteRequest = None
+
+try:
+    from fastapi.requests import Request as FastAPIRequest
+except ImportError:
+    FastAPIRequest = None
+
+try:
+    import httpx
+except ImportError:
+    httpx = None
+
+AsyncHTTPClient = httpx
 
 def passthrough_decorator(func):
     def wrap(*args, **kwargs):
@@ -162,7 +178,9 @@ def get_request():
     # TODO(cory): add in a generic _get_locals_request() which
     # will iterate up through the call stack and look for a variable
     # that appears to be valid request object.
-    for fn in (_get_bottle_request,
+    for fn in (_get_fastapi_request,
+               _get_starlette_request,
+               _get_bottle_request,
                _get_flask_request,
                _get_pyramid_request,
                _get_pylons_request):
@@ -204,6 +222,26 @@ def _get_pylons_request():
     return request
 
 
+def _get_starlette_request():
+    # Do not modify the returned object
+
+    if StarletteRequest is None:
+        return None
+
+    from rollbar.contrib.starlette import get_current_request
+    return get_current_request()
+
+
+def _get_fastapi_request():
+    # Do not modify the returned object
+
+    if FastAPIRequest is None:
+        return None
+
+    from rollbar.contrib.fastapi import get_current_request
+    return get_current_request()
+
+
 BASE_DATA_HOOK = None
 
 agent_log = None
@@ -237,7 +275,7 @@ SETTINGS = {
     'root': None,  # root path to your code
     'branch': None,  # git branch name
     'code_version': None,
-    'handler': 'thread',  # 'blocking', 'thread', 'agent', 'tornado', 'gae' or 'twisted'
+    'handler': 'default',  # 'blocking', 'thread' (default), 'async', 'agent', 'tornado', 'gae', 'twisted' or 'httpx'
     'endpoint': DEFAULT_ENDPOINT,
     'timeout': DEFAULT_TIMEOUT,
     'agent.log_file': 'log.rollbar',
@@ -479,16 +517,23 @@ def send_payload(payload, access_token):
     Available handlers:
     - 'blocking': calls _send_payload() (which makes an HTTP request) immediately, blocks on it
     - 'thread': starts a single-use thread that will call _send_payload(). returns immediately.
+    - 'async': calls _send_payload_async() (which makes an async HTTP request using default async handler)
     - 'agent': writes to a log file to be processed by rollbar-agent
     - 'tornado': calls _send_payload_tornado() (which makes an async HTTP request using tornado's AsyncHTTPClient)
     - 'gae': calls _send_payload_appengine() (which makes a blocking call to Google App Engine)
     - 'twisted': calls _send_payload_twisted() (which makes an async HTTP request using Twisted and Treq)
+    - 'httpx': calls _send_payload_httpx() (which makes an async HTTP request using HTTPX)
     """
     payload = events.on_payload(payload)
     if payload is False:
         return
 
-    handler = SETTINGS.get('handler')
+    if sys.version_info >= (3, 6):
+        from rollbar.lib._async import get_current_handler
+        handler = get_current_handler()
+    else:
+        handler = SETTINGS.get('handler')
+
     if handler == 'twisted':
         payload['data']['framework'] = 'twisted'
 
@@ -512,11 +557,21 @@ def send_payload(payload, access_token):
             log.error('Unable to find Treq')
             return
         _send_payload_twisted(payload_str, access_token)
+    elif handler == 'httpx':
+        if httpx is None:
+            log.error('Unable to find HTTPX')
+            return
+        _send_payload_httpx(payload_str, access_token)
+    elif handler == 'async':
+        if AsyncHTTPClient is None:
+            log.error('Unable to find async handler')
+            return
+        _send_payload_async(payload_str, access_token)
+    elif handler == 'thread':
+        _send_payload_thread(payload_str, access_token)
     else:
         # default to 'thread'
-        thread = threading.Thread(target=_send_payload, args=(payload_str, access_token))
-        _threads.put(thread)
-        thread.start()
+        _send_payload_thread(payload_str, access_token)
 
 
 def search_items(title, return_fields=None, access_token=None, endpoint=None, **search_fields):
@@ -865,7 +920,7 @@ def _add_person_data(data, request):
 
 def _build_person_data(request):
     """
-    Returns a dictionary describing the logged-in user using data from `request.
+    Returns a dictionary describing the logged-in user using data from `request`.
 
     Try request.rollbar_person first, then 'user', then 'user_id'
     """
@@ -877,7 +932,12 @@ def _build_person_data(request):
         else:
             return None
 
-    if hasattr(request, 'user'):
+    if StarletteRequest:
+        from rollbar.contrib.starlette.requests import hasuser
+    else:
+        hasuser = lambda request: False
+
+    if hasuser(request) and hasattr(request, 'user'):
         user_prop = request.user
         user = user_prop() if callable(user_prop) else user_prop
         if not user:
@@ -1082,7 +1142,6 @@ def _get_actual_request(request):
 def _build_request_data(request):
     """
     Returns a dictionary containing data from the request.
-    Can handle webob or werkzeug-based request objects.
     """
 
     # webob (pyramid)
@@ -1120,6 +1179,14 @@ def _build_request_data(request):
     # Plain wsgi (should be last)
     if isinstance(request, dict) and 'wsgi.version' in request:
         return _build_wsgi_request_data(request)
+
+    # FastAPI (built on top of Starlette, so keep the order)
+    if FastAPIRequest and isinstance(request, FastAPIRequest):
+        return _build_fastapi_request_data(request)
+
+    # Starlette (should be the last one for Starlette based frameworks)
+    if StarletteRequest and isinstance(request, StarletteRequest):
+        return _build_starlette_request_data(request)
 
     return None
 
@@ -1300,6 +1367,53 @@ def _build_wsgi_request_data(request):
 
     return request_data
 
+def _build_starlette_request_data(request):
+    from starlette.datastructures import UploadFile
+
+    request_data = {
+        'url': str(request.url),
+        'GET': dict(request.query_params),
+        'headers': dict(request.headers),
+        'method': request.method,
+        'user_ip': _starlette_extract_user_ip(request),
+        'params': dict(request.path_params),
+    }
+
+    if hasattr(request, '_form'):
+        request_data['POST'] = {
+            k: v.filename if isinstance(v, UploadFile) else v
+            for k, v in request._form.items()
+        }
+        request_data['files_keys'] = [
+            field.filename
+            for field in request._form.values()
+            if isinstance(field, UploadFile)
+        ]
+
+    if hasattr(request, '_body'):
+        body = request._body.decode()
+    else:
+        body = None
+
+    if body and SETTINGS['include_request_body']:
+        request_data['body'] = body
+
+    if hasattr(request, '_json'):
+        request_data['json'] = request._json
+    elif body:
+        try:
+            request_data['json'] = json.loads(body)
+        except json.JSONDecodeError:
+            pass
+
+    # Filter out empty values
+    request_data = {k: v for k, v in request_data.items() if v}
+
+    return request_data
+
+def _build_fastapi_request_data(request):
+    return _build_starlette_request_data(request)
+
 
 def _filter_ip(request_data, capture_ip):
     if 'user_ip' not in request_data or capture_ip == True:
@@ -1388,6 +1502,12 @@ def _send_payload(payload_str, access_token):
         _threads.task_done()
     except queue.Empty:
         pass
+
+
+def _send_payload_thread(payload_str, access_token):
+    thread = threading.Thread(target=_send_payload, args=(payload_str, access_token))
+    _threads.put(thread)
+    thread.start()
 
 
 def _send_payload_appengine(payload_str, access_token):
@@ -1515,6 +1635,22 @@ def _post_api_twisted(path, payload_str, access_token=None):
                   timeout=SETTINGS.get('timeout', DEFAULT_TIMEOUT))
     d.addCallback(post_cb)
 
+def _send_payload_httpx(payload_str, access_token):
+    from rollbar.lib._async import call_later, _post_api_httpx
+    try:
+        call_later(_post_api_httpx('item/', payload_str,
+                                   access_token=access_token))
+    except Exception as e:
+        log.exception('Exception while posting item %r', e)
+
+
+
+def _send_payload_async(payload_str, access_token):
+    try:
+        _send_payload_httpx(payload_str, access_token=access_token)
+    except Exception as e:
+        log.exception('Exception while posting item %r', e)
+
 
 def _send_failsafe(message, uuid, host):
     body_message = ('Failsafe from pyrollbar: {0}. Original payload may be found '
@@ -1604,14 +1740,18 @@ def _parse_response(path, access_token, params, resp, endpoint=None):
             return Result(access_token, path, params, result)
 
 
-def _extract_user_ip(request):
+def _extract_user_ip_from_headers(request):
     forwarded_for = request.headers.get('X-Forwarded-For')
     if forwarded_for:
         return forwarded_for
     real_ip = request.headers.get('X-Real-Ip')
     if real_ip:
         return real_ip
-    return request.remote_addr
+    return None
+
+
+def _extract_user_ip(request):
+    return _extract_user_ip_from_headers(request) or request.remote_addr
 
 
 def _wsgi_extract_user_ip(environ):
@@ -1622,3 +1762,7 @@ def _wsgi_extract_user_ip(environ):
     if real_ip:
         return real_ip
     return environ['REMOTE_ADDR']
+
+
+def _starlette_extract_user_ip(request):
+    return request.client.host or _extract_user_ip_from_headers(request)
