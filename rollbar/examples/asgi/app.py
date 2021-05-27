@@ -55,6 +55,7 @@ async def localfunc(arg1, arg2, arg3):
 @app.route('/error')
 async def error(request):
     await localfunc('func_arg1', 'func_arg2', 1)
+    return PlainTextResponse("You shouldn't be seeing this")
 
 
 if __name__ == '__main__':

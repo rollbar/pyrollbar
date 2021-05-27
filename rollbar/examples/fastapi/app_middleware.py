@@ -50,6 +50,7 @@ async def localfunc(arg1, arg2, arg3):
 @app.get('/error')
 async def read_error():
     await localfunc('func_arg1', 'func_arg2', 1)
+    return {'result': "You shouldn't be seeing this")
 
 
 if __name__ == '__main__':
