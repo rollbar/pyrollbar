@@ -12,6 +12,7 @@ import uvicorn
 
 from rollbar.contrib.starlette import LoggerMiddleware
 from starlette.applications import Starlette
+from starlette.responses import JSONResponse
 
 # Integrate Rollbar with Starlette application
 app = Starlette()
@@ -30,7 +31,7 @@ async def get_user_agent():
 @app.route('/')
 async def root(request):
     user_agent = await get_user_agent()
-    return {'user-agent': user_agent}
+    return JSONResponse({'user-agent': user_agent})
 
 
 if __name__ == '__main__':
