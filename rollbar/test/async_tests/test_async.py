@@ -518,6 +518,17 @@ class AsyncLibTest(BaseTest):
 
         async_report_exc_info.assert_not_called()
 
+    @mock.patch('rollbar.lib._async.httpx', None)
+    def test_try_report_should_raise_exc_if_httpx_package_is_missing(self):
+        import rollbar
+        from rollbar.lib._async import RollbarAsyncError, run, try_report
+
+        rollbar.SETTINGS['handler'] = 'httpx'
+        self.assertEqual(rollbar.SETTINGS['handler'], 'httpx')
+
+        with self.assertRaises(RollbarAsyncError):
+            run(try_report())
+
     @mock.patch('asyncio.ensure_future')
     def test_should_schedule_task_in_event_loop(self, ensure_future):
         from rollbar.lib._async import call_later, coroutine
