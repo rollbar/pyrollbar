@@ -1,3 +1,4 @@
+import logging
 import sys
 
 from starlette import __version__
@@ -9,6 +10,8 @@ from .requests import store_current_request
 from rollbar.contrib.asgi import ReporterMiddleware as ASGIReporterMiddleware
 from rollbar.contrib.asgi.integration import integrate
 from rollbar.lib._async import RollbarAsyncError, try_report
+
+log = logging.getLogger(__name__)
 
 
 @integrate(framework_name=f'starlette {__version__}')
@@ -35,5 +38,8 @@ class ReporterMiddleware(ASGIReporterMiddleware):
                 try:
                     await try_report(exc_info, request)
                 except RollbarAsyncError:
+                    log.warning(
+                        'Failed to report asynchronously. Trying to report synchronously.'
+                    )
                     rollbar.report_exc_info(exc_info, request)
             raise

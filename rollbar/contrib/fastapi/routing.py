@@ -94,6 +94,9 @@ class RollbarLoggingRoute(APIRoute):
                 try:
                     await try_report(exc_info, request)
                 except RollbarAsyncError:
+                    log.warning(
+                        'Failed to report asynchronously. Trying to report synchronously.'
+                    )
                     rollbar.report_exc_info(exc_info, request)
                 raise
 

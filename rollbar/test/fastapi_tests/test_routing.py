@@ -367,10 +367,11 @@ class LoggingRouteTest(BaseTest):
         async_report_exc_info.assert_called_once()
         sync_report_exc_info.assert_not_called()
 
+    @mock.patch('logging.Logger.warning')
     @mock.patch('rollbar.lib._async.report_exc_info', new_callable=AsyncMock)
     @mock.patch('rollbar.report_exc_info')
     def test_should_use_sync_report_exc_info_if_non_async_handlers(
-        self, sync_report_exc_info, async_report_exc_info
+        self, sync_report_exc_info, async_report_exc_info, mock_log
     ):
         from fastapi import FastAPI
         import rollbar
@@ -396,6 +397,9 @@ class LoggingRouteTest(BaseTest):
 
         sync_report_exc_info.assert_called_once()
         async_report_exc_info.assert_not_called()
+        mock_log.assert_called_once_with(
+            'Failed to report asynchronously. Trying to report synchronously.'
+        )
 
     def test_should_enable_loading_route_handler_if_fastapi_version_is_sufficient(self):
         from fastapi import FastAPI

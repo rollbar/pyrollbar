@@ -101,10 +101,11 @@ class ReporterMiddlewareTest(BaseTest):
         self.assertFalse(sync_report_exc_info.called)
 
     @unittest2.skipUnless(ASYNC_REPORT_ENABLED, 'Requires Python 3.6+')
+    @mock.patch('logging.Logger.warning')
     @mock.patch('rollbar.lib._async.report_exc_info', new_callable=AsyncMock)
     @mock.patch('rollbar.report_exc_info')
     def test_should_use_sync_report_exc_info_if_non_async_handlers(
-        self, sync_report_exc_info, async_report_exc_info
+        self, sync_report_exc_info, async_report_exc_info, mock_log
     ):
         import rollbar
         from rollbar.contrib.asgi.middleware import ReporterMiddleware
@@ -118,6 +119,9 @@ class ReporterMiddlewareTest(BaseTest):
 
         self.assertFalse(async_report_exc_info.called)
         self.assertTrue(sync_report_exc_info.called)
+        mock_log.assert_called_once_with(
+            'Failed to report asynchronously. Trying to report synchronously.'
+        )
 
     def test_should_support_http_only(self):
         from rollbar.contrib.asgi.middleware import ReporterMiddleware
