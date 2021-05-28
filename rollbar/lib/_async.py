@@ -39,7 +39,7 @@ except ImportError:
     ContextVar = None
 
 if ContextVar:
-    _ctx_handler = ContextVar('handler', default=None)
+    _ctx_handler = ContextVar('rollbar-handler', default=None)
 else:
     _ctx_handler = None
 

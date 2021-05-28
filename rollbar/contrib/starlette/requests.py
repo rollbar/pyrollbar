@@ -28,7 +28,7 @@ except ImportError:
 
 if ContextVar:
     _current_request: ContextVar[Optional[Request]] = ContextVar(
-        'request', default=None
+        'rollbar-request-object', default=None
     )
 
 
