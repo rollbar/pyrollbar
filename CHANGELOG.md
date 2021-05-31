@@ -2,6 +2,18 @@
 
 The change log is also available on the [GitHub Releases Page](https://github.com/rollbar/pyrollbar/releases).
 
+**0.16.0**
+
+- Add support for FastAPI framework. See [#373](https://github.com/rollbar/pyrollbar/pull/373)
+- Add support for Starlette framework. See [#373](https://github.com/rollbar/pyrollbar/pull/373)
+- Add support for ASGI-based frameworks. See [#373](https://github.com/rollbar/pyrollbar/pull/373)
+- Add support for HTTPX async handler. See [#373](https://github.com/rollbar/pyrollbar/pull/373)
+- Add support for async report_exc_info and report_message. See [#373](https://github.com/rollbar/pyrollbar/pull/373)
+- Collect user IP from X-Forwarded-For, fall back to X-Real-Ip. See [#370](https://github.com/rollbar/pyrollbar/pull/370)
+- Improve examples. See [#368](https://github.com/rollbar/pyrollbar/pull/368)
+- Fix Python 3.3 builds. See [#374](https://github.com/rollbar/pyrollbar/pull/374)
+- Fix Flask 0.x builds. See [#376](https://github.com/rollbar/pyrollbar/pull/376)
+
 **0.15.2**
 
 - Add support for whitelist/blacklist for safelist/blocklist. See [#354](https://github.com/rollbar/pyrollbar/pull/343)
