@@ -50,7 +50,7 @@ async def localfunc(arg1, arg2, arg3):
 @app.get('/error')
 async def read_error():
     await localfunc('func_arg1', 'func_arg2', 1)
-    return {'result': "You shouldn't be seeing this")
+    return {'result': "You shouldn't be seeing this"}
 
 
 # Cause an uncaught exception to be sent to Rollbar
@@ -60,7 +60,7 @@ async def read_error():
 @app.post('/body')
 async def read_body():
     cause_error_with_body
-    return {'result': "You shouldn't be seeing this")
+    return {'result': "You shouldn't be seeing this"}
 
 
 # Cause an uncaught exception to be sent to Rollbar
@@ -70,7 +70,7 @@ async def read_body():
 @app.post('/form')
 async def read_form():
     cause_error_with_form
-    return {'result': "You shouldn't be seeing this")
+    return {'result': "You shouldn't be seeing this"}
 
 
 if __name__ == '__main__':

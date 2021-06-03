@@ -1,9 +1,12 @@
+import logging
 import sys
 
 import rollbar
 from .integration import IntegrationBase, integrate
 from .types import ASGIApp, Receive, Scope, Send
 from rollbar.lib._async import RollbarAsyncError, try_report
+
+log = logging.getLogger(__name__)
 
 
 @integrate(framework_name='asgi')
@@ -23,5 +26,8 @@ class ReporterMiddleware(IntegrationBase):
                 try:
                     await try_report(exc_info)
                 except RollbarAsyncError:
+                    log.warning(
+                        'Failed to report asynchronously. Trying to report synchronously.'
+                    )
                     rollbar.report_exc_info(exc_info)
             raise
