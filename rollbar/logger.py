@@ -132,7 +132,7 @@ class RollbarHandler(logging.Handler):
         request = getattr(record, "request", None) or rollbar.get_request()
 
         # Formatted msg
-        message = super().format(record)
+        message = super(RollbarHandler, self).format(record)
 
         uuid = None
         try:
