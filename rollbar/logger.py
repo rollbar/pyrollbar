@@ -131,16 +131,19 @@ class RollbarHandler(logging.Handler):
         # load the request
         request = getattr(record, "request", None) or rollbar.get_request()
 
+        # Formatted msg
+        message = super().format(record)
+
         uuid = None
         try:
             # when not in an exception handler, exc_info == (None, None, None)
             if exc_info and exc_info[0]:
-                if record.msg:
+                if message:
                     message_template = {
                         'body': {
                             'trace': {
                                 'exception': {
-                                    'description': record.getMessage()
+                                    'description': message
                                 }
                             }
                         }
@@ -154,7 +157,7 @@ class RollbarHandler(logging.Handler):
                                                extra_data=extra_data,
                                                payload_data=payload_data)
             else:
-                uuid = rollbar.report_message(record.getMessage(),
+                uuid = rollbar.report_message(message,
                                               level=level,
                                               request=request,
                                               extra_data=extra_data,
