@@ -1,6 +1,87 @@
 # Change Log
 
-The change log has moved to this repo's [GitHub Releases Page](https://github.com/rollbar/pyrollbar/releases).
+The change log is also available on the [GitHub Releases Page](https://github.com/rollbar/pyrollbar/releases).
+
+**0.16.0**
+
+- Add support for FastAPI framework. See [#373](https://github.com/rollbar/pyrollbar/pull/373)
+- Add support for Starlette framework. See [#373](https://github.com/rollbar/pyrollbar/pull/373)
+- Add support for ASGI-based frameworks. See [#373](https://github.com/rollbar/pyrollbar/pull/373)
+- Add support for HTTPX async handler. See [#373](https://github.com/rollbar/pyrollbar/pull/373)
+- Add support for async report_exc_info and report_message. See [#373](https://github.com/rollbar/pyrollbar/pull/373)
+- Collect user IP from X-Forwarded-For, fall back to X-Real-Ip. See [#370](https://github.com/rollbar/pyrollbar/pull/370)
+- Improve examples. See [#368](https://github.com/rollbar/pyrollbar/pull/368)
+- Fix Python 3.3 builds. See [#374](https://github.com/rollbar/pyrollbar/pull/374)
+- Fix Flask 0.x builds. See [#376](https://github.com/rollbar/pyrollbar/pull/376)
+
+**0.15.2**
+
+- Add support for whitelist/blacklist for safelist/blocklist. See [#354](https://github.com/rollbar/pyrollbar/pull/343)
+- Add Twisted to the available frameworks. See [#360](https://github.com/rollbar/pyrollbar/pull/360)
+
+**0.15.1**
+
+- Add support to Python 3.8. See [#351](https://github.com/rollbar/pyrollbar/pull/351)
+- Fix deque test. See [#349](https://github.com/rollbar/pyrollbar/pull/349)
+- Add alternatives to exception handler. See [#335](https://github.com/rollbar/pyrollbar/pull/335)
+- Change dict_merge to allow strict mode. See [#339](https://github.com/rollbar/pyrollbar/pull/339)
+- Improve scrubbing test case. See [#343](https://github.com/rollbar/pyrollbar/pull/343)
+
+**0.15.0**
+
+- Prevent recursive re-raising of exceptions. See [#317](https://github.com/rollbar/pyrollbar/pull/317)
+- Correctly apply logger formatting to Rollbar messages. See [#312](https://github.com/rollbar/pyrollbar/pull/312)
+- Fix deprecation warnings. See [#325](https://github.com/rollbar/pyrollbar/pull/319) and [#331](https://github.com/rollbar/pyrollbar/pull/331)
+- Allow the request pool to be configured. See [#305](https://github.com/rollbar/pyrollbar/pull/305)
+- Use callable() instead of try/except TypeError. See [#319](https://github.com/rollbar/pyrollbar/pull/319)
+- Update Travis CI matrix. See [#317](https://github.com/rollbar/pyrollbar/pull/317)
+- Fix Travis build errors. See [#328](https://github.com/rollbar/pyrollbar/pull/328)
+- Update trove classifiers. See [#331](https://github.com/rollbar/pyrollbar/pull/331)
+
+**0.14.7**
+
+- Allow the raw request body to be included if desired. See [#304](https://github.com/rollbar/pyrollbar/pull/304)
+- Send Rollbar access token in HTTP header. See [#303](https://github.com/rollbar/pyrollbar/pull/303)
+- Add support for Django 1.7 & 1.8 in \_build_django_request_data. See [#301](https://github.com/rollbar/pyrollbar/pull/301)
+- Add support for Quart framework. See [#300](https://github.com/rollbar/pyrollbar/pull/300)
+
+**0.14.6**
+
+- Add the authorization header to the default scrub fields list. See [#299](https://github.com/rollbar/pyrollbar/pull/299)
+- Encode the payload properly for newer versions of Twisted. See [#298](https://github.com/rollbar/pyrollbar/pull/298)
+- Don't fail to send payloads because some inner object is not JSON serializable. See [#297](https://github.com/rollbar/pyrollbar/pull/297)
+- Allow floats as circular references. See [#291](https://github.com/rollbar/pyrollbar/pull/291)
+
+**0.14.5**
+
+- Fix bug in which error params were not being passed correctly to Pyramid middleware. See [#287](https://github.com/rollbar/pyrollbar/pull/287)
+
+**0.14.4**
+
+- Fix bug in Pyramid middleware where exc_info was not being passed to handle_error. See [#283](https://github.com/rollbar/pyrollbar/pull/283)
+- Fix bug where errors in the serialization of local variables caused errors to be dropped. They will now make it to Rollbar. See [#284](https://github.com/rollbar/pyrollbar/pull/284)
+
+**0.14.3**
+
+- Add support for HTTP(S) proxies. See [#276](https://github.com/rollbar/pyrollbar/pull/276)
+
+**0.14.2**
+
+- Fix bug with file-based logging config in Python 3. See [#277](https://github.com/rollbar/pyrollbar/issues/277)
+- Fix bug in Django middleware when request has no META attribute. See [#273](https://github.com/rollbar/pyrollbar/pull/273)
+
+**0.14.1**
+
+- Add Django middlewares that differentiate between 404 and other exceptions. See [#270](https://github.com/rollbar/pyrollbar/pull/270)
+- Make Werkzeug request handling more general. See [#271](https://github.com/rollbar/pyrollbar/pull/271)
+- Fix incorrect handling rollbar.init() arguments when using LOGGER in Django. See [#235](https://github.com/rollbar/pyrollbar/pull/235)
+- Use thread local storage for not thead-safe requests.Sessions. See [#269](https://github.com/rollbar/pyrollbar/pull/269)
+- Swallow known error that happens in add_person_data. See [#268](https://github.com/rollbar/pyrollbar/pull/268)
+- Only write a log about a rate limit once. See [#267](https://github.com/rollbar/pyrollbar/pull/267)
+- Adapt Django view monkey patch to support Django 2. See [#257](https://github.com/rollbar/pyrollbar/pull/257)
+- Add support request objects from Django REST framework. See [#18](https://github.com/rollbar/pyrollbar/pull/18)
+- Add support for Falcon framework requests. See [#51](https://github.com/rollbar/pyrollbar/pull/51)
+- Add support for Django Channels' AsgiRequest. See [#272](https://github.com/rollbar/pyrollbar/pull/272)
 
 **0.14.0**
 
