@@ -2,6 +2,10 @@
 
 The change log is also available on the [GitHub Releases Page](https://github.com/rollbar/pyrollbar/releases).
 
+**0.16.1**
+
+- Fix PyPI artifacts
+
 **0.16.0**
 
 - Add support for FastAPI framework. See [#373](https://github.com/rollbar/pyrollbar/pull/373)
