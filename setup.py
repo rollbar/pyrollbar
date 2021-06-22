@@ -20,17 +20,12 @@ with open(INIT_PATH) as fd:
 tests_require = [
     'webob',
     'blinker',
-    'unittest2'
+    'unittest2',
+    'mock<=3.0.5; python_version < "3.3"',
+    'enum34; python_version < "3.4"',
+    'httpx; python_version >= "3.6"',
+    'aiocontextvars; python_version == "3.6"'
 ]
-
-if sys.version_info < (3, 3):
-    tests_require.append('mock<=3.0.5') # mock > 3.0.5 requires python >= 3.6
-if sys.version_info < (3, 4):
-    tests_require.append('enum34')
-if sys.version_info >= (3, 6):
-    tests_require.append('httpx')
-if sys.version_info[:2] == (3, 6):
-    tests_require.append('aiocontextvars')
 
 setup(
     name='rollbar',
