@@ -20,7 +20,7 @@ import warnings
 import requests
 import six
 
-from rollbar.lib import events, filters, dict_merge, parse_qs, text, transport, urljoin, iteritems, defaultJSONEncode
+from rollbar.lib import events, filters, dict_merge, parse_qs, text, transport, telemetry, urljoin, iteritems, defaultJSONEncode
 
 
 __version__ = '0.16.1'
@@ -380,6 +380,18 @@ def init(access_token, environment='production', scrub_fields=None, url_fields=N
 
     if SETTINGS.get('allow_logging_basic_config'):
         logging.basicConfig()
+
+    if SETTINGS.get('log_telemetry'):
+        formatter = SETTINGS.get('log_telemetry_formatter')
+        telemetry.set_log_telemetry(formatter)
+    if SETTINGS.get('network_telemetry'):
+        enable_req_headers = SETTINGS.get('enable_req_headers')
+        enable_response_headers = SETTINGS.get('enable_response_headers')
+        requests.get = telemetry.request(requests.get, enable_req_headers, enable_response_headers )
+        requests.post = telemetry.request(requests.post, enable_req_headers, enable_response_headers)
+        requests.put = telemetry.request(requests.put, enable_req_headers, enable_response_headers)
+        requests.patch = telemetry.request(requests.patch, enable_req_headers, enable_response_headers)
+        requests.delete = telemetry.request(requests.delete, enable_req_headers, enable_response_headers)
 
     if SETTINGS.get('handler') == 'agent':
         agent_log = _create_agent_log()
@@ -777,6 +789,7 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     _add_request_data(data, request)
     _add_person_data(data, request)
     _add_lambda_context_data(data)
+    _add_telemetry(data)
     data['server'] = _build_server_data()
 
     if payload_data:
@@ -857,6 +870,7 @@ def _report_message(message, level, request, extra_data, payload_data):
     _add_request_data(data, request)
     _add_person_data(data, request)
     _add_lambda_context_data(data)
+    _add_telemetry(data)
     data['server'] = _build_server_data()
 
     if payload_data:
@@ -1117,6 +1131,12 @@ def _add_request_data(data, request):
         if request_data:
             _filter_ip(request_data, SETTINGS['capture_ip'])
             data['request'] = request_data
+
+
+def _add_telemetry(data):
+    telemetry_data = telemetry.TELEMETRY_QUEUE.get_items()
+    if telemetry_data:
+        data['body']['telemetry'] = telemetry_data
 
 
 def _check_add_locals(frame, frame_num, total_frames):
