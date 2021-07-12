@@ -381,6 +381,10 @@ def init(access_token, environment='production', scrub_fields=None, url_fields=N
     if SETTINGS.get('allow_logging_basic_config'):
         logging.basicConfig()
 
+    queue_size = SETTINGS.get('set_custom_queue_size')
+    if queue_size:
+        telemetry.TELEMETRY_QUEUE = telemetry.Queue(queue_size)
+
     if SETTINGS.get('log_telemetry'):
         formatter = SETTINGS.get('log_telemetry_formatter')
         telemetry.set_log_telemetry(formatter)
