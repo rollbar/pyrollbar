@@ -21,6 +21,10 @@ class Queue:
         with self.lock:
             return self.items
 
+    def clear_items(self):
+        with self.lock:
+            self.items = []
+
 
 TELEMETRY_QUEUE_SIZE = 50
 TELEMETRY_QUEUE = Queue(TELEMETRY_QUEUE_SIZE)
@@ -34,7 +38,7 @@ class TelemetryLogHandler(logging.Handler):
     def emit(self, record):
         self.setFormatter(self.formatter)
         msg = {'message': self.format(record)}
-        data = {'body': msg, 'source': 'client', 'timestamp_ms': int(time.time()), 'type': 'log',
+        data = {'body': msg, 'source': 'client', 'timestamp_ms': get_current_timestamp(), 'type': 'log',
                 'level': record.levelname}
 
         TELEMETRY_QUEUE.put(data)
@@ -44,21 +48,28 @@ def set_log_telemetry(log_formatter=None):
     logging.getLogger().addHandler(TelemetryLogHandler(log_formatter))
 
 
+def get_current_timestamp():
+    return int(time.time())
+
+
 def request(request_function, enable_req_headers, enable_response_headers):
     def telemetry(*args, **kwargs):
 
         def clean_headers(headers):
+            if not headers:
+                return []
             for h in headers:
                 if h in rollbar.SETTINGS['scrub_fields']:
                     del headers[h]
             return headers
-
         data = {'level': 'info'}
         data_body = {'status_code': None}
+        try:
+            response = request_function(*args, **kwargs)
+        except:  # noqa: E722
+            response = None
 
-        response = request_function(*args, **kwargs)
-
-        if response:
+        if response is not None:
             data_body['status_code'] = response.status_code
             if response.status_code >= 500:
                 data['level'] = 'critical'
@@ -74,9 +85,10 @@ def request(request_function, enable_req_headers, enable_response_headers):
         data['body'] = data_body
 
         data['source'] = 'client'
-        data['timestamp_ms'] = int(time.time())
+        data['timestamp_ms'] = get_current_timestamp()
         data['type'] = 'network'
         TELEMETRY_QUEUE.put(data)
 
         return response
+
     return telemetry
