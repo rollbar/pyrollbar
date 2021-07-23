@@ -46,6 +46,8 @@ jobs:
           - python-version: 2.7
             framework: DJANGO_VERSION=2.1.15
           - python-version: 3.4
+            framework: DJANGO_VERSION=2.0.13
+          - python-version: 3.4
             framework: DJANGO_VERSION=2.1.7
           - python-version: 3.4
             framework: DJANGO_VERSION=2.1.15
@@ -154,6 +156,8 @@ jobs:
             framework: DJANGO_VERSION=1.9.13
           - python-version: 3.4
             framework: DJANGO_VERSION=1.10.8
+          - python-version: 3.4
+            framework: DJANGO_VERSION=2.0.13 chardet==3.0.4 idna==2.7 mock==3.0.5
           - python-version: 3.5
             framework: DJANGO_VERSION=1.8.19
           - python-version: 3.5
