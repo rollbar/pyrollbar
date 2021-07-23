@@ -7,7 +7,8 @@ import requests
 
 class RollbarTelemetryTest(BaseTest):
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         formatter = logging.Formatter('%(name)s :: %(levelname)s :: %(message)s')
         telemetry.set_log_telemetry(formatter)
         requests.get = telemetry.request(requests.get, False, False)
