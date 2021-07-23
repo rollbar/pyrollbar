@@ -27,11 +27,11 @@ jobs:
           - TWISTED_VERSION=16.6.0 treq==16.12.0 zope.interface==4.5.0
           - TWISTED_VERSION=17.1.0 treq==16.12.0 zope.interface==4.5.0
           - DJANGO_VERSION=1.11.20 chardet==3.0.4 idna==2.7 mock==3.0.5
-          - DJANGO_VERSION=2.0.13 chardet==3.0.4 idna==2.7 mock==3.0.5
+          - DJANGO_VERSION=2.0.13
           - DJANGO_VERSION=2.1.7
           - DJANGO_VERSION=2.1.15
-          - PYRAMID_VERSION=1.9.2
-          - PYRAMID_VERSION=1.10.4
+          - PYRAMID_VERSION=1.9.2 chardet==3.0.4 idna==2.7 mock==3.0.5
+          - PYRAMID_VERSION=1.10.4 chardet==3.0.4 idna==2.7 mock==3.0.5
           - STARLETTE_VERSION=0.12.12 httpx==0.18.1 python-multipart==0.0.5
           - STARLETTE_VERSION=0.12.13 httpx==0.18.1 python-multipart==0.0.5
           - STARLETTE_VERSION=0.14.2 httpx==0.18.1 python-multipart==0.0.5
