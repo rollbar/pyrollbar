@@ -60,7 +60,7 @@ def request(request_function, enable_req_headers, enable_response_headers):
                 return []
             for h in headers:
                 if h in rollbar.SETTINGS['scrub_fields']:
-                    del headers[h]
+                    headers[h] = '[FILTERED]'
             return headers
         data = {'level': 'info'}
         data_body = {'status_code': None}
