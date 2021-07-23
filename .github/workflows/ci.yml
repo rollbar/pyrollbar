@@ -53,6 +53,10 @@ jobs:
             framework: DJANGO_VERSION=2.1.15
           - python-version: 3.5
             framework: DJANGO_VERSION=2.1.15
+          - python-version: 3.5
+            framework: DJANGO_VERSION=2.0.13
+          - python-version: 3.5
+            framework: DJANGO_VERSION=2.1.7
           - python-version: 3.6
             framework: DJANGO_VERSION=2.1.15
           - python-version: 3.7
@@ -164,6 +168,10 @@ jobs:
             framework: DJANGO_VERSION=1.9.13
           - python-version: 3.5
             framework: DJANGO_VERSION=1.10.8
+          - python-version: 3.5
+            framework: DJANGO_VERSION=2.0.13 mock==3.0.5
+          - python-version: 3.5
+            framework: DJANGO_VERSION=2.1.7 mock==3.0.5
           - python-version: 3.7
             framework: TWISTED_VERSION=18.9.0 treq==20.4.1 zope.interface==4.5.0
           - python-version: 3.7
