@@ -141,7 +141,7 @@ jobs:
           - python-version: 2.7
             framework: FLASK_VERSION=0.9
           - python-version: 3.3
-            framework: FLASK_VERSION=0.10.1 mock==4.0.3
+            framework: FLASK_VERSION=0.10.1 mock==2.0.0
           - python-version: 3.3
             framework: FLASK_VERSION=0.11.1 mock==2.0.0
           - python-version: 3.3
