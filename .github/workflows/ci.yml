@@ -141,33 +141,33 @@ jobs:
           - python-version: 2.7
             framework: FLASK_VERSION=0.9
           - python-version: 3.3
-            framework: FLASK_VERSION=0.10.1
+            framework: FLASK_VERSION=0.10.1 mock==3.0.5
           - python-version: 3.3
-            framework: FLASK_VERSION=0.11.1
+            framework: FLASK_VERSION=0.11.1 mock==3.0.5
           - python-version: 3.3
-            framework: FLASK_VERSION=0.12.4
+            framework: FLASK_VERSION=0.12.4 mock==3.0.5
           - python-version: 3.3
-            framework: FLASK_VERSION=1.0.2
+            framework: FLASK_VERSION=1.0.2 mock==3.0.5
           - python-version: 3.3
-            framework: DJANGO_VERSION=1.6.11
+            framework: DJANGO_VERSION=1.6.11 mock==3.0.5
           - python-version: 3.3
-            framework: DJANGO_VERSION=1.8.19
+            framework: DJANGO_VERSION=1.8.19 mock==3.0.5
           - python-version: 3.4
-            framework: DJANGO_VERSION=1.7.11
+            framework: DJANGO_VERSION=1.7.11 chardet==3.0.4 idna==2.7 mock==3.0.5
           - python-version: 3.4
-            framework: DJANGO_VERSION=1.8.19
+            framework: DJANGO_VERSION=1.8.19 chardet==3.0.4 idna==2.7 mock==3.0.5
           - python-version: 3.4
-            framework: DJANGO_VERSION=1.9.13
+            framework: DJANGO_VERSION=1.9.13 chardet==3.0.4 idna==2.7 mock==3.0.5
           - python-version: 3.4
-            framework: DJANGO_VERSION=1.10.8
+            framework: DJANGO_VERSION=1.10.8 chardet==3.0.4 idna==2.7 mock==3.0.5
           - python-version: 3.4
             framework: DJANGO_VERSION=2.0.13 chardet==3.0.4 idna==2.7 mock==3.0.5
           - python-version: 3.5
-            framework: DJANGO_VERSION=1.8.19
+            framework: DJANGO_VERSION=1.8.19 mock==3.0.5
           - python-version: 3.5
-            framework: DJANGO_VERSION=1.9.13
+            framework: DJANGO_VERSION=1.9.13 mock==3.0.5
           - python-version: 3.5
-            framework: DJANGO_VERSION=1.10.8
+            framework: DJANGO_VERSION=1.10.8 mock==3.0.5
           - python-version: 3.5
             framework: DJANGO_VERSION=2.0.13 mock==3.0.5
           - python-version: 3.5
