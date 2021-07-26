@@ -46,21 +46,21 @@ jobs:
           - python-version: 2.7
             framework: DJANGO_VERSION=2.1.15 mock==2.0.0
           - python-version: 3.4
-            framework: DJANGO_VERSION=2.0.13
+            framework: DJANGO_VERSION=2.0.13 mock==2.0.0
           - python-version: 3.4
-            framework: DJANGO_VERSION=2.1.7
+            framework: DJANGO_VERSION=2.1.7 mock==2.0.0
           - python-version: 3.4
-            framework: DJANGO_VERSION=2.1.15
+            framework: DJANGO_VERSION=2.1.15 mock==2.0.0
           - python-version: 3.5
-            framework: DJANGO_VERSION=2.1.15
+            framework: DJANGO_VERSION=2.1.15 mock==2.0.0
           - python-version: 3.5
-            framework: DJANGO_VERSION=2.0.13
+            framework: DJANGO_VERSION=2.0.13 mock==2.0.0
           - python-version: 3.5
-            framework: DJANGO_VERSION=2.1.7
+            framework: DJANGO_VERSION=2.1.7 mock==2.0.0
           - python-version: 3.6
-            framework: DJANGO_VERSION=2.1.15
+            framework: DJANGO_VERSION=2.1.15 mock==2.0.0
           - python-version: 3.7
-            framework: DJANGO_VERSION=2.1.15
+            framework: DJANGO_VERSION=2.1.15 mock==2.0.0
 
           # twisted/treq setup.py allows:
           # Twisted < 18.7.0 on python < 3.7
