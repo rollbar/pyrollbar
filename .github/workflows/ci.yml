@@ -101,23 +101,23 @@ jobs:
             framework: TWISTED_VERSION=17.1.0 treq==20.4.1 zope.interface==4.3.0
 
           - python-version: 2.7
-            framework: STARLETTE_VERSION=0.12.12 httpx==0.18.1 python-multipart==0.0.5
+            framework: STARLETTE_VERSION=0.12.12 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
           - python-version: 2.7
-            framework: STARLETTE_VERSION=0.12.13 httpx==0.18.1 python-multipart==0.0.5
+            framework: STARLETTE_VERSION=0.12.13 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
           - python-version: 2.7
-            framework: STARLETTE_VERSION=0.14.2 httpx==0.18.1 python-multipart==0.0.5
+            framework: STARLETTE_VERSION=0.14.2 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
           - python-version: 3.4
-            framework: STARLETTE_VERSION=0.12.12 httpx==0.18.1 python-multipart==0.0.5
+            framework: STARLETTE_VERSION=0.12.12 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
           - python-version: 3.4
-            framework: STARLETTE_VERSION=0.12.13 httpx==0.18.1 python-multipart==0.0.5
+            framework: STARLETTE_VERSION=0.12.13 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
           - python-version: 3.4
-            framework: STARLETTE_VERSION=0.14.2 httpx==0.18.1 python-multipart==0.0.5
+            framework: STARLETTE_VERSION=0.14.2 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
           - python-version: 3.5
-            framework: STARLETTE_VERSION=0.12.12 httpx==0.18.1 python-multipart==0.0.5
+            framework: STARLETTE_VERSION=0.12.12 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
           - python-version: 3.5
-            framework: STARLETTE_VERSION=0.12.13 httpx==0.18.1 python-multipart==0.0.5
+            framework: STARLETTE_VERSION=0.12.13 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
           - python-version: 3.5
-            framework: STARLETTE_VERSION=0.14.2 httpx==0.18.1 python-multipart==0.0.5
+            framework: STARLETTE_VERSION=0.14.2 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
 
           - python-version: 2.7
             framework: FASTAPI_VERSION=0.40.0 httpx==0.18.1 python-multipart==0.0.5
