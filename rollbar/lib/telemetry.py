@@ -38,8 +38,13 @@ class TelemetryLogHandler(logging.Handler):
     def emit(self, record):
         self.setFormatter(self.formatter)
         msg = {'message': self.format(record)}
-        data = {'body': msg, 'source': 'client', 'timestamp_ms': get_current_timestamp(), 'type': 'log',
-                'level': record.levelname}
+        data = {
+            'body': msg,
+            'source': 'client',
+            'timestamp_ms': get_current_timestamp(),
+            'type': 'log',
+            'level': record.levelname,
+        }
 
         TELEMETRY_QUEUE.put(data)
 
