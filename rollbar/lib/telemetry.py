@@ -82,7 +82,7 @@ def request(request_function, enable_req_headers, enable_response_headers):
         if enable_req_headers:
             data_body['request_headers'] = clean_headers(kwargs.get('headers'))
         data_body['url'] = args[0]
-        data_body['method'] = request_function.__name__
+        data_body['method'] = request_function.__name__.upper()
         data_body['subtype'] = 'http'
         data['body'] = data_body
 
