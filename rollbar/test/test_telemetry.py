@@ -35,8 +35,17 @@ class RollbarTelemetryTest(BaseTest):
         items = telemetry.TELEMETRY_QUEUE.get_items()
         self.assertEqual(1, len(items))
 
-        result = {'body': {'url': 'http://example.com', 'status_code': 200, 'method': 'get',
-                           'subtype': 'http'}, 'source': 'client', 'timestamp_ms': 1000000,
-                  'type': 'network', 'level': 'info'}
+        result = {
+            'body': {
+                'url': 'http://example.com',
+                'status_code': 200,
+                'method': 'get',
+                'subtype': 'http',
+            },
+            'source': 'client',
+            'timestamp_ms': 1000000,
+            'type': 'network',
+            'level': 'info',
+        }
         self.assertEqual(result, items[0])
         telemetry.TELEMETRY_QUEUE.clear_items()
