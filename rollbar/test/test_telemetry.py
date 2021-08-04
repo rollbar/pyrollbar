@@ -20,9 +20,13 @@ class RollbarTelemetryTest(BaseTest):
         items = telemetry.TELEMETRY_QUEUE.get_items()
         self.assertEqual(1, len(items))
 
-        result = {'body': {'message': 'root :: WARNING :: test loggin'},
-                  'source': 'client', 'level': 'WARNING', 'type': 'log',
-                  'timestamp_ms': 1000000}
+        result = {
+            'body': {'message': 'root :: WARNING :: test loggin'},
+            'source': 'client',
+            'level': 'WARNING',
+            'type': 'log',
+            'timestamp_ms': 1000000,
+        }
 
         self.assertEqual(result, items[0])
         telemetry.TELEMETRY_QUEUE.clear_items()
