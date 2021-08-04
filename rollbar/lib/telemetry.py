@@ -62,10 +62,7 @@ def request(request_function, enable_req_headers, enable_response_headers):
         def clean_headers(headers):
             if not headers:
                 return headers
-            for h in headers:
-                if h in rollbar.SETTINGS['scrub_fields']:
-                    headers[h] = '[FILTERED]'
-            return headers
+            return {h: '[FILTERED]' if h in rollbar.SETTINGS['scrub_fields'] else headers[h] for h in headers}
             
         data = {'level': 'info'}
         data_body = {'status_code': None}
