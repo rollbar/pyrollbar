@@ -20,7 +20,7 @@ import warnings
 import requests
 import six
 
-from rollbar.lib import events, filters, dict_merge, parse_qs, text, transport, telemetry, urljoin, iteritems, defaultJSONEncode
+from rollbar.lib import events, filters, dict_merge, parse_qs, telemetry, text, transport, urljoin, iteritems, defaultJSONEncode
 
 
 __version__ = '0.16.1'
