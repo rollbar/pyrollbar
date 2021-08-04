@@ -6,7 +6,6 @@ import requests
 
 
 class RollbarTelemetryTest(BaseTest):
-
     @classmethod
     def setUpClass(self):
         formatter = logging.Formatter('%(name)s :: %(levelname)s :: %(message)s')
