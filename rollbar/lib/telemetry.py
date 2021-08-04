@@ -54,7 +54,6 @@ def get_current_timestamp():
 
 def request(request_function, enable_req_headers, enable_response_headers):
     def telemetry(*args, **kwargs):
-
         def clean_headers(headers):
             if not headers:
                 return []
