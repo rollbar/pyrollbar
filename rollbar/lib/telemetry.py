@@ -8,27 +8,6 @@ from rollbar.lib import transforms
 from rollbar.lib.transforms.scrub import ScrubTransform
 
 
-class Queue:
-    def __init__(self, size):
-        self.size = size
-        self.items = []
-        self.lock = threading.Lock()
-
-    def put(self, item):
-        with self.lock:
-            if len(self.items) >= self.size:
-                self.items = self.items[1:]
-            self.items.append(item)
-
-    def get_items(self):
-        with self.lock:
-            return self.items
-
-    def clear_items(self):
-        with self.lock:
-            self.items = []
-
-
 class TelemetryLogHandler(logging.Handler):
     def __init__(self, formatter=None):
         super(TelemetryLogHandler, self).__init__()
@@ -45,7 +24,7 @@ class TelemetryLogHandler(logging.Handler):
             'level': record.levelname,
         }
 
-        rollbar.TELEMETRY_QUEUE.put(data)
+        rollbar.TELEMETRY_QUEUE.append(data)
 
 
 def enable_log_telemetry(log_formatter=None):
@@ -63,6 +42,8 @@ def request(request_function, enable_req_headers, enable_response_headers):
             response = request_function(*args, **kwargs)
         except:  # noqa: E722
             response = None
+            data_body['status_code'] = 0
+            data['level'] = 'critical'
 
         if response is not None:
             data_body['status_code'] = response.status_code
@@ -82,7 +63,7 @@ def request(request_function, enable_req_headers, enable_response_headers):
         data['source'] = 'client'
         data['timestamp_ms'] = rollbar.get_current_timestamp()
         data['type'] = 'network'
-        rollbar.TELEMETRY_QUEUE.put(data)
+        rollbar.TELEMETRY_QUEUE.append(data)
 
         return response
 

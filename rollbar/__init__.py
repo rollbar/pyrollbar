@@ -19,6 +19,7 @@ import warnings
 import requests
 import six
 
+from collections import deque
 from rollbar.lib import events, filters, dict_merge, parse_qs, telemetry, text, transport, urljoin, iteritems, defaultJSONEncode, get_current_timestamp
 
 
@@ -325,7 +326,7 @@ SETTINGS = {
 }
 
 
-TELEMETRY_QUEUE = telemetry.Queue(SETTINGS['telemetry_queue_size'])
+TELEMETRY_QUEUE = deque([], SETTINGS['telemetry_queue_size'])
 
 _CURRENT_LAMBDA_CONTEXT = None
 _LAST_RESPONSE_STATUS = None
@@ -386,7 +387,7 @@ def init(access_token, environment='production', scrub_fields=None, url_fields=N
 
     queue_size = SETTINGS.get('telemetry_queue_size')
     if queue_size:
-        TELEMETRY_QUEUE = telemetry.Queue(queue_size)
+        TELEMETRY_QUEUE = deque([], queue_size)
 
     if SETTINGS.get('log_telemetry'):
         formatter = SETTINGS.get('log_telemetry_formatter')
@@ -1137,7 +1138,7 @@ def _add_request_data(data, request):
 
 
 def _add_telemetry(data):
-    telemetry_data = TELEMETRY_QUEUE.get_items()
+    telemetry_data = list(TELEMETRY_QUEUE)
     if telemetry_data:
         data['body']['telemetry'] = telemetry_data
 
