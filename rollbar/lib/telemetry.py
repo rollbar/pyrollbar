@@ -1,8 +1,11 @@
 import logging
 import threading
-import time
+import requests
+import copy
 
 import rollbar
+from rollbar.lib import transforms
+from rollbar.lib.transforms.scrub import ScrubTransform
 
 
 class Queue:
@@ -26,10 +29,6 @@ class Queue:
             self.items = []
 
 
-TELEMETRY_QUEUE_SIZE = 50
-TELEMETRY_QUEUE = Queue(TELEMETRY_QUEUE_SIZE)
-
-
 class TelemetryLogHandler(logging.Handler):
     def __init__(self, formatter=None):
         super(TelemetryLogHandler, self).__init__()
@@ -41,29 +40,23 @@ class TelemetryLogHandler(logging.Handler):
         data = {
             'body': msg,
             'source': 'client',
-            'timestamp_ms': get_current_timestamp(),
+            'timestamp_ms': rollbar.get_current_timestamp(),
             'type': 'log',
             'level': record.levelname,
         }
 
-        TELEMETRY_QUEUE.put(data)
+        rollbar.TELEMETRY_QUEUE.put(data)
 
 
-def set_log_telemetry(log_formatter=None):
+def enable_log_telemetry(log_formatter=None):
     logging.getLogger().addHandler(TelemetryLogHandler(log_formatter))
 
 
-def get_current_timestamp():
-    return int(time.time())
-
-
 def request(request_function, enable_req_headers, enable_response_headers):
+    scrubber = ScrubTransform(suffixes=rollbar.SETTINGS['scrub_fields'], redact_char='*', randomize_len=False)
+
     def telemetry(*args, **kwargs):
-        def clean_headers(headers):
-            if not headers:
-                return headers
-            return {h: '[FILTERED]' if h in rollbar.SETTINGS['scrub_fields'] else headers[h] for h in headers}
-            
+
         data = {'level': 'info'}
         data_body = {'status_code': None}
         try:
@@ -78,19 +71,27 @@ def request(request_function, enable_req_headers, enable_response_headers):
             elif response.status_code >= 400:
                 data['level'] = 'error'
             if enable_response_headers:
-                data_body['response'] = {'headers': clean_headers(response.headers)}
+                data_body['response'] = {'headers': transforms.transform(copy.deepcopy(response.headers), scrubber)}
         if enable_req_headers:
-            data_body['request_headers'] = clean_headers(kwargs.get('headers'))
+            data_body['request_headers'] = transforms.transform(copy.deepcopy(kwargs.get('headers')), scrubber)
         data_body['url'] = args[0]
         data_body['method'] = request_function.__name__.upper()
         data_body['subtype'] = 'http'
         data['body'] = data_body
 
         data['source'] = 'client'
-        data['timestamp_ms'] = get_current_timestamp()
+        data['timestamp_ms'] = rollbar.get_current_timestamp()
         data['type'] = 'network'
-        TELEMETRY_QUEUE.put(data)
+        rollbar.TELEMETRY_QUEUE.put(data)
 
         return response
 
     return telemetry
+
+
+def enable_network_telemetry(enable_req_headers, enable_resp_headers):
+    requests.get = request(requests.get, enable_req_headers, enable_resp_headers)
+    requests.post = request(requests.post, enable_req_headers, enable_resp_headers)
+    requests.put = request(requests.put, enable_req_headers, enable_resp_headers)
+    requests.patch = request(requests.patch, enable_req_headers, enable_resp_headers)
+    requests.delete = request(requests.delete, enable_req_headers, enable_resp_headers)

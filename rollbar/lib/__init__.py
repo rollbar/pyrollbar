@@ -4,7 +4,7 @@ import copy
 import os
 import sys
 from array import array
-import json
+import time
 
 try:
     # Python 3
@@ -229,3 +229,7 @@ def defaultJSONEncode(o):
             o._setup()
         return o._wrapped
     return repr(o) + " is not JSON serializable"
+
+
+def get_current_timestamp():
+    return int(time.time())

@@ -10,7 +10,6 @@ import os
 import socket
 import sys
 import threading
-import time
 import traceback
 import types
 import uuid
@@ -20,7 +19,7 @@ import warnings
 import requests
 import six
 
-from rollbar.lib import events, filters, dict_merge, parse_qs, telemetry, text, transport, urljoin, iteritems, defaultJSONEncode
+from rollbar.lib import events, filters, dict_merge, parse_qs, telemetry, text, transport, urljoin, iteritems, defaultJSONEncode, get_current_timestamp
 
 
 __version__ = '0.16.1'
@@ -322,7 +321,11 @@ SETTINGS = {
     'request_pool_connections': None,
     'request_pool_maxsize': None,
     'request_max_retries': None,
+    'telemetry_queue_size': 50,
 }
+
+
+TELEMETRY_QUEUE = telemetry.Queue(SETTINGS['telemetry_queue_size'])
 
 _CURRENT_LAMBDA_CONTEXT = None
 _LAST_RESPONSE_STATUS = None
@@ -381,21 +384,17 @@ def init(access_token, environment='production', scrub_fields=None, url_fields=N
     if SETTINGS.get('allow_logging_basic_config'):
         logging.basicConfig()
 
-    queue_size = SETTINGS.get('set_custom_queue_size')
+    queue_size = SETTINGS.get('telemetry_queue_size')
     if queue_size:
-        telemetry.TELEMETRY_QUEUE = telemetry.Queue(queue_size)
+        TELEMETRY_QUEUE = telemetry.Queue(queue_size)
 
     if SETTINGS.get('log_telemetry'):
         formatter = SETTINGS.get('log_telemetry_formatter')
-        telemetry.set_log_telemetry(formatter)
+        telemetry.enable_log_telemetry(formatter)
     if SETTINGS.get('network_telemetry'):
         enable_req_headers = SETTINGS.get('enable_req_headers')
-        enable_response_headers = SETTINGS.get('enable_response_headers')
-        requests.get = telemetry.request(requests.get, enable_req_headers, enable_response_headers )
-        requests.post = telemetry.request(requests.post, enable_req_headers, enable_response_headers)
-        requests.put = telemetry.request(requests.put, enable_req_headers, enable_response_headers)
-        requests.patch = telemetry.request(requests.patch, enable_req_headers, enable_response_headers)
-        requests.delete = telemetry.request(requests.delete, enable_req_headers, enable_response_headers)
+        enable_resp_headers = SETTINGS.get('enable_resp_headers')
+        telemetry.enable_network_telemetry(enable_req_headers, enable_resp_headers)
 
     if SETTINGS.get('handler') == 'agent':
         agent_log = _create_agent_log()
@@ -905,7 +904,7 @@ def _check_config():
 
 def _build_base_data(request, level='error'):
     data = {
-        'timestamp': int(time.time()),
+        'timestamp': get_current_timestamp(),
         'environment': SETTINGS['environment'],
         'level': level,
         'language': 'python %s' % '.'.join(str(x) for x in sys.version_info[:3]),
@@ -1138,7 +1137,7 @@ def _add_request_data(data, request):
 
 
 def _add_telemetry(data):
-    telemetry_data = telemetry.TELEMETRY_QUEUE.get_items()
+    telemetry_data = TELEMETRY_QUEUE.get_items()
     if telemetry_data:
         data['body']['telemetry'] = telemetry_data
 
