@@ -31,19 +31,19 @@ class RollbarTelemetryTest(BaseTest):
         self.assertEqual(result, items[0])
         rollbar.TELEMETRY_QUEUE.clear_items()
 
-    @mock.patch('rollbar.telemetry.get_current_timestamp')
+    @mock.patch('rollbar.get_current_timestamp')
     def test_telemetry_request(self, timestamp):
         timestamp.return_value = 1000000
 
         requests.get("http://example.com")
-        items = telemetry.TELEMETRY_QUEUE.get_items()
+        items = rollbar.TELEMETRY_QUEUE.get_items()
         self.assertEqual(1, len(items))
 
         result = {
             'body': {
                 'url': 'http://example.com',
                 'status_code': 200,
-                'method': 'get',
+                'method': 'GET',
                 'subtype': 'http',
             },
             'source': 'client',
@@ -52,4 +52,4 @@ class RollbarTelemetryTest(BaseTest):
             'level': 'info',
         }
         self.assertEqual(result, items[0])
-        telemetry.TELEMETRY_QUEUE.clear_items()
+        rollbar.TELEMETRY_QUEUE.clear_items()
