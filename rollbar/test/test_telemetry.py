@@ -3,20 +3,21 @@ from rollbar.test import BaseTest
 import logging
 import mock
 import requests
+import rollbar
 
 
 class RollbarTelemetryTest(BaseTest):
     @classmethod
     def setUpClass(self):
         formatter = logging.Formatter('%(name)s :: %(levelname)s :: %(message)s')
-        telemetry.set_log_telemetry(formatter)
-        requests.get = telemetry.request(requests.get, False, False)
+        telemetry.enable_log_telemetry(formatter)
+        telemetry.enable_network_telemetry(False, False)
 
-    @mock.patch('rollbar.telemetry.get_current_timestamp')
+    @mock.patch('rollbar.get_current_timestamp')
     def test_telemetry_log(self, timestamp):
         timestamp.return_value = 1000000
         logging.warning("test loggin")
-        items = telemetry.TELEMETRY_QUEUE.get_items()
+        items = rollbar.TELEMETRY_QUEUE.get_items()
         self.assertEqual(1, len(items))
 
         result = {
@@ -28,7 +29,7 @@ class RollbarTelemetryTest(BaseTest):
         }
 
         self.assertEqual(result, items[0])
-        telemetry.TELEMETRY_QUEUE.clear_items()
+        rollbar.TELEMETRY_QUEUE.clear_items()
 
     @mock.patch('rollbar.telemetry.get_current_timestamp')
     def test_telemetry_request(self, timestamp):
