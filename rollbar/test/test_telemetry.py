@@ -17,7 +17,7 @@ class RollbarTelemetryTest(BaseTest):
     def test_telemetry_log(self, timestamp):
         timestamp.return_value = 1000000
         logging.warning("test loggin")
-        items = rollbar.TELEMETRY_QUEUE.get_items()
+        items = list(rollbar.TELEMETRY_QUEUE)
         self.assertEqual(1, len(items))
 
         result = {
@@ -29,14 +29,14 @@ class RollbarTelemetryTest(BaseTest):
         }
 
         self.assertEqual(result, items[0])
-        rollbar.TELEMETRY_QUEUE.clear_items()
+        rollbar.TELEMETRY_QUEUE.clear()
 
     @mock.patch('rollbar.get_current_timestamp')
     def test_telemetry_request(self, timestamp):
         timestamp.return_value = 1000000
 
         requests.get("http://example.com")
-        items = rollbar.TELEMETRY_QUEUE.get_items()
+        items = list(rollbar.TELEMETRY_QUEUE)
         self.assertEqual(1, len(items))
 
         result = {
@@ -52,4 +52,4 @@ class RollbarTelemetryTest(BaseTest):
             'level': 'info',
         }
         self.assertEqual(result, items[0])
-        rollbar.TELEMETRY_QUEUE.clear_items()
+        rollbar.TELEMETRY_QUEUE.clear()
