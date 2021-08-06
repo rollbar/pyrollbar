@@ -6,6 +6,14 @@ import requests
 import rollbar
 
 
+try:
+    # 3.x
+    import urllib.request as ulib
+except ImportError:
+    # 2.x
+    import urllib as ulib
+
+
 class RollbarTelemetryTest(BaseTest):
     @classmethod
     def setUpClass(self):
@@ -36,6 +44,29 @@ class RollbarTelemetryTest(BaseTest):
         timestamp.return_value = 1000000
 
         requests.get("http://example.com")
+        items = list(rollbar.TELEMETRY_QUEUE)
+        self.assertEqual(1, len(items))
+
+        result = {
+            'body': {
+                'url': 'http://example.com',
+                'status_code': 200,
+                'method': 'GET',
+                'subtype': 'http',
+            },
+            'source': 'client',
+            'timestamp_ms': 1000000,
+            'type': 'network',
+            'level': 'info',
+        }
+        self.assertEqual(result, items[0])
+        rollbar.TELEMETRY_QUEUE.clear()
+
+    @mock.patch('rollbar.get_current_timestamp')
+    def test_telemetry_urllib_request(self, timestamp):
+        timestamp.return_value = 1000000
+
+        ulib.urlopen("http://example.com")
         items = list(rollbar.TELEMETRY_QUEUE)
         self.assertEqual(1, len(items))
 
