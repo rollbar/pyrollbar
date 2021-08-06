@@ -14,6 +14,12 @@ except ImportError:
     import urllib as ulib
 
 
+
+except ImportError:
+    # 2.x
+   print('please install httpx for python3')
+
+
 class TelemetryLogHandler(logging.Handler):
     def __init__(self, formatter=None):
         super(TelemetryLogHandler, self).__init__()
@@ -52,7 +58,7 @@ def request(request_function, enable_req_headers, enable_response_headers, reque
             data['level'] = 'critical'
 
         if response is not None:
-            if request_type == 'requests':
+            if request_type in ['requests', 'httpx']:
                 data_body['status_code'] = response.status_code
             elif request_type == 'urllib':
                 data_body['status_code'] = response.code
@@ -62,11 +68,14 @@ def request(request_function, enable_req_headers, enable_response_headers, reque
             elif data_body['status_code'] >= 400:
                 data['level'] = 'error'
             if enable_response_headers:
-                data_body['response'] = {'headers': transforms.transform(copy.deepcopy(response.headers), scrubber)}
+                response_headers = copy.deepcopy(response.headers)
+                if not response_headers:
+                    response_headers = {}
+                data_body['response'] = {'headers': transforms.transform(response_headers, scrubber)}
         if enable_req_headers:
-            data_body['request_headers'] = transforms.transform(copy.deepcopy(kwargs.get('headers')), scrubber)
+            data_body['request_headers'] = transforms.transform(copy.deepcopy(kwargs.get('headers', {})), scrubber)
         data_body['url'] = args[0]
-        if request_type == 'requests':
+        if request_type in ['requests', 'httpx']:
             data_body['method'] = request_function.__name__.upper()
         if request_type == 'urllib':
             data_body['method'] = kwargs.get('method', 'GET')
@@ -84,10 +93,21 @@ def request(request_function, enable_req_headers, enable_response_headers, reque
 
 
 def enable_network_telemetry(enable_req_headers, enable_resp_headers):
-    requests.get = request(requests.get, enable_req_headers, enable_resp_headers, "requests")
-    requests.post = request(requests.post, enable_req_headers, enable_resp_headers, "requests")
-    requests.put = request(requests.put, enable_req_headers, enable_resp_headers, "requests")
-    requests.patch = request(requests.patch, enable_req_headers, enable_resp_headers, "requests")
-    requests.delete = request(requests.delete, enable_req_headers, enable_resp_headers, "requests")
+    requests.get = request(requests.get, enable_req_headers, enable_resp_headers, 'requests')
+    requests.post = request(requests.post, enable_req_headers, enable_resp_headers, 'requests')
+    requests.put = request(requests.put, enable_req_headers, enable_resp_headers, 'requests')
+    requests.patch = request(requests.patch, enable_req_headers, enable_resp_headers, 'requests')
+    requests.delete = request(requests.delete, enable_req_headers, enable_resp_headers, 'requests')
 
-    ulib.urlopen = request(ulib.urlopen, enable_req_headers, enable_resp_headers, "urllib")
+    ulib.urlopen = request(ulib.urlopen, enable_req_headers, enable_resp_headers, 'urllib')
+
+    try:
+        # 3.x
+        import httpx
+        httpx.get = request(httpx.get, enable_req_headers, enable_resp_headers, 'httpx')
+        httpx.post = request(httpx.post, enable_req_headers, enable_resp_headers, 'httpx')
+        httpx.put = request(httpx.put, enable_req_headers, enable_resp_headers, 'httpx')
+        httpx.patch = request(httpx.patch, enable_req_headers, enable_resp_headers, 'httpx')
+        httpx.delete = request(httpx.delete, enable_req_headers, enable_resp_headers, 'httpx')
+    except ImportError:
+        pass
