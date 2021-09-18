@@ -354,6 +354,48 @@ class RollbarTest(BaseTest):
             data, {'id': '123', 'username': 'admin', 'email': 'admin@example.org'}
         )
 
+    def test_starlette_build_person_data_if_user_authenticated(self):
+        try:
+            from starlette.authentication import SimpleUser
+            from starlette.requests import Request
+        except ImportError:
+            self.skipTest('Requires Starlette to be installed')
+
+        # Implement interface with the id attribute
+        class User(SimpleUser):
+            counter = 0
+
+            def __init__(self, username, email):
+                super().__init__(username)
+                self.email = email
+
+                User.counter += 1
+                self.id = User.counter
+
+        scope = {'type': 'http'}
+        request = Request(scope)
+        # Make the user authenticated
+        request.scope['user'] = User('admin', 'admin@example.org')
+
+        data = rollbar._build_person_data(request)
+
+        self.assertDictEqual(
+            data, {'id': '1', 'username': 'admin', 'email': 'admin@example.org'}
+        )
+
+    def test_starlette_failsafe_build_person_data_if_user_not_authenticated(self):
+        try:
+            from starlette.requests import Request
+        except ImportError:
+            self.skipTest('Requires Starlette to be installed')
+
+        scope = {'type': 'http'}
+        request = Request(scope)
+
+        data = rollbar._build_person_data(request)
+
+        self.assertIsNone(data)
+
     @unittest.skipUnless(sys.version_info >= (3, 6), 'Python3.6+ required')
     def test_get_request_starlette_middleware(self):
         try:
