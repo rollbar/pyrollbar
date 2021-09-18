@@ -327,6 +327,33 @@ class RollbarTest(BaseTest):
         self.assertEqual(data['user_ip'], scope['client'][0])
         self.assertEqual(data['method'], scope['method'])
 
+    def test_django_build_person_data(self):
+        try:
+            import django
+            from django.conf import settings
+        except ImportError:
+            self.skipTest('Requires Django to be installed')
+        else:
+            settings.configure(
+                INSTALLED_APPS=['django.contrib.auth', 'django.contrib.contenttypes']
+            )
+            django.setup()
+
+        from django.contrib.auth.models import User
+        from django.http.request import HttpRequest
+
+        request = HttpRequest()
+        request.user = User()
+        request.user.id = 123
+        request.user.username = 'admin'
+        request.user.email = 'admin@example.org'
+
+        data = rollbar._build_person_data(request)
+
+        self.assertDictEqual(
+            data, {'id': '123', 'username': 'admin', 'email': 'admin@example.org'}
+        )
+
     @unittest.skipUnless(sys.version_info >= (3, 6), 'Python3.6+ required')
     def test_get_request_starlette_middleware(self):
         try:
