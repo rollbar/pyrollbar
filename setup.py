@@ -78,7 +78,19 @@ setup(
         "Topic :: System :: Monitoring",
         ],
     install_requires=[
-        'requests>=0.12.1',
+        # The currently used version of `setuptools` has a bug,
+        # so the version requirements are not properly respected.
+        #
+        # In the current version, `requests>= 0.12.1`
+        # always installs the latest version of the package.
+        'requests>=0.12.1; python_version == "2.7"',
+        'requests>=0.12.1; python_version >= "3.6"',
+        'requests<2.26,>=0.12.1; python_version == "3.5"',
+        'requests<2.22,>=0.12.1; python_version == "3.4"',
+        'requests<2.19,>=0.12.1; python_version == "3.3"',
+        'requests<1.2,>=0.12.1; python_version == "3.2"',
+        'requests<1.2,>=0.12.1; python_version == "3.1"',
+        'requests<1.2,>=0.12.1; python_version == "3.0"',
         'six>=1.9.0'
     ],
     tests_require=tests_require,
