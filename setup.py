@@ -1,6 +1,5 @@
 import re
 import os.path
-import sys
 from setuptools import setup, find_packages
 
 HERE = os.path.abspath(os.path.dirname(__file__))
@@ -94,4 +93,4 @@ setup(
         'six>=1.9.0'
     ],
     tests_require=tests_require,
-    )
+)
