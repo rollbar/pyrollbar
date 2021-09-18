@@ -337,7 +337,8 @@ class RollbarTest(BaseTest):
             settings.configure(
                 INSTALLED_APPS=['django.contrib.auth', 'django.contrib.contenttypes']
             )
-            django.setup()
+            if django.VERSION >= (1, 7):
+                django.setup()
 
         from django.contrib.auth.models import User
         from django.http.request import HttpRequest
