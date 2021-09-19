@@ -57,8 +57,10 @@ def store_current_request(
 
     if receive is None:
         request = request_or_scope
-    else:
+    elif request_or_scope['type'] == 'http':
         request = Request(request_or_scope, receive)
+    else:
+        request = None
 
     _current_request.set(request)
     return request
