@@ -2,6 +2,12 @@
 
 The change log is also available on the [GitHub Releases Page](https://github.com/rollbar/pyrollbar/releases).
 
+**0.16.2**
+
+- Fix building person data in Django. See [#385](https://github.com/rollbar/pyrollbar/pull/385)
+- Fix circular error logging for non-HTTP events in Starlette. See [#390](https://github.com/rollbar/pyrollbar/pull/390)
+- Fix Python 3.4 builds. See [#389](https://github.com/rollbar/pyrollbar/pull/389)
+
 **0.16.1**
 
 - Fix PyPI artifacts
