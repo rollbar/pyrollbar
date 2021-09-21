@@ -935,7 +935,7 @@ def _build_person_data(request):
     if StarletteRequest:
         from rollbar.contrib.starlette.requests import hasuser
     else:
-        hasuser = lambda request: False
+        def hasuser(request): return True
 
     if hasuser(request) and hasattr(request, 'user'):
         user_prop = request.user
