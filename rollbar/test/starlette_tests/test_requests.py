@@ -51,7 +51,7 @@ class RequestTest(BaseTest):
 
         self.assertEqual(request, stored_request)
 
-    def test_should_accept_scope_and_receive_params(self):
+    def test_should_accept_scope_param_if_http_type(self):
         from starlette.requests import Request
         from rollbar.contrib.starlette.requests import store_current_request
         from rollbar.lib._async import async_receive
@@ -82,6 +82,16 @@ class RequestTest(BaseTest):
         request = store_current_request(scope, receive)
 
         self.assertEqual(request, expected_request)
+
+    def test_should_not_accept_scope_param_if_not_http_type(self):
+        from rollbar.contrib.starlette.requests import store_current_request
+
+        scope = {'asgi': {'spec_version': '2.0', 'version': '3.0'}, 'type': 'lifespan'}
+        receive = {}
+
+        request = store_current_request(scope, receive)
+
+        self.assertIsNone(request)
 
     def test_hasuser(self):
         from starlette.requests import Request
