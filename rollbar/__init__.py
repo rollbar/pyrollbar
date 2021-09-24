@@ -10,7 +10,6 @@ import os
 import socket
 import sys
 import threading
-import time
 import traceback
 import types
 import uuid
@@ -20,7 +19,8 @@ import warnings
 import requests
 import six
 
-from rollbar.lib import events, filters, dict_merge, parse_qs, text, transport, urljoin, iteritems, defaultJSONEncode
+from collections import deque
+from rollbar.lib import events, filters, dict_merge, parse_qs, telemetry, text, transport, urljoin, iteritems, defaultJSONEncode, get_current_timestamp
 
 
 __version__ = '0.16.2'
@@ -322,7 +322,11 @@ SETTINGS = {
     'request_pool_connections': None,
     'request_pool_maxsize': None,
     'request_max_retries': None,
+    'telemetry_queue_size': 50,
 }
+
+
+TELEMETRY_QUEUE = deque([], SETTINGS['telemetry_queue_size'])
 
 _CURRENT_LAMBDA_CONTEXT = None
 _LAST_RESPONSE_STATUS = None
@@ -380,6 +384,18 @@ def init(access_token, environment='production', scrub_fields=None, url_fields=N
 
     if SETTINGS.get('allow_logging_basic_config'):
         logging.basicConfig()
+
+    queue_size = SETTINGS.get('telemetry_queue_size')
+    if queue_size:
+        TELEMETRY_QUEUE = deque([], queue_size)
+
+    if SETTINGS.get('log_telemetry'):
+        formatter = SETTINGS.get('log_telemetry_formatter')
+        telemetry.enable_log_telemetry(formatter)
+    if SETTINGS.get('network_telemetry'):
+        enable_req_headers = SETTINGS.get('enable_req_headers')
+        enable_resp_headers = SETTINGS.get('enable_resp_headers')
+        telemetry.enable_network_telemetry(enable_req_headers, enable_resp_headers)
 
     if SETTINGS.get('handler') == 'agent':
         agent_log = _create_agent_log()
@@ -777,6 +793,7 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     _add_request_data(data, request)
     _add_person_data(data, request)
     _add_lambda_context_data(data)
+    _add_telemetry(data)
     data['server'] = _build_server_data()
 
     if payload_data:
@@ -857,6 +874,7 @@ def _report_message(message, level, request, extra_data, payload_data):
     _add_request_data(data, request)
     _add_person_data(data, request)
     _add_lambda_context_data(data)
+    _add_telemetry(data)
     data['server'] = _build_server_data()
 
     if payload_data:
@@ -887,7 +905,7 @@ def _check_config():
 
 def _build_base_data(request, level='error'):
     data = {
-        'timestamp': int(time.time()),
+        'timestamp': get_current_timestamp(),
         'environment': SETTINGS['environment'],
         'level': level,
         'language': 'python %s' % '.'.join(str(x) for x in sys.version_info[:3]),
@@ -1117,6 +1135,12 @@ def _add_request_data(data, request):
         if request_data:
             _filter_ip(request_data, SETTINGS['capture_ip'])
             data['request'] = request_data
+
+
+def _add_telemetry(data):
+    telemetry_data = list(TELEMETRY_QUEUE)
+    if telemetry_data:
+        data['body']['telemetry'] = telemetry_data
 
 
 def _check_add_locals(frame, frame_num, total_frames):

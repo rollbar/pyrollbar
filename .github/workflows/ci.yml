@@ -14,47 +14,53 @@ jobs:
       matrix:
         python-version: [2.7, 3.4, 3.5, 3.6, 3.7, 3.8]
         framework:
-          - FLASK_VERSION=0.10.1 Werkzeug\>=0.7,\<1.0
-          - FLASK_VERSION=0.11.1 Werkzeug\>=0.7,\<1.0
-          - FLASK_VERSION=0.12.4 Werkzeug\>=0.7,\<1.0
-          - FLASK_VERSION=1.0.2
-          - TWISTED_VERSION=15.5.0 treq==15.1.0 zope.interface==4.1.3
-          - TWISTED_VERSION=16.1.0 treq==16.12.0 zope.interface==4.1.3
-          - TWISTED_VERSION=16.2.0 treq==16.12.0 zope.interface==4.1.3
-          - TWISTED_VERSION=16.3.0 treq==16.12.0 zope.interface==4.2.0
-          - TWISTED_VERSION=16.4.0 treq==16.12.0 zope.interface==4.5.0
-          - TWISTED_VERSION=16.5.0 treq==16.12.0 zope.interface==4.5.0
-          - TWISTED_VERSION=16.6.0 treq==16.12.0 zope.interface==4.5.0
-          - TWISTED_VERSION=17.1.0 treq==16.12.0 zope.interface==4.5.0
-          - DJANGO_VERSION=1.11.20
-          - DJANGO_VERSION=2.0.13
-          - DJANGO_VERSION=2.1.7
-          - DJANGO_VERSION=2.1.15
-          - PYRAMID_VERSION=1.9.2
-          - PYRAMID_VERSION=1.10.4
-          - STARLETTE_VERSION=0.12.12 httpx==0.18.1 python-multipart==0.0.5
-          - STARLETTE_VERSION=0.12.13 httpx==0.18.1 python-multipart==0.0.5
-          - STARLETTE_VERSION=0.14.2 httpx==0.18.1 python-multipart==0.0.5
-          - FASTAPI_VERSION=0.40.0 httpx==0.18.1 python-multipart==0.0.5
-          - FASTAPI_VERSION=0.50.0 httpx==0.18.1 python-multipart==0.0.5
-          - FASTAPI_VERSION=0.63.0 httpx==0.18.1 python-multipart==0.0.5
+          - FLASK_VERSION=0.10.1 Werkzeug\>=0.7,\<1.0 chardet==3.0.4 idna==2.7 mock==3.0.5
+          - FLASK_VERSION=0.11.1 Werkzeug\>=0.7,\<1.0 chardet==3.0.4 idna==2.7 mock==3.0.5
+          - FLASK_VERSION=0.12.4 Werkzeug\>=0.7,\<1.0 chardet==3.0.4 idna==2.7 mock==3.0.5
+          - FLASK_VERSION=1.0.2 chardet==3.0.4 idna==2.7 mock==3.0.5
+          - TWISTED_VERSION=15.5.0 treq==15.1.0 zope.interface==4.1.3 mock==2.0.0
+          - TWISTED_VERSION=16.1.0 treq==16.12.0 zope.interface==4.1.3 mock==2.0.0
+          - TWISTED_VERSION=16.2.0 treq==16.12.0 zope.interface==4.1.3 mock==2.0.0
+          - TWISTED_VERSION=16.3.0 treq==16.12.0 zope.interface==4.2.0 mock==2.0.0
+          - TWISTED_VERSION=16.4.0 treq==16.12.0 zope.interface==4.5.0 mock==2.0.0
+          - TWISTED_VERSION=16.5.0 treq==16.12.0 zope.interface==4.5.0 mock==2.0.0
+          - TWISTED_VERSION=16.6.0 treq==16.12.0 zope.interface==4.5.0 mock==2.0.0
+          - TWISTED_VERSION=17.1.0 treq==16.12.0 zope.interface==4.5.0 mock==2.0.0
+          - DJANGO_VERSION=1.11.20 chardet==3.0.4 idna==2.7 mock==3.0.5
+          - DJANGO_VERSION=2.0.13 mock==2.0.0
+          - DJANGO_VERSION=2.1.7 mock==2.0.0
+          - DJANGO_VERSION=2.1.15 mock==2.0.0
+          - PYRAMID_VERSION=1.9.2 chardet==3.0.4 idna==2.7 mock==3.0.5
+          - PYRAMID_VERSION=1.10.4 chardet==3.0.4 idna==2.7 mock==3.0.5
+          - STARLETTE_VERSION=0.12.12 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
+          - STARLETTE_VERSION=0.12.13 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
+          - STARLETTE_VERSION=0.14.2 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
+          - FASTAPI_VERSION=0.40.0 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
+          - FASTAPI_VERSION=0.50.0 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
+          - FASTAPI_VERSION=0.63.0 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
         exclude:
           - python-version: 2.7
-            framework: DJANGO_VERSION=2.0.13
+            framework: DJANGO_VERSION=2.0.13 mock==2.0.0
           - python-version: 2.7
-            framework: DJANGO_VERSION=2.1.7
+            framework: DJANGO_VERSION=2.1.7 mock==2.0.0
           - python-version: 2.7
-            framework: DJANGO_VERSION=2.1.15
+            framework: DJANGO_VERSION=2.1.15 mock==2.0.0
           - python-version: 3.4
-            framework: DJANGO_VERSION=2.1.7
+            framework: DJANGO_VERSION=2.0.13 mock==2.0.0
           - python-version: 3.4
-            framework: DJANGO_VERSION=2.1.15
+            framework: DJANGO_VERSION=2.1.7 mock==2.0.0
+          - python-version: 3.4
+            framework: DJANGO_VERSION=2.1.15 mock==2.0.0
           - python-version: 3.5
-            framework: DJANGO_VERSION=2.1.15
+            framework: DJANGO_VERSION=2.1.15 mock==2.0.0
+          - python-version: 3.5
+            framework: DJANGO_VERSION=2.0.13 mock==2.0.0
+          - python-version: 3.5
+            framework: DJANGO_VERSION=2.1.7 mock==2.0.0
           - python-version: 3.6
-            framework: DJANGO_VERSION=2.1.15
+            framework: DJANGO_VERSION=2.1.15 mock==2.0.0
           - python-version: 3.7
-            framework: DJANGO_VERSION=2.1.15
+            framework: DJANGO_VERSION=2.1.15 mock==2.0.0
 
           # twisted/treq setup.py allows:
           # Twisted < 18.7.0 on python < 3.7
@@ -95,83 +101,89 @@ jobs:
             framework: TWISTED_VERSION=17.1.0 treq==20.4.1 zope.interface==4.3.0
 
           - python-version: 2.7
-            framework: STARLETTE_VERSION=0.12.12 httpx==0.18.1 python-multipart==0.0.5
+            framework: STARLETTE_VERSION=0.12.12 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
           - python-version: 2.7
-            framework: STARLETTE_VERSION=0.12.13 httpx==0.18.1 python-multipart==0.0.5
+            framework: STARLETTE_VERSION=0.12.13 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
           - python-version: 2.7
-            framework: STARLETTE_VERSION=0.14.2 httpx==0.18.1 python-multipart==0.0.5
+            framework: STARLETTE_VERSION=0.14.2 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
           - python-version: 3.4
-            framework: STARLETTE_VERSION=0.12.12 httpx==0.18.1 python-multipart==0.0.5
+            framework: STARLETTE_VERSION=0.12.12 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
           - python-version: 3.4
-            framework: STARLETTE_VERSION=0.12.13 httpx==0.18.1 python-multipart==0.0.5
+            framework: STARLETTE_VERSION=0.12.13 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
           - python-version: 3.4
-            framework: STARLETTE_VERSION=0.14.2 httpx==0.18.1 python-multipart==0.0.5
+            framework: STARLETTE_VERSION=0.14.2 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
           - python-version: 3.5
-            framework: STARLETTE_VERSION=0.12.12 httpx==0.18.1 python-multipart==0.0.5
+            framework: STARLETTE_VERSION=0.12.12 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
           - python-version: 3.5
-            framework: STARLETTE_VERSION=0.12.13 httpx==0.18.1 python-multipart==0.0.5
+            framework: STARLETTE_VERSION=0.12.13 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
           - python-version: 3.5
-            framework: STARLETTE_VERSION=0.14.2 httpx==0.18.1 python-multipart==0.0.5
+            framework: STARLETTE_VERSION=0.14.2 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
 
           - python-version: 2.7
-            framework: FASTAPI_VERSION=0.40.0 httpx==0.18.1 python-multipart==0.0.5
+            framework: FASTAPI_VERSION=0.40.0 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
           - python-version: 2.7
-            framework: FASTAPI_VERSION=0.50.0 httpx==0.18.1 python-multipart==0.0.5
+            framework: FASTAPI_VERSION=0.50.0 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
           - python-version: 2.7
-            framework: FASTAPI_VERSION=0.63.0 httpx==0.18.1 python-multipart==0.0.5
+            framework: FASTAPI_VERSION=0.63.0 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
           - python-version: 3.4
-            framework: FASTAPI_VERSION=0.40.0 httpx==0.18.1 python-multipart==0.0.5
+            framework: FASTAPI_VERSION=0.40.0 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
           - python-version: 3.4
-            framework: FASTAPI_VERSION=0.50.0 httpx==0.18.1 python-multipart==0.0.5
+            framework: FASTAPI_VERSION=0.50.0 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
           - python-version: 3.4
-            framework: FASTAPI_VERSION=0.63.0 httpx==0.18.1 python-multipart==0.0.5
+            framework: FASTAPI_VERSION=0.63.0 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
           - python-version: 3.5
-            framework: FASTAPI_VERSION=0.40.0 httpx==0.18.1 python-multipart==0.0.5
+            framework: FASTAPI_VERSION=0.40.0 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
           - python-version: 3.5
-            framework: FASTAPI_VERSION=0.50.0 httpx==0.18.1 python-multipart==0.0.5
+            framework: FASTAPI_VERSION=0.50.0 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
           - python-version: 3.5
-            framework: FASTAPI_VERSION=0.63.0 httpx==0.18.1 python-multipart==0.0.5
+            framework: FASTAPI_VERSION=0.63.0 httpx==0.18.1 python-multipart==0.0.5 mock==3.0.5
         include:
           - python-version: 2.7
             framework: FLASK_VERSION=0.9
           - python-version: 3.3
-            framework: FLASK_VERSION=0.10.1
+            framework: FLASK_VERSION=0.10.1 mock==2.0.0
           - python-version: 3.3
-            framework: FLASK_VERSION=0.11.1
+            framework: FLASK_VERSION=0.11.1 mock==2.0.0
           - python-version: 3.3
-            framework: FLASK_VERSION=0.12.4
+            framework: FLASK_VERSION=0.12.4 mock==2.0.0
           - python-version: 3.3
-            framework: FLASK_VERSION=1.0.2
+            framework: FLASK_VERSION=1.0.2 mock==2.0.0
           - python-version: 3.3
-            framework: DJANGO_VERSION=1.6.11
+            framework: DJANGO_VERSION=1.6.11 mock==2.0.0
           - python-version: 3.3
-            framework: DJANGO_VERSION=1.8.19
+            framework: DJANGO_VERSION=1.8.19 mock==2.0.0
           - python-version: 3.4
-            framework: DJANGO_VERSION=1.7.11
+            framework: DJANGO_VERSION=1.7.11 chardet==3.0.4 idna==2.7 mock==3.0.5
           - python-version: 3.4
-            framework: DJANGO_VERSION=1.8.19
+            framework: DJANGO_VERSION=1.8.19 chardet==3.0.4 idna==2.7 mock==3.0.5
           - python-version: 3.4
-            framework: DJANGO_VERSION=1.9.13
+            framework: DJANGO_VERSION=1.9.13 chardet==3.0.4 idna==2.7 mock==3.0.5
           - python-version: 3.4
-            framework: DJANGO_VERSION=1.10.8
+            framework: DJANGO_VERSION=1.10.8 chardet==3.0.4 idna==2.7 mock==3.0.5
+          - python-version: 3.4
+            framework: DJANGO_VERSION=2.0.13 chardet==3.0.4 idna==2.7 mock==3.0.5
           - python-version: 3.5
-            framework: DJANGO_VERSION=1.8.19
+            framework: DJANGO_VERSION=1.8.19 mock==3.0.5
           - python-version: 3.5
-            framework: DJANGO_VERSION=1.9.13
+            framework: DJANGO_VERSION=1.9.13 mock==3.0.5
           - python-version: 3.5
-            framework: DJANGO_VERSION=1.10.8
+            framework: DJANGO_VERSION=1.10.8 mock==3.0.5
+          - python-version: 3.5
+            framework: DJANGO_VERSION=2.0.13 mock==3.0.5
+          - python-version: 3.5
+            framework: DJANGO_VERSION=2.1.7 mock==3.0.5
           - python-version: 3.7
-            framework: TWISTED_VERSION=18.9.0 treq==20.4.1 zope.interface==4.5.0
+            framework: TWISTED_VERSION=18.9.0 treq==20.4.1 zope.interface==4.5.0 mock==3.0.5
           - python-version: 3.7
-            framework: TWISTED_VERSION=19.10.0 treq==20.4.1 zope.interface==4.6.0
+            framework: TWISTED_VERSION=19.10.0 treq==20.4.1 zope.interface==4.6.0 mock==3.0.5
           - python-version: 3.7
-            framework: TWISTED_VERSION=20.3.0 treq==20.4.1 zope.interface==4.7.0
+            framework: TWISTED_VERSION=20.3.0 treq==20.4.1 zope.interface==4.7.0 mock==3.0.5
           - python-version: 3.8
-            framework: TWISTED_VERSION=18.9.0 treq==20.4.1 zope.interface==4.5.0
+            framework: TWISTED_VERSION=18.9.0 treq==20.4.1 zope.interface==4.5.0 mock==3.0.5
           - python-version: 3.8
-            framework: TWISTED_VERSION=19.10.0 treq==20.4.1 zope.interface==4.6.0
+            framework: TWISTED_VERSION=19.10.0 treq==20.4.1 zope.interface==4.6.0 mock==3.0.5
           - python-version: 3.8
-            framework: TWISTED_VERSION=20.3.0 treq==20.4.1 zope.interface==4.7.0
+            framework: TWISTED_VERSION=20.3.0 treq==20.4.1 zope.interface==4.7.0 mock==3.0.5
     steps:
       - uses: actions/checkout@v2
         with:
