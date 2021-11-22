@@ -50,7 +50,6 @@ setup(
         "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.3",
         "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
@@ -86,10 +85,6 @@ setup(
         'requests>=0.12.1; python_version >= "3.6"',
         'requests<2.26,>=0.12.1; python_version == "3.5"',
         'requests<2.22,>=0.12.1; python_version == "3.4"',
-        'requests<2.19,>=0.12.1; python_version == "3.3"',
-        'requests<1.2,>=0.12.1; python_version == "3.2"',
-        'requests<1.2,>=0.12.1; python_version == "3.1"',
-        'requests<1.2,>=0.12.1; python_version == "3.0"',
         'six>=1.9.0'
     ],
     tests_require=tests_require,
