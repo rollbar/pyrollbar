@@ -134,7 +134,7 @@ def _patch_debugview(rollbar_web_base):
         if new_data in debug.TECHNICAL_500_TEMPLATE:
             return
         debug.TECHNICAL_500_TEMPLATE = debug.TECHNICAL_500_TEMPLATE.replace(insert_before, replacement, 1)
-    else:
+    elif hasattr(debug, 'CURRENT_DIR'):
         # patch ExceptionReporter.get_traceback_html if this version of Django is using
         # the file system templates rather than the ones in code
         # This code comes from:
@@ -152,6 +152,14 @@ def _patch_debugview(rollbar_web_base):
             c = Context(exception_reporter.get_traceback_data(), use_l10n=False)
             return t.render(c)
         debug.ExceptionReporter.get_traceback_html = new_get_traceback_html
+    else:
+        # patch ExceptionReporter.get_traceback_html for Django versions 4.0+
+        def new_get_traceback_html(self):
+            """Return HTML version of debug 500 HTTP error page."""
+            with self.html_template_path.open(encoding='utf-8') as fh:
+                t = debug.DEBUG_ENGINE.from_string(fh.read())
+            c = Context(self.get_traceback_data(), use_l10n=False)
+            return t.render(c)
 
     if hasattr(debug.ExceptionReporter, '__rollbar__patched'):
         return
