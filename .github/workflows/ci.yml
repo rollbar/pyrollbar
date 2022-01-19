@@ -166,6 +166,20 @@ jobs:
         include:
           - python-version: 2.7
             framework: FLASK_VERSION=0.9
+          - python-version: 3.4
+            framework: DJANGO_VERSION=1.7.11
+          - python-version: 3.4
+            framework: DJANGO_VERSION=1.8.19
+          - python-version: 3.4
+            framework: DJANGO_VERSION=1.9.13
+          - python-version: 3.4
+            framework: DJANGO_VERSION=1.10.8
+          - python-version: 3.5
+            framework: DJANGO_VERSION=1.8.19
+          - python-version: 3.5
+            framework: DJANGO_VERSION=1.9.13
+          - python-version: 3.5
+            framework: DJANGO_VERSION=1.10.8
           - python-version: 3.7
             framework: TWISTED_VERSION=18.9.0 treq==20.4.1 zope.interface==4.5.0
           - python-version: 3.7
