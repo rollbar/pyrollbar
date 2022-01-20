@@ -1,5 +1,7 @@
 # Pyrollbar
+
 ![Build Status](https://github.com/rollbar/pyrollbar/workflows/Pyrollbar%20CI/badge.svg?tag=latest)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/rollbar)
 
 Python notifier for reporting exceptions, errors, and log messages to [Rollbar](https://rollbar.com).
 
