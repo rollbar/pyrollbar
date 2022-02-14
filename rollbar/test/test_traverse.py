@@ -33,3 +33,12 @@ class RollbarTraverseTest(BaseTest):
     def test_bad_object(self):
         setattr(self.tuple, '_fields', 'not quite a named tuple')
         self.assertEqual(traverse(self.tuple), (1, 2, 3))
+
+class RollbarTraverseLimitTest(BaseTest):
+    def test_limits(self):
+        for input, expected in [
+            ([1, 2, 3, 4, 5], [1, 2, 3]),
+            ((1, 2, 3, 4, 5), (1, 2, 3))
+        ]:
+            result = traverse(input, max_list=3)
+            self.assertEqual(result, expected)

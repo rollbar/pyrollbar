@@ -10,6 +10,7 @@ except ImportError:
     from collections import Sequence
 
 from rollbar.lib import binary_type, iteritems, string_types, circular_reference_label
+from itertools import islice
 
 CIRCULAR = -1
 DEFAULT = 0
@@ -19,6 +20,8 @@ NAMEDTUPLE = 3
 LIST = 4
 SET = 5
 STRING = 6
+
+MAX_LIST = 100
 
 log = logging.getLogger(__name__)
 
@@ -85,6 +88,10 @@ def get_type(obj):
     return DEFAULT
 
 
+def limited_enumerate(i, max):
+    return enumerate(islice(i, 0, max))
+
+
 def traverse(obj,
              key=(),
              string_handler=_default_handlers[STRING],
@@ -97,6 +104,7 @@ def traverse(obj,
              circular_reference_handler=_default_handlers[CIRCULAR],
              allowed_circular_reference_types=None,
              memo=None,
+             max_list=MAX_LIST,
              **custom_handlers):
 
     memo = memo or {}
@@ -120,7 +128,8 @@ def traverse(obj,
         'default_handler': default_handler,
         'circular_reference_handler': circular_reference_handler,
         'allowed_circular_reference_types': allowed_circular_reference_types,
-        'memo': memo
+        'memo': memo,
+        'max_list': max_list
     }
     kw.update(custom_handlers)
 
@@ -128,13 +137,13 @@ def traverse(obj,
         if obj_type is STRING:
             return string_handler(obj, key=key)
         elif obj_type is TUPLE:
-            return tuple_handler(tuple(traverse(elem, key=key + (i,), **kw) for i, elem in enumerate(obj)), key=key)
+            return tuple_handler(tuple(traverse(elem, key=key + (i,), **kw) for i, elem in limited_enumerate(obj, max_list)), key=key)
         elif obj_type is NAMEDTUPLE:
             return namedtuple_handler(obj._make(traverse(v, key=key + (k,), **kw) for k, v in iteritems(obj._asdict())), key=key)
         elif obj_type is LIST:
-            return list_handler(list(traverse(elem, key=key + (i,), **kw) for i, elem in enumerate(obj)), key=key)
+            return list_handler(list(traverse(elem, key=key + (i,), **kw) for i, elem in limited_enumerate(obj, max_list)), key=key)
         elif obj_type is SET:
-            return set_handler(set(traverse(elem, key=key + (i,), **kw) for i, elem in enumerate(obj)), key=key)
+            return set_handler(set(traverse(elem, key=key + (i,), **kw) for i, elem in limited_enumerate(obj, max_list)), key=key)
         elif obj_type is MAPPING:
             return mapping_handler(dict((k, traverse(v, key=key + (k,), **kw)) for k, v in iteritems(obj)), key=key)
         elif obj_type is DEFAULT:
