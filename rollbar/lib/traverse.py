@@ -92,6 +92,10 @@ def limited_enumerate(i, max):
     return enumerate(islice(i, 0, max))
 
 
+def limited_iteritems(dict, max):
+    return islice(iteritems(dict), 0, max)
+
+
 def traverse(obj,
              key=(),
              string_handler=_default_handlers[STRING],
@@ -139,13 +143,13 @@ def traverse(obj,
         elif obj_type is TUPLE:
             return tuple_handler(tuple(traverse(elem, key=key + (i,), **kw) for i, elem in limited_enumerate(obj, max_list)), key=key)
         elif obj_type is NAMEDTUPLE:
-            return namedtuple_handler(obj._make(traverse(v, key=key + (k,), **kw) for k, v in iteritems(obj._asdict())), key=key)
+            return namedtuple_handler(obj._make(traverse(v, key=key + (k,), **kw) for k, v in limited_iteritems(obj._asdict(), max_list)), key=key)
         elif obj_type is LIST:
             return list_handler(list(traverse(elem, key=key + (i,), **kw) for i, elem in limited_enumerate(obj, max_list)), key=key)
         elif obj_type is SET:
             return set_handler(set(traverse(elem, key=key + (i,), **kw) for i, elem in limited_enumerate(obj, max_list)), key=key)
         elif obj_type is MAPPING:
-            return mapping_handler(dict((k, traverse(v, key=key + (k,), **kw)) for k, v in iteritems(obj)), key=key)
+            return mapping_handler(dict((k, traverse(v, key=key + (k,), **kw)) for k, v in limited_iteritems(obj, max_list)), key=key)
         elif obj_type is DEFAULT:
             for handler_type, handler in iteritems(custom_handlers):
                 if isinstance(obj, handler_type):

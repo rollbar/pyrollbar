@@ -38,7 +38,8 @@ class RollbarTraverseLimitTest(BaseTest):
     def test_limits(self):
         for input, expected in [
             ([1, 2, 3, 4, 5], [1, 2, 3]),
-            ((1, 2, 3, 4, 5), (1, 2, 3))
+            ((1, 2, 3, 4, 5), (1, 2, 3)),
+            (dict((i, i) for i in range(5)), dict((i, i) for i in range(3))),
         ]:
             result = traverse(input, max_list=3)
             self.assertEqual(result, expected)
