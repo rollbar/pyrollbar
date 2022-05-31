@@ -205,18 +205,6 @@ jobs:
       - name: Install dependencies
         run: pip install setuptools==39.2.0 --force-reinstall
 
-      - name: Install Python 2 dependencies
-        if: ${{ contains(matrix.python-version, '2.7') }}
-        # certifi dropped support for Python 2 in 2020.4.5.2 but only started
-        # using Python 3 syntax in 2022.5.18. 2021.10.8 is the last release with
-        # Python 2 support.
-        run: pip install certifi==2021.10.8
-
-      - name: Install Python 3.4 dependencies
-        if: ${{ contains(matrix.python-version, '3.4') }}
-        # certifi uses the 'typing' from Python 3.5 module starting in 2022.5.18
-        run: pip install certifi==2021.10.8 typing-extensions==3.10.0.1
-
       - name: Set the framework
         run: echo ${{ matrix.framework }} >> $GITHUB_ENV
 
@@ -243,6 +231,18 @@ jobs:
       - name: Install FastAPI
         if: ${{ contains(matrix.framework, 'FASTAPI_VERSION') }}
         run: pip install fastapi==$FASTAPI_VERSION
+
+      - name: Install Python 2 dependencies
+        if: ${{ contains(matrix.python-version, '2.7') }}
+        # certifi dropped support for Python 2 in 2020.4.5.2 but only started
+        # using Python 3 syntax in 2022.5.18. 2021.10.8 is the last release with
+        # Python 2 support.
+        run: pip install certifi==2021.10.8
+
+      - name: Install Python 3.4 dependencies
+        if: ${{ contains(matrix.python-version, '3.4') }}
+        # certifi uses the 'typing' from Python 3.5 module starting in 2022.5.18
+        run: pip install certifi==2021.10.8 typing-extensions==3.10.0.1
 
       - name: Run tests
         run: python setup.py test
