@@ -22,8 +22,6 @@ tests_require = [
     'unittest2',
     'mock<=3.0.5; python_version < "3.3"',
     'enum34; python_version < "3.4"',
-    'typing-extensions<4; python_version < "3.6"',
-    'typing-extensions<4.2; python_version == "3.6"',
     'httpx; python_version >= "3.6"',
     'aiocontextvars; python_version == "3.6"'
 ]

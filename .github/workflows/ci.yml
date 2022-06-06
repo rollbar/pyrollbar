@@ -242,7 +242,17 @@ jobs:
       - name: Install Python 3.4 dependencies
         if: ${{ contains(matrix.python-version, '3.4') }}
         # certifi uses the 'typing' from Python 3.5 module starting in 2022.5.18
-        run: pip install certifi==2021.10.8
+        run: pip install certifi==2021.10.8 typing-extensions<4
+
+      - name: Install Python 3.5 dependencies
+        if: ${{ contains(matrix.python-version, '3.5') }}
+        # typing-extensions dropped support for Python 3.5 in version 4
+        run: pip install typing-extensions<4
+
+      - name: Install Python 3.6 dependencies
+        if: ${{ contains(matrix.python-version, '3.6') }}
+        # typing-extensions dropped support for Python 3.6 in version 4.2
+        run: pip install typing-extensions<4.2
 
       - name: Run tests
         run: python setup.py test
