@@ -2,6 +2,14 @@
 
 The change log is also available on the [GitHub Releases Page](https://github.com/rollbar/pyrollbar/releases).
 
+**0.16.3**
+
+- Pinned Python 2 CI tests to legacy version of dependencies. See [#408](https://github.com/rollbar/pyrollbar/pull/408)
+- Add PyPI badge for supported Python versions. See [#408](https://github.com/rollbar/pyrollbar/pull/401)
+- Add Django 4.0+ compatibility. See [#408](https://github.com/rollbar/pyrollbar/pull/400)
+- Update PR template. See [#408](https://github.com/rollbar/pyrollbar/pull/395)
+- SC-95272: Remove support for Python 3.3. See [#408](https://github.com/rollbar/pyrollbar/pull/394)
+
 **0.16.2**
 
 - Fix building person data in Django. See [#385](https://github.com/rollbar/pyrollbar/pull/385)
