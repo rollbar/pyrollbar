@@ -60,7 +60,7 @@ else:
     del ImproperlyConfigured
 
 try:
-    from werkzeug.wrappers import BaseRequest as WerkzeugRequest
+    from werkzeug.wrappers import Request as WerkzeugRequest
 except (ImportError, SyntaxError):
     WerkzeugRequest = None
 
