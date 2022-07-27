@@ -185,6 +185,14 @@ def _should_ignore_404(url):
     url_patterns = getattr(settings, 'ROLLBAR', {}).get('ignorable_404_urls', ())
     return any(p.search(url) for p in url_patterns)
 
+def _apply_sensitive_post_params(request):
+    if request.sensitive_post_parameters:
+        mutable = request.POST._mutable
+        request.POST._mutable = True
+        for param in request.sensitive_post_parameters:
+            if param in request.POST:
+                request.POST[param] = "******"
+        request.POST._mutable = mutable
 
 class RollbarNotifierMiddleware(MiddlewareMixin):
     def __init__(self, get_response=None):
@@ -276,12 +284,7 @@ class RollbarNotifierMiddleware(MiddlewareMixin):
     def process_exception(self, request, exc):
         if isinstance(exc, Http404) and _should_ignore_404(request.get_full_path()):
             return
-        if request.sensitive_post_parameters:
-            post_request = request.POST.copy()
-            for param in request.sensitive_post_parameters:
-                if param in post_request:
-                    post_request[param] = "******"
-            request.POST = post_request
+        _apply_sensitive_post_params(request)
 
         rollbar.report_exc_info(
             sys.exc_info(),
@@ -312,13 +315,7 @@ class RollbarNotifierMiddlewareOnly404(MiddlewareMixin):
             else:
                 raise Http404()
         except Exception as exc:
-            if request.sensitive_post_parameters:
-                post_request = request.POST.copy()
-                for param in request.sensitive_post_parameters:
-                    if param in post_request:
-                        post_request[param] = "******"
-                request.POST = post_request
-
+            _apply_sensitive_post_params(request)
             rollbar.report_exc_info(
                 sys.exc_info(),
                 request,
