@@ -237,7 +237,7 @@ jobs:
         # certifi dropped support for Python 2 in 2020.4.5.2 but only started
         # using Python 3 syntax in 2022.5.18. 2021.10.8 is the last release with
         # Python 2 support.
-        run: pip install certifi==2021.10.8
+        run: pip install certifi==2021.10.8 requests==2.27.1
 
       - name: Install Python 3.4 dependencies
         if: ${{ contains(matrix.python-version, '3.4') }}
