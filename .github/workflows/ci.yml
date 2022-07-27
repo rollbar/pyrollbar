@@ -12,50 +12,37 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        python-version: [2.7, 3.4, 3.5, 3.6, 3.7, 3.8]
+        python-version: [3.4, 3.5, 3.6, 3.7, 3.8]
         framework:
-          - FLASK_VERSION=0.10.1 Werkzeug\>=0.7,\<1.0 requests==2.27.1
-          - FLASK_VERSION=0.11.1 Werkzeug\>=0.7,\<1.0 requests==2.27.1
-          - FLASK_VERSION=0.12.4 Werkzeug\>=0.7,\<1.0 requests==2.27.1
-          - FLASK_VERSION=1.0.2 requests==2.27.1
-          - TWISTED_VERSION=15.5.0 treq==15.1.0 zope.interface==4.1.3 requests==2.27.1
-          - TWISTED_VERSION=16.1.0 treq==16.12.0 zope.interface==4.1.3 requests==2.27.1
-          - TWISTED_VERSION=16.2.0 treq==16.12.0 zope.interface==4.1.3 requests==2.27.1
-          - TWISTED_VERSION=16.3.0 treq==16.12.0 zope.interface==4.2.0 requests==2.27.1
-          - TWISTED_VERSION=16.4.0 treq==16.12.0 zope.interface==4.5.0 requests==2.27.1
-          - TWISTED_VERSION=16.5.0 treq==16.12.0 zope.interface==4.5.0 requests==2.27.1
-          - TWISTED_VERSION=16.6.0 treq==16.12.0 zope.interface==4.5.0 requests==2.27.1
-          - TWISTED_VERSION=17.1.0 treq==16.12.0 zope.interface==4.5.0 requests==2.27.1
-          - DJANGO_VERSION=1.11.29 requests==2.27.1
-          - DJANGO_VERSION=2.0.13 requests==2.27.1
-          - DJANGO_VERSION=2.1.15 requests==2.27.1
-          - DJANGO_VERSION=2.2.26 requests==2.27.1
-          - DJANGO_VERSION=3.0.14 requests==2.27.1
-          - DJANGO_VERSION=3.1.14 requests==2.27.1
-          - DJANGO_VERSION=3.2.11 requests==2.27.1
-          - DJANGO_VERSION=4.0.1 requests==2.27.1
-          - PYRAMID_VERSION=1.9.2 requests==2.27.1
-          - PYRAMID_VERSION=1.10.4 requests==2.27.1
-          - STARLETTE_VERSION=0.12.12 httpx==0.18.1 python-multipart==0.0.5 requests==2.27.1
-          - STARLETTE_VERSION=0.12.13 httpx==0.18.1 python-multipart==0.0.5 requests==2.27.1
-          - STARLETTE_VERSION=0.14.2 httpx==0.18.1 python-multipart==0.0.5 requests==2.27.1
-          - FASTAPI_VERSION=0.40.0 httpx==0.18.1 python-multipart==0.0.5 requests==2.27.1
-          - FASTAPI_VERSION=0.50.0 httpx==0.18.1 python-multipart==0.0.5 requests==2.27.1
-          - FASTAPI_VERSION=0.63.0 httpx==0.18.1 python-multipart==0.0.5 requests==2.27.1
+          - FLASK_VERSION=0.10.1 Werkzeug\>=0.7,\<1.0
+          - FLASK_VERSION=0.11.1 Werkzeug\>=0.7,\<1.0
+          - FLASK_VERSION=0.12.4 Werkzeug\>=0.7,\<1.0
+          - FLASK_VERSION=1.0.2
+          - TWISTED_VERSION=15.5.0 treq==15.1.0 zope.interface==4.1.3
+          - TWISTED_VERSION=16.1.0 treq==16.12.0 zope.interface==4.1.3
+          - TWISTED_VERSION=16.2.0 treq==16.12.0 zope.interface==4.1.3
+          - TWISTED_VERSION=16.3.0 treq==16.12.0 zope.interface==4.2.0
+          - TWISTED_VERSION=16.4.0 treq==16.12.0 zope.interface==4.5.0
+          - TWISTED_VERSION=16.5.0 treq==16.12.0 zope.interface==4.5.0
+          - TWISTED_VERSION=16.6.0 treq==16.12.0 zope.interface==4.5.0
+          - TWISTED_VERSION=17.1.0 treq==16.12.0 zope.interface==4.5.0
+          - DJANGO_VERSION=1.11.29
+          - DJANGO_VERSION=2.0.13
+          - DJANGO_VERSION=2.1.15
+          - DJANGO_VERSION=2.2.26
+          - DJANGO_VERSION=3.0.14
+          - DJANGO_VERSION=3.1.14
+          - DJANGO_VERSION=3.2.11
+          - DJANGO_VERSION=4.0.1
+          - PYRAMID_VERSION=1.9.2
+          - PYRAMID_VERSION=1.10.4
+          - STARLETTE_VERSION=0.12.12 httpx==0.18.1 python-multipart==0.0.5
+          - STARLETTE_VERSION=0.12.13 httpx==0.18.1 python-multipart==0.0.5
+          - STARLETTE_VERSION=0.14.2 httpx==0.18.1 python-multipart==0.0.5
+          - FASTAPI_VERSION=0.40.0 httpx==0.18.1 python-multipart==0.0.5
+          - FASTAPI_VERSION=0.50.0 httpx==0.18.1 python-multipart==0.0.5
+          - FASTAPI_VERSION=0.63.0 httpx==0.18.1 python-multipart==0.0.5
         exclude:
-          - python-version: 2.7
-            framework: DJANGO_VERSION=2.0.13
-          - python-version: 2.7
-            framework: DJANGO_VERSION=2.1.15
-          - python-version: 2.7
-            framework: DJANGO_VERSION=2.2.26
-          - python-version: 2.7
-            framework: DJANGO_VERSION=3.0.14
-          - python-version: 2.7
-            framework: DJANGO_VERSION=3.1.14
-          - python-version: 2.7
-            framework: DJANGO_VERSION=3.2.11
-          - python-version: 2.7
             framework: DJANGO_VERSION=4.0.1
           - python-version: 3.4
             framework: DJANGO_VERSION=2.1.15
@@ -126,12 +113,6 @@ jobs:
           - python-version: 3.8
             framework: TWISTED_VERSION=17.1.0 treq==20.4.1 zope.interface==4.3.0
 
-          - python-version: 2.7
-            framework: STARLETTE_VERSION=0.12.12 httpx==0.18.1 python-multipart==0.0.5 requests==2.27.1
-          - python-version: 2.7 
-            framework: STARLETTE_VERSION=0.12.13 httpx==0.18.1 python-multipart==0.0.5 requests==2.27.1
-          - python-version: 2.7
-            framework: STARLETTE_VERSION=0.14.2 httpx==0.18.1 python-multipart==0.0.5 requests==2.27.1
           - python-version: 3.4
             framework: STARLETTE_VERSION=0.12.12 httpx==0.18.1 python-multipart==0.0.5
           - python-version: 3.4
@@ -145,12 +126,6 @@ jobs:
           - python-version: 3.5
             framework: STARLETTE_VERSION=0.14.2 httpx==0.18.1 python-multipart==0.0.5
 
-          - python-version: 2.7
-            framework: FASTAPI_VERSION=0.40.0 httpx==0.18.1 python-multipart==0.0.5 requests==2.27.1
-          - python-version: 2.7
-            framework: FASTAPI_VERSION=0.50.0 httpx==0.18.1 python-multipart==0.0.5 requests==2.27.1
-          - python-version: 2.7
-            framework: FASTAPI_VERSION=0.63.0 httpx==0.18.1 python-multipart==0.0.5 requests==2.27.1
           - python-version: 3.4
             framework: FASTAPI_VERSION=0.40.0 httpx==0.18.1 python-multipart==0.0.5
           - python-version: 3.4
@@ -165,7 +140,7 @@ jobs:
             framework: FASTAPI_VERSION=0.63.0 httpx==0.18.1 python-multipart==0.0.5
         include:
           - python-version: 2.7
-            framework: FLASK_VERSION=0.9 requests==2.27.1
+            framework: FLASK_VERSION=0.9
           - python-version: 3.4
             framework: DJANGO_VERSION=1.7.11
           - python-version: 3.4
