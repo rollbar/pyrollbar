@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        python-version: [3.4, 3.5, 3.6, 3.7, 3.8]
+        python-version: [2.7, 3.4, 3.5, 3.6, 3.7, 3.8]
         framework:
           - FLASK_VERSION=0.10.1 Werkzeug\>=0.7,\<1.0
           - FLASK_VERSION=0.11.1 Werkzeug\>=0.7,\<1.0
@@ -43,6 +43,19 @@ jobs:
           - FASTAPI_VERSION=0.50.0 httpx==0.18.1 python-multipart==0.0.5
           - FASTAPI_VERSION=0.63.0 httpx==0.18.1 python-multipart==0.0.5
         exclude:
+          - python-version: 2.7
+            framework: DJANGO_VERSION=2.0.13
+          - python-version: 2.7
+            framework: DJANGO_VERSION=2.1.15
+          - python-version: 2.7
+            framework: DJANGO_VERSION=2.2.26
+          - python-version: 2.7
+            framework: DJANGO_VERSION=3.0.14
+          - python-version: 2.7
+            framework: DJANGO_VERSION=3.1.14
+          - python-version: 2.7
+            framework: DJANGO_VERSION=3.2.11
+          - python-version: 2.7
             framework: DJANGO_VERSION=4.0.1
           - python-version: 3.4
             framework: DJANGO_VERSION=2.1.15
@@ -113,6 +126,12 @@ jobs:
           - python-version: 3.8
             framework: TWISTED_VERSION=17.1.0 treq==20.4.1 zope.interface==4.3.0
 
+          - python-version: 2.7
+            framework: STARLETTE_VERSION=0.12.12 httpx==0.18.1 python-multipart==0.0.5
+          - python-version: 2.7
+            framework: STARLETTE_VERSION=0.12.13 httpx==0.18.1 python-multipart==0.0.5
+          - python-version: 2.7
+            framework: STARLETTE_VERSION=0.14.2 httpx==0.18.1 python-multipart==0.0.5
           - python-version: 3.4
             framework: STARLETTE_VERSION=0.12.12 httpx==0.18.1 python-multipart==0.0.5
           - python-version: 3.4
@@ -126,6 +145,12 @@ jobs:
           - python-version: 3.5
             framework: STARLETTE_VERSION=0.14.2 httpx==0.18.1 python-multipart==0.0.5
 
+          - python-version: 2.7
+            framework: FASTAPI_VERSION=0.40.0 httpx==0.18.1 python-multipart==0.0.5
+          - python-version: 2.7
+            framework: FASTAPI_VERSION=0.50.0 httpx==0.18.1 python-multipart==0.0.5
+          - python-version: 2.7
+            framework: FASTAPI_VERSION=0.63.0 httpx==0.18.1 python-multipart==0.0.5
           - python-version: 3.4
             framework: FASTAPI_VERSION=0.40.0 httpx==0.18.1 python-multipart==0.0.5
           - python-version: 3.4
@@ -140,7 +165,7 @@ jobs:
             framework: FASTAPI_VERSION=0.63.0 httpx==0.18.1 python-multipart==0.0.5
         include:
           - python-version: 2.7
-            framework: FLASK_VERSION=0.9 requests==2.27.1
+            framework: FLASK_VERSION=0.9
           - python-version: 3.4
             framework: DJANGO_VERSION=1.7.11
           - python-version: 3.4
@@ -212,7 +237,7 @@ jobs:
         # certifi dropped support for Python 2 in 2020.4.5.2 but only started
         # using Python 3 syntax in 2022.5.18. 2021.10.8 is the last release with
         # Python 2 support.
-        run: pip install certifi==2021.10.8
+        run: pip install certifi==2021.10.8 requests==2.27.1
 
       - name: Install Python 3.4 dependencies
         if: ${{ contains(matrix.python-version, '3.4') }}
