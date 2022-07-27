@@ -276,6 +276,13 @@ class RollbarNotifierMiddleware(MiddlewareMixin):
     def process_exception(self, request, exc):
         if isinstance(exc, Http404) and _should_ignore_404(request.get_full_path()):
             return
+        if request.sensitive_post_parameters:
+            post_request = request.POST.copy()
+            for param in request.sensitive_post_parameters:
+                if param in post_request:
+                    post_request[param] = "******"
+            request.POST = post_request
+
         rollbar.report_exc_info(
             sys.exc_info(),
             request,
@@ -305,6 +312,13 @@ class RollbarNotifierMiddlewareOnly404(MiddlewareMixin):
             else:
                 raise Http404()
         except Exception as exc:
+            if request.sensitive_post_parameters:
+                post_request = request.POST.copy()
+                for param in request.sensitive_post_parameters:
+                    if param in post_request:
+                        post_request[param] = "******"
+                request.POST = post_request
+
             rollbar.report_exc_info(
                 sys.exc_info(),
                 request,
