@@ -1035,7 +1035,7 @@ class RollbarTest(BaseTest):
 
         send_payload_httpx.assert_called_once()
 
-    @unittest.skipUnless(sys.version_info >= (3, 2), 'concurrent.futures support requires Python3.2+')
+    @unittest.skipUnless(sys.version_info >= (3, 6), 'assert_called_once support requires Python3.6+')
     @mock.patch('rollbar._send_payload_thread_pool')
     def test_thread_pool_handler(self, send_payload_thread_pool):
         def _raise():
