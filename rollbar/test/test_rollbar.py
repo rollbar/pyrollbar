@@ -1035,6 +1035,32 @@ class RollbarTest(BaseTest):
 
         send_payload_httpx.assert_called_once()
 
+    @unittest.skipUnless(sys.version_info >= (3, 6), 'assert_called_once support requires Python3.6+')
+    @mock.patch('rollbar._send_payload_thread_pool')
+    def test_thread_pool_handler(self, send_payload_thread_pool):
+        def _raise():
+            try:
+                raise Exception('foo')
+            except:
+                rollbar.report_exc_info()
+        rollbar.SETTINGS['handler'] = 'thread_pool'
+        _raise()
+
+        send_payload_thread_pool.assert_called_once()
+
+    @unittest.skipUnless(sys.version_info >= (3, 2), 'concurrent.futures support requires Python3.2+')
+    def test_thread_pool_submit(self):
+        from rollbar.lib.thread_pool import init_pool, submit
+        init_pool(1)
+        ran = {'nope': True}  # dict used so it is not shadowed in run
+
+        def run(payload_str, access_token):
+            ran['nope'] = False
+
+        submit(run, 'foo', 'bar')
+        self.assertFalse(ran['nope'])
+
+
     @mock.patch('rollbar.send_payload')
     def test_args_constructor(self, send_payload):
 

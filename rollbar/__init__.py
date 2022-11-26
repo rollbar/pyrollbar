@@ -23,7 +23,7 @@ import six
 from rollbar.lib import events, filters, dict_merge, parse_qs, text, transport, urljoin, iteritems, defaultJSONEncode
 
 
-__version__ = '0.16.3'
+__version__ = '0.16.4beta'
 __log_name__ = 'rollbar'
 log = logging.getLogger(__log_name__)
 
@@ -124,7 +124,7 @@ try:
     from twisted.internet.ssl import CertificateOptions
     from twisted.internet import task, defer, ssl, reactor
     from zope.interface import implementer
-    
+
     @implementer(IPolicyForHTTPS)
     class VerifyHTTPS(object):
         def __init__(self):
@@ -275,7 +275,12 @@ SETTINGS = {
     'root': None,  # root path to your code
     'branch': None,  # git branch name
     'code_version': None,
-    'handler': 'default',  # 'blocking', 'thread' (default), 'async', 'agent', 'tornado', 'gae', 'twisted' or 'httpx'
+    # 'blocking', 'thread' (default), 'async', 'agent', 'tornado', 'gae', 'twisted', 'httpx' or 'thread_pool'
+    # 'async' requires Python 3.4 or higher.
+    # 'httpx' requires Python 3.7 or higher.
+    # 'thread_pool' requires Python 3.2 or higher.
+    'handler': 'default',
+    'thread_pool_workers': None,
     'endpoint': DEFAULT_ENDPOINT,
     'timeout': DEFAULT_TIMEOUT,
     'agent.log_file': 'log.rollbar',
@@ -383,6 +388,9 @@ def init(access_token, environment='production', scrub_fields=None, url_fields=N
 
     if SETTINGS.get('handler') == 'agent':
         agent_log = _create_agent_log()
+    elif SETTINGS.get('handler') == 'thread_pool':
+        from rollbar.lib.thread_pool import init_pool
+        init_pool(SETTINGS.get('thread_pool_workers', None))
 
     if not SETTINGS['locals']['safelisted_types'] and SETTINGS['locals']['whitelisted_types']:
         warnings.warn('whitelisted_types deprecated use safelisted_types instead', DeprecationWarning)
@@ -523,6 +531,7 @@ def send_payload(payload, access_token):
     - 'gae': calls _send_payload_appengine() (which makes a blocking call to Google App Engine)
     - 'twisted': calls _send_payload_twisted() (which makes an async HTTP request using Twisted and Treq)
     - 'httpx': calls _send_payload_httpx() (which makes an async HTTP request using HTTPX)
+    - 'thread_pool': uses a pool of worker threads to make HTTP requests off the main thread. Returns immediately.
     """
     payload = events.on_payload(payload)
     if payload is False:
@@ -569,6 +578,8 @@ def send_payload(payload, access_token):
         _send_payload_async(payload_str, access_token)
     elif handler == 'thread':
         _send_payload_thread(payload_str, access_token)
+    elif handler == 'thread_pool':
+        _send_payload_thread_pool(payload_str, access_token)
     else:
         # default to 'thread'
         _send_payload_thread(payload_str, access_token)
@@ -1508,6 +1519,18 @@ def _send_payload_thread(payload_str, access_token):
     thread = threading.Thread(target=_send_payload, args=(payload_str, access_token))
     _threads.put(thread)
     thread.start()
+
+
+def _send_payload_pool(payload_str, access_token):
+    try:
+        _post_api('item/', payload_str, access_token=access_token)
+    except Exception as e:
+        log.exception('Exception while posting item %r', e)
+
+
+def _send_payload_thread_pool(payload_str, access_token):
+    from rollbar.lib.thread_pool import submit
+    submit(_send_payload_pool, payload_str, access_token)
 
 
 def _send_payload_appengine(payload_str, access_token):
