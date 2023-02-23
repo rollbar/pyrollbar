@@ -19,7 +19,6 @@ with open(INIT_PATH) as fd:
 tests_require = [
     'webob',
     'blinker',
-    'unittest2',
     'mock<=3.0.5; python_version < "3.3"',
     'enum34; python_version < "3.4"',
     'httpx; python_version >= "3.6"',

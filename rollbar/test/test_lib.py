@@ -2,6 +2,8 @@ from rollbar.lib import dict_merge
 
 from rollbar.test import BaseTest
 
+import six
+
 class RollbarLibTest(BaseTest):
     def test_dict_merge_not_dict(self):
         a = {'a': {'b': 42}}
@@ -56,4 +58,4 @@ class RollbarLibTest(BaseTest):
         self.assertIn('b', result['a'])
         self.assertEqual(42, result['a']['b'])
         self.assertIn('y', result['a'])
-        self.assertRegex(result['a']['y'], r'Uncopyable obj')
+        six.assertRegex(self, result['a']['y'], r'Uncopyable obj')
