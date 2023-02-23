@@ -82,8 +82,8 @@ setup(
         # always installs the latest version of the package.
         'requests>=0.12.1; python_version == "2.7"',
         'requests>=0.12.1; python_version >= "3.6"',
-        'requests<2.26,>=0.12.1; python_version == "3.5"',
-        'requests<2.22,>=0.12.1; python_version == "3.4"',
+        'requests>=0.12.1; python_version == "3.5"',
+        'requests>=0.12.1; python_version == "3.4"',
         'six>=1.9.0'
     ],
     tests_require=tests_require,

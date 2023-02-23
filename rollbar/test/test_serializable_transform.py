@@ -2,6 +2,7 @@ import collections
 import base64
 import copy
 import enum
+import sys
 
 try:
     # Python 3
@@ -147,7 +148,13 @@ class SerializableTransformTest(BaseTest):
     def test_encode_empty_tuple(self):
         start = ()
         expected = ()
-        self._assertSerialized(start, expected)
+        
+        skip_id_check = False
+        # different behavior in 3.11
+        if sys.version_info >= (3, 11):
+            skip_id_check = True
+        
+        self._assertSerialized(start, expected, skip_id_check=skip_id_check)
 
     def test_encode_empty_list(self):
         start = []

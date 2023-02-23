@@ -1383,8 +1383,8 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(2, len(payload['data']['body']['trace']['frames'][-1]['argspec']))
         self.assertEqual('password', payload['data']['body']['trace']['frames'][-1]['argspec'][0])
-        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['password'], r'\*+')
-        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['headers']['Authorization'], r'\*+')
+        six.assertRegex(self, payload['data']['body']['trace']['frames'][-1]['locals']['password'], r'\*+')
+        six.assertRegex(self, payload['data']['body']['trace']['frames'][-1]['locals']['headers']['Authorization'], r'\*+')
         self.assertEqual('clear', payload['data']['body']['trace']['frames'][-1]['argspec'][1])
         self.assertEqual('text', payload['data']['body']['trace']['frames'][-1]['locals']['clear'])
 
