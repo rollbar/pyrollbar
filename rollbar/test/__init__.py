@@ -10,4 +10,4 @@ class BaseTest(unittest.TestCase):
 
 
 def discover():
-    return unittest2.defaultTestLoader.discover(__name__)
+    return unittest.defaultTestLoader.discover(__name__)

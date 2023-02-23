@@ -7,14 +7,14 @@ try:
 except ImportError:
     STARLETTE_INSTALLED = False
 
-import unittest2
+import unittest
 
 from rollbar.test import BaseTest
 
 ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
 
 
-@unittest2.skipUnless(
+@unittest.skipUnless(
     STARLETTE_INSTALLED and ALLOWED_PYTHON_VERSION,
     'Global request access requires Python3.6+',
 )

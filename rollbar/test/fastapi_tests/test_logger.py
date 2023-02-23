@@ -13,7 +13,7 @@ try:
 except ImportError:
     FASTAPI_INSTALLED = False
 
-import unittest2
+import unittest
 
 import rollbar
 from rollbar.test import BaseTest
@@ -21,7 +21,7 @@ from rollbar.test import BaseTest
 ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
 
 
-@unittest2.skipUnless(
+@unittest.skipUnless(
     FASTAPI_INSTALLED and ALLOWED_PYTHON_VERSION,
     'FastAPI LoggerMiddleware requires Python3.6+',
 )

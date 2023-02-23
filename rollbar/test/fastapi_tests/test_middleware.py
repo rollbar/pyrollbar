@@ -14,7 +14,7 @@ try:
 except ImportError:
     FASTAPI_INSTALLED = False
 
-import unittest2
+import unittest
 
 import rollbar
 from rollbar.lib._async import AsyncMock
@@ -23,7 +23,7 @@ from rollbar.test import BaseTest
 ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
 
 
-@unittest2.skipUnless(
+@unittest.skipUnless(
     FASTAPI_INSTALLED and ALLOWED_PYTHON_VERSION, 'FastAPI requires Python3.6+'
 )
 class ReporterMiddlewareTest(BaseTest):
@@ -258,7 +258,7 @@ class ReporterMiddlewareTest(BaseTest):
             'Failed to report asynchronously. Trying to report synchronously.'
         )
 
-    @unittest2.skipUnless(
+    @unittest.skipUnless(
         sys.version_info >= (3, 6), 'Global request access requires Python 3.6+'
     )
     @mock.patch('rollbar.contrib.starlette.middleware.store_current_request')
@@ -305,7 +305,7 @@ class ReporterMiddlewareTest(BaseTest):
         scope = store_current_request.call_args[0][0]
         self.assertDictContainsSubset(expected_scope, scope)
 
-    @unittest2.skipUnless(
+    @unittest.skipUnless(
         sys.version_info >= (3, 6), 'Global request access is supported in Python 3.6+'
     )
     def test_should_return_current_request(self):
