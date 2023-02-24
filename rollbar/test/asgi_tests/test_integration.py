@@ -1,6 +1,12 @@
+import unittest
+import sys
+
 from rollbar.test import BaseTest
 
+ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 5)
 
+
+@unittest.skipUnless(ALLOWED_PYTHON_VERSION, 'ASGI implementation requires Python3.5+')
 class IntegrationTest(BaseTest):
     def test_should_integrate_if__integrate_defined(self):
         from rollbar.contrib.asgi.integration import IntegrationBase

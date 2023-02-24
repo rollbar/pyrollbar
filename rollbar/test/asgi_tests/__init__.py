@@ -1,9 +1,9 @@
 import sys
-import unittest2
+import unittest
 
 
 def _load_tests(loader, tests, pattern):
-    return unittest2.TestSuite()
+    return unittest.TestSuite()
 
 
 if sys.version_info < (3, 5):

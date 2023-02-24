@@ -19,7 +19,6 @@ with open(INIT_PATH) as fd:
 tests_require = [
     'webob',
     'blinker',
-    'unittest2',
     'mock<=3.0.5; python_version < "3.3"',
     'enum34; python_version < "3.4"',
     'httpx; python_version >= "3.6"',
@@ -55,6 +54,9 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Development Status :: 5 - Production/Stable",
@@ -83,8 +85,8 @@ setup(
         # always installs the latest version of the package.
         'requests>=0.12.1; python_version == "2.7"',
         'requests>=0.12.1; python_version >= "3.6"',
-        'requests<2.26,>=0.12.1; python_version == "3.5"',
-        'requests<2.22,>=0.12.1; python_version == "3.4"',
+        'requests>=0.12.1; python_version == "3.5"',
+        'requests>=0.12.1; python_version == "3.4"',
         'six>=1.9.0'
     ],
     tests_require=tests_require,

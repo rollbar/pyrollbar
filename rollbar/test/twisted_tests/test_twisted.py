@@ -54,7 +54,7 @@ if ALLOWED_PYTHON_VERSION and TWISTED_INSTALLED:
             self.proto.dataReceived('8')
             self.assertEqual(int(self.tr.value()), 64)
 
-            self.assertEqual(send_payload.called, False)
+            self.assertFalse(send_payload.called)
 
         @mock.patch('rollbar.send_payload')
         def test_caught_exception(self, send_payload):
@@ -63,7 +63,7 @@ if ALLOWED_PYTHON_VERSION and TWISTED_INSTALLED:
             errors = self.flushLoggedErrors(ValueError)
             self.assertEqual(len(errors), 1)
 
-            self.assertEqual(send_payload.called, True)
+            self.assertTrue(send_payload.called)
             payload = send_payload.call_args[0][0]
             data = payload['data']
 

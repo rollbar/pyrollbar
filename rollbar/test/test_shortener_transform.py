@@ -103,6 +103,8 @@ class ShortenerTransformTest(BaseTest):
 
     def test_shorten_array(self):
         expected = 'array(\'l\', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...])'
+        if sys.version_info >= (3, 10):
+            expected = '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...]'
         self._assert_shortened('array', expected)
 
     def test_shorten_deque(self):

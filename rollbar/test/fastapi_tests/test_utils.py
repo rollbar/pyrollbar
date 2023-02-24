@@ -7,14 +7,14 @@ try:
 except ImportError:
     FASTAPI_INSTALLED = False
 
-import unittest2
+import unittest
 
 from rollbar.test import BaseTest
 
 ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
 
 
-@unittest2.skipUnless(
+@unittest.skipUnless(
     FASTAPI_INSTALLED and ALLOWED_PYTHON_VERSION, 'FastAPI requires Python3.6+'
 )
 class UtilsMiddlewareTest(BaseTest):
@@ -66,7 +66,7 @@ class UtilsMiddlewareTest(BaseTest):
         self.assertListEqual(middlewares, [])
 
 
-@unittest2.skipUnless(
+@unittest.skipUnless(
     FASTAPI_INSTALLED and ALLOWED_PYTHON_VERSION, 'FastAPI requires Python3.6+'
 )
 class UtilsBareRoutingTest(BaseTest):

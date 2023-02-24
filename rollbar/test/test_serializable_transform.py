@@ -2,6 +2,7 @@ import collections
 import base64
 import copy
 import enum
+import sys
 
 try:
     # Python 3
@@ -9,6 +10,8 @@ try:
 except ImportError:
     # Python 2.7
     from collections import Mapping
+
+import six
 
 from rollbar.lib import transforms, python_major_version
 from rollbar.lib.transforms.serializable import SerializableTransform
@@ -145,7 +148,13 @@ class SerializableTransformTest(BaseTest):
     def test_encode_empty_tuple(self):
         start = ()
         expected = ()
-        self._assertSerialized(start, expected)
+        
+        skip_id_check = False
+        # different behavior in 3.11
+        if sys.version_info >= (3, 11):
+            skip_id_check = True
+        
+        self._assertSerialized(start, expected, skip_id_check=skip_id_check)
 
     def test_encode_empty_list(self):
         start = []
@@ -237,7 +246,7 @@ class SerializableTransformTest(BaseTest):
         if python_major_version() < 3:
             self.assertEqual(result['custom'], b'hello')
         else:
-            self.assertRegex(result['custom'], "<class '.*CustomRepr'>")
+            six.assertRegex(self, result['custom'], "<class '.*CustomRepr'>")
 
     def test_encode_with_custom_repr_returns_object(self):
         class CustomRepr(object):
@@ -248,7 +257,7 @@ class SerializableTransformTest(BaseTest):
 
         serializable = SerializableTransform(safelist_types=[CustomRepr])
         result = transforms.transform(start, serializable)
-        self.assertRegex(result['custom'], "<class '.*CustomRepr'>")
+        six.assertRegex(self, result['custom'], "<class '.*CustomRepr'>")
 
     def test_encode_with_custom_repr_returns_unicode(self):
         class CustomRepr(object):
@@ -268,7 +277,7 @@ class SerializableTransformTest(BaseTest):
         start = {'hello': 'world', 'custom': CustomRepr()}
         serializable = SerializableTransform(safelist_types=[CustomRepr])
         result = transforms.transform(start, serializable)
-        self.assertRegex(result['custom'], "<AssertionError.*CustomRepr.*>")
+        six.assertRegex(self, result['custom'], "<AssertionError.*CustomRepr.*>")
 
     def test_encode_with_bad_str_doesnt_die(self):
 
@@ -284,4 +293,4 @@ class SerializableTransformTest(BaseTest):
         start = {'hello': 'world', 'custom': CustomRepr()}
         serializable = SerializableTransform(safelist_types=[CustomRepr])
         result = transforms.transform(start, serializable)
-        self.assertRegex(result['custom'], "<UnStringableException.*Exception.*str.*>")
+        six.assertRegex(self, result['custom'], "<UnStringableException.*Exception.*str.*>")

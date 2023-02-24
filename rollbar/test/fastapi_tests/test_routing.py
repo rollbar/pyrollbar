@@ -17,7 +17,7 @@ except ImportError:
     FASTAPI_INSTALLED = False
     ALLOWED_FASTAPI_VERSION = False
 
-import unittest2
+import unittest
 
 import rollbar
 from rollbar.lib._async import AsyncMock
@@ -27,7 +27,7 @@ from rollbar.test import BaseTest
 ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
 
 
-@unittest2.skipUnless(
+@unittest.skipUnless(
     FASTAPI_INSTALLED and ALLOWED_PYTHON_VERSION, 'FastAPI requires Python3.6+'
 )
 class LoggingRouteUnsupportedFastAPIVersionTest(BaseTest):
@@ -64,10 +64,10 @@ class LoggingRouteUnsupportedFastAPIVersionTest(BaseTest):
         fastapi.__version__ = fastapi_version
 
 
-@unittest2.skipUnless(
+@unittest.skipUnless(
     FASTAPI_INSTALLED and ALLOWED_PYTHON_VERSION, 'FastAPI requires Python3.6+'
 )
-@unittest2.skipUnless(ALLOWED_FASTAPI_VERSION, 'FastAPI v0.41.0+ is required')
+@unittest.skipUnless(ALLOWED_FASTAPI_VERSION, 'FastAPI v0.41.0+ is required')
 class LoggingRouteTest(BaseTest):
     default_settings = copy.deepcopy(rollbar.SETTINGS)
 
@@ -686,7 +686,7 @@ class LoggingRouteTest(BaseTest):
                     ' This can cause in duplicate occurrences.'
                 )
 
-    @unittest2.skipUnless(
+    @unittest.skipUnless(
         sys.version_info >= (3, 6), 'Global request access requires Python 3.6+'
     )
     @mock.patch('rollbar.contrib.fastapi.routing.store_current_request')
@@ -733,7 +733,7 @@ class LoggingRouteTest(BaseTest):
         scope = store_current_request.call_args[0][0]
         self.assertDictContainsSubset(expected_scope, scope)
 
-    @unittest2.skipUnless(
+    @unittest.skipUnless(
         sys.version_info >= (3, 6), 'Global request access is supported in Python 3.6+'
     )
     def test_should_return_current_request(self):
