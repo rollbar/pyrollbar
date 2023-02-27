@@ -1486,7 +1486,7 @@ def _build_payload(data):
     """
 
     for k, v in iteritems(data):
-        data[k] = _transform0(v, key=(k,))
+        data[k] = _transform(v, key=(k,))
 
     payload = {
         'access_token': SETTINGS['access_token'],
