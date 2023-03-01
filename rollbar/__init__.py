@@ -327,6 +327,7 @@ SETTINGS = {
     'request_pool_connections': None,
     'request_pool_maxsize': None,
     'request_max_retries': None,
+    'batch_transforms': False,
 }
 
 _CURRENT_LAMBDA_CONTEXT = None
@@ -341,11 +342,13 @@ _initialized = False
 from rollbar.lib.transforms.scrub_redact import REDACT_REF
 
 from rollbar.lib import transforms
+from rollbar.lib import type_info
 from rollbar.lib.transforms.scrub import ScrubTransform
 from rollbar.lib.transforms.scruburl import ScrubUrlTransform
 from rollbar.lib.transforms.scrub_redact import ScrubRedactTransform
 from rollbar.lib.transforms.serializable import SerializableTransform
 from rollbar.lib.transforms.shortener import ShortenerTransform
+from rollbar.lib.transforms.batched import BatchedTransform
 
 
 ## public api
@@ -1082,10 +1085,11 @@ def _add_locals_data(trace_data, exc_info):
 
 
 def _serialize_frame_data(data):
-    for transform in (ScrubRedactTransform(), _serialize_transform):
-        data = transforms.transform(data, transform)
-
-    return data
+    return transforms.transform(
+        data,
+        [ScrubRedactTransform(), _serialize_transform],
+        batch_transforms=SETTINGS['batch_transforms']
+    )
 
 
 def _add_lambda_context_data(data):
@@ -1477,10 +1481,12 @@ def _build_server_data():
 
 
 def _transform(obj, key=None):
-    for transform in _transforms:
-        obj = transforms.transform(obj, transform, key=key)
-
-    return obj
+    return transforms.transform(
+        obj,
+        _transforms,
+        key=key,
+        batch_transforms=SETTINGS['batch_transforms']
+    )
 
 
 def _build_payload(data):

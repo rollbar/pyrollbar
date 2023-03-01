@@ -1,7 +1,7 @@
 import random
 
 from rollbar.lib import build_key_matcher, text
-from rollbar.lib.transforms import Transform
+from rollbar.lib.transform import Transform
 
 
 class ScrubTransform(Transform):
