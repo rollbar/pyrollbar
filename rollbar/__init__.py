@@ -20,7 +20,7 @@ import warnings
 import requests
 import six
 
-from rollbar.lib import events, filters, dict_merge, parse_qs, text, transport, urljoin, iteritems, defaultJSONEncode
+from rollbar.lib import events, filters, dict_merge, parse_qs, text, transport, urljoin, iteritems, defaultJSONEncode, walk
 
 
 __version__ = '0.16.4beta'
@@ -1477,10 +1477,7 @@ def _build_server_data():
 
 
 def _transform(obj, key=None):
-    for transform in _transforms:
-        obj = transforms.transform(obj, transform, key=key)
-
-    return obj
+    return transforms.transform(obj, _transforms, key=key)
 
 
 def _build_payload(data):
