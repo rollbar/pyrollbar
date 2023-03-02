@@ -22,7 +22,16 @@ tests_require = [
     'mock<=3.0.5; python_version < "3.3"',
     'enum34; python_version < "3.4"',
     'httpx; python_version >= "3.6"',
-    'aiocontextvars; python_version == "3.6"'
+    'aiocontextvars; python_version == "3.6"',
+    # The currently used version of `setuptools` has a bug,
+    # so the version requirements are not properly respected.
+    #
+    # In the current version, `requests>= 0.12.1`
+    # always installs the latest version of the package.
+    'requests>=0.12.1; python_version == "2.7"',
+    'requests>=0.12.1; python_version >= "3.6"',
+    'requests>=0.12.1; python_version == "3.5"',
+    'requests>=0.12.1; python_version == "3.4"',
 ]
 
 setup(
@@ -78,15 +87,6 @@ setup(
         "Topic :: System :: Monitoring",
         ],
     install_requires=[
-        # The currently used version of `setuptools` has a bug,
-        # so the version requirements are not properly respected.
-        #
-        # In the current version, `requests>= 0.12.1`
-        # always installs the latest version of the package.
-        'requests>=0.12.1; python_version == "2.7"',
-        'requests>=0.12.1; python_version >= "3.6"',
-        'requests>=0.12.1; python_version == "3.5"',
-        'requests>=0.12.1; python_version == "3.4"',
         'six>=1.9.0'
     ],
     tests_require=tests_require,
