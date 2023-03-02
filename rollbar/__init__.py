@@ -341,6 +341,8 @@ _initialized = False
 from rollbar.lib.transforms.scrub_redact import REDACT_REF
 
 from rollbar.lib import transforms
+from rollbar.lib import walk
+from rollbar.lib import type_info
 from rollbar.lib.transforms.scrub import ScrubTransform
 from rollbar.lib.transforms.scruburl import ScrubUrlTransform
 from rollbar.lib.transforms.scrub_redact import ScrubRedactTransform

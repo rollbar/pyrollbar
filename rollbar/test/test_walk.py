@@ -5,16 +5,16 @@ from rollbar.test import BaseTest
 
 class RollbarWalkTest(BaseTest):
     def assertWalk(self, input, want):
-        steps = []
+        # steps = []
 
-        walk(
+        got = walk(
             input,
-            lambda o, key=None: steps.append((o, key)),
+            # lambda o, key=None: steps.append((o, key)),
         )
 
         self.assertEqual(
             want,
-            steps,
+            list(got),
         )
 
     def test_number(self):
