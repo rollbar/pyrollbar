@@ -1667,6 +1667,7 @@ class RollbarTest(BaseTest):
 
         payload = send_payload.call_args[0][0]
         for frame in payload['data']['body']['trace']['frames']:
+            # print(frame)
             self.assertIn('locals', frame)
 
 
@@ -1787,6 +1788,7 @@ class RollbarTest(BaseTest):
         self.assertEqual('I am from NSA', unscrubbed['headers']['Authorization'])
 
         scrubbed = rollbar._transform(unscrubbed)
+        print("\n", scrubbed['url'])
         six.assertRegex(self, scrubbed['url'], r'http://example.com/the/path\?(q=hello&password=-+)|(password=-+&q=hello)')
 
         self.assertEqual(scrubbed['GET']['q'], 'hello')

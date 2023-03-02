@@ -2,9 +2,6 @@ from rollbar.lib.transform import Transform
 from rollbar.lib import (
     python_major_version,
     number_types,
-    iteritems,
-    string_types,
-    circular_reference_label,
     type_info,
 )
 
@@ -96,13 +93,10 @@ class BatchedTransform(Transform):
         self._transforms = transforms
 
     def default(self, o, key=None):
-        # for (node, k) in walk(o, key=key):
         for transform in self._transforms:
             node_type = type_info.get_type(o)
             handler = handlers.get(node_type, type_info.DEFAULT)
-            handler(transform, o, key=key)
-
-            # safeset(obj, key, node)
+            o = handler(transform, o, key=key)
 
         return o
 

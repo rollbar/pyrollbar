@@ -1,24 +1,19 @@
 import logging
 
-try:
-    # Python 3
-    from collections.abc import Mapping
-    from collections.abc import Sequence
-except ImportError:
-    # Python 2.7
-    from collections import Mapping
-    from collections import Sequence
 
 from rollbar.lib import binary_type, iteritems, string_types, circular_reference_label
+from rollbar.lib.type_info import (
+    get_type,
+    CIRCULAR,
+    DEFAULT,
+    MAPPING,
+    TUPLE,
+    NAMEDTUPLE,
+    LIST,
+    SET,
+    STRING,
+)
 
-CIRCULAR = -1
-DEFAULT = 0
-MAPPING = 1
-TUPLE = 2
-NAMEDTUPLE = 3
-LIST = 4
-SET = 5
-STRING = 6
 
 log = logging.getLogger(__name__)
 
@@ -61,28 +56,6 @@ _default_handlers = {
     SET: _noop_set,
     MAPPING: _noop_mapping,
 }
-
-
-def get_type(obj):
-    if isinstance(obj, (string_types, binary_type)):
-        return STRING
-
-    if isinstance(obj, Mapping):
-        return MAPPING
-
-    if isinstance(obj, tuple):
-        if hasattr(obj, "_fields"):
-            return NAMEDTUPLE
-
-        return TUPLE
-
-    if isinstance(obj, set):
-        return SET
-
-    if isinstance(obj, Sequence):
-        return LIST
-
-    return DEFAULT
 
 
 def traverse(

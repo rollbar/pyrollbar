@@ -20,7 +20,7 @@ import warnings
 import requests
 import six
 
-from rollbar.lib import events, filters, dict_merge, parse_qs, text, transport, urljoin, iteritems, defaultJSONEncode, walk
+from rollbar.lib import events, filters, dict_merge, parse_qs, text, transport, urljoin, iteritems, defaultJSONEncode
 
 
 __version__ = '0.16.4beta'
@@ -342,7 +342,6 @@ _initialized = False
 from rollbar.lib.transforms.scrub_redact import REDACT_REF
 
 from rollbar.lib import transforms
-from rollbar.lib import walk
 from rollbar.lib import type_info
 from rollbar.lib.transforms.scrub import ScrubTransform
 from rollbar.lib.transforms.scruburl import ScrubUrlTransform
@@ -1089,8 +1088,7 @@ def _serialize_frame_data(data):
     return transforms.transform(
         data,
         [ScrubRedactTransform(), _serialize_transform],
-        # batch_transforms=SETTINGS['batch_transforms']
-        batcher=BatchedTransform if SETTINGS['batch_transforms'] else None,
+        batch_transforms=SETTINGS['batch_transforms']
     )
 
 
@@ -1485,11 +1483,9 @@ def _build_server_data():
 def _transform(obj, key=None):
     return transforms.transform(
         obj,
-        # BatchedTransform(_transforms) if SETTINGS['batch_transforms'] else _transforms,
         _transforms,
         key=key,
-        # batch_transforms=SETTINGS['batch_transforms']
-        batcher=BatchedTransform if SETTINGS['batch_transforms'] else None,
+        batch_transforms=SETTINGS['batch_transforms']
     )
 
 
