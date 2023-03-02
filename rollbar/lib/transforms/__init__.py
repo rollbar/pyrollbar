@@ -1,3 +1,10 @@
+try:
+    # Python 3
+    from collections.abc import Iterable
+except ImportError:
+    # Python 2.7
+    from collections import Iterable
+
 from rollbar.lib import (
     python_major_version,
     binary_type,
@@ -65,9 +72,14 @@ class Transform(object):
         return self.default(o, key=key)
 
 
-def transform(obj, transforms, key=None, depth_first=False):
-    if depth_first:
-        return _depth_first_transform(obj, transforms, key=key)
+def transform(obj, transforms, key=None, batch_transforms=False):
+    try:
+        transforms = iter(transforms)
+    except:
+        transforms = [transforms]
+
+    if batch_transforms:
+        return _batched_transform(obj, transforms, key=key)
 
     for transform in transforms:
         obj = _transform(obj, transform, key=key)
@@ -150,7 +162,7 @@ def safeset(source, path, val):
     return source
 
 
-def _depth_first_transform(obj, transforms, key=None):
+def _batched_transform(obj, transforms, key=None):
     key = key or ()
 
     def do_transform(transform, type_name, val, key=None, **kw):

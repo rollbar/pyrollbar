@@ -327,6 +327,7 @@ SETTINGS = {
     'request_pool_connections': None,
     'request_pool_maxsize': None,
     'request_max_retries': None,
+    'batch_transforms': True,
 }
 
 _CURRENT_LAMBDA_CONTEXT = None
@@ -1084,10 +1085,11 @@ def _add_locals_data(trace_data, exc_info):
 
 
 def _serialize_frame_data(data):
-    for transform in (ScrubRedactTransform(), _serialize_transform):
-        data = transforms.transform(data, transform)
-
-    return data
+    return transforms.transform(
+        data,
+        [ScrubRedactTransform(), _serialize_transform],
+        batch_transforms=SETTINGS['batch_transforms']
+    )
 
 
 def _add_lambda_context_data(data):
@@ -1479,7 +1481,12 @@ def _build_server_data():
 
 
 def _transform(obj, key=None):
-    return transforms.transform(obj, _transforms, key=key)
+    return transforms.transform(
+        obj,
+        _transforms,
+        key=key,
+        batch_transforms=SETTINGS['batch_transforms']
+    )
 
 
 def _build_payload(data):
