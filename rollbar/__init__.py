@@ -327,7 +327,7 @@ SETTINGS = {
     'request_pool_connections': None,
     'request_pool_maxsize': None,
     'request_max_retries': None,
-    'batch_transforms': True,
+    'batch_transforms': False,
 }
 
 _CURRENT_LAMBDA_CONTEXT = None
