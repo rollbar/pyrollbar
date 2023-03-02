@@ -6,7 +6,7 @@ from rollbar.lib import (
     undecodable_object_label, unencodable_object_label)
 from rollbar.lib import iteritems, python_major_version, text
 
-from rollbar.lib.transforms import Transform
+from rollbar.lib.transform import Transform
 
 
 class SerializableTransform(Transform):

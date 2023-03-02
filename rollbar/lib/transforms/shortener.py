@@ -12,7 +12,7 @@ except ImportError:
 from rollbar.lib import (
     integer_types, iteritems, key_in, number_types, reprlib, sequence_types,
     string_types, text)
-from rollbar.lib.transforms import Transform
+from rollbar.lib.transform import Transform
 
 
 _type_name_mapping = {

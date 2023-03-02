@@ -1,4 +1,4 @@
-from rollbar.lib.transforms import _depth_first_transform as transform, Transform
+from rollbar.lib.transforms import transform, _batched_transform, Transform
 from rollbar.lib.walk import walk
 
 from rollbar.test import BaseTest
@@ -6,10 +6,10 @@ from rollbar.test import BaseTest
 
 class TrackingTransformer(Transform):
     def __init__(self):
-        self.seen = []
+        self.got = []
 
     def default(self, o, key=None):
-        self.seen.append((o, key))
+        self.got.append((o, key))
         return o
 
 
@@ -22,7 +22,7 @@ class RollbarTransformTest(BaseTest):
             tracking_transformer,
         ]
 
-        transform(input, transforms)
+        transform(input, transforms, batch_transforms=True)
 
         want = []
 
@@ -30,7 +30,7 @@ class RollbarTransformTest(BaseTest):
             want.append((node, key))
             want.append((node, key))
 
-        self.assertEqual(want, tracking_transformer.seen)
+        self.assertEqual(want, tracking_transformer.got)
 
     def test_number(self):
         self.assertTrackingTransform(1)

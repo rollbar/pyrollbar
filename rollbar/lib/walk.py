@@ -17,8 +17,6 @@ from rollbar.lib import binary_type, iteritems, string_types, circular_reference
 log = logging.getLogger(__name__)
 
 
-
-
 def walk(value, key=(), memo=None):
     key = key or ()
 

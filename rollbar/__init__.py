@@ -349,6 +349,7 @@ from rollbar.lib.transforms.scruburl import ScrubUrlTransform
 from rollbar.lib.transforms.scrub_redact import ScrubRedactTransform
 from rollbar.lib.transforms.serializable import SerializableTransform
 from rollbar.lib.transforms.shortener import ShortenerTransform
+from rollbar.lib.transforms.batched import BatchedTransform
 
 
 ## public api
@@ -1088,7 +1089,8 @@ def _serialize_frame_data(data):
     return transforms.transform(
         data,
         [ScrubRedactTransform(), _serialize_transform],
-        batch_transforms=SETTINGS['batch_transforms']
+        # batch_transforms=SETTINGS['batch_transforms']
+        batcher=BatchedTransform if SETTINGS['batch_transforms'] else None,
     )
 
 
@@ -1483,9 +1485,11 @@ def _build_server_data():
 def _transform(obj, key=None):
     return transforms.transform(
         obj,
+        # BatchedTransform(_transforms) if SETTINGS['batch_transforms'] else _transforms,
         _transforms,
         key=key,
-        batch_transforms=SETTINGS['batch_transforms']
+        # batch_transforms=SETTINGS['batch_transforms']
+        batcher=BatchedTransform if SETTINGS['batch_transforms'] else None,
     )
 
 

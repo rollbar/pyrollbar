@@ -15,6 +15,8 @@ from rollbar.lib import (
     walk,
     type_info,
 )
+from rollbar.lib.transform import Transform
+from rollbar.lib.transforms.batched import BatchedTransform
 
 _ALLOWED_CIRCULAR_REFERENCE_TYPES = [binary_type, bool, type(None)]
 
@@ -31,55 +33,16 @@ else:
 _ALLOWED_CIRCULAR_REFERENCE_TYPES = tuple(_ALLOWED_CIRCULAR_REFERENCE_TYPES)
 
 
-class Transform(object):
-    def default(self, o, key=None):
-        return o
-
-    def transform_circular_reference(self, o, key=None, ref_key=None):
-        # By default, we just perform a no-op for circular references.
-        # Subclasses should implement this method to return whatever representation
-        # for the circular reference they need.
-        return self.default(o, key=key)
-
-    def transform_tuple(self, o, key=None):
-        return self.default(o, key=key)
-
-    def transform_namedtuple(self, o, key=None):
-        return self.default(o, key=key)
-
-    def transform_list(self, o, key=None):
-        return self.default(o, key=key)
-
-    def transform_dict(self, o, key=None):
-        return self.default(o, key=key)
-
-    def transform_number(self, o, key=None):
-        return self.default(o, key=key)
-
-    def transform_py2_str(self, o, key=None):
-        return self.default(o, key=key)
-
-    def transform_py3_bytes(self, o, key=None):
-        return self.default(o, key=key)
-
-    def transform_unicode(self, o, key=None):
-        return self.default(o, key=key)
-
-    def transform_boolean(self, o, key=None):
-        return self.default(o, key=key)
-
-    def transform_custom(self, o, key=None):
-        return self.default(o, key=key)
-
-
-def transform(obj, transforms, key=None, batch_transforms=False):
-    try:
-        transforms = iter(transforms)
-    except:
+def transform(obj, transforms, key=None, batch_transforms=False, batcher=None):
+    if isinstance(transforms, Transform):
         transforms = [transforms]
 
+    # if batcher:
+    #     transforms = [batcher(transforms)]
+
     if batch_transforms:
-        return _batched_transform(obj, transforms, key=key)
+        transforms = [BatchedTransform(transforms)]
+    #     return _batched_transform(obj, transforms, key=key)
 
     for transform in transforms:
         obj = _transform(obj, transform, key=key)
@@ -150,6 +113,7 @@ def _transform(obj, transform, key=None):
 def safeset(source, path, val):
     if len(path) == 0:
         return source
+    print(source, path)
     memo = source
     ancestors, dest = path[: len(path) - 1], path[len(path) - 1]
     for key in ancestors:

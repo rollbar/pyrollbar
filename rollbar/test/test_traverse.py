@@ -1,4 +1,4 @@
-from rollbar.lib.traverse import traverse, traverse_depth_first
+from rollbar.lib.traverse import traverse
 
 from rollbar.test import BaseTest
 
