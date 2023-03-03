@@ -14,7 +14,7 @@ jobs:
       matrix:
         python-version: [2.7, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, '3.10', 3.11]
         framework:
-          - FLASK_VERSION=0.12.5 Werkzeug\>=0.7,\<1.0
+          - FLASK_VERSION=0.12.5 Werkzeug\>=0.7,\<1.0 requests==2.27.1
           - FLASK_VERSION=1.1.4 requests==2.27.1
           - FLASK_VERSION=2.2.3 requests==2.27.1
           - DJANGO_VERSION=1.11.29 requests==2.27.1
@@ -35,93 +35,93 @@ jobs:
         exclude:
           # Test frameworks on the python versions they support, according to pypi registry
           # Flask
-          - framework: FLASK_VERSION=1.1.4
+          - framework: FLASK_VERSION=1.1.4 requests==2.27.1
             python-version: 3.4
-          - framework: FLASK_VERSION=2.2.3
+          - framework: FLASK_VERSION=2.2.3 requests==2.27.1
             python-version: 2.7
-          - framework: FLASK_VERSION=2.2.3
+          - framework: FLASK_VERSION=2.2.3 requests==2.27.1
             python-version: 3.4
-          - framework: FLASK_VERSION=2.2.3
+          - framework: FLASK_VERSION=2.2.3 requests==2.27.1
             python-version: 3.5
-          - framework: FLASK_VERSION=2.2.3
+          - framework: FLASK_VERSION=2.2.3 requests==2.27.1
             python-version: 3.6
 
           # Django
-          - framework: DJANGO_VERSION=1.11.29
+          - framework: DJANGO_VERSION=1.11.29 requests==2.27.1
             python-version: 3.8
-          - framework: DJANGO_VERSION=1.11.29
+          - framework: DJANGO_VERSION=1.11.29 requests==2.27.1
             python-version: 3.9
-          - framework: DJANGO_VERSION=1.11.29
+          - framework: DJANGO_VERSION=1.11.29 requests==2.27.1
             python-version: '3.10'
-          - framework: DJANGO_VERSION=1.11.29
+          - framework: DJANGO_VERSION=1.11.29 requests==2.27.1
             python-version: 3.11
-          - framework: DJANGO_VERSION=2.2.28
+          - framework: DJANGO_VERSION=2.2.28 requests==2.27.1
             python-version: 2.7
-          - framework: DJANGO_VERSION=2.2.28
+          - framework: DJANGO_VERSION=2.2.28 requests==2.27.1
             python-version: 3.4
-          - framework: DJANGO_VERSION=3.2.18
+          - framework: DJANGO_VERSION=3.2.18 requests==2.27.1
             python-version: 2.7
-          - framework: DJANGO_VERSION=3.2.18
+          - framework: DJANGO_VERSION=3.2.18 requests==2.27.1
             python-version: 3.4
-          - framework: DJANGO_VERSION=3.2.18
+          - framework: DJANGO_VERSION=3.2.18 requests==2.27.1
             python-version: 3.5
-          - framework: DJANGO_VERSION=4.0.10
+          - framework: DJANGO_VERSION=4.0.10 requests==2.27.1
             python-version: 2.7
-          - framework: DJANGO_VERSION=4.0.10
+          - framework: DJANGO_VERSION=4.0.10 requests==2.27.1
             python-version: 3.4
-          - framework: DJANGO_VERSION=4.0.10
+          - framework: DJANGO_VERSION=4.0.10 requests==2.27.1
             python-version: 3.5
-          - framework: DJANGO_VERSION=4.0.10
+          - framework: DJANGO_VERSION=4.0.10 requests==2.27.1
             python-version: 3.6
-          - framework: DJANGO_VERSION=4.0.10
+          - framework: DJANGO_VERSION=4.0.10 requests==2.27.1
             python-version: 3.7
-          - framework: DJANGO_VERSION=4.1.7
+          - framework: DJANGO_VERSION=4.1.7 requests==2.27.1
             python-version: 2.7
-          - framework: DJANGO_VERSION=4.1.7
+          - framework: DJANGO_VERSION=4.1.7 requests==2.27.1
             python-version: 3.4
-          - framework: DJANGO_VERSION=4.1.7
+          - framework: DJANGO_VERSION=4.1.7 requests==2.27.1
             python-version: 3.5
-          - framework: DJANGO_VERSION=4.1.7
+          - framework: DJANGO_VERSION=4.1.7 requests==2.27.1
             python-version: 3.6
-          - framework: DJANGO_VERSION=4.1.7
+          - framework: DJANGO_VERSION=4.1.7 requests==2.27.1
             python-version: 3.7
           
           # Twisted
-          - framework: TWISTED_VERSION=17.1.0 treq==16.12.0 zope.interface==4.5.0
+          - framework: TWISTED_VERSION=17.1.0 treq==16.12.0 zope.interface==4.5.0 requests==2.27.1
             python-version: 3.4
-          - framework: TWISTED_VERSION=17.1.0 treq==16.12.0 zope.interface==4.5.0
+          - framework: TWISTED_VERSION=17.1.0 treq==16.12.0 zope.interface==4.5.0 requests==2.27.1
             python-version: 3.5
-          - framework: TWISTED_VERSION=17.1.0 treq==16.12.0 zope.interface==4.5.0
+          - framework: TWISTED_VERSION=17.1.0 treq==16.12.0 zope.interface==4.5.0 requests==2.27.1
             python-version: 3.6
-          - framework: TWISTED_VERSION=17.1.0 treq==16.12.0 zope.interface==4.5.0
+          - framework: TWISTED_VERSION=17.1.0 treq==16.12.0 zope.interface==4.5.0 requests==2.27.1
             python-version: 3.7
-          - framework: TWISTED_VERSION=17.1.0 treq==16.12.0 zope.interface==4.5.0
+          - framework: TWISTED_VERSION=17.1.0 treq==16.12.0 zope.interface==4.5.0 requests==2.27.1
             python-version: 3.8
-          - framework: TWISTED_VERSION=17.1.0 treq==16.12.0 zope.interface==4.5.0
+          - framework: TWISTED_VERSION=17.1.0 treq==16.12.0 zope.interface==4.5.0 requests==2.27.1
             python-version: 3.9
-          - framework: TWISTED_VERSION=17.1.0 treq==16.12.0 zope.interface==4.5.0
+          - framework: TWISTED_VERSION=17.1.0 treq==16.12.0 zope.interface==4.5.0 requests==2.27.1
             python-version: '3.10'
-          - framework: TWISTED_VERSION=17.1.0 treq==16.12.0 zope.interface==4.5.0
+          - framework: TWISTED_VERSION=17.1.0 treq==16.12.0 zope.interface==4.5.0 requests==2.27.1
             python-version: 3.11
-          - framework: TWISTED_VERSION=20.3.0
+          - framework: TWISTED_VERSION=20.3.0 requests==2.27.1
             python-version: 2.7
-          - framework: TWISTED_VERSION=20.3.0
+          - framework: TWISTED_VERSION=20.3.0 requests==2.27.1
             python-version: 3.4
-          - framework: TWISTED_VERSION=20.3.0
+          - framework: TWISTED_VERSION=20.3.0 requests==2.27.1
             python-version: 3.11
-          - framework: TWISTED_VERSION=21.7.0
+          - framework: TWISTED_VERSION=21.7.0 requests==2.27.1
             python-version: 2.7
-          - framework: TWISTED_VERSION=21.7.0
+          - framework: TWISTED_VERSION=21.7.0 requests==2.27.1
             python-version: 3.4
-          - framework: TWISTED_VERSION=21.7.0
+          - framework: TWISTED_VERSION=21.7.0 requests==2.27.1
             python-version: 3.5
-          - framework: TWISTED_VERSION=22.10.0
+          - framework: TWISTED_VERSION=22.10.0 requests==2.27.1
             python-version: 2.7
-          - framework: TWISTED_VERSION=22.10.0
+          - framework: TWISTED_VERSION=22.10.0 requests==2.27.1
             python-version: 3.4
-          - framework: TWISTED_VERSION=22.10.0
+          - framework: TWISTED_VERSION=22.10.0 requests==2.27.1
             python-version: 3.5
-          - framework: TWISTED_VERSION=22.10.0
+          - framework: TWISTED_VERSION=22.10.0 requests==2.27.1
             python-version: 3.6
 
           
