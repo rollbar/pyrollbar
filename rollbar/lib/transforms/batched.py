@@ -71,22 +71,6 @@ handlers = {
 }
 
 
-def set_at_key(source, key, val):
-    if key and len(key) == 0:
-        return source
-    print("\nset_at_key", source, key)
-    memo = source
-    ancestors, dest = key[: len(key) - 1], key[len(key) - 1]
-    for ancestor in ancestors:
-        try:
-            memo = memo[ancestor]
-        except KeyError:
-            return None
-    if memo[dest]:
-        memo[dest] = val
-    return source
-
-
 class BatchedTransform(Transform):
     def __init__(self, transforms):
         super(BatchedTransform, self).__init__()
@@ -95,7 +79,7 @@ class BatchedTransform(Transform):
     def default(self, o, key=None):
         for transform in self._transforms:
             node_type = type_info.get_type(o)
-            handler = handlers.get(node_type, type_info.DEFAULT)
+            handler = handlers.get(node_type, handlers.get(type_info.DEFAULT))
             o = handler(transform, o, key=key)
 
         return o
