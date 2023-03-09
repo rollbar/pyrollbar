@@ -44,6 +44,10 @@ class BatchedTransformTest(BaseTest):
             circular_reference_handler=dup_watch_handler,
         )
 
+        print('\n')
+        for (i, key) in tracking_transformer.got:
+            print(i, key)
+
         self.assertEqual(want, tracking_transformer.got)
 
     def test_number(self):

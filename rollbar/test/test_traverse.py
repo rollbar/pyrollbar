@@ -7,7 +7,6 @@ class NamedTuple(tuple):
     """
     Modeled after NamedTuple and KeyedTuple from SQLAlchemy 0.7 and 0.8.
     """
-
     def __new__(cls, vals, labels=None):
         t = tuple.__new__(cls, vals)
         if labels:
@@ -25,7 +24,6 @@ class RollbarTraverseTest(BaseTest):
     will cause an Exception while identifying them if they don't implement
     the _make method.
     """
-
     def setUp(self):
         self.tuple = NamedTuple((1, 2, 3), labels=["one", "two", "three"])
 
@@ -33,5 +31,5 @@ class RollbarTraverseTest(BaseTest):
         self.assertEqual(traverse(self.tuple), (1, 2, 3))
 
     def test_bad_object(self):
-        setattr(self.tuple, "_fields", "not quite a named tuple")
+        setattr(self.tuple, '_fields', 'not quite a named tuple')
         self.assertEqual(traverse(self.tuple), (1, 2, 3))

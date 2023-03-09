@@ -14,8 +14,14 @@ from rollbar.lib import (
     traverse,
     type_info,
 )
+
+# NOTE: If we remove this import, then it would cause a breaking change for
+# any user of this library that implements their own transform. `Transform` was 
+# previously defined in here but was moved to its own module outside of "transforms"
+# because the usage of `BatchedTransform` in this __init__ file introduced a circular 
+# dependency.
 from rollbar.lib.transform import Transform
-from rollbar.lib.transforms.batched import BatchedTransform
+from rollbar.lib.transforms.batched import BatchedTransform, transform as batch_transform
 
 _ALLOWED_CIRCULAR_REFERENCE_TYPES = [binary_type, bool, type(None)]
 
@@ -37,7 +43,8 @@ def transform(obj, transforms, key=None, batch_transforms=False):
         transforms = [transforms]
 
     if batch_transforms:
-        transforms = [BatchedTransform(transforms)]
+        # transforms = [BatchedTransform(transforms)]
+        return batch_transform(transforms, obj, key)
 
     for transform in transforms:
         obj = _transform(obj, transform, key=key)
