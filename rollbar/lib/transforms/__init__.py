@@ -14,6 +14,8 @@ from rollbar.lib import (
     traverse,
     type_info,
 )
+# NOTE: Don't remove this import, it would cause a breaking change to the library's API.
+# The `Transform` class was moved out of this file to prevent a cyclical dependency issue.
 from rollbar.lib.transform import Transform
 from rollbar.lib.transforms.batched import BatchedTransform
 

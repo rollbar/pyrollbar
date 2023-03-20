@@ -2,6 +2,10 @@ import logging
 
 
 from rollbar.lib import binary_type, iteritems, string_types, circular_reference_label
+
+# NOTE: Don't remove this line of code as it would cause a breaking change
+# to the library's API. The items imported here were originally in this file
+# but were moved to a new file for easier use elsewhere.
 from rollbar.lib.type_info import (
     get_type,
     CIRCULAR,
