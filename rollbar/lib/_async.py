@@ -138,7 +138,7 @@ async def _post_api_httpx(path, payload_str, access_token=None):
     ) as client:
         resp = await client.post(
             url,
-            data=payload_str,
+            content=payload_str,
             headers=headers,
             timeout=rollbar.SETTINGS.get('timeout', DEFAULT_TIMEOUT),
         )
