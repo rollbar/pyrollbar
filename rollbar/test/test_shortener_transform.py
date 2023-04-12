@@ -6,7 +6,7 @@ import six
 from rollbar import DEFAULT_LOCALS_SIZES
 from rollbar.lib import transforms
 from rollbar.lib.transforms.shortener import ShortenerTransform
-from rollbar.lib.traverse import Sequence
+from rollbar.lib.type_info import Sequence
 from rollbar.test import BaseTest
 
 
