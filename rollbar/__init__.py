@@ -425,10 +425,11 @@ def init(access_token, environment='production', scrub_fields=None, url_fields=N
     ]
 
     if SETTINGS['locals']['enabled']:
-        shortener_keys.append(('body', 'trace', 'frames', '*', 'code'))
-        shortener_keys.append(('body', 'trace', 'frames', '*', 'args', '*'))
-        shortener_keys.append(('body', 'trace', 'frames', '*', 'kwargs', '*'))
-        shortener_keys.append(('body', 'trace', 'frames', '*', 'locals', '*'))
+        for prefix in (('body', 'trace'), ('body', 'trace_chain', '*')):
+            shortener_keys.append(prefix + ('frames', '*', 'code'))
+            shortener_keys.append(prefix + ('frames', '*', 'args', '*'))
+            shortener_keys.append(prefix + ('frames', '*', 'kwargs', '*'))
+            shortener_keys.append(prefix + ('frames', '*', 'locals', '*'))
 
     shortener_keys.extend(SETTINGS['shortener_keys'])
 
