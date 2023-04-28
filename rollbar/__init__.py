@@ -17,7 +17,6 @@ import uuid
 import wsgiref.util
 import warnings
 
-import requests
 import six
 
 from rollbar.lib import events, filters, dict_merge, parse_qs, text, transport, urljoin, iteritems, defaultJSONEncode
@@ -33,6 +32,11 @@ try:
 except ImportError:
     # 3.x
     import queue
+
+try:
+    import requests
+except ImportError:
+    requests = None
 
 # import request objects from various frameworks, if available
 try:
@@ -552,6 +556,9 @@ def send_payload(payload, access_token):
 
     payload_str = _serialize_payload(payload)
     if handler == 'blocking':
+        if requests is None:
+            log.error('Unable to find requests module')
+            return
         _send_payload(payload_str, access_token)
     elif handler == 'agent':
         agent_log.error(payload_str)
@@ -580,11 +587,15 @@ def send_payload(payload, access_token):
             log.error('Unable to find async handler')
             return
         _send_payload_async(payload_str, access_token)
-    elif handler == 'thread':
-        _send_payload_thread(payload_str, access_token)
     elif handler == 'thread_pool':
+        if requests is None:
+            log.error('Unable to find requests module')
+            return
         _send_payload_thread_pool(payload_str, access_token)
     else:
+        if requests is None:
+            log.error('Unable to find requests module')
+            return
         # default to 'thread'
         _send_payload_thread(payload_str, access_token)
 
