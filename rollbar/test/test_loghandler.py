@@ -2,7 +2,6 @@
 Tests for the RollbarHandler logging handler
 """
 import copy
-import json
 import logging
 import sys
 
