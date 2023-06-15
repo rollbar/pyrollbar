@@ -52,6 +52,19 @@ class LogHandlerTest(BaseTest):
         self.assertEqual(payload['data']['body']['message']['record']['name'], __name__)
 
     @mock.patch('rollbar.send_payload')
+    def test_logger_related_fields_are_in_body_message(self, send_payload):
+        logger = self._create_logger()
+        logger.warning("Hello %d %s", 1, 'world')
+
+        payload = send_payload.call_args[0][0]
+
+        self.assertEqual(payload['data']['body']['message']['args'], (1, 'world'))
+        self.assertEqual(payload['data']['body']['message']['record']['name'], __name__)
+        self.assertEqual(payload['data']['body']['message']['record']['module'], 'test_loghandler')
+        self.assertEqual(payload['data']['body']['message']['record']['funcName'],
+                         'test_logger_related_fields_are_in_body_message')
+
+    @mock.patch('rollbar.send_payload')
     def test_string_or_int_level(self, send_payload):
         logger = self._create_logger()
         logger.setLevel(logging.ERROR)
