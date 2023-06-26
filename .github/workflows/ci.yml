@@ -106,7 +106,7 @@ jobs:
       - name: Install Python 3.6 dependencies
         if: ${{ contains(matrix.python-version, '3.6') }}
         # typing-extensions dropped support for Python 3.6 in version 4.2
-        run: pip install six==1.16.0 "typing-extensions<4.2" requests==2.27.0
+        run: pip install six==1.16.0 "typing-extensions<4.2" requests==2.27.0 blinker==1.5
 
       - name: Set the framework
         run: echo ${{ matrix.framework }} >> $GITHUB_ENV
