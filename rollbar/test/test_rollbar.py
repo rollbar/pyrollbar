@@ -892,6 +892,18 @@ class RollbarTest(BaseTest):
         self.assertEqual(payload['data']['body']['message']['body'], 'foo')
 
     @mock.patch('rollbar.send_payload')
+    def test_user_provided_extra_data_ends_up_in_custom(self, send_payload):
+        rollbar.report_message('foo', extra_data={'id': 123, 'name': 'John'})
+
+        payload = send_payload.call_args[0][0]
+
+        self.assertIn('custom', payload['data'])
+        self.assertIn('id', payload['data']['custom'])
+        self.assertIn('name', payload['data']['custom'])
+        self.assertEqual(payload['data']['custom']['id'], 123)
+        self.assertEqual(payload['data']['custom']['name'], 'John')
+
+    @mock.patch('rollbar.send_payload')
     def test_uuid(self, send_payload):
         uuid = rollbar.report_message('foo')
 

@@ -23,7 +23,7 @@ import six
 from rollbar.lib import events, filters, dict_merge, parse_qs, text, transport, urljoin, iteritems, defaultJSONEncode
 
 
-__version__ = '0.16.4beta1'
+__version__ = '0.16.4beta2'
 __log_name__ = 'rollbar'
 log = logging.getLogger(__log_name__)
 
@@ -839,6 +839,59 @@ def _trace_data(cls, exc, trace):
     return trace_data
 
 
+def _process_extra_data(data, extra_data):
+    """
+    If `extra_data` contains `args` or select keys in `record` then that's
+    something pyrollbar generated with the logger, which is to be put in
+    data.body.message. Otherwise, `extra_data` was passed through by a user,
+    which is to be put in custom.
+    """
+    custom = {}
+    body_message = {}
+
+    record_logger_keys = [
+        'created',
+        'funcName',
+        'lineno',
+        'module',
+        'name',
+        'pathname',
+        'process',
+        'processName',
+        'relativeCreated',
+        'thread',
+        'threadName',
+    ]
+
+    for k, v in extra_data.items():
+        if k == 'args':
+            body_message['args'] = v
+
+        elif k == 'record':
+            record_full = v
+            record_custom = {}
+            record_body_message = {}
+
+            if isinstance(record_full, dict):
+                for kk, vv in record_full.items():
+                    if kk in record_logger_keys:
+                        record_body_message[kk] = vv
+                    else:
+                        record_custom[kk] = vv
+
+            if record_custom:
+                custom['record'] = record_custom
+            if record_body_message:
+                body_message['record'] = record_body_message
+
+        else:
+            custom[k] = v
+
+    if custom:
+        data['custom'] = custom
+    data['body']['message'].update(body_message)
+
+
 def _report_message(message, level, request, extra_data, payload_data):
     """
     Called by report_message() wrapper
@@ -866,7 +919,7 @@ def _report_message(message, level, request, extra_data, payload_data):
 
     if extra_data:
         extra_data = extra_data
-        data['body']['message'].update(extra_data)
+        _process_extra_data(data, extra_data)
 
     request = _get_actual_request(request)
     _add_request_data(data, request)
