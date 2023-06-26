@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        python-version: [2.7, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, '3.10', 3.11]
+        python-version: [3.4, 3.5, 3.6, 3.7, 3.8, 3.9, '3.10', 3.11]
         framework:
           - FLASK_VERSION=0.12.5 Werkzeug\>=0.7,\<1.0
           - FLASK_VERSION=1.1.4
@@ -38,8 +38,6 @@ jobs:
           - framework: FLASK_VERSION=1.1.4
             python-version: 3.4
           - framework: FLASK_VERSION=2.2.3
-            python-version: 2.7
-          - framework: FLASK_VERSION=2.2.3
             python-version: 3.4
           - framework: FLASK_VERSION=2.2.3
             python-version: 3.5
@@ -56,17 +54,11 @@ jobs:
           - framework: DJANGO_VERSION=1.11.29
             python-version: 3.11
           - framework: DJANGO_VERSION=2.2.28
-            python-version: 2.7
-          - framework: DJANGO_VERSION=2.2.28
             python-version: 3.4
-          - framework: DJANGO_VERSION=3.2.18
-            python-version: 2.7
           - framework: DJANGO_VERSION=3.2.18
             python-version: 3.4
           - framework: DJANGO_VERSION=3.2.18
             python-version: 3.5
-          - framework: DJANGO_VERSION=4.0.10
-            python-version: 2.7
           - framework: DJANGO_VERSION=4.0.10
             python-version: 3.4
           - framework: DJANGO_VERSION=4.0.10
@@ -76,8 +68,6 @@ jobs:
           - framework: DJANGO_VERSION=4.0.10
             python-version: 3.7
           - framework: DJANGO_VERSION=4.1.7
-            python-version: 2.7
-          - framework: DJANGO_VERSION=4.1.7
             python-version: 3.4
           - framework: DJANGO_VERSION=4.1.7
             python-version: 3.5
@@ -85,7 +75,7 @@ jobs:
             python-version: 3.6
           - framework: DJANGO_VERSION=4.1.7
             python-version: 3.7
-          
+
           # Twisted
           - framework: TWISTED_VERSION=17.1.0 treq==16.12.0 zope.interface==4.5.0
             python-version: 3.4
@@ -104,19 +94,13 @@ jobs:
           - framework: TWISTED_VERSION=17.1.0 treq==16.12.0 zope.interface==4.5.0
             python-version: 3.11
           - framework: TWISTED_VERSION=20.3.0
-            python-version: 2.7
-          - framework: TWISTED_VERSION=20.3.0
             python-version: 3.4
           - framework: TWISTED_VERSION=20.3.0
             python-version: 3.11
           - framework: TWISTED_VERSION=21.7.0
-            python-version: 2.7
-          - framework: TWISTED_VERSION=21.7.0
             python-version: 3.4
           - framework: TWISTED_VERSION=21.7.0
             python-version: 3.5
-          - framework: TWISTED_VERSION=22.10.0
-            python-version: 2.7
           - framework: TWISTED_VERSION=22.10.0
             python-version: 3.4
           - framework: TWISTED_VERSION=22.10.0
@@ -124,37 +108,27 @@ jobs:
           - framework: TWISTED_VERSION=22.10.0
             python-version: 3.6
 
-          
+
           # Starlette
           - framework: STARLETTE_VERSION=0.12.13 httpx==0.18.1 python-multipart==0.0.5
-            python-version: 2.7
-          - framework: STARLETTE_VERSION=0.12.13 httpx==0.18.1 python-multipart==0.0.5
             python-version: 3.4
           - framework: STARLETTE_VERSION=0.12.13 httpx==0.18.1 python-multipart==0.0.5
             python-version: 3.5
           - framework: STARLETTE_VERSION=0.14.2 httpx==0.18.1 python-multipart==0.0.5
-            python-version: 2.7
-          - framework: STARLETTE_VERSION=0.14.2 httpx==0.18.1 python-multipart==0.0.5
             python-version: 3.4
           - framework: STARLETTE_VERSION=0.14.2 httpx==0.18.1 python-multipart==0.0.5
             python-version: 3.5
-          
+
           # Fastapi
           - framework: FASTAPI_VERSION=0.40.0 httpx==0.18.1 python-multipart==0.0.5
-            python-version: 2.7
-          - framework: FASTAPI_VERSION=0.40.0 httpx==0.18.1 python-multipart==0.0.5
             python-version: 3.4
           - framework: FASTAPI_VERSION=0.40.0 httpx==0.18.1 python-multipart==0.0.5
             python-version: 3.5
           - framework: FASTAPI_VERSION=0.50.0 httpx==0.18.1 python-multipart==0.0.5
-            python-version: 2.7
-          - framework: FASTAPI_VERSION=0.50.0 httpx==0.18.1 python-multipart==0.0.5
             python-version: 3.4
           - framework: FASTAPI_VERSION=0.50.0 httpx==0.18.1 python-multipart==0.0.5
             python-version: 3.5
-          
-          - framework: FASTAPI_VERSION=0.63.0 httpx==0.18.1 python-multipart==0.0.5
-            python-version: 2.7
+
           - framework: FASTAPI_VERSION=0.63.0 httpx==0.18.1 python-multipart==0.0.5
             python-version: 3.4
           - framework: FASTAPI_VERSION=0.63.0 httpx==0.18.1 python-multipart==0.0.5
@@ -169,16 +143,6 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-
-      #- name: Install setuptools for 2.7,3.4
-      #  run: pip install setuptools==39.2.0 --force-reinstall 
-
-      - name: Install Python 2 dependencies
-        if: ${{ contains(matrix.python-version, '2.7') }}
-        # certifi dropped support for Python 2 in 2020.4.5.2 but only started
-        # using Python 3 syntax in 2022.5.18. 2021.10.8 is the last release with
-        # Python 2 support.
-        run: pip install certifi==2021.10.8 requests==2.27.1 incremental==21.3.0
 
       - name: Install Python 3.4 dependencies
         if: ${{ contains(matrix.python-version, '3.4') }}
