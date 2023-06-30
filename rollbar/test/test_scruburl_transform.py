@@ -1,15 +1,12 @@
-import copy
-import six
+from urllib.parse import urlparse, parse_qs
 
-from rollbar.lib import map, transforms, string_types, urlparse, parse_qs, python_major_version
+from rollbar.lib import transforms, string_types
 from rollbar.lib.transforms.scruburl import ScrubUrlTransform, _starts_with_auth_re
 
-from rollbar.test import BaseTest, SNOWMAN, SNOWMAN_UNICODE
+from rollbar.test import BaseTest, SNOWMAN_UNICODE
 
-if python_major_version() >= 3:
-    SNOWMAN = SNOWMAN_UNICODE
 
-SNOWMAN_LEN = len(SNOWMAN)
+SNOWMAN_LEN = len(SNOWMAN_UNICODE)
 
 
 class ScrubUrlTransformTest(BaseTest):
@@ -43,17 +40,17 @@ class ScrubUrlTransformTest(BaseTest):
         if _starts_with_auth_re.match(url2):
             url2 = '//%s' % url2
 
-        parsed_urls = map(urlparse, (url1, url2))
-        qs_params = map(lambda x: parse_qs(x.query, keep_blank_values=True), parsed_urls)
-        num_params = map(len, qs_params)
-        param_names = map(lambda x: set(x.keys()), qs_params)
+        parsed_urls = [urlparse(url) for url in (url1, url2)]
+        qs_params = [parse_qs(x.query, keep_blank_values=True) for x in parsed_urls]
+        num_params = [len(x) for x in qs_params]
+        param_names = [set(x.keys()) for x in qs_params]
 
         self.assertEqual(*num_params)
         self.assertDictEqual(*qs_params)
         self.assertSetEqual(*param_names)
 
         for facet in ('scheme', 'netloc', 'path', 'params', 'username', 'password', 'hostname', 'port'):
-            comp = map(lambda x: getattr(x, facet), parsed_urls)
+            comp = [getattr(x, facet) for x in parsed_urls]
             self.assertEqual(*comp)
 
     def test_no_scrub(self):
@@ -72,14 +69,14 @@ class ScrubUrlTransformTest(BaseTest):
         self._assertScrubbed(['password'], obj, expected)
 
     def test_scrub_utf8_url_params(self):
-        obj = 'http://foo.com/asdf?password=%s' % SNOWMAN
-        expected = obj.replace(SNOWMAN, '-' * SNOWMAN_LEN)
+        obj = 'http://foo.com/asdf?password=%s' % SNOWMAN_UNICODE
+        expected = obj.replace(SNOWMAN_UNICODE, '-' * SNOWMAN_LEN)
         self._assertScrubbed(['password'], obj, expected)
 
     def test_scrub_utf8_url_keys(self):
-        obj = 'http://foo.com/asdf?%s=secret' % SNOWMAN
+        obj = 'http://foo.com/asdf?%s=secret' % SNOWMAN_UNICODE
         expected = obj.replace('secret', '------')
-        self._assertScrubbed([str(SNOWMAN)], obj, expected)
+        self._assertScrubbed([str(SNOWMAN_UNICODE)], obj, expected)
 
     def test_scrub_multi_url_params(self):
         obj = 'http://foo.com/asdf?password=secret&password=secret2&token=TOK&clear=text'
@@ -147,5 +144,5 @@ class ScrubUrlTransformTest(BaseTest):
         self.assertNotIn('secret', result['url'][0]['link'])
         self.assertNotIn('secr3t', result['link'][0]['url'])
         self.assertNotIn('secret', result['link'][0]['url'])
-        six.assertNotRegex(self, result['url'][0]['link'], r'^-+$')
-        six.assertNotRegex(self, result['link'][0]['url'], r'^-+$')
+        self.assertNotRegex(result['url'][0]['link'], r'^-+$')
+        self.assertNotRegex(result['link'][0]['url'], r'^-+$')

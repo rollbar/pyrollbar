@@ -1,11 +1,6 @@
 import copy
 
-try:
-    # Python 3
-    from collections.abc import Mapping
-except ImportError:
-    # Python 2.7
-    from collections import Mapping
+from collections.abc import Mapping
 
 from rollbar.lib import transforms
 from rollbar.lib.transforms.scrub import ScrubTransform

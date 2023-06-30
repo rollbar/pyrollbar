@@ -1,11 +1,6 @@
-try:
-    # Python 3
-    from collections.abc import Mapping
-except ImportError:
-    # Python 2.7
-    from collections import Mapping
+from collections.abc import Mapping
 
-from rollbar.lib import text, transforms
+from rollbar.lib import transforms
 from rollbar.lib.transforms.scrub_redact import ScrubRedactTransform, REDACT_REF
 
 from rollbar.test import BaseTest
@@ -19,7 +14,7 @@ NOT_REDACT_REF = NotRedactRef()
 try:
     SCRUBBED = '*' * len(REDACT_REF)
 except:
-    SCRUBBED = '*' * len(text(REDACT_REF))
+    SCRUBBED = '*' * len(str(REDACT_REF))
 
 
 class ScrubRedactTransformTest(BaseTest):

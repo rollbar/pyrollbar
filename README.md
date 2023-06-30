@@ -20,17 +20,29 @@ Python notifier for reporting exceptions, errors, and log messages to [Rollbar](
 - **Advanced search:** Filter items by many different properties. <a href="https://docs.rollbar.com/docs/search-items">Learn more about search</a>.
 - **Customizable notifications:** Rollbar supports several messaging and incident management tools where your team can get notified about errors and important events by real-time alerts. <a href="https://docs.rollbar.com/docs/notifications">Learn more about Rollbar notifications</a>.
 
+## Versions Supported
 
-# Setup Instructions
+| PyRollbar Version | Python Version Compatibility                  | Support Level       |
+|-------------------|-----------------------------------------------|---------------------|
+| 0.17.0            | 3.6, 3.7. 3.8, 3.9, 3.10, 3.11                | Full                |
+| 0.16.3            | 2.7, 3.4, 3.5, 3.6, 3.7. 3.8, 3.9, 3.10, 3.11 | Security Fixes Only |
+
+#### Support Level Definitions
+
+**Full** - We will support new features of the library and test against all supported versions.
+
+**Security Fixes Only** - We will only provide critical security fixes for the library.
+
+## Setup Instructions
 
 1. [Sign up for a Rollbar account](https://rollbar.com/signup)
 2. Follow the [Quick Start](https://docs.rollbar.com/docs/python#section-quick-start) instructions in our [Python SDK docs](https://docs.rollbar.com/docs/python) to install pyrollbar and configure it for your platform.
 
-# Usage and Reference
+## Usage and Reference
 
 For complete usage instructions and configuration reference, see our [Python SDK docs](https://docs.rollbar.com/docs/python).
 
-# Release History & Changelog
+## Release History & Changelog
 
 See our [Releases](https://github.com/rollbar/pyrollbar/releases) page for a list of all releases, including changes.
 

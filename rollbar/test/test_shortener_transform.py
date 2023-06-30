@@ -2,7 +2,6 @@ import sys
 from array import array
 from collections import deque
 
-import six
 from rollbar import DEFAULT_LOCALS_SIZES
 from rollbar.lib import transforms
 from rollbar.lib.transforms.shortener import ShortenerTransform
@@ -71,9 +70,7 @@ class ShortenerTransformTest(BaseTest):
         self._assert_shortened('string', expected)
 
     def test_shorten_long(self):
-        expected = '179556827339164684...002504519623752387L'
-        if six.PY3:
-            expected = '179556827339164684...5002504519623752387'
+        expected = '179556827339164684...5002504519623752387'
         self._assert_shortened('long', expected)
 
     def test_shorten_mapping(self):
@@ -114,9 +111,7 @@ class ShortenerTransformTest(BaseTest):
         self._assert_shortened('deque', expected)
 
     def test_shorten_other(self):
-        expected = '<rollbar.test.test_shortener_transform.TestCla...'
-        if six.PY3:
-            expected = '<rollbar.test.test_shortener_transform.TestClas...'
+        expected = '<rollbar.test.test_shortener_transform.TestClas...'
         self._assert_shortened('other', expected)
 
     def test_shorten_object(self):

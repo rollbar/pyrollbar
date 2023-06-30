@@ -1,6 +1,6 @@
 import random
 
-from rollbar.lib import build_key_matcher, text
+from rollbar.lib import build_key_matcher
 from rollbar.lib.transform import Transform
 
 
@@ -21,7 +21,7 @@ class ScrubTransform(Transform):
             try:
                 _len = len(val)
             except:
-                _len = len(text(val))
+                _len = len(str(val))
 
         return self.redact_char * _len
 

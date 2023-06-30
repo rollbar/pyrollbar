@@ -4,6 +4,7 @@ import inspect
 import logging
 import sys
 from unittest import mock
+from urllib.parse import urljoin
 
 try:
     import httpx
@@ -12,7 +13,7 @@ except ImportError:
 
 import rollbar
 from rollbar import DEFAULT_TIMEOUT
-from rollbar.lib import transport, urljoin
+from rollbar.lib import transport
 
 log = logging.getLogger(__name__)
 

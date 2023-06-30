@@ -16,23 +16,18 @@ import types
 import uuid
 import wsgiref.util
 import warnings
+import queue
+from urllib.parse import parse_qs, urljoin
 
 import requests
-import six
 
-from rollbar.lib import events, filters, dict_merge, parse_qs, text, transport, urljoin, iteritems, defaultJSONEncode
+from rollbar.lib import events, filters, dict_merge, transport, defaultJSONEncode
 
 
 __version__ = '0.16.4beta2'
 __log_name__ = 'rollbar'
 log = logging.getLogger(__log_name__)
 
-try:
-    # 2.x
-    import Queue as queue
-except ImportError:
-    # 3.x
-    import queue
 
 # import request objects from various frameworks, if available
 try:
@@ -691,7 +686,7 @@ class PagedResult(Result):
 
 def _resolve_exception_class(idx, filter):
     cls, level = filter
-    if isinstance(cls, six.string_types):
+    if isinstance(cls, str):
         # Lazily resolve class name
         parts = cls.split('.')
         module = '.'.join(parts[:-1])
@@ -830,7 +825,7 @@ def _trace_data(cls, exc, trace):
         'frames': frames,
         'exception': {
             'class': getattr(cls, '__name__', cls.__class__.__name__),
-            'message': text(exc),
+            'message': str(exc),
         }
     }
 
@@ -960,7 +955,7 @@ def _build_base_data(request, level='error'):
         'level': level,
         'language': 'python %s' % '.'.join(str(x) for x in sys.version_info[:3]),
         'notifier': SETTINGS['notifier'],
-        'uuid': text(uuid.uuid4()),
+        'uuid': str(uuid.uuid4()),
     }
 
     if SETTINGS.get('code_version'):
@@ -1015,9 +1010,9 @@ def _build_person_data(request):
         else:
             retval = {}
             if getattr(user, 'id', None):
-                retval['id'] = text(user.id)
+                retval['id'] = str(user.id)
             elif getattr(user, 'user_id', None):
-                retval['id'] = text(user.user_id)
+                retval['id'] = str(user.user_id)
 
             # id is required, so only include username/email if we have an id
             if retval.get('id'):
@@ -1034,7 +1029,7 @@ def _build_person_data(request):
         user_id = user_id_prop() if callable(user_id_prop) else user_id_prop
         if not user_id:
             return None
-        return {'id': text(user_id)}
+        return {'id': str(user_id)}
 
 
 def _get_func_from_frame(frame):
@@ -1047,16 +1042,6 @@ def _get_func_from_frame(frame):
         func = None
 
     return func
-
-
-def _flatten_nested_lists(l):
-    ret = []
-    for x in l:
-        if isinstance(x, list):
-            ret.extend(_flatten_nested_lists(x))
-        else:
-            ret.append(x)
-    return ret
 
 
 def _add_locals_data(trace_data, exc_info):
@@ -1093,15 +1078,7 @@ def _add_locals_data(trace_data, exc_info):
             # Optionally fill in locals for this frame
             if arginfo.locals and _check_add_locals(cur_frame, frame_num, num_frames):
                 # Get all of the named args
-                #
-                # args can be a nested list of args in the case where there
-                # are anonymous tuple args provided.
-                # e.g. in Python 2 you can:
-                #   def func((x, (a, b), z)):
-                #       return x + a + b + z
-                #
-                #   func((1, (1, 2), 3))
-                argspec = _flatten_nested_lists(arginfo.args)
+                argspec = arginfo.args
 
                 if arginfo.varargs is not None:
                     varargspec = arginfo.varargs
@@ -1131,7 +1108,7 @@ def _add_locals_data(trace_data, exc_info):
             cur_frame['keywordspec'] = keywordspec
         if _locals:
             try:
-                cur_frame['locals'] = dict((k, _serialize_frame_data(v)) for k, v in iteritems(_locals))
+                cur_frame['locals'] = {k: _serialize_frame_data(v) for k, v in _locals.items()}
             except Exception:
                 log.exception('Error while serializing frame data.')
 
@@ -1419,7 +1396,7 @@ def _build_wsgi_request_data(request):
     if 'QUERY_STRING' in request:
         request_data['GET'] = parse_qs(request['QUERY_STRING'], keep_blank_values=True)
         # Collapse single item arrays
-        request_data['GET'] = dict((k, v[0] if len(v) == 1 else v) for k, v in request_data['GET'].items())
+        request_data['GET'] = {k: (v[0] if len(v) == 1 else v) for k, v in request_data['GET'].items()}
 
     request_data['headers'] = _extract_wsgi_headers(request.items())
 
@@ -1548,7 +1525,7 @@ def _build_payload(data):
     Returns the full payload as a string.
     """
 
-    for k, v in iteritems(data):
+    for k, v in data.items():
         data[k] = _transform(v, key=(k,))
 
     payload = {

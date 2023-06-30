@@ -4,24 +4,14 @@ import copy
 import enum
 import sys
 
-try:
-    # Python 3
-    from collections.abc import Mapping
-except ImportError:
-    # Python 2.7
-    from collections import Mapping
+from collections.abc import Mapping
 
-import six
-
-from rollbar.lib import transforms, python_major_version
+from rollbar.lib import transforms
 from rollbar.lib.transforms.serializable import SerializableTransform
 
-from rollbar.test import BaseTest, SNOWMAN, SNOWMAN_UNICODE
+from rollbar.test import BaseTest, SNOWMAN_UNICODE
 
-if python_major_version() >= 3:
-    SNOWMAN = SNOWMAN_UNICODE
-
-SNOWMAN_LEN = len(SNOWMAN)
+SNOWMAN_LEN = len(SNOWMAN_UNICODE)
 
 
 # This base64 encoded string contains bytes that do not
@@ -29,8 +19,7 @@ SNOWMAN_LEN = len(SNOWMAN)
 invalid_b64 = b'CuX2JKuXuLVtJ6l1s7DeeQ=='
 
 invalid = base64.b64decode(invalid_b64)
-binary_type_name = 'str' if python_major_version() < 3 else 'bytes'
-undecodable_repr = '<Undecodable type:(%s) base64:(%s)>' % (binary_type_name, invalid_b64.decode('ascii'))
+undecodable_repr = f'<Undecodable type:({"bytes"}) base64:({invalid_b64.decode("ascii")})>'
 
 
 class SerializableTransformTest(BaseTest):
@@ -171,10 +160,7 @@ class SerializableTransformTest(BaseTest):
         nt = MyType(field_1='this is field 1', field_2=invalid)
 
         start = nt
-        if python_major_version() < 3:
-            expected = "<MyType(field_1='this is field 1', field_2=u'%s')>" % undecodable_repr
-        else:
-            expected = "<MyType(field_1='this is field 1', field_2='%s')>" % undecodable_repr
+        expected = "<MyType(field_1='this is field 1', field_2='%s')>" % undecodable_repr
 
         self._assertSerialized(start, expected)
 
@@ -243,10 +229,7 @@ class SerializableTransformTest(BaseTest):
         serializable = SerializableTransform(safelist_types=[CustomRepr])
         result = transforms.transform(start, serializable)
 
-        if python_major_version() < 3:
-            self.assertEqual(result['custom'], b'hello')
-        else:
-            six.assertRegex(self, result['custom'], "<class '.*CustomRepr'>")
+        self.assertRegex(result['custom'], "<class '.*CustomRepr'>")
 
     def test_encode_with_custom_repr_returns_object(self):
         class CustomRepr(object):
@@ -257,16 +240,16 @@ class SerializableTransformTest(BaseTest):
 
         serializable = SerializableTransform(safelist_types=[CustomRepr])
         result = transforms.transform(start, serializable)
-        six.assertRegex(self, result['custom'], "<class '.*CustomRepr'>")
+        self.assertRegex(result['custom'], "<class '.*CustomRepr'>")
 
     def test_encode_with_custom_repr_returns_unicode(self):
         class CustomRepr(object):
             def __repr__(self):
-                return SNOWMAN
+                return SNOWMAN_UNICODE
 
         start = {'hello': 'world', 'custom': CustomRepr()}
         expected = copy.deepcopy(start)
-        expected['custom'] = SNOWMAN
+        expected['custom'] = SNOWMAN_UNICODE
         self._assertSerialized(start, expected, safelist=[CustomRepr])
 
     def test_encode_with_bad_repr_doesnt_die(self):
@@ -277,7 +260,7 @@ class SerializableTransformTest(BaseTest):
         start = {'hello': 'world', 'custom': CustomRepr()}
         serializable = SerializableTransform(safelist_types=[CustomRepr])
         result = transforms.transform(start, serializable)
-        six.assertRegex(self, result['custom'], "<AssertionError.*CustomRepr.*>")
+        self.assertRegex(result['custom'], "<AssertionError.*CustomRepr.*>")
 
     def test_encode_with_bad_str_doesnt_die(self):
 
@@ -293,4 +276,4 @@ class SerializableTransformTest(BaseTest):
         start = {'hello': 'world', 'custom': CustomRepr()}
         serializable = SerializableTransform(safelist_types=[CustomRepr])
         result = transforms.transform(start, serializable)
-        six.assertRegex(self, result['custom'], "<UnStringableException.*Exception.*str.*>")
+        self.assertRegex(result['custom'], "<UnStringableException.*Exception.*str.*>")
