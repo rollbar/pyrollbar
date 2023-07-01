@@ -21,6 +21,39 @@ class FastAPIVersionError(Exception):
         return super().__init__(err_msg)
 
 
+def is_current_version_higher_or_equal(current_version, min_version):
+    if current_version == min_version:
+        return True
+
+    for current_as_string, min_as_string in zip(
+        current_version.split('.'),
+        min_version.split('.'),
+    ):
+        if current_as_string == min_as_string:
+            continue
+
+        try:
+            current_as_int = int(current_as_string)
+        except ValueError:
+            current_as_int = None
+
+        try:
+            min_as_int = int(min_as_string)
+        except ValueError:
+            min_as_int = None
+
+        if current_as_int is None or min_as_int is None:
+            # If one of the parts fails the int conversion, compare as string
+            return current_as_string > min_as_string
+        else:
+            if current_as_int == min_as_int:
+                continue
+            return current_as_int > min_as_int
+
+    # Somehow the comparison didn't properly finish - defaulting to False
+    return False
+
+
 class fastapi_min_version:
     def __init__(self, min_version):
         self.min_version = min_version
@@ -28,7 +61,10 @@ class fastapi_min_version:
     def __call__(self, func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            if fastapi.__version__ < self.min_version:
+            if not is_current_version_higher_or_equal(
+                fastapi.__version__,
+                self.min_version,
+            ):
                 raise FastAPIVersionError(
                     self.min_version, reason=f'to use {func.__name__}() function'
                 )
