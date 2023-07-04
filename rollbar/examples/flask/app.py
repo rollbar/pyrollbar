@@ -9,8 +9,7 @@ import rollbar.contrib.flask
 app = Flask(__name__)
 
 
-@app.before_first_request
-def init_rollbar():
+with app.app_context():
     rollbar.init('ACCESS_TOKEN', environment='development')
     # send exceptions from `app` to rollbar, using flask's signal system.
     got_request_exception.connect(rollbar.contrib.flask.report_exception, app)
