@@ -3,10 +3,8 @@ from collections.abc import Iterable
 from rollbar.lib import (
     binary_type,
     string_types,
-    integer_types,
     number_types,
     traverse,
-    type_info,
 )
 # NOTE: Don't remove this import, it would cause a breaking change to the library's API.
 # The `Transform` class was moved out of this file to prevent a cyclical dependency issue.

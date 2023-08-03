@@ -1,4 +1,4 @@
-from rollbar.lib import dict_merge
+from rollbar.lib import dict_merge, prefix_match
 
 from rollbar.test import BaseTest
 
@@ -10,6 +10,14 @@ class RollbarLibTest(BaseTest):
         result = dict_merge(a, b)
 
         self.assertEqual(99, result)
+
+    def test_prefix_match(self):
+        key = ['password', 'argspec', '0']
+        self.assertTrue(prefix_match(key, [['password']]))
+
+    def test_prefix_match(self):
+        key = ['environ', 'argspec', '0']
+        self.assertFalse(prefix_match(key, [['password']]))
 
     def test_dict_merge_dicts_independent(self):
         a = {'a': {'b': 42}}

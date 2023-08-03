@@ -1,8 +1,6 @@
 import base64
 import collections
 import copy
-import os
-import sys
 from array import array
 
 from collections.abc import Mapping
@@ -26,8 +24,10 @@ def prefix_match(key, prefixes):
         return False
 
     for prefix in prefixes:
-        common_prefix = os.path.commonprefix((prefix, key))
-        if common_prefix == prefix:
+        if len(prefix) > len(key):
+            continue
+
+        if prefix == key[:len(prefix)]:
             return True
 
     return False
@@ -45,18 +45,17 @@ def key_in(key, keys):
 
 
 def key_match(key1, key2):
-    key1_len = len(key1)
-    key2_len = len(key2)
-    if key1_len != key2_len:
+    if len(key1) != len(key2):
         return False
 
-    z_key = zip(key1, key2)
-    num_matches = 0
-    for p1, p2 in z_key:
-        if '*' in (p1, p2) or p1 == p2:
-            num_matches += 1
+    for p1, p2 in zip(key1, key2):
+        if '*' == p1 or '*' == p2:
+            continue
+        if p1 == p2:
+            continue
+        return False
 
-    return num_matches == key1_len
+    return True
 
 
 def reverse_list_of_lists(l, apply_each_fn=None):
