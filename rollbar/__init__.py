@@ -81,7 +81,7 @@ except ImportError:
 
 try:
     from google.appengine.api.urlfetch import fetch as AppEngineFetch
-except ImportError:
+except (ImportError, KeyError):
     AppEngineFetch = None
 
 try:
