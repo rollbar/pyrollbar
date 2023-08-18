@@ -14,7 +14,6 @@ jobs:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9, '3.10', 3.11]
         framework:
-          - FLASK_VERSION=0.12.5 Werkzeug\>=0.7,\<1.0
           - FLASK_VERSION=1.1.4
           - FLASK_VERSION=2.2.3
           - DJANGO_VERSION=1.11.29
@@ -76,7 +75,12 @@ jobs:
       - name: Install Python 3.6 dependencies
         if: ${{ contains(matrix.python-version, '3.6') }}
         # typing-extensions dropped support for Python 3.6 in version 4.2
-        run: pip install "typing-extensions<4.2" requests==2.27.0 blinker==1.5
+        run: pip install "typing-extensions<4.2" requests==2.27.0 blinker==1.5 immutables==0.19
+
+      - name: Install Python 3.7 dependencies
+        if: ${{ contains(matrix.python-version, '3.7') }}
+        # immutables dropped support for Python<3.8 in version 0.20
+        run: pip install immutables==0.19
 
       - name: Set the framework
         run: echo ${{ matrix.framework }} >> $GITHUB_ENV
