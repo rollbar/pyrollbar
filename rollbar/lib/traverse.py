@@ -1,7 +1,7 @@
 import logging
 
 
-from rollbar.lib import binary_type, iteritems, string_types, circular_reference_label
+from rollbar.lib import binary_type, string_types, circular_reference_label
 
 # NOTE: Don't remove this line of code as it would cause a breaking change
 # to the library's API. The items imported here were originally in this file
@@ -118,29 +118,27 @@ def traverse(
             return namedtuple_handler(
                 obj._make(
                     traverse(v, key=key + (k,), **kw)
-                    for k, v in iteritems(obj._asdict())
+                    for k, v in obj._asdict().items()
                 ),
                 key=key,
             )
         elif obj_type is LIST:
             return list_handler(
-                list(
-                    traverse(elem, key=key + (i,), **kw) for i, elem in enumerate(obj)
-                ),
+                [traverse(elem, key=key + (i,), **kw) for i, elem in enumerate(obj)],
                 key=key,
             )
         elif obj_type is SET:
             return set_handler(
-                set(traverse(elem, key=key + (i,), **kw) for i, elem in enumerate(obj)),
+                {traverse(elem, key=key + (i,), **kw) for i, elem in enumerate(obj)},
                 key=key,
             )
         elif obj_type is MAPPING:
             return mapping_handler(
-                dict((k, traverse(v, key=key + (k,), **kw)) for k, v in iteritems(obj)),
+                {k: traverse(v, key=key + (k,), **kw) for k, v in obj.items()},
                 key=key,
             )
         elif obj_type is DEFAULT:
-            for handler_type, handler in iteritems(custom_handlers):
+            for handler_type, handler in custom_handlers.items():
                 if isinstance(obj, handler_type):
                     return handler(obj, key=key)
     except:

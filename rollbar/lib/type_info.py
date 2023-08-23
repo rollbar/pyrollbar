@@ -1,16 +1,7 @@
 from rollbar.lib import binary_type, string_types
 
 
-try:
-    # Python 3
-    from collections.abc import Mapping
-    from collections.abc import Sequence
-    from collections.abc import Set
-except ImportError:
-    # Python 2.7
-    from collections import Mapping
-    from collections import Sequence
-    from collections import Set
+from collections.abc import Mapping, Sequence, Set
 
 
 CIRCULAR = -1

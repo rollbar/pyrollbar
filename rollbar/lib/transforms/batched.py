@@ -1,6 +1,5 @@
 from rollbar.lib.transform import Transform
 from rollbar.lib import (
-    python_major_version,
     number_types,
     type_info,
 )
@@ -13,21 +12,11 @@ def do_transform(transform, type_name, val, key=None, **kw):
     return val
 
 
-if python_major_version() < 3:
-
-    def string_handler(transform, s, key=None):
-        if isinstance(s, str):
-            return do_transform(transform, "py2_str", s, key=key)
-        elif isinstance(s, unicode):
-            return do_transform(transform, "unicode", s, key=key)
-
-else:
-
-    def string_handler(transform, s, key=None):
-        if isinstance(s, bytes):
-            return do_transform(transform, "py3_bytes", s, key=key)
-        elif isinstance(s, str):
-            return do_transform(transform, "unicode", s, key=key)
+def string_handler(transform, s, key=None):
+    if isinstance(s, bytes):
+        return do_transform(transform, "bytes", s, key=key)
+    elif isinstance(s, str):
+        return do_transform(transform, "unicode", s, key=key)
 
 
 def default_handler(transform, o, key=None):

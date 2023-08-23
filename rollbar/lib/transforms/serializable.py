@@ -4,7 +4,6 @@ from rollbar.lib import binary_type, string_types
 from rollbar.lib import (
     circular_reference_label, float_infinity_label, float_nan_label,
     undecodable_object_label, unencodable_object_label)
-from rollbar.lib import iteritems, python_major_version, text
 
 from rollbar.lib.transform import Transform
 
@@ -25,7 +24,7 @@ class SerializableTransform(Transform):
         for field in tuple_dict:
             new_vals.append(transformed_dict[field])
 
-        return '<%s>' % text(o._make(new_vals))
+        return '<%s>' % str(o._make(new_vals))
 
     def transform_number(self, o, key=None):
         if math.isnan(o):
@@ -35,15 +34,7 @@ class SerializableTransform(Transform):
         else:
             return o
 
-    def transform_py2_str(self, o, key=None):
-        try:
-            o.decode('utf8')
-        except UnicodeDecodeError:
-            return undecodable_object_label(o)
-        else:
-            return o
-
-    def transform_py3_bytes(self, o, key=None):
+    def transform_bytes(self, o, key=None):
         try:
             o.decode('utf8')
         except UnicodeDecodeError:
@@ -61,20 +52,14 @@ class SerializableTransform(Transform):
 
     def transform_dict(self, o, key=None):
         ret = {}
-        for k, v in iteritems(o):
+        for k, v in o.items():
             if isinstance(k, string_types) or isinstance(k, binary_type):
-                if python_major_version() < 3:
-                    if isinstance(k, unicode):
-                        new_k = self.transform_unicode(k)
-                    else:
-                        new_k = self.transform_py2_str(k)
+                if isinstance(k, bytes):
+                    new_k = self.transform_bytes(k)
                 else:
-                    if isinstance(k, bytes):
-                        new_k = self.transform_py3_bytes(k)
-                    else:
-                        new_k = self.transform_unicode(k)
+                    new_k = self.transform_unicode(k)
             else:
-                new_k = text(k)
+                new_k = str(k)
 
             ret[new_k] = v
 

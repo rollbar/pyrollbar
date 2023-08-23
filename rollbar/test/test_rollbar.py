@@ -11,16 +11,13 @@ try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+
+from unittest import mock
 
 import unittest
-import six
 
 import rollbar
-from rollbar.lib import python_major_version, string_types
+from rollbar.lib import string_types
 
 from rollbar.test import BaseTest
 
@@ -464,18 +461,8 @@ class RollbarTest(BaseTest):
         app = FastAPI()
         app.add_middleware(ReporterMiddleware)
 
-        # Inject annotations and decorate endpoint dynamically
-        # to avoid SyntaxError for older Python
-        #
-        # This is the code we'd use if we had not loaded the test file on Python 2.
-        #
-        # @app.get('/{param}')
-        # def root(param, fastapi_request: Request):
-        #     current_request = rollbar.get_request()
-        #
-        #     self.assertEqual(current_request, fastapi_request)
-
-        def root(param, fastapi_request):
+        @app.get('/{param}')
+        def root(param, fastapi_request: Request):
             current_request = rollbar.get_request()
 
             self.assertEqual(current_request, fastapi_request)
@@ -501,18 +488,8 @@ class RollbarTest(BaseTest):
         app = FastAPI()
         app.add_middleware(ReporterMiddleware)
 
-        # Inject annotations and decorate endpoint dynamically
-        # to avoid SyntaxError for older Python
-        #
-        # This is the code we'd use if we had not loaded the test file on Python 2.
-        #
-        # @app.get('/{param}')
-        # def root(fastapi_request: Request):
-        #     current_request = rollbar.get_request()
-        #
-        #     self.assertEqual(current_request, fastapi_request)
-
-        def root(param, fastapi_request):
+        @app.get('/{param}')
+        def root(fastapi_request: Request):
             current_request = rollbar.get_request()
 
             self.assertEqual(current_request, fastapi_request)
@@ -542,18 +519,8 @@ class RollbarTest(BaseTest):
         app = FastAPI()
         rollbar_add_to(app)
 
-        # Inject annotations and decorate endpoint dynamically
-        # to avoid SyntaxError for older Python
-        #
-        # This is the code we'd use if we had not loaded the test file on Python 2.
-        #
-        # @app.get('/{param}')
-        # def root(fastapi_request: Request):
-        #     current_request = rollbar.get_request()
-        #
-        #     self.assertEqual(current_request, fastapi_request)
-
-        def root(param, fastapi_request):
+        @app.get('/{param}')
+        def root(fastapi_request: Request):
             current_request = rollbar.get_request()
 
             self.assertEqual(current_request, fastapi_request)
@@ -1190,7 +1157,7 @@ class RollbarTest(BaseTest):
         varargs = payload['data']['body']['trace']['frames'][-1]['varargspec']
 
         self.assertEqual(1, len(payload['data']['body']['trace']['frames'][-1]['locals'][varargs]))
-        six.assertRegex(self, payload['data']['body']['trace']['frames'][-1]['locals'][varargs][0], r'\*+')
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals'][varargs][0], r'\*+')
 
     @mock.patch('rollbar.send_payload')
     def test_args_lambda_with_star_args_and_args(self, send_payload):
@@ -1217,8 +1184,8 @@ class RollbarTest(BaseTest):
         self.assertEqual('arg1-value', payload['data']['body']['trace']['frames'][-1]['locals']['arg1'])
 
         self.assertEqual(2, len(payload['data']['body']['trace']['frames'][-1]['locals'][varargs]))
-        six.assertRegex(self, payload['data']['body']['trace']['frames'][-1]['locals'][varargs][0], r'\*+')
-        six.assertRegex(self, payload['data']['body']['trace']['frames'][-1]['locals'][varargs][1], r'\*+')
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals'][varargs][0], r'\*+')
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals'][varargs][1], r'\*+')
 
     @mock.patch('rollbar.send_payload')
     def test_args_lambda_with_kwargs(self, send_payload):
@@ -1383,8 +1350,8 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(2, len(payload['data']['body']['trace']['frames'][-1]['argspec']))
         self.assertEqual('password', payload['data']['body']['trace']['frames'][-1]['argspec'][0])
-        six.assertRegex(self, payload['data']['body']['trace']['frames'][-1]['locals']['password'], r'\*+')
-        six.assertRegex(self, payload['data']['body']['trace']['frames'][-1]['locals']['headers']['Authorization'], r'\*+')
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['password'], r'\*+')
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['headers']['Authorization'], r'\*+')
         self.assertEqual('clear', payload['data']['body']['trace']['frames'][-1]['argspec'][1])
         self.assertEqual('text', payload['data']['body']['trace']['frames'][-1]['locals']['clear'])
 
@@ -1438,7 +1405,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(2, len(payload['data']['body']['trace']['frames'][-1]['locals'][keywords]))
         self.assertIn('password', payload['data']['body']['trace']['frames'][-1]['locals'][keywords])
-        six.assertRegex(self, payload['data']['body']['trace']['frames'][-1]['locals'][keywords]['password'], r'\*+')
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals'][keywords]['password'], r'\*+')
         self.assertIn('clear', payload['data']['body']['trace']['frames'][-1]['locals'][keywords])
         self.assertEqual('text', payload['data']['body']['trace']['frames'][-1]['locals'][keywords]['clear'])
 
@@ -1469,12 +1436,11 @@ class RollbarTest(BaseTest):
 
         payload = send_payload.call_args[0][0]
 
-        six.assertRegex(self, payload['data']['body']['trace']['frames'][-1]['locals']['password'], r'\*+')
-        six.assertRegex(self, payload['data']['body']['trace']['frames'][-1]['locals']['Password'], r'\*+')
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['password'], r'\*+')
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['Password'], r'\*+')
         self.assertIn('_invalid', payload['data']['body']['trace']['frames'][-1]['locals'])
 
-        binary_type_name = 'str' if python_major_version() < 3 else 'bytes'
-        undecodable_message = '<Undecodable type:(%s) base64:(%s)>' % (binary_type_name, base64.b64encode(invalid).decode('ascii'))
+        undecodable_message = '<Undecodable type:(%s) base64:(%s)>' % ('bytes', base64.b64encode(invalid).decode('ascii'))
         self.assertEqual(undecodable_message, payload['data']['body']['trace']['frames'][-1]['locals']['_invalid'])
 
     @mock.patch('rollbar.send_payload')
@@ -1787,19 +1753,19 @@ class RollbarTest(BaseTest):
         self.assertEqual('I am from NSA', unscrubbed['headers']['Authorization'])
 
         scrubbed = rollbar._transform(unscrubbed)
-        six.assertRegex(self, scrubbed['url'], r'http://example.com/the/path\?(q=hello&password=-+)|(password=-+&q=hello)')
+        self.assertRegex(scrubbed['url'], r'http://example.com/the/path\?(q=hello&password=-+)|(password=-+&q=hello)')
 
         self.assertEqual(scrubbed['GET']['q'], 'hello')
-        six.assertRegex(self, scrubbed['GET']['password'], r'\*+')
+        self.assertRegex(scrubbed['GET']['password'], r'\*+')
 
         self.assertEqual(scrubbed['POST']['foo'], 'bar')
-        six.assertRegex(self, scrubbed['POST']['confirm_password'], r'\*+')
-        six.assertRegex(self, scrubbed['POST']['token'], r'\*+')
+        self.assertRegex(scrubbed['POST']['confirm_password'], r'\*+')
+        self.assertRegex(scrubbed['POST']['token'], r'\*+')
 
         self.assertEqual('5.6.7.8', scrubbed['headers']['X-Real-Ip'])
 
-        six.assertRegex(self, scrubbed['headers']['Cookies'], r'\*+')
-        six.assertRegex(self, scrubbed['headers']['Authorization'], r'\*+')
+        self.assertRegex(scrubbed['headers']['Cookies'], r'\*+')
+        self.assertRegex(scrubbed['headers']['Authorization'], r'\*+')
 
     def test_filter_ip_no_user_ip(self):
         request_data = {'something': 'but no ip'}

@@ -138,7 +138,7 @@ def includeme(config):
     environment = kw.pop('environment', 'production')
 
     if kw.get('scrub_fields'):
-        kw['scrub_fields'] = set([str.strip(x) for x in kw.get('scrub_fields').split('\n') if x])
+        kw['scrub_fields'] = {str.strip(x) for x in kw.get('scrub_fields').split('\n') if x}
 
     if kw.get('exception_level_filters'):
         r = DottedNameResolver()

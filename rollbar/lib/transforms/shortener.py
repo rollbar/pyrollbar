@@ -1,17 +1,13 @@
 from array import array
 import collections
 import itertools
+import reprlib
 
-try:
-    # Python 3
-    from collections.abc import Mapping
-except ImportError:
-    # Python 2.7
-    from collections import Mapping
+from collections.abc import Mapping
 
 from rollbar.lib import (
-    integer_types, iteritems, key_in, number_types, reprlib, sequence_types,
-    string_types, text)
+    integer_types, key_in, number_types, sequence_types,
+    string_types)
 from rollbar.lib.transform import Transform
 
 
@@ -36,11 +32,11 @@ class ShortenerTransform(Transform):
         self.keys = keys
         self._repr = reprlib.Repr()
 
-        for name, size in iteritems(sizes):
+        for name, size in sizes.items():
             setattr(self._repr, name, size)
 
     def _get_max_size(self, obj):
-        for name, _type in iteritems(_type_name_mapping):
+        for name, _type in _type_name_mapping.items():
             # Special case for dicts since we are using collections.abc.Mapping
             # to provide better type checking for dict-like objects
             if name == 'mapping':
@@ -66,7 +62,7 @@ class ShortenerTransform(Transform):
         return {k: obj[k] for k in itertools.islice(obj.keys(), max_keys)}
 
     def _shorten_basic(self, obj, max_len):
-        val = text(obj)
+        val = str(obj)
         if len(val) <= max_len:
             return obj
 
@@ -77,7 +73,7 @@ class ShortenerTransform(Transform):
             return None
 
         if self.safe_repr:
-            obj = text(obj)
+            obj = str(obj)
 
         return self._repr.repr(obj)
 

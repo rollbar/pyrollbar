@@ -23,10 +23,7 @@ class Transform(object):
     def transform_number(self, o, key=None):
         return self.default(o, key=key)
 
-    def transform_py2_str(self, o, key=None):
-        return self.default(o, key=key)
-
-    def transform_py3_bytes(self, o, key=None):
+    def transform_bytes(self, o, key=None):
         return self.default(o, key=key)
 
     def transform_unicode(self, o, key=None):

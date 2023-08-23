@@ -1,89 +1,22 @@
 import base64
 import collections
 import copy
-import os
-import sys
 from array import array
-import json
 
-try:
-    # Python 3
-    from collections.abc import Mapping
-except ImportError:
-    # Python 2.7
-    from collections import Mapping
+from collections.abc import Mapping
 
-import six
-from six.moves import urllib
-
-iteritems = six.iteritems
-reprlib = six.moves.reprlib
-
-binary_type = six.binary_type
-integer_types = six.integer_types
-number_types = integer_types + (float, )
-string_types = six.string_types
+binary_type = bytes
+integer_types = int
+number_types = (float, int)
+string_types = str
 sequence_types = (Mapping, list, tuple, set, frozenset, array, collections.deque)
 
-urlparse = urllib.parse.urlparse
-urlsplit = urllib.parse.urlsplit
-urlunparse = urllib.parse.urlunparse
-urlunsplit = urllib.parse.urlunsplit
-parse_qs = urllib.parse.parse_qs
-urlencode = urllib.parse.urlencode
-urljoin = urllib.parse.urljoin
-quote = urllib.parse.quote
 
-
-_version = sys.version_info
-
-
-def python_major_version():
-    return _version[0]
-
-
-if python_major_version() < 3:
-    def text(val):
-        if isinstance(val, (str, unicode)):
-            return val
-
-        conversion_options = [unicode, lambda x: unicode(x, encoding='utf8')]
-        for option in conversion_options:
-            try:
-                return option(val)
-            except UnicodeDecodeError:
-                pass
-
-        return repr(val)
-
-    _map = map
-
-    def map(*args):
-        return _map(*args)
-
-    def force_lower(val):
+def force_lower(val):
+    try:
+        return val.lower()
+    except:
         return str(val).lower()
-
-else:
-    def text(val):
-        return str(val)
-
-    _map = map
-
-    def map(*args):
-        return list(_map(*args))
-
-    def force_lower(val):
-        try:
-            return val.lower()
-        except:
-            return str(val).lower()
-
-
-def do_for_python_version(two_fn, three_fn, *args, **kw):
-    if python_major_version() < 3:
-        return two_fn(*args, **kw)
-    return three_fn(*args, **kw)
 
 
 def prefix_match(key, prefixes):
@@ -91,8 +24,10 @@ def prefix_match(key, prefixes):
         return False
 
     for prefix in prefixes:
-        common_prefix = os.path.commonprefix((prefix, key))
-        if common_prefix == prefix:
+        if len(prefix) > len(key):
+            continue
+
+        if prefix == key[:len(prefix)]:
             return True
 
     return False
@@ -110,23 +45,22 @@ def key_in(key, keys):
 
 
 def key_match(key1, key2):
-    key1_len = len(key1)
-    key2_len = len(key2)
-    if key1_len != key2_len:
+    if len(key1) != len(key2):
         return False
 
-    z_key = zip(key1, key2)
-    num_matches = 0
-    for p1, p2 in z_key:
-        if '*' in (p1, p2) or p1 == p2:
-            num_matches += 1
+    for p1, p2 in zip(key1, key2):
+        if '*' == p1 or '*' == p2:
+            continue
+        if p1 == p2:
+            continue
+        return False
 
-    return num_matches == key1_len
+    return True
 
 
 def reverse_list_of_lists(l, apply_each_fn=None):
     apply_each_fn = apply_each_fn or (lambda x: x)
-    return map(lambda x: list(reversed(map(apply_each_fn, x))), l or [])
+    return [reversed([apply_each_fn(x) for x in inner]) for inner in l or []]
 
 
 def build_key_matcher(prefixes_or_suffixes, type='prefix', case_sensitive=False):
@@ -183,9 +117,9 @@ def dict_merge(a, b, silence_errors=False):
         else:
             try:
                 result[k] = copy.deepcopy(v)
-            except:
+            except Exception as e:
                 if not silence_errors:
-                    raise six.reraise(*sys.exc_info())
+                    raise e
 
                 result[k] = '<Uncopyable obj:(%s)>' % (v,)
 
@@ -193,7 +127,7 @@ def dict_merge(a, b, silence_errors=False):
 
 
 def circular_reference_label(data, ref_key=None):
-    ref = '.'.join(map(text, ref_key))
+    ref = '.'.join([str(x) for x in ref_key])
     return '<CircularReference type:(%s) ref:(%s)>' % (type(data).__name__, ref)
 
 

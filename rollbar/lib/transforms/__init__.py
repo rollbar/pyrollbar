@@ -1,18 +1,10 @@
-try:
-    # Python 3
-    from collections.abc import Iterable
-except ImportError:
-    # Python 2.7
-    from collections import Iterable
+from collections.abc import Iterable
 
 from rollbar.lib import (
-    python_major_version,
     binary_type,
     string_types,
-    integer_types,
     number_types,
     traverse,
-    type_info,
 )
 # NOTE: Don't remove this import, it would cause a breaking change to the library's API.
 # The `Transform` class was moved out of this file to prevent a cyclical dependency issue.
@@ -56,21 +48,11 @@ def _transform(obj, transform, key=None):
 
         return val
 
-    if python_major_version() < 3:
-
-        def string_handler(s, key=None):
-            if isinstance(s, str):
-                return do_transform("py2_str", s, key=key)
-            elif isinstance(s, unicode):
-                return do_transform("unicode", s, key=key)
-
-    else:
-
-        def string_handler(s, key=None):
-            if isinstance(s, bytes):
-                return do_transform("py3_bytes", s, key=key)
-            elif isinstance(s, str):
-                return do_transform("unicode", s, key=key)
+    def string_handler(s, key=None):
+        if isinstance(s, bytes):
+            return do_transform("bytes", s, key=key)
+        elif isinstance(s, str):
+            return do_transform("unicode", s, key=key)
 
     def default_handler(o, key=None):
         if isinstance(o, bool):

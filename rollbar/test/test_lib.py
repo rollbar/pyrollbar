@@ -1,8 +1,7 @@
-from rollbar.lib import dict_merge
+from rollbar.lib import dict_merge, prefix_match
 
 from rollbar.test import BaseTest
 
-import six
 
 class RollbarLibTest(BaseTest):
     def test_dict_merge_not_dict(self):
@@ -11,6 +10,14 @@ class RollbarLibTest(BaseTest):
         result = dict_merge(a, b)
 
         self.assertEqual(99, result)
+
+    def test_prefix_match(self):
+        key = ['password', 'argspec', '0']
+        self.assertTrue(prefix_match(key, [['password']]))
+
+    def test_prefix_match(self):
+        key = ['environ', 'argspec', '0']
+        self.assertFalse(prefix_match(key, [['password']]))
 
     def test_dict_merge_dicts_independent(self):
         a = {'a': {'b': 42}}
@@ -58,4 +65,4 @@ class RollbarLibTest(BaseTest):
         self.assertIn('b', result['a'])
         self.assertEqual(42, result['a']['b'])
         self.assertIn('y', result['a'])
-        six.assertRegex(self, result['a']['y'], r'Uncopyable obj')
+        self.assertRegex(result['a']['y'], r'Uncopyable obj')
