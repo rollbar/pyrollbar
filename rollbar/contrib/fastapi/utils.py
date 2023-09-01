@@ -22,36 +22,30 @@ class FastAPIVersionError(Exception):
 
 
 def is_current_version_higher_or_equal(current_version, min_version):
-    if current_version == min_version:
-        return True
+    """
+    Compare two version strings and return True if the current version is higher or equal to the minimum version.
 
-    for current_as_string, min_as_string in zip(
-        current_version.split('.'),
-        min_version.split('.'),
-    ):
-        if current_as_string == min_as_string:
-            continue
+    Note: This function only compares the release segment of the version string.
+    """
+    def parse_version(version):
+        """Parse the release segment of a version string into a list of strings."""
+        parsed = ['']
+        current_segment = 0
+        for c in version:
+            if c.isdigit():
+                parsed[current_segment] += c
+            elif c == '.':
+                current_segment += 1
+                parsed.append('')
+            else:
+                break
+        if parsed[-1] == '':
+            parsed.pop()
+        return parsed
 
-        try:
-            current_as_int = int(current_as_string)
-        except ValueError:
-            current_as_int = None
-
-        try:
-            min_as_int = int(min_as_string)
-        except ValueError:
-            min_as_int = None
-
-        if current_as_int is None or min_as_int is None:
-            # If one of the parts fails the int conversion, compare as string
-            return current_as_string > min_as_string
-        else:
-            if current_as_int == min_as_int:
-                continue
-            return current_as_int > min_as_int
-
-    # Somehow the comparison didn't properly finish - defaulting to False
-    return False
+    current = tuple(map(int, parse_version(current_version)))
+    minimum = tuple(map(int, parse_version(min_version)))
+    return current >= minimum
 
 
 class fastapi_min_version:
