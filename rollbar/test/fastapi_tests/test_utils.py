@@ -122,7 +122,9 @@ class UtilsBareRoutingTest(BaseTest):
 
         self.assertFalse(has_bare_routing(app))
 
-
+@unittest.skipUnless(
+    FASTAPI_INSTALLED and ALLOWED_PYTHON_VERSION, 'FastAPI requires Python3.6+'
+)
 class UtilsVersionCompareTest(BaseTest):
     def test_is_current_version_higher_or_equal(self):
         # Copied from https://semver.org/#spec-item-11
