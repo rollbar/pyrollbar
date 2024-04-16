@@ -78,8 +78,6 @@ class ShortenerTransform(Transform):
         return self._repr.repr(obj)
 
     def traverse_dict(self, d):
-        max_size = self._get_max_size(d)
-        d = self._shorten_mapping(d, max_size)
         for k, v in d.items():
             if isinstance(v, dict):
                 max_size = self._get_max_size(v)
@@ -93,6 +91,8 @@ class ShortenerTransform(Transform):
         max_size = self._get_max_size(val)
 
         if isinstance(val, dict):
+            max_size = self._get_max_size(val)
+            val = self._shorten_mapping(val, max_size)
             return self.traverse_dict(val)
 
         if isinstance(val, (string_types, sequence_types)):
