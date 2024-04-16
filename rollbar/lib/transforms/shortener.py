@@ -105,6 +105,8 @@ class ShortenerTransform(Transform):
 
         if isinstance(val, sequence_types):
             val = self._shorten_sequence(val, max_size)
+            if isinstance(val, string_types):
+                return val
             return self.traverse_obj(val)
 
         if isinstance(val, number_types):
