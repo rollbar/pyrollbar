@@ -77,32 +77,21 @@ class ShortenerTransform(Transform):
 
         return self._repr.repr(obj)
 
-    def traverse_obj(self, d):
-        if isinstance(d, dict):
-            for k, v in d.items():
-                if isinstance(v, dict):
-                    max_size = self._get_max_size(v)
-                    d[k] = self._shorten_mapping(v, max_size)
-                    self.traverse_obj(d[k])
-                elif isinstance(v,  sequence_types):
-                    max_size = self._get_max_size(v)
-                    d[k] = self._shorten_sequence(v, max_size)
-                    self.traverse_obj(d[k])
-                else:
-                    d[k] = self._shorten(v)
-        elif isinstance(d, sequence_types):
-            for i in range(len(d)):
-                if isinstance(d[i], dict):
-                    max_size = self._get_max_size(d[i])
-                    d[i] = self._shorten_mapping(d[i], max_size)
-                    self.traverse_obj(d[i])
-                elif isinstance(d[i],  sequence_types):
-                    max_size = self._get_max_size(d[i])
-                    d[i] = self._shorten_sequence(d[i], max_size)
-                    self.traverse_obj(d[i])
-                else:
-                    d[i] = self._shorten(d[i])
-        return d
+    def traverse_obj(self, obj):
+        def seq_iter(o):
+            return o if isinstance(o, dict) else range(len(o))
+
+        for k in seq_iter(obj):
+            max_size = self._get_max_size(obj[k])
+            if isinstance(obj[k], dict):
+                obj[k] = self._shorten_mapping(obj[k], max_size)
+                self.traverse_obj(obj[k])
+            elif isinstance(obj[k], sequence_types):
+                obj[k] = self._shorten_sequence(obj[k], max_size)
+                self.traverse_obj(obj[k])
+            else:
+                obj[k] = self._shorten(obj[k])
+        return obj
 
     def _shorten(self, val):
         max_size = self._get_max_size(val)
