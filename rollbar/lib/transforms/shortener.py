@@ -82,7 +82,9 @@ class ShortenerTransform(Transform):
         d = self._shorten_mapping(d, max_size)
         for k, v in d.items():
             if isinstance(v, dict):
-                self.traverse_dict(v)
+                max_size = self._get_max_size(v)
+                d[k] = self._shorten_mapping(v, max_size)
+                self.traverse_dict(d[k])
             else:
                 d[k] = self._shorten(v)
         return d
