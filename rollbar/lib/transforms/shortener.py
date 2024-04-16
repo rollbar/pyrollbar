@@ -77,26 +77,46 @@ class ShortenerTransform(Transform):
 
         return self._repr.repr(obj)
 
-    def traverse_dict(self, d):
-        for k, v in d.items():
-            if isinstance(v, dict):
-                max_size = self._get_max_size(v)
-                d[k] = self._shorten_mapping(v, max_size)
-                self.traverse_dict(d[k])
-            else:
-                d[k] = self._shorten(v)
+    def traverse_obj(self, d):
+        if isinstance(d, dict):
+            for k, v in d.items():
+                if isinstance(v, dict):
+                    max_size = self._get_max_size(v)
+                    d[k] = self._shorten_mapping(v, max_size)
+                    self.traverse_obj(d[k])
+                elif isinstance(v,  sequence_types):
+                    max_size = self._get_max_size(v)
+                    d[k] = self._shorten_sequence(v, max_size)
+                    self.traverse_obj(d[k])
+                else:
+                    d[k] = self._shorten(v)
+        elif isinstance(d, sequence_types):
+            for i in range(len(d)):
+                if isinstance(d[i], dict):
+                    max_size = self._get_max_size(d[i])
+                    d[i] = self._shorten_mapping(d[i], max_size)
+                    self.traverse_obj(d[i])
+                elif isinstance(d[i],  sequence_types):
+                    max_size = self._get_max_size(d[i])
+                    d[i] = self._shorten_sequence(d[i], max_size)
+                    self.traverse_obj(d[i])
+                else:
+                    d[i] = self._shorten(d[i])
         return d
 
     def _shorten(self, val):
         max_size = self._get_max_size(val)
 
         if isinstance(val, dict):
-            max_size = self._get_max_size(val)
             val = self._shorten_mapping(val, max_size)
-            return self.traverse_dict(val)
+            return self.traverse_obj(val)
 
-        if isinstance(val, (string_types, sequence_types)):
+        if isinstance(val, string_types):
             return self._shorten_sequence(val, max_size)
+
+        if isinstance(val, sequence_types):
+            val = self._shorten_sequence(val, max_size)
+            return self.traverse_obj(val)
 
         if isinstance(val, number_types):
             return self._shorten_basic(val, self._repr.maxlong)
