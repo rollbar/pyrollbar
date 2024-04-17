@@ -47,6 +47,8 @@ class ShortenerTransform(Transform):
 
         return self._repr.maxother
 
+    def _get_max_level(self):
+        return getattr(self._repr, 'maxlevel')
     def _shorten_sequence(self, obj, max_keys):
         _len = len(obj)
         if _len <= max_keys:
@@ -77,13 +79,43 @@ class ShortenerTransform(Transform):
 
         return self._repr.repr(obj)
 
+    def traverse_obj(self, obj, level=1):
+        def seq_iter(o):
+            return o if isinstance(o, dict) else range(len(o))
+
+        for k in seq_iter(obj):
+            max_size = self._get_max_size(obj[k])
+            if isinstance(obj[k], dict):
+                obj[k] = self._shorten_mapping(obj[k], max_size)
+                if level == self._get_max_level():
+                    del obj[k]
+                    return
+                self.traverse_obj(obj[k], level + 1)
+            elif isinstance(obj[k], sequence_types):
+                obj[k] = self._shorten_sequence(obj[k], max_size)
+                if level == self._get_max_level():
+                    del obj[k]
+                    return
+                self.traverse_obj(obj[k], level + 1)
+            else:
+                obj[k] = self._shorten(obj[k])
+        return obj
+
     def _shorten(self, val):
         max_size = self._get_max_size(val)
 
         if isinstance(val, dict):
-            return self._shorten_mapping(val, max_size)
-        if isinstance(val, (string_types, sequence_types)):
+            val = self._shorten_mapping(val, max_size)
+            return self.traverse_obj(val)
+
+        if isinstance(val, string_types):
             return self._shorten_sequence(val, max_size)
+
+        if isinstance(val, sequence_types):
+            val = self._shorten_sequence(val, max_size)
+            if isinstance(val, string_types):
+                return val
+            return self.traverse_obj(val)
 
         if isinstance(val, number_types):
             return self._shorten_basic(val, self._repr.maxlong)

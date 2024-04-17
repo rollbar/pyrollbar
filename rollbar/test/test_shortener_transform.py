@@ -37,7 +37,10 @@ class ShortenerTransformTest(BaseTest):
             'frozenset': frozenset([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]),
             'array': array('l', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]),
             'deque': deque([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], 15),
-            'other': TestClassWithAVeryVeryVeryVeryVeryVeryVeryLongName()
+            'other': TestClassWithAVeryVeryVeryVeryVeryVeryVeryLongName(),
+            'list_max_level': [1, [2, [3, [4, ["good_5", ["bad_6", ["bad_7"]]]]]]],
+            'dict_max_level': {1: 1, 2: {3: {4: {"level4": "good", "level5": {"toplevel": "ok", 6: {7: {}}}}}}},
+            'list_multi_level':  [1, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]]
         }
 
     def _assert_shortened(self, key, expected):
@@ -45,14 +48,16 @@ class ShortenerTransformTest(BaseTest):
         result = transforms.transform(self.data, shortener)
 
         if key == 'dict':
-            self.assertEqual(expected, len(result))
+            self.assertEqual(expected, len(result[key]))
+        elif key in ('list_max_level', 'dict_max_level', 'list_multi_level'):
+            self.assertEqual(expected,  result[key])
         else:
             # the repr output can vary between Python versions
             stripped_result_key = result[key].strip("'\"u")
 
         if key == 'other':
             self.assertIn(expected, stripped_result_key)
-        elif key != 'dict':
+        elif key not in ('dict', 'list_max_level', 'dict_max_level', 'list_multi_level'):
             self.assertEqual(expected, stripped_result_key)
 
         # make sure nothing else was shortened
@@ -81,6 +86,18 @@ class ShortenerTransformTest(BaseTest):
     def test_shorten_list(self):
         expected = '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...]'
         self._assert_shortened('list', expected)
+
+    def test_shorten_list_max_level(self):
+        expected = [1, [2, [3, [4, ['good_5']]]]]
+        self._assert_shortened('list_max_level', expected)
+
+    def test_shorten_list_multi_level(self):
+        expected = [1, '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...]']
+        self._assert_shortened('list_multi_level', expected)
+
+    def test_shorten_dict_max_level(self):
+        expected = {1: 1, 2: {3: {4: {'level4': 'good', 'level5': {'toplevel': 'ok'}}}}}
+        self._assert_shortened('dict_max_level', expected)
 
     def test_shorten_tuple(self):
         expected = '(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...)'
