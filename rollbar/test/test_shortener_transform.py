@@ -47,7 +47,7 @@ class ShortenerTransformTest(BaseTest):
         result = transforms.transform(self.data, shortener)
 
         if key == 'dict':
-            self.assertEqual(expected, len(result))
+            self.assertEqual(expected, len(result[key]))
         elif key in ('list_max_level', 'dict_max_level'):
             self.assertEqual(expected,  result[key])
         else:
