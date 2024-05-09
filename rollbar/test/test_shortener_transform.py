@@ -128,3 +128,96 @@ class ShortenerTransformTest(BaseTest):
         self.assertEqual(type(result), dict)
         self.assertEqual(len(result['request']['POST']), 10)
 
+    def test_shorten_frame(self):
+        data = {
+            'body': {
+                'trace': {
+                    'frames': [
+                        {
+                            "filename": "/path/to/app.py",
+                            "lineno": 82,
+                            "method": "sub_func",
+                            "code": "extra(**kwargs)",
+                            "keywordspec": "kwargs",
+                            "locals": {
+                                "kwargs": {
+                                    "app": ["foo", "bar", "baz", "qux", "quux", "corge", "grault", "garply", "waldo",
+                                            "fred", "plugh", "xyzzy", "thud"],
+                                    "extra": {
+                                        "request": "<class 'some.package.MyClass'>"
+                                    }
+                                },
+                                "one": {
+                                    "two": {
+                                        "three": {
+                                            "four": {
+                                                "five": {
+                                                    "six": {
+                                                        "seven": 8,
+                                                        "eight": "nine"
+                                                    },
+                                                    "ten": "Yep! this should still be here, but it is a little on the "
+                                                           "long side, so we might want to cut it down a bit."
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "a": ["foo", "bar", "baz", "qux", 5, 6, 7, 8, 9, 10, 11, 12],
+                                    "b": 14071504106566481658450568387453168916351054663,
+                                    "app_id": 140715046161904,
+                                    "bar": "im a bar",
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+        keys = [('body', 'trace', 'frames', '*', 'locals', '*')]
+        shortener = ShortenerTransform(keys=keys, **DEFAULT_LOCALS_SIZES)
+        result = transforms.transform(data, shortener)
+        expected = {
+            'body': {
+                'trace': {
+                    'frames': [
+                        {
+                            "filename": "/path/to/app.py",
+                            "lineno": 82,
+                            "method": "sub_func",
+                            "code": "extra(**kwargs)",
+                            "keywordspec": "kwargs",
+                            "locals": {
+                                "kwargs": {
+                                    # Shortened
+                                    "app": "['foo', 'bar', 'baz', 'qux', 'quux', 'corge', 'grault', 'garply', 'waldo', "
+                                           "'fred', ...]",
+                                    "extra": {
+                                        "request": "<class 'some.package.MyClass'>"
+                                    }
+                                },
+                                "one": {
+                                    "two": {
+                                        "three": {
+                                            "four": {
+                                                "five": {
+                                                    "six": '{...}',  # Dropped because it is past the maxlevel.
+                                                    # Shortened
+                                                    "ten": "'Yep! this should still be here, but it is a lit...ong "
+                                                           "side, so we might want to cut it down a bit.'"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "a": "['foo', 'bar', 'baz', 'qux', 5, 6, 7, 8, 9, 10, ...]",   # Shortened
+                                    "b": '140715041065664816...7453168916351054663',  # Shortened
+                                    "app_id": 140715046161904,
+                                    "bar": "im a bar",
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+
+        self.assertEqual(result, expected)

@@ -6,7 +6,7 @@ import reprlib
 from collections.abc import Mapping
 
 from rollbar.lib import (
-    integer_types, key_in, number_types, sequence_types,
+    integer_types, key_in, key_depth, number_types, sequence_types,
     string_types)
 from rollbar.lib.transform import Transform
 
@@ -96,7 +96,23 @@ class ShortenerTransform(Transform):
 
         return key_in(key, self.keys)
 
+    def _should_drop(self, val, key) -> bool:
+        if not key:
+            return False
+
+        maxdepth = key_depth(key, self.keys)
+        if maxdepth == 0:
+            return False
+
+        return (maxdepth + self._repr.maxlevel) <= len(key)
+
     def default(self, o, key=None):
+        if self._should_drop(o, key):
+            if isinstance(o, dict):
+                return '{...}'
+            if isinstance(o, sequence_types):
+                return '[...]'
+
         if self._should_shorten(o, key):
             return self._shorten(o)
 
