@@ -12,6 +12,8 @@ try:
 except ImportError:
     from io import StringIO
 
+from pathlib import Path
+
 from unittest import mock
 
 import unittest
@@ -1866,6 +1868,23 @@ class RollbarTest(BaseTest):
         request = Request(scope)
         user_ip = rollbar._starlette_extract_user_ip(request)
         self.assertEqual(user_ip, ip_forwarded_for.decode())
+    
+    @mock.patch('rollbar.send_payload')
+    def test_root_path(self, send_payload):
+        prev_root = rollbar.SETTINGS['root']
+        rollbar.SETTINGS['root'] = Path("/tmp")
+        try:
+            called_with('original value')
+        except:
+            rollbar.report_exc_info()
+        finally:
+            rollbar.SETTINGS['root'] = prev_root
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = send_payload.call_args[0][0]
+        self.assertEqual(payload['data']['server']['root'], "/tmp")
+
 
 ### Helpers
 

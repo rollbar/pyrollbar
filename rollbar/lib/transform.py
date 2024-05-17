@@ -32,5 +32,8 @@ class Transform(object):
     def transform_boolean(self, o, key=None):
         return self.default(o, key=key)
 
+    def transform_path(self, o, key=None):
+        return self.default(str(o), key=key)
+
     def transform_custom(self, o, key=None):
         return self.default(o, key=key)

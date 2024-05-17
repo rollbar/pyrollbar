@@ -1,5 +1,5 @@
 import logging
-
+from pathlib import Path
 
 from rollbar.lib import binary_type, string_types, circular_reference_label
 
@@ -16,6 +16,7 @@ from rollbar.lib.type_info import (
     LIST,
     SET,
     STRING,
+    PATH,
 )
 
 
@@ -49,6 +50,9 @@ def _noop_set(a, **_):
 def _noop_mapping(a, **_):
     return dict(a)
 
+def _noop_path(a, **_):
+    return Path(a)
+
 
 _default_handlers = {
     CIRCULAR: _noop_circular,
@@ -58,6 +62,7 @@ _default_handlers = {
     NAMEDTUPLE: _noop_namedtuple,
     LIST: _noop_list,
     SET: _noop_set,
+    PATH: _noop_path,
     MAPPING: _noop_mapping,
 }
 
@@ -71,6 +76,7 @@ def traverse(
     list_handler=_default_handlers[LIST],
     set_handler=_default_handlers[SET],
     mapping_handler=_default_handlers[MAPPING],
+    path_handler=_default_handlers[PATH],
     default_handler=_default_handlers[DEFAULT],
     circular_reference_handler=_default_handlers[CIRCULAR],
     allowed_circular_reference_types=None,
@@ -97,6 +103,7 @@ def traverse(
         "list_handler": list_handler,
         "set_handler": set_handler,
         "mapping_handler": mapping_handler,
+        "path_handler": path_handler,
         "default_handler": default_handler,
         "circular_reference_handler": circular_reference_handler,
         "allowed_circular_reference_types": allowed_circular_reference_types,
@@ -137,6 +144,8 @@ def traverse(
                 {k: traverse(v, key=key + (k,), **kw) for k, v in obj.items()},
                 key=key,
             )
+        elif obj_type is PATH:
+            return path_handler(obj, key=key)
         elif obj_type is DEFAULT:
             for handler_type, handler in custom_handlers.items():
                 if isinstance(obj, handler_type):
