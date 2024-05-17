@@ -56,16 +56,14 @@ def key_depth(key, canonicals) -> int:
 
 
 def key_match(key, canonical):
-    i = 0
+    if len(key) < len(canonical):
+        return False
+
     for k, c in zip(key, canonical):
-        i += 1
         if '*' == c:
             continue
         if c == k:
             continue
-        return False
-
-    if i < len(canonical) - 1:
         return False
 
     return True

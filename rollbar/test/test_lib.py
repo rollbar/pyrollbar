@@ -30,6 +30,12 @@ class RollbarLibTest(BaseTest):
 
         self.assertTrue(key_match(key, canonical))
 
+    def test_key_match_too_short(self):
+        canonical = ['body', 'trace', 'frames', '*', 'locals', '*']
+        key = ['body', 'trace', 'frames', 5, 'locals']
+
+        self.assertFalse(key_match(key, canonical))
+
     def test_key_depth(self):
         canonicals = [['body', 'trace', 'frames', '*', 'locals', '*']]
         key = ['body', 'trace', 'frames', 5, 'locals', 'foo']
