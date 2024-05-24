@@ -2,6 +2,27 @@
 
 The change log is also available on the [GitHub Releases Page](https://github.com/rollbar/pyrollbar/releases).
 
+**1.1.0-alpha**
+
+- Fixed shortener multi level shortening by @danielmorell and @pawelsz-rb. See [#449](https://github.com/rollbar/pyrollbar/pull/449)
+
+**1.0.0**
+
+- Fixed handling `sensitive_post_parameters` decorator in Django by @pawelsz-rb. See [#413](https://github.com/rollbar/pyrollbar/pull/413)
+- Fixed Werkzeug DeprecationWarning of `BaseRequest`  by @compyman. See [#410](https://github.com/rollbar/pyrollbar/pull/410)
+- Fixed missing locals shortening on items with "trace_chain" instead of "trace" by @terencehonles. See [#365](https://github.com/rollbar/pyrollbar/pull/365)
+- Fixed FastAPI version comparison by @ayharano. See [#433](https://github.com/rollbar/pyrollbar/pull/433)
+- Fixed #436 `WSGIRequest` has no attribute `sensitive_post_parameters`. by @danielmorell. See [#437](https://github.com/rollbar/pyrollbar/pull/437)
+- Added new `thread_pool` handler by @danielmorell. See [#416](https://github.com/rollbar/pyrollbar/pull/416)
+- Added Rollbar branding to the readme by @paulserraino. See [#418](https://github.com/rollbar/pyrollbar/pull/418)
+- Added batched transform to increase sanitization and serialization performance by @ijsnow. See [#421](https://github.com/rollbar/pyrollbar/pull/421)
+- Replaced unittest2 with unittest by @brianr. See [#420](https://github.com/rollbar/pyrollbar/pull/420)
+- Removed unittest2 by @mcepl. See [#419](https://github.com/rollbar/pyrollbar/pull/419)
+- Remove deprecated flask `before_first_request` by @albertyw. See [#428](https://github.com/rollbar/pyrollbar/pull/428)
+- Removed support for Python 2 by @danielmorell. See [#435](https://github.com/rollbar/pyrollbar/pull/435)
+- Updated the base Ubuntu for CI to 20.04 test runner by @danielmorell and @waltjones. See [#427](https://github.com/rollbar/pyrollbar/pull/427)
+- Replaced `httpx.post` `data` kwarg with `content` by @ayharano. See [#425](https://github.com/rollbar/pyrollbar/pull/425)
+
 **0.16.3**
 
 - Pinned Python 2 CI tests to legacy version of dependencies. See [#408](https://github.com/rollbar/pyrollbar/pull/408)
