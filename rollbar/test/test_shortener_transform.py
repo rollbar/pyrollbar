@@ -37,10 +37,7 @@ class ShortenerTransformTest(BaseTest):
             'frozenset': frozenset([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]),
             'array': array('l', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]),
             'deque': deque([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], 15),
-            'other': TestClassWithAVeryVeryVeryVeryVeryVeryVeryLongName(),
-            'list_max_level': [1, [2, [3, [4, ["good_5", ["bad_6", ["bad_7"]]]]]]],
-            'dict_max_level': {1: 1, 2: {3: {4: {"level4": "good", "level5": {"toplevel": "ok", 6: {7: {}}}}}}},
-            'list_multi_level':  [1, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]]
+            'other': TestClassWithAVeryVeryVeryVeryVeryVeryVeryLongName()
         }
 
     def _assert_shortened(self, key, expected):
@@ -48,16 +45,14 @@ class ShortenerTransformTest(BaseTest):
         result = transforms.transform(self.data, shortener)
 
         if key == 'dict':
-            self.assertEqual(expected, len(result[key]))
-        elif key in ('list_max_level', 'dict_max_level', 'list_multi_level'):
-            self.assertEqual(expected,  result[key])
+            self.assertEqual(expected, len(result))
         else:
             # the repr output can vary between Python versions
             stripped_result_key = result[key].strip("'\"u")
 
         if key == 'other':
             self.assertIn(expected, stripped_result_key)
-        elif key not in ('dict', 'list_max_level', 'dict_max_level', 'list_multi_level'):
+        elif key != 'dict':
             self.assertEqual(expected, stripped_result_key)
 
         # make sure nothing else was shortened
@@ -86,18 +81,6 @@ class ShortenerTransformTest(BaseTest):
     def test_shorten_list(self):
         expected = '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...]'
         self._assert_shortened('list', expected)
-
-    def test_shorten_list_max_level(self):
-        expected = [1, [2, [3, [4, ['good_5']]]]]
-        self._assert_shortened('list_max_level', expected)
-
-    def test_shorten_list_multi_level(self):
-        expected = [1, '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...]']
-        self._assert_shortened('list_multi_level', expected)
-
-    def test_shorten_dict_max_level(self):
-        expected = {1: 1, 2: {3: {4: {'level4': 'good', 'level5': {'toplevel': 'ok'}}}}}
-        self._assert_shortened('dict_max_level', expected)
 
     def test_shorten_tuple(self):
         expected = '(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...)'
@@ -145,3 +128,96 @@ class ShortenerTransformTest(BaseTest):
         self.assertEqual(type(result), dict)
         self.assertEqual(len(result['request']['POST']), 10)
 
+    def test_shorten_frame(self):
+        data = {
+            'body': {
+                'trace': {
+                    'frames': [
+                        {
+                            "filename": "/path/to/app.py",
+                            "lineno": 82,
+                            "method": "sub_func",
+                            "code": "extra(**kwargs)",
+                            "keywordspec": "kwargs",
+                            "locals": {
+                                "kwargs": {
+                                    "app": ["foo", "bar", "baz", "qux", "quux", "corge", "grault", "garply", "waldo",
+                                            "fred", "plugh", "xyzzy", "thud"],
+                                    "extra": {
+                                        "request": "<class 'some.package.MyClass'>"
+                                    }
+                                },
+                                "one": {
+                                    "two": {
+                                        "three": {
+                                            "four": {
+                                                "five": {
+                                                    "six": {
+                                                        "seven": 8,
+                                                        "eight": "nine"
+                                                    },
+                                                    "ten": "Yep! this should still be here, but it is a little on the "
+                                                           "long side, so we might want to cut it down a bit."
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "a": ["foo", "bar", "baz", "qux", 5, 6, 7, 8, 9, 10, 11, 12],
+                                    "b": 14071504106566481658450568387453168916351054663,
+                                    "app_id": 140715046161904,
+                                    "bar": "im a bar",
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+        keys = [('body', 'trace', 'frames', '*', 'locals', '*')]
+        shortener = ShortenerTransform(keys=keys, **DEFAULT_LOCALS_SIZES)
+        result = transforms.transform(data, shortener)
+        expected = {
+            'body': {
+                'trace': {
+                    'frames': [
+                        {
+                            "filename": "/path/to/app.py",
+                            "lineno": 82,
+                            "method": "sub_func",
+                            "code": "extra(**kwargs)",
+                            "keywordspec": "kwargs",
+                            "locals": {
+                                "kwargs": {
+                                    # Shortened
+                                    "app": "['foo', 'bar', 'baz', 'qux', 'quux', 'corge', 'grault', 'garply', 'waldo', "
+                                           "'fred', ...]",
+                                    "extra": {
+                                        "request": "<class 'some.package.MyClass'>"
+                                    }
+                                },
+                                "one": {
+                                    "two": {
+                                        "three": {
+                                            "four": {
+                                                "five": {
+                                                    "six": '{...}',  # Dropped because it is past the maxlevel.
+                                                    # Shortened
+                                                    "ten": "'Yep! this should still be here, but it is a lit...ong "
+                                                           "side, so we might want to cut it down a bit.'"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "a": "['foo', 'bar', 'baz', 'qux', 5, 6, 7, 8, 9, 10, ...]",   # Shortened
+                                    "b": '140715041065664816...7453168916351054663',  # Shortened
+                                    "app_id": 140715046161904,
+                                    "bar": "im a bar",
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+
+        self.assertEqual(result, expected)

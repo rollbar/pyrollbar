@@ -33,25 +33,36 @@ def prefix_match(key, prefixes):
     return False
 
 
-def key_in(key, keys):
+def key_in(key, canonicals):
     if not key:
         return False
 
-    for k in keys:
-        if key_match(k, key):
+    for c in canonicals:
+        if key_match(key, c):
             return True
 
     return False
 
 
-def key_match(key1, key2):
-    if len(key1) != len(key2):
+def key_depth(key, canonicals) -> int:
+    if not key:
+        return 0
+
+    for c in canonicals:
+        if key_match(key, c):
+            return len(c)
+
+    return 0
+
+
+def key_match(key, canonical):
+    if len(key) < len(canonical):
         return False
 
-    for p1, p2 in zip(key1, key2):
-        if '*' == p1 or '*' == p2:
+    for k, c in zip(key, canonical):
+        if '*' == c:
             continue
-        if p1 == p2:
+        if c == k:
             continue
         return False
 

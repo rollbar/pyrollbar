@@ -1,23 +1,65 @@
-from rollbar.lib import dict_merge, prefix_match
+from rollbar.lib import dict_merge, prefix_match, key_match, key_depth
 
 from rollbar.test import BaseTest
 
 
 class RollbarLibTest(BaseTest):
+    def test_prefix_match(self):
+        key = ['password', 'argspec', '0']
+        self.assertTrue(prefix_match(key, [['password']]))
+
+    def test_prefix_match_dont_match(self):
+        key = ['environ', 'argspec', '0']
+        self.assertFalse(prefix_match(key, [['password']]))
+
+    def test_key_match(self):
+        canonical = ['body', 'trace', 'frames', '*', 'locals', '*']
+        key = ['body', 'trace', 'frames', 5, 'locals', 'foo']
+
+        self.assertTrue(key_match(key, canonical))
+
+    def test_key_match_dont_match(self):
+        canonical = ['body', 'trace', 'frames', '*', 'locals', '*']
+        key = ['body', 'trace', 'frames', 5, 'bar', 'foo']
+
+        self.assertFalse(key_match(key, canonical))
+
+    def test_key_match_wildcard_end(self):
+        canonical = ['body', 'trace', 'frames', '*', 'locals', '*']
+        key = ['body', 'trace', 'frames', 5, 'locals', 'foo', 'bar']
+
+        self.assertTrue(key_match(key, canonical))
+
+    def test_key_match_too_short(self):
+        canonical = ['body', 'trace', 'frames', '*', 'locals', '*']
+        key = ['body', 'trace', 'frames', 5, 'locals']
+
+        self.assertFalse(key_match(key, canonical))
+
+    def test_key_depth(self):
+        canonicals = [['body', 'trace', 'frames', '*', 'locals', '*']]
+        key = ['body', 'trace', 'frames', 5, 'locals', 'foo']
+
+        self.assertEqual(6, key_depth(key, canonicals))
+
+    def test_key_depth_dont_match(self):
+        canonicals = [['body', 'trace', 'frames', '*', 'locals', '*']]
+        key = ['body', 'trace', 'frames', 5, 'bar', 'foo']
+
+        self.assertEqual(0, key_depth(key, canonicals))
+
+    def test_key_depth_wildcard_end(self):
+        canonicals = [['body', 'trace', 'frames', '*']]
+        key = ['body', 'trace', 'frames', 5, 'locals', 'foo', 'bar']
+
+        self.assertEqual(4, key_depth(key, canonicals))
+
     def test_dict_merge_not_dict(self):
         a = {'a': {'b': 42}}
         b = 99
         result = dict_merge(a, b)
 
         self.assertEqual(99, result)
-
-    def test_prefix_match(self):
-        key = ['password', 'argspec', '0']
-        self.assertTrue(prefix_match(key, [['password']]))
-
-    def test_prefix_match(self):
-        key = ['environ', 'argspec', '0']
-        self.assertFalse(prefix_match(key, [['password']]))
 
     def test_dict_merge_dicts_independent(self):
         a = {'a': {'b': 42}}

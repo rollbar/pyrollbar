@@ -402,12 +402,6 @@ def init(access_token, environment='production', scrub_fields=None, url_fields=N
     #       trace frame values using the ShortReprTransform.
     _serialize_transform = SerializableTransform(safe_repr=SETTINGS['locals']['safe_repr'],
                                                  safelist_types=SETTINGS['locals']['safelisted_types'])
-    _transforms = [
-        ScrubRedactTransform(),
-        _serialize_transform,
-        ScrubTransform(suffixes=[(field,) for field in SETTINGS['scrub_fields']], redact_char='*'),
-        ScrubUrlTransform(suffixes=[(field,) for field in SETTINGS['url_fields']], params_to_scrub=SETTINGS['scrub_fields'])
-    ]
 
     # A list of key prefixes to apply our shortener transform to. The request
     # being included in the body key is old behavior and is being retained for
@@ -431,7 +425,13 @@ def init(access_token, environment='production', scrub_fields=None, url_fields=N
     shortener = ShortenerTransform(safe_repr=SETTINGS['locals']['safe_repr'],
                                    keys=shortener_keys,
                                    **SETTINGS['locals']['sizes'])
-    _transforms.append(shortener)
+    _transforms = [
+        shortener,
+        ScrubRedactTransform(),
+        _serialize_transform,
+        ScrubTransform(suffixes=[(field,) for field in SETTINGS['scrub_fields']], redact_char='*'),
+        ScrubUrlTransform(suffixes=[(field,) for field in SETTINGS['url_fields']], params_to_scrub=SETTINGS['scrub_fields'])
+    ]
     _threads = queue.Queue()
     events.reset()
     filters.add_builtin_filters(SETTINGS)
