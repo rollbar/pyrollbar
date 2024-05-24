@@ -24,7 +24,7 @@ import requests
 from rollbar.lib import events, filters, dict_merge, transport, defaultJSONEncode
 
 
-__version__ = '1.0.0'
+__version__ = '1.1.0-alpha'
 __log_name__ = 'rollbar'
 log = logging.getLogger(__log_name__)
 
