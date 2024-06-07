@@ -1118,8 +1118,14 @@ def _check_add_locals(frame, frame_num, total_frames):
     """
     # Include the last frames locals
     # Include any frame locals that came from a file in the project's root
+    root = SETTINGS.get('root')
+    if root:
+        # coerce to string, in case root is a Path object
+        root = str(root)
+    else:
+        root = ''
     return any(((frame_num == total_frames - 1),
-                ('root' in SETTINGS and (frame.get('filename') or '').lower().startswith((SETTINGS['root'] or '').lower()))))
+                ('root' in SETTINGS and (frame.get('filename') or '').lower().startswith(root.lower()))))
 
 
 def _get_actual_request(request):

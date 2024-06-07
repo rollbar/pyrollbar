@@ -79,6 +79,7 @@ def _transform(obj, transform, key=None):
         "list_handler": lambda o, key=None: do_transform("list", o, key=key),
         "set_handler": lambda o, key=None: do_transform("set", o, key=key),
         "mapping_handler": lambda o, key=None: do_transform("dict", o, key=key),
+        "path_handler": lambda o, key=None: do_transform("path", o, key=key),
         "circular_reference_handler": lambda o, key=None, ref_key=None: do_transform(
             "circular_reference", o, key=key, ref_key=ref_key
         ),

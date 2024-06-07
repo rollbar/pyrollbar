@@ -2,6 +2,7 @@ from rollbar.lib import binary_type, string_types
 
 
 from collections.abc import Mapping, Sequence, Set
+from pathlib import Path
 
 
 CIRCULAR = -1
@@ -12,6 +13,7 @@ NAMEDTUPLE = 3
 LIST = 4
 SET = 5
 STRING = 6
+PATH = 7
 
 
 def get_type(obj):
@@ -33,6 +35,9 @@ def get_type(obj):
     if isinstance(obj, Sequence):
         return LIST
 
+    if isinstance(obj, Path):
+        return PATH
+
     return DEFAULT
 
 
@@ -45,5 +50,6 @@ __all__ = [
     "LIST",
     "SET",
     "STRING",
+    "PATH",
     "get_type",
 ]
