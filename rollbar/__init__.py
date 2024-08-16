@@ -1372,7 +1372,7 @@ def _build_starlette_request_data(request):
         'params': dict(request.path_params),
     }
 
-    if hasattr(request, '_form'):
+    if hasattr(request, '_form') and request._form is not None:
         request_data['POST'] = {
             k: v.filename if isinstance(v, UploadFile) else v
             for k, v in request._form.items()
@@ -1772,4 +1772,8 @@ def _wsgi_extract_user_ip(environ):
 
 
 def _starlette_extract_user_ip(request):
+    if not hasattr(request, 'client'):
+        return _extract_user_ip_from_headers(request)
+    if not hasattr(request.client, 'host'):
+        return _extract_user_ip_from_headers(request)
     return request.client.host or _extract_user_ip_from_headers(request)

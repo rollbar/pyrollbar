@@ -10,6 +10,7 @@ except ImportError:
 import unittest
 
 from rollbar.test import BaseTest
+from rollbar.test.utils import get_public_attrs
 
 ALLOWED_PYTHON_VERSION = sys.version_info >= (3, 6)
 
@@ -49,7 +50,7 @@ class RequestTest(BaseTest):
 
         stored_request = store_current_request(request)
 
-        self.assertEqual(request, stored_request)
+        self.assertEqual(get_public_attrs(request), get_public_attrs(stored_request))
 
     def test_should_accept_scope_param_if_http_type(self):
         from starlette.requests import Request
@@ -81,7 +82,7 @@ class RequestTest(BaseTest):
 
         request = store_current_request(scope, receive)
 
-        self.assertEqual(request, expected_request)
+        self.assertEqual(get_public_attrs(request), get_public_attrs(expected_request))
 
     def test_should_not_accept_scope_param_if_not_http_type(self):
         from rollbar.contrib.starlette.requests import store_current_request
