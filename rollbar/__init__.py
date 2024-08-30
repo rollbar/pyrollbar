@@ -1772,4 +1772,8 @@ def _wsgi_extract_user_ip(environ):
 
 
 def _starlette_extract_user_ip(request):
+    if not hasattr(request, 'client'):
+        return _extract_user_ip_from_headers(request)
+    if not hasattr(request.client, 'host'):
+        return _extract_user_ip_from_headers(request)
     return request.client.host or _extract_user_ip_from_headers(request)
