@@ -1372,7 +1372,7 @@ def _build_starlette_request_data(request):
         'params': dict(request.path_params),
     }
 
-    if hasattr(request, '_form'):
+    if hasattr(request, '_form') and request._form is not None:
         request_data['POST'] = {
             k: v.filename if isinstance(v, UploadFile) else v
             for k, v in request._form.items()
