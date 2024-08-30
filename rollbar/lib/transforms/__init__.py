@@ -34,6 +34,8 @@ def transform(obj, transforms, key=None, batch_transforms=False):
         transforms = [BatchedTransform(transforms)]
 
     for transform in transforms:
+        if not isinstance(transform, Transform):
+            continue
         obj = _transform(obj, transform, key=key)
 
     return obj
