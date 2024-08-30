@@ -20,7 +20,7 @@ Python notifier for reporting exceptions, errors, and log messages to [Rollbar](
 - **Advanced search:** Filter items by many different properties. <a href="https://docs.rollbar.com/docs/search-items">Learn more about search</a>.
 - **Customizable notifications:** Rollbar supports several messaging and incident management tools where your team can get notified about errors and important events by real-time alerts. <a href="https://docs.rollbar.com/docs/notifications">Learn more about Rollbar notifications</a>.
 
-## Versions Supported
+## Python Versions Supported
 
 | PyRollbar Version | Python Version Compatibility                  | Support Level       |
 |-------------------|-----------------------------------------------|---------------------|
@@ -32,6 +32,26 @@ Python notifier for reporting exceptions, errors, and log messages to [Rollbar](
 **Full** - We will support new features of the library and test against all supported versions.
 
 **Security Fixes Only** - We will only provide critical security fixes for the library.
+
+## Frameworks Supported
+
+Generally, PyRollbar can be used with any Python framework. However, we have official support for the following frameworks:
+
+| Framework | Support Duration           | Tested Versions |
+|-----------|----------------------------|-----------------|
+| Celery    | Release +1 year            | None            |
+| Django    | Release or LTS end +1 year | 3.2, 4.2, 5.0   |
+| FastAPI   | Release +1 year            | 0.101, 0.112    |
+| Flask     | Release +1 year            | 1.1, 2.3, 3.0   |
+| Pyramid   | Release +1 year            | 1.10, 2.0       |
+
+Official support means that we ship and maintain integrations for these frameworks. It also means that we test against these frameworks as part of our CI pipeline.
+
+Generally, we will support the last year of releases for a framework. If a framework has a defined support period (including LTS releases), we will support the release for the duration of that period plus one year.
+
+### Community Supported
+
+There are also a number of community-supported integrations available. For more information, see the [Python SDK docs](https://docs.rollbar.com/docs/python-community-supported-sdks).
 
 ## Setup Instructions
 
