@@ -103,6 +103,7 @@ jobs:
         run: pip install immutables==0.19
 
       - name: Set the framework
+        if: ${{ matrix.framework != 'NONE' }}
         run: echo ${{ matrix.framework }} >> $GITHUB_ENV
 
       - name: Install Flask
