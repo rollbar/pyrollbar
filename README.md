@@ -11,6 +11,7 @@
 
 ![Build Status](https://github.com/rollbar/pyrollbar/workflows/Pyrollbar%20CI/badge.svg?tag=latest)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/rollbar)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Frollbar%2Fpyrollbar.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Frollbar%2Fpyrollbar?ref=badge_shield)
 
 Python notifier for reporting exceptions, errors, and log messages to [Rollbar](https://rollbar.com).
 
@@ -62,3 +63,7 @@ For bug reports, please [open an issue on GitHub](https://github.com/rollbar/pyr
 5. Create new Pull Request
 
 Tests are in `rollbar/test`. To run the tests: `python setup.py test`
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Frollbar%2Fpyrollbar.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Frollbar%2Fpyrollbar?ref=badge_large)
