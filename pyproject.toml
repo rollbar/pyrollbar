@@ -1,0 +1,54 @@
+[project]
+name = "rollbar"
+dynamic = ["version"]
+description = "Easy and powerful exception tracking with Rollbar. Send messages and exceptions with arbitrary context, get back aggregates, and debug production issues quickly."
+readme = "README.md"
+license = {file = "LICENSE"}
+maintainers = [{name = "Rollbar, Inc.", email = "support@rollbar.com"}]
+classifiers = [
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3 :: Only",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Web Environment",
+    "Framework :: AsyncIO",
+    "Framework :: Bottle",
+    "Framework :: Django",
+    "Framework :: Flask",
+    "Framework :: Pylons",
+    "Framework :: Pyramid",
+    "Framework :: Twisted",
+    "Intended Audience :: Developers",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Bug Tracking",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: System :: Logging",
+    "Topic :: System :: Monitoring",
+]
+requires-python = ">=3.6"
+dependencies = [
+    "requests>=0.12.1",
+]
+
+[project.urls]
+Homepage = "https://rollbar.com/"
+Documentation = "https://docs.rollbar.com/docs/python"
+Changes = "https://github.com/rollbar/pyrollbar/blob/master/CHANGELOG.md"
+Source = "https://github.com/rollbar/pyrollbar/"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = {attr = "rollbar.__version__"}
