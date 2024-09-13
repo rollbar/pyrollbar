@@ -97,7 +97,7 @@ jobs:
       - name: Install Python 3.6 dependencies
         if: ${{ contains(matrix.python-version, '3.6') }}
         # typing-extensions dropped support for Python 3.6 in version 4.2
-        run: pip install "typing-extensions<4.2" requests==2.27.0 blinker==1.5 immutables==0.19
+        run: pip install "typing-extensions<4.2" requests==2.27.0 blinker==1.5 immutables==0.19 webob blinker httpx aiocontextvars
 
       - name: Install Python 3.7 dependencies
         if: ${{ contains(matrix.python-version, '3.7') }}
@@ -135,5 +135,10 @@ jobs:
       - name: Install Tox
         run: pip install tox
 
-      - name: Run tests
+      - name: Run tests (skip on Python 3.6)
+        if: ${{ !contains(matrix.python-version, '3.6') }}
         run: tox
+
+      - name: Run tests (Python 3.6)
+        if: ${{ contains(matrix.python-version, '3.6') }}
+        run: python -m unittest rollbar.test.discover
