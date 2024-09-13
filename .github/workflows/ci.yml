@@ -14,53 +14,75 @@ jobs:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9, '3.10', 3.11]
         framework:
+          - NONE
           - FLASK_VERSION=1.1.4
-          - FLASK_VERSION=2.2.3
-          - DJANGO_VERSION=1.11.29
-          - DJANGO_VERSION=2.2.28
-          - DJANGO_VERSION=3.2.18
-          - DJANGO_VERSION=4.0.10
-          - DJANGO_VERSION=4.1.7
+          - FLASK_VERSION=2.3.3
+          - FLASK_VERSION=3.0.3
+          - DJANGO_VERSION=3.2.25
+          - DJANGO_VERSION=4.2.15
+          - DJANGO_VERSION=5.0.8
           - TWISTED_VERSION=20.3.0
           - TWISTED_VERSION=21.7.0
           - TWISTED_VERSION=22.10.0
           - PYRAMID_VERSION=1.10.8
-          - STARLETTE_VERSION=0.12.13 httpx==0.18.1 python-multipart==0.0.5
-          - STARLETTE_VERSION=0.14.2 httpx==0.18.1 python-multipart==0.0.5
-          - FASTAPI_VERSION=0.40.0 httpx==0.18.1 python-multipart==0.0.5
-          - FASTAPI_VERSION=0.50.0 httpx==0.18.1 python-multipart==0.0.5
-          - FASTAPI_VERSION=0.63.0 httpx==0.18.1 python-multipart==0.0.5
+          - PYRAMID_VERSION=2.0.2
+          - STARLETTE_VERSION=0.30.0 httpx==0.24.1 python-multipart==0.0.9
+          - STARLETTE_VERSION=0.38.2 httpx==0.27.0 python-multipart==0.0.9
+          - FASTAPI_VERSION=0.101.1 httpx==0.24.1 python-multipart==0.0.9
+          - FASTAPI_VERSION=0.112.1 httpx==0.27.0 python-multipart==0.0.9
         exclude:
           # Test frameworks on the python versions they support, according to pypi registry
           # Flask
-          - framework: FLASK_VERSION=2.2.3
+          - framework: FLASK_VERSION=2.3.3
             python-version: 3.6
+          - framework: FLASK_VERSION=2.3.3
+            python-version: 3.7
+          - framework: FLASK_VERSION=3.0.3
+            python-version: 3.6
+          - framework: FLASK_VERSION=3.0.3
+            python-version: 3.7
 
           # Django
-          - framework: DJANGO_VERSION=1.11.29
-            python-version: 3.8
-          - framework: DJANGO_VERSION=1.11.29
-            python-version: 3.9
-          - framework: DJANGO_VERSION=1.11.29
-            python-version: '3.10'
-          - framework: DJANGO_VERSION=1.11.29
+          - framework: DJANGO_VERSION=3.2.25
             python-version: 3.11
-          - framework: DJANGO_VERSION=4.0.10
+          - framework: DJANGO_VERSION=4.2.15
             python-version: 3.6
-          - framework: DJANGO_VERSION=4.0.10
+          - framework: DJANGO_VERSION=4.2.15
             python-version: 3.7
-          - framework: DJANGO_VERSION=4.1.7
-            python-version: 3.5
-          - framework: DJANGO_VERSION=4.1.7
+          - framework: DJANGO_VERSION=5.0.8
             python-version: 3.6
-          - framework: DJANGO_VERSION=4.1.7
+          - framework: DJANGO_VERSION=5.0.8
             python-version: 3.7
+          - framework: DJANGO_VERSION=5.0.8
+            python-version: 3.8
+          - framework: DJANGO_VERSION=5.0.8
+            python-version: 3.9
 
           # Twisted
           - framework: TWISTED_VERSION=20.3.0
             python-version: 3.11
           - framework: TWISTED_VERSION=22.10.0
             python-version: 3.6
+
+          # Starlette
+          - framework: STARLETTE_VERSION=0.30.0 httpx==0.24.1 python-multipart==0.0.9
+            python-version: 3.6
+          - framework: STARLETTE_VERSION=0.30.0 httpx==0.24.1 python-multipart==0.0.9
+            python-version: 3.7
+          - framework: STARLETTE_VERSION=0.38.2 httpx==0.27.0 python-multipart==0.0.9
+            python-version: 3.6
+          - framework: STARLETTE_VERSION=0.38.2 httpx==0.27.0 python-multipart==0.0.9
+            python-version: 3.7
+
+          # FastAPI
+          - framework: FASTAPI_VERSION=0.101.1 httpx==0.24.1 python-multipart==0.0.9
+            python-version: 3.6
+          - framework: FASTAPI_VERSION=0.101.1 httpx==0.24.1 python-multipart==0.0.9
+            python-version: 3.7
+          - framework: FASTAPI_VERSION=0.112.1 httpx==0.27.0 python-multipart==0.0.9
+            python-version: 3.6
+          - framework: FASTAPI_VERSION=0.112.1 httpx==0.27.0 python-multipart==0.0.9
+            python-version: 3.7
 
     steps:
       - uses: actions/checkout@v2
@@ -75,7 +97,7 @@ jobs:
       - name: Install Python 3.6 dependencies
         if: ${{ contains(matrix.python-version, '3.6') }}
         # typing-extensions dropped support for Python 3.6 in version 4.2
-        run: pip install "typing-extensions<4.2" requests==2.27.0 blinker==1.5 immutables==0.19
+        run: pip install "typing-extensions<4.2" requests==2.27.0 blinker==1.5 immutables==0.19 webob blinker httpx aiocontextvars
 
       - name: Install Python 3.7 dependencies
         if: ${{ contains(matrix.python-version, '3.7') }}
@@ -83,6 +105,7 @@ jobs:
         run: pip install immutables==0.19
 
       - name: Set the framework
+        if: ${{ matrix.framework != 'NONE' }}
         run: echo ${{ matrix.framework }} >> $GITHUB_ENV
 
       - name: Install Flask
@@ -109,5 +132,13 @@ jobs:
         if: ${{ contains(matrix.framework, 'FASTAPI_VERSION') }}
         run: pip install fastapi==$FASTAPI_VERSION
 
-      - name: Run tests
-        run: python setup.py test
+      - name: Install Tox
+        run: pip install tox
+
+      - name: Run tests (skip on Python 3.6)
+        if: ${{ !contains(matrix.python-version, '3.6') }}
+        run: tox
+
+      - name: Run tests (Python 3.6)
+        if: ${{ contains(matrix.python-version, '3.6') }}
+        run: python -m unittest rollbar.test.discover
