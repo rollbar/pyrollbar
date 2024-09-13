@@ -132,5 +132,8 @@ jobs:
         if: ${{ contains(matrix.framework, 'FASTAPI_VERSION') }}
         run: pip install fastapi==$FASTAPI_VERSION
 
+      - name: Install Tox
+        run: pip install tox
+
       - name: Run tests
-        run: python setup.py test
+        run: tox
