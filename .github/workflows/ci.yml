@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9, '3.10', 3.11]
+        python-version: [3.6, 3.7, 3.8, 3.9, '3.10', 3.11, 3.12]
         framework:
           - NONE
           - FLASK_VERSION=1.1.4
@@ -45,6 +45,8 @@ jobs:
           # Django
           - framework: DJANGO_VERSION=3.2.25
             python-version: 3.11
+          - framework: DJANGO_VERSION=3.2.25
+            python-version: 3.12
           - framework: DJANGO_VERSION=4.2.15
             python-version: 3.6
           - framework: DJANGO_VERSION=4.2.15
@@ -61,6 +63,8 @@ jobs:
           # Twisted
           - framework: TWISTED_VERSION=20.3.0
             python-version: 3.11
+          - framework: TWISTED_VERSION=20.3.0
+            python-version: 3.12
           - framework: TWISTED_VERSION=22.10.0
             python-version: 3.6
 
