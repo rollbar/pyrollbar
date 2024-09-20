@@ -24,7 +24,7 @@ Python notifier for reporting exceptions, errors, and log messages to [Rollbar](
 
 | PyRollbar Version | Python Version Compatibility                  | Support Level       |
 |-------------------|-----------------------------------------------|---------------------|
-| 1.0.0             | 3.6, 3.7. 3.8, 3.9, 3.10, 3.11                | Full                |
+| 1.0.0             | 3.6, 3.7. 3.8, 3.9, 3.10, 3.11, 3.12          | Full                |
 | 0.16.3            | 2.7, 3.4, 3.5, 3.6, 3.7. 3.8, 3.9, 3.10, 3.11 | Security Fixes Only |
 
 #### Support Level Definitions

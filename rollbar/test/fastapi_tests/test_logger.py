@@ -99,7 +99,7 @@ class LoggerMiddlewareTest(BaseTest):
         store_current_request.assert_called_once()
 
         scope = store_current_request.call_args[0][0]
-        self.assertDictContainsSubset(expected_scope, scope)
+        self.assertEqual(scope, {**expected_scope, **scope})
 
     def test_should_return_current_request(self):
         from fastapi import FastAPI

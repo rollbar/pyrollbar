@@ -728,7 +728,7 @@ class LoggingRouteTest(BaseTest):
         store_current_request.assert_called_once()
 
         scope = store_current_request.call_args[0][0]
-        self.assertDictContainsSubset(expected_scope, scope)
+        self.assertEqual(scope, {**expected_scope, **scope})
 
     @unittest.skipUnless(
         sys.version_info >= (3, 6), 'Global request access is supported in Python 3.6+'
