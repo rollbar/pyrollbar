@@ -122,6 +122,22 @@ class UtilsBareRoutingTest(BaseTest):
 
         self.assertFalse(has_bare_routing(app))
 
+    def test_should_return_true_if_docs_disabled(self):
+        from fastapi import APIRouter, FastAPI
+        from rollbar.contrib.fastapi.utils import has_bare_routing
+
+        app = FastAPI(docs_url=None, redoc_url=None)
+        self.assertTrue(has_bare_routing(app))
+
+        app = FastAPI(docs_url=None)
+        self.assertTrue(has_bare_routing(app))
+
+        app = FastAPI(redoc_url=None)
+        self.assertTrue(has_bare_routing(app))
+
+        router = APIRouter()
+        self.assertTrue(has_bare_routing(router))
+
 @unittest.skipUnless(
     FASTAPI_INSTALLED and ALLOWED_PYTHON_VERSION, 'FastAPI requires Python3.6+'
 )

@@ -1,5 +1,6 @@
 import functools
 import logging
+from typing import Union
 
 import fastapi
 from fastapi import APIRouter, FastAPI
@@ -96,17 +97,20 @@ def get_installed_middlewares(app):
     return middlewares
 
 
-def has_bare_routing(app_or_router):
-    expected_app_routes = 4
-    expected_router_routes = 0
+def has_bare_routing(app_or_router: Union[FastAPI, APIRouter]):
+    if not isinstance(app_or_router, (FastAPI, APIRouter)):
+        return False
 
-    if (
-        isinstance(app_or_router, FastAPI)
-        and expected_app_routes != len(app_or_router.routes)
-    ) or (
-        isinstance(app_or_router, APIRouter)
-        and expected_router_routes != len(app_or_router.routes)
-    ):
+    urls = [
+        getattr(app_or_router, 'openapi_url', None),
+        getattr(app_or_router, 'docs_url', None),
+        getattr(app_or_router, 'redoc_url', None),
+        getattr(app_or_router, 'swagger_ui_oauth2_redirect_url', None),
+    ]
+
+    for route in app_or_router.routes:
+        if route is None or route.path in urls:
+            continue
         return False
 
     return True
