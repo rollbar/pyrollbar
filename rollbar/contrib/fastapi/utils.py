@@ -1,5 +1,6 @@
 import functools
 import logging
+from typing import Union
 
 import fastapi
 from fastapi import APIRouter, FastAPI
@@ -96,7 +97,7 @@ def get_installed_middlewares(app):
     return middlewares
 
 
-def has_bare_routing(app_or_router: FastAPI | APIRouter):
+def has_bare_routing(app_or_router: Union[FastAPI, APIRouter]):
     if not isinstance(app_or_router, (FastAPI, APIRouter)):
         return False
 
