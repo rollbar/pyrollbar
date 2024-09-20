@@ -132,13 +132,5 @@ jobs:
         if: ${{ contains(matrix.framework, 'FASTAPI_VERSION') }}
         run: pip install fastapi==$FASTAPI_VERSION
 
-      - name: Install Tox
-        run: pip install tox
-
-      - name: Run tests (skip on Python 3.6)
-        if: ${{ !contains(matrix.python-version, '3.6') }}
-        run: tox
-
-      - name: Run tests (Python 3.6)
-        if: ${{ contains(matrix.python-version, '3.6') }}
+      - name: Run tests
         run: python -m unittest rollbar.test.discover
