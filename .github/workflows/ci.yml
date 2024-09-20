@@ -94,6 +94,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Install Python Test dependencies
+        run: pip install requests webob blinker httpx
+
       - name: Install Python 3.6 dependencies
         if: ${{ contains(matrix.python-version, '3.6') }}
         # typing-extensions dropped support for Python 3.6 in version 4.2
