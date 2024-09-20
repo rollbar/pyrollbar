@@ -94,6 +94,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Install Python Test dependencies
+        run: pip install requests webob blinker httpx
+
       - name: Install Python 3.6 dependencies
         if: ${{ contains(matrix.python-version, '3.6') }}
         # typing-extensions dropped support for Python 3.6 in version 4.2
@@ -132,13 +135,5 @@ jobs:
         if: ${{ contains(matrix.framework, 'FASTAPI_VERSION') }}
         run: pip install fastapi==$FASTAPI_VERSION
 
-      - name: Install Tox
-        run: pip install tox
-
-      - name: Run tests (skip on Python 3.6)
-        if: ${{ !contains(matrix.python-version, '3.6') }}
-        run: tox
-
-      - name: Run tests (Python 3.6)
-        if: ${{ contains(matrix.python-version, '3.6') }}
+      - name: Run tests
         run: python -m unittest rollbar.test.discover
