@@ -45,6 +45,8 @@ jobs:
           # Django
           - framework: DJANGO_VERSION=3.2.25
             python-version: 3.11
+          - framework: DJANGO_VERSION=3.2.25
+            python-version: 3.12
           - framework: DJANGO_VERSION=4.2.15
             python-version: 3.6
           - framework: DJANGO_VERSION=4.2.15
@@ -61,6 +63,8 @@ jobs:
           # Twisted
           - framework: TWISTED_VERSION=20.3.0
             python-version: 3.11
+          - framework: TWISTED_VERSION=20.3.0
+            python-version: 3.12
           - framework: TWISTED_VERSION=22.10.0
             python-version: 3.6
 
