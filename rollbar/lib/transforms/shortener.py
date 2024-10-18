@@ -4,7 +4,7 @@ import itertools
 import reprlib
 
 from collections.abc import Mapping
-from typing import Union
+from typing import Union, Tuple
 
 from rollbar.lib import (
     integer_types, key_in, key_depth, sequence_types,
@@ -26,7 +26,7 @@ _type_name_mapping = {
 }
 
 
-def _max_left_right(max_len: int, seperator_len: int) -> tuple[int, int]:
+def _max_left_right(max_len: int, seperator_len: int) -> Tuple[int, int]:
     left = max(0, (max_len-seperator_len)//2)
     right = max(0, max_len-seperator_len-left)
     return left, right
