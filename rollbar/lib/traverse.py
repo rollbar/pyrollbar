@@ -81,6 +81,7 @@ def traverse(
     circular_reference_handler=_default_handlers[CIRCULAR],
     allowed_circular_reference_types=None,
     memo=None,
+    depth_first=True,
     **custom_handlers
 ):
     memo = memo or {}
@@ -108,6 +109,7 @@ def traverse(
         "circular_reference_handler": circular_reference_handler,
         "allowed_circular_reference_types": allowed_circular_reference_types,
         "memo": memo,
+        "depth_first": depth_first,
     }
     kw.update(custom_handlers)
 
@@ -115,35 +117,50 @@ def traverse(
         if obj_type is STRING:
             return string_handler(obj, key=key)
         elif obj_type is TUPLE:
-            return tuple_handler(
-                tuple(
-                    traverse(elem, key=key + (i,), **kw) for i, elem in enumerate(obj)
-                ),
-                key=key,
-            )
+            if depth_first:
+                return tuple_handler(
+                    tuple(
+                        traverse(elem, key=key + (i,), **kw) for i, elem in enumerate(obj)
+                    ),
+                    key=key,
+                )
+            # Breadth first
+            return tuple(traverse(elem, key=key + (i,), **kw) for i, elem in enumerate(tuple_handler(obj, key=key)))
         elif obj_type is NAMEDTUPLE:
-            return namedtuple_handler(
-                obj._make(
-                    traverse(v, key=key + (k,), **kw)
-                    for k, v in obj._asdict().items()
-                ),
-                key=key,
-            )
+            if depth_first:
+                return namedtuple_handler(
+                    obj._make(
+                        traverse(v, key=key + (k,), **kw)
+                        for k, v in obj._asdict().items()
+                    ),
+                    key=key,
+                )
+            # Breadth first
+            return obj._make(traverse(v, key=key + (k,), **kw) for k, v in namedtuple_handler(obj, key=key)._asdict().items())
         elif obj_type is LIST:
-            return list_handler(
-                [traverse(elem, key=key + (i,), **kw) for i, elem in enumerate(obj)],
-                key=key,
-            )
+            if depth_first:
+                return list_handler(
+                    [traverse(elem, key=key + (i,), **kw) for i, elem in enumerate(obj)],
+                    key=key,
+                )
+            # Breadth first
+            return [traverse(elem, key=key + (i,), **kw) for i, elem in enumerate(list_handler(obj, key=key))]
         elif obj_type is SET:
-            return set_handler(
-                {traverse(elem, key=key + (i,), **kw) for i, elem in enumerate(obj)},
-                key=key,
-            )
+            if depth_first:
+                return set_handler(
+                    {traverse(elem, key=key + (i,), **kw) for i, elem in enumerate(obj)},
+                    key=key,
+                )
+            # Breadth first
+            return {traverse(elem, key=key + (i,), **kw) for i, elem in enumerate(set_handler(obj, key=key))}
         elif obj_type is MAPPING:
-            return mapping_handler(
-                {k: traverse(v, key=key + (k,), **kw) for k, v in obj.items()},
-                key=key,
-            )
+            if depth_first:
+                return mapping_handler(
+                    {k: traverse(v, key=key + (k,), **kw) for k, v in obj.items()},
+                    key=key,
+                )
+            # Breadth first
+            return {k: traverse(v, key=key + (k,), **kw) for k, v in mapping_handler(obj, key=key).items()}
         elif obj_type is PATH:
             return path_handler(obj, key=key)
         elif obj_type is DEFAULT:

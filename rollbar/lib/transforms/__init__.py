@@ -89,7 +89,7 @@ def _transform(obj, transform, key=None):
         "allowed_circular_reference_types": _ALLOWED_CIRCULAR_REFERENCE_TYPES,
     }
 
-    return traverse.traverse(obj, key=key, **handlers)
+    return traverse.traverse(obj, key=key, depth_first=transform.depth_first, **handlers)
 
 
 __all__ = ["transform", "Transform"]

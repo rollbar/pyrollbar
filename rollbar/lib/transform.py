@@ -1,4 +1,6 @@
 class Transform(object):
+    depth_first = True
+
     def default(self, o, key=None):
         return o
 

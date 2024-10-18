@@ -2,10 +2,9 @@ import sys
 from array import array
 from collections import deque
 
-from rollbar import DEFAULT_LOCALS_SIZES
+from rollbar import DEFAULT_LOCALS_SIZES, SETTINGS
 from rollbar.lib import transforms
 from rollbar.lib.transforms.shortener import ShortenerTransform
-from rollbar.lib.type_info import Sequence
 from rollbar.test import BaseTest
 
 
@@ -13,12 +12,35 @@ class TestClassWithAVeryVeryVeryVeryVeryVeryVeryLongName:
     pass
 
 
+class KeyMemShortenerTransform(ShortenerTransform):
+    """
+    A shortener that just stores the keys.
+    """
+    keysUsed = []
+
+    def default(self, o, key=None):
+        self.keysUsed.append((key, o))
+        return super(KeyMemShortenerTransform, self).default(o, key=key)
+
+
 class ShortenerTransformTest(BaseTest):
     def setUp(self):
-        self.data = {
-            'string': 'x' * 120,
-            'long': 17955682733916468498414734863645002504519623752387,
-            'dict': {
+        self.shortener = ShortenerTransform(keys=[('shorten',)], **DEFAULT_LOCALS_SIZES)
+
+    def test_shorten_string(self):
+        original = 'x' * 120
+        shortened = '{}...{}'.format('x'*48, 'x'*49)
+        self.assertEqual(shortened, self.shortener.default(original, ('shorten',)))
+        self.assertEqual(original, self.shortener.default(original, ('nope',)))
+
+    def test_shorten_long(self):
+        original = 17955682733916468498414734863645002504519623752387
+        shortened = '179556827339164684...5002504519623752387'
+        self.assertEqual(shortened, self.shortener.default(original, ('shorten',)))
+        self.assertEqual(original, self.shortener.default(original, ('nope',)))
+
+    def test_shorten_mapping(self):
+        original = {
                 'one': 'one',
                 'two': 'two',
                 'three': 'three',
@@ -30,89 +52,69 @@ class ShortenerTransformTest(BaseTest):
                 'nine': 'nine',
                 'ten': 'ten',
                 'eleven': 'eleven'
-            },
-            'list': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-            'tuple': (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
-            'set': set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]),
-            'frozenset': frozenset([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]),
-            'array': array('l', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]),
-            'deque': deque([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], 15),
-            'other': TestClassWithAVeryVeryVeryVeryVeryVeryVeryLongName()
-        }
+            }
+        shortened = {
+                'one': 'one',
+                'two': 'two',
+                'three': 'three',
+                'four': 'four',
+                'five': 'five',
+                'six': 'six',
+                'seven': 'seven',
+                'eight': 'eight',
+                'nine': 'nine',
+                'ten': 'ten',
+            }
+        self.assertEqual(shortened, self.shortener.default(original, ('shorten',)))
+        self.assertEqual(original, self.shortener.default(original, ('nope',)))
 
-    def _assert_shortened(self, key, expected):
-        shortener = ShortenerTransform(keys=[(key,)], **DEFAULT_LOCALS_SIZES)
-        result = transforms.transform(self.data, shortener)
-
-        if key == 'dict':
-            self.assertEqual(expected, len(result))
-        else:
-            # the repr output can vary between Python versions
-            stripped_result_key = result[key].strip("'\"u")
-
-        if key == 'other':
-            self.assertIn(expected, stripped_result_key)
-        elif key != 'dict':
-            self.assertEqual(expected, stripped_result_key)
-
-        # make sure nothing else was shortened
-        result.pop(key)
-        self.assertNotIn('...', str(result))
-        self.assertNotIn('...', str(self.data))
-
-    def test_no_shorten(self):
-        shortener = ShortenerTransform(**DEFAULT_LOCALS_SIZES)
-        result = transforms.transform(self.data, shortener)
-        self.assertEqual(self.data, result)
-
-    def test_shorten_string(self):
-        expected = '{}...{}'.format('x'*47, 'x'*48)
-        self._assert_shortened('string', expected)
-
-    def test_shorten_long(self):
-        expected = '179556827339164684...5002504519623752387'
-        self._assert_shortened('long', expected)
-
-    def test_shorten_mapping(self):
-        # here, expected is the number of key value pairs
-        expected = 10
-        self._assert_shortened('dict', expected)
+    def test_shorten_bytes(self):
+        original = b'\x78' * 120
+        shortened = b'\x78' * 100
+        self.assertEqual(shortened, self.shortener.default(original, ('shorten',)))
+        self.assertEqual(original, self.shortener.default(original, ('nope',)))
 
     def test_shorten_list(self):
-        expected = '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...]'
-        self._assert_shortened('list', expected)
+        original = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+        shortened = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, '...']
+        self.assertEqual(shortened, self.shortener.default(original, ('shorten',)))
+        self.assertEqual(original, self.shortener.default(original, ('nope',)))
 
     def test_shorten_tuple(self):
-        expected = '(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...)'
-        self._assert_shortened('tuple', expected)
+        original = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
+        shortened = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, '...')
+        self.assertEqual(shortened, self.shortener.default(original, ('shorten',)))
+        self.assertEqual(original, self.shortener.default(original, ('nope',)))
 
     def test_shorten_set(self):
-        expected = 'set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...])'
-        if sys.version_info >= (3, 5):
-            expected = '{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...}'
-        self._assert_shortened('set', expected)
+        original = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
+        shortened = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, '...'}
+        self.assertEqual(shortened, self.shortener.default(original, ('shorten',)))
+        self.assertEqual(original, self.shortener.default(original, ('nope',)))
 
     def test_shorten_frozenset(self):
-        expected = 'frozenset([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...])'
-        if sys.version_info >= (3, 5):
-            expected = 'frozenset({1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...})'
-        self._assert_shortened('frozenset', expected)
+        original = frozenset([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
+        shortened = frozenset([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, '...'])
+        self.assertEqual(shortened, self.shortener.default(original, ('shorten',)))
+        self.assertEqual(original, self.shortener.default(original, ('nope',)))
 
     def test_shorten_array(self):
-        expected = 'array(\'l\', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...])'
-        if sys.version_info >= (3, 10):
-            expected = '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...]'
-        self._assert_shortened('array', expected)
+        original = array('l', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
+        shortened = array('l', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+        self.assertEqual(shortened, self.shortener.default(original, ('shorten',)))
+        self.assertEqual(original, self.shortener.default(original, ('nope',)))
 
     def test_shorten_deque(self):
-        expected = 'deque([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...])'
-        if issubclass(deque, Sequence):
-            expected = '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...]'
-        self._assert_shortened('deque', expected)
+        original = deque([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], 15)
+        shortened = deque([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 15)
+        self.assertEqual(shortened, self.shortener.default(original, ('shorten',)))
+        self.assertEqual(original, self.shortener.default(original, ('nope',)))
 
     def test_shorten_other(self):
-        expected = '<rollbar.test.test_shortener_transform.TestClas...'
-        self._assert_shortened('other', expected)
+        original = TestClassWithAVeryVeryVeryVeryVeryVeryVeryLongName()
+        shortened = '<rollbar.test.test_shortener_transform.TestClas...'
+        self.assertIn(shortened, self.shortener.default(original, ('shorten',)))
+        self.assertEqual(original, self.shortener.default(original, ('nope',)))
 
     def test_shorten_object(self):
         data = {'request': {'POST': {i: i for i in range(12)}}}
@@ -189,8 +191,8 @@ class ShortenerTransformTest(BaseTest):
                             "locals": {
                                 "kwargs": {
                                     # Shortened
-                                    "app": "['foo', 'bar', 'baz', 'qux', 'quux', 'corge', 'grault', 'garply', 'waldo', "
-                                           "'fred', ...]",
+                                    "app": ['foo', 'bar', 'baz', 'qux', 'quux', 'corge', 'grault', 'garply', 'waldo',
+                                           'fred', '...'],
                                     "extra": {
                                         "request": "<class 'some.package.MyClass'>"
                                     }
@@ -200,15 +202,15 @@ class ShortenerTransformTest(BaseTest):
                                         "three": {
                                             "four": {
                                                 "five": {
-                                                    "six": '{...}',  # Dropped because it is past the maxlevel.
+                                                    "six": dict(),  # Dropped because it is past the maxlevel.
                                                     # Shortened
-                                                    "ten": "'Yep! this should still be here, but it is a lit...ong "
-                                                           "side, so we might want to cut it down a bit.'"
+                                                    "ten": "Yep! this should still be here, but it is a litt...long "
+                                                           "side, so we might want to cut it down a bit."
                                                 }
                                             }
                                         }
                                     },
-                                    "a": "['foo', 'bar', 'baz', 'qux', 5, 6, 7, 8, 9, 10, ...]",   # Shortened
+                                    "a": ['foo', 'bar', 'baz', 'qux', 5, 6, 7, 8, 9, 10, '...'],   # Shortened
                                     "b": '140715041065664816...7453168916351054663',  # Shortened
                                     "app_id": 140715046161904,
                                     "bar": "im a bar",
@@ -221,3 +223,55 @@ class ShortenerTransformTest(BaseTest):
         }
 
         self.assertEqual(result, expected)
+
+    def test_breadth_first(self):
+        obj = {
+            "one": ["four", "five", 6, 7],
+            "two": ("eight", "nine", "ten"),
+            "three": {
+                "eleven": 12,
+                "thirteen": 14
+            }
+        }
+
+        shortener_instance = KeyMemShortenerTransform(
+            safe_repr=True,
+            keys=[
+                ('request', 'POST'),
+                ('request', 'json'),
+                ('body', 'request', 'POST'),
+                ('body', 'request', 'json'),
+            ],
+            **SETTINGS['locals']['sizes']
+        )
+
+        transforms.transform(obj, [shortener_instance], key=())
+
+        self.assertEqual(
+            shortener_instance.keysUsed,
+            [
+                ((), {
+                    "one": ["four", "five", 6, 7],
+                    "two": ("eight", "nine", "ten"),
+                    "three": {
+                        "eleven": 12,
+                        "thirteen": 14
+                    }
+                }),
+                (("one",), ["four", "five", 6, 7]),
+                (("one", 0), "four"),
+                (("one", 1), "five"),
+                (("one", 2), 6),
+                (("one", 3), 7),
+                (("two",), ("eight", "nine", "ten")),
+                (("two", 0), "eight"),
+                (("two", 1), "nine"),
+                (("two", 2), "ten"),
+                (("three",), {
+                    "eleven": 12,
+                    "thirteen": 14
+                }),
+                (("three", "eleven"), 12),
+                (("three", "thirteen"), 14),
+            ],
+        )
