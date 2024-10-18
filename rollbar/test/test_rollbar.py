@@ -1555,7 +1555,7 @@ class RollbarTest(BaseTest):
 
         self.assertEqual(1, len(payload['data']['body']['trace']['frames'][-1]['argspec']))
         self.assertEqual('large', payload['data']['body']['trace']['frames'][-1]['argspec'][0])
-        self.assertEqual("'###############################################...################################################'",
+        self.assertEqual("################################################...#################################################",
                          payload['data']['body']['trace']['frames'][-1]['locals']['large'])
 
     @mock.patch('rollbar.send_payload')
@@ -1586,12 +1586,12 @@ class RollbarTest(BaseTest):
 
         self.assertEqual('large', payload['data']['body']['trace']['frames'][-1]['argspec'][0])
         self.assertTrue(
-            ("['hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', ...]" ==
+            (['hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', '...'] ==
                 payload['data']['body']['trace']['frames'][-1]['argspec'][0])
 
             or
 
-            ("['hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', ...]" ==
+            (['hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', 'hi', '...'] ==
                     payload['data']['body']['trace']['frames'][0]['locals']['xlarge']))
 
 
