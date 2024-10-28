@@ -186,7 +186,7 @@ class ShortenerTransform(Transform):
     def default(self, o, key=None):
         if self._should_drop(o, key):
             if isinstance(o, (dict, Mapping)):
-                return dict()
+                return {'...': '...'}
             if isinstance(o, sequence_types):
                 return ['...']
 
