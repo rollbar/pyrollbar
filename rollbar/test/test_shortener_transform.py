@@ -202,7 +202,7 @@ class ShortenerTransformTest(BaseTest):
                                         "three": {
                                             "four": {
                                                 "five": {
-                                                    "six": dict(),  # Dropped because it is past the maxlevel.
+                                                    "six": {'...': '...'},  # Dropped because it is past the maxlevel.
                                                     # Shortened
                                                     "ten": "Yep! this should still be here, but it is a litt...long "
                                                            "side, so we might want to cut it down a bit."
