@@ -60,7 +60,9 @@ class RollbarHandler(logging.Handler):
 
         if access_token is not None:
             rollbar.init(
-                access_token, environment, **resolve_logging_types(kw))
+                access_token, environment,
+                allow_logging_basic_config=False,   # a handler shouldn't configure the root logger
+                **resolve_logging_types(kw))
 
         self.notify_level = _checkLevel(level)
 
