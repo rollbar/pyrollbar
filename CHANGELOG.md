@@ -2,6 +2,15 @@
 
 The change log is also available on the [GitHub Releases Page](https://github.com/rollbar/pyrollbar/releases).
 
+**1.1.0**
+
+- Updated supported/tested frameworks and modernized tests and packaging by @danielmorell in [#455](https://github.com/rollbar/pyrollbar/pull/455)
+- Fixed #398 FastAPI integration fails if docs are disabled by @danielmorell in [#459](https://github.com/rollbar/pyrollbar/pull/459)
+- Support `pathlib.Path()` objects by @singingwolfboy in [$450](https://github.com/rollbar/pyrollbar/pull/450)
+- Added support for Python 3.12 by @danielmorell in [#460](https://github.com/rollbar/pyrollbar/pull/460)
+- Changed the `ShortenerTransform` to use breadth first traversal by @danielmorell in [#461](https://github.com/rollbar/pyrollbar/pull/461)
+- Fixed shortener multi level shortening by @danielmorell and @pawelsz-rb. See [#449](https://github.com/rollbar/pyrollbar/pull/449)
+
 **1.1.0-beta**
 
 - Updated supported/tested frameworks and modernized tests and packaging by @danielmorell in [#455](https://github.com/rollbar/pyrollbar/pull/455)
