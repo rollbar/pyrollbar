@@ -1,4 +1,5 @@
 from rollbar.lib import dict_merge, prefix_match, key_match, key_depth
+from rollbar.lib.transport import _get_proxy_cfg
 
 from rollbar.test import BaseTest
 
@@ -108,3 +109,19 @@ class RollbarLibTest(BaseTest):
         self.assertEqual(42, result['a']['b'])
         self.assertIn('y', result['a'])
         self.assertRegex(result['a']['y'], r'Uncopyable obj')
+
+    def test_transport_get_proxy_cfg(self):
+        result = _get_proxy_cfg({})
+        self.assertEqual(None, result)
+
+        result = _get_proxy_cfg({'proxy': 'localhost'})
+        self.assertEqual({'http': 'http://localhost', 'https': 'http://localhost'}, result)
+
+        result = _get_proxy_cfg({'proxy': 'localhost:8080'})
+        self.assertEqual({'http': 'http://localhost:8080', 'https': 'http://localhost:8080'}, result)
+
+        result = _get_proxy_cfg({'proxy': 'localhost', 'proxy_user': 'username', 'proxy_password': 'password'})
+        self.assertEqual({
+            'http': 'http://username:password@localhost',
+            'https': 'http://username:password@localhost',
+        }, result)
