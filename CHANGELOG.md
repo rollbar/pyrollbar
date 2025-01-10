@@ -2,6 +2,10 @@
 
 The change log is also available on the [GitHub Releases Page](https://github.com/rollbar/pyrollbar/releases).
 
+**1.1.1**
+
+Fixed #465 httpx 0.28.0 not compatible with pyrollbar by @danielmorell in [#466](https://github.com/rollbar/pyrollbar/pull/466)
+
 **1.1.0**
 
 - Updated supported/tested frameworks and modernized tests and packaging by @danielmorell in [#455](https://github.com/rollbar/pyrollbar/pull/455)
