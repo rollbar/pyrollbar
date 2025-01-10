@@ -132,10 +132,16 @@ async def _post_api_httpx(path, payload_str, access_token=None):
         'proxy_password': rollbar.SETTINGS.get('http_proxy_password'),
     }
     proxies = transport._get_proxy_cfg(proxy_cfg)
+    mounts = None
+    if proxies:
+        mounts = {
+            'http://': httpx.HTTPTransport(proxy=proxies['http']),
+            'https://': httpx.HTTPTransport(proxy=proxies['https']),
+        }
 
     url = urljoin(rollbar.SETTINGS['endpoint'], path)
     async with httpx.AsyncClient(
-        proxies=proxies, verify=rollbar.SETTINGS.get('verify_https', True)
+        mounts=mounts, verify=rollbar.SETTINGS.get('verify_https', True)
     ) as client:
         resp = await client.post(
             url,
