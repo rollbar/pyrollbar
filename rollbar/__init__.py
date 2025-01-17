@@ -1264,11 +1264,12 @@ def _build_werkzeug_request_data(request):
         'files_keys': list(request.files.keys()),
     }
 
-    try:
-        if request.json:
-            request_data['body'] = request.json
-    except Exception:
-        pass
+    if SETTINGS['include_request_body']:
+        try:
+            if request.json:
+                request_data['body'] = request.json
+        except Exception:
+            pass
 
     return request_data
 
@@ -1296,13 +1297,15 @@ def _build_bottle_request_data(request):
         'GET': dict(request.query)
     }
 
-    if request.json:
-        try:
-            request_data['body'] = request.body.getvalue()
-        except:
-            pass
-    else:
-        request_data['POST'] = dict(request.forms)
+
+    if SETTINGS['include_request_body']:
+        if request.json:
+            try:
+                request_data['body'] = request.body.getvalue()
+            except:
+                pass
+        else:
+            request_data['POST'] = dict(request.forms)
 
     return request_data
 
@@ -1316,13 +1319,14 @@ def _build_sanic_request_data(request):
         'GET': dict(request.args)
     }
 
-    if request.json:
-        try:
-            request_data['body'] = request.json
-        except:
-            pass
-    else:
-        request_data['POST'] = request.form
+    if SETTINGS['include_request_body']:
+        if request.json:
+            try:
+                request_data['body'] = request.json
+            except:
+                pass
+        else:
+            request_data['POST'] = request.form
 
     return request_data
 
@@ -1353,16 +1357,17 @@ def _build_wsgi_request_data(request):
 
     request_data['headers'] = _extract_wsgi_headers(request.items())
 
-    try:
-        length = int(request.get('CONTENT_LENGTH', 0))
-    except ValueError:
-        length = 0
-    input = request.get('wsgi.input')
-    if length and input and hasattr(input, 'seek') and hasattr(input, 'tell'):
-        pos = input.tell()
-        input.seek(0, 0)
-        request_data['body'] = input.read(length)
-        input.seek(pos, 0)
+    if SETTINGS['include_request_body']:
+        try:
+            length = int(request.get('CONTENT_LENGTH', 0))
+        except ValueError:
+            length = 0
+        input = request.get('wsgi.input')
+        if length and input and hasattr(input, 'seek') and hasattr(input, 'tell'):
+            pos = input.tell()
+            input.seek(0, 0)
+            request_data['body'] = input.read(length)
+            input.seek(pos, 0)
 
     return request_data
 

@@ -82,6 +82,7 @@ if ALLOWED_PYTHON_VERSION and FLASK_INSTALLED:
 
         @mock.patch('rollbar.send_payload')
         def test_uncaught(self, send_payload):
+            rollbar.SETTINGS['include_request_body'] = True
             resp = self.client.get('/cause_error?foo=bar',
                 headers={'X-Real-Ip': '1.2.3.4', 'User-Agent': 'Flask Test'})
             self.assertEqual(resp.status_code, 500)
@@ -115,6 +116,7 @@ if ALLOWED_PYTHON_VERSION and FLASK_INSTALLED:
 
         @mock.patch('rollbar.send_payload')
         def test_uncaught_json_request(self, send_payload):
+            rollbar.SETTINGS['include_request_body'] = True
             json_body = {"hello": "world"}
             json_body_str = json.dumps(json_body)
             resp = self.client.post('/cause_error', data=json_body_str,
@@ -178,3 +180,20 @@ if ALLOWED_PYTHON_VERSION and FLASK_INSTALLED:
 
             rollbar.SETTINGS['capture_email'] = True
             rollbar.SETTINGS['capture_username'] = True
+
+        @mock.patch('rollbar.send_payload')
+        def test_uncaught_no_body(self, send_payload):
+            rollbar.SETTINGS['include_request_body'] = False
+
+            resp = self.client.get('/cause_error?foo=bar',
+                headers={'X-Real-Ip': '1.2.3.4', 'User-Agent': 'Flask Test'})
+            self.assertEqual(resp.status_code, 500)
+
+            self.assertEqual(send_payload.called, True)
+            payload = send_payload.call_args[0][0]
+            data = payload['data']
+
+            self.assertIn('request', data)
+            self.assertNotIn('body', data['request'])
+
+            rollbar.SETTINGS['include_request_body'] = True
