@@ -9,6 +9,7 @@ from rollbar.lib.transform import Transform
 
 
 class SerializableTransform(Transform):
+    priority = 30
     def __init__(self, safe_repr=True, safelist_types=None):
         super(SerializableTransform, self).__init__()
         self.safe_repr = safe_repr

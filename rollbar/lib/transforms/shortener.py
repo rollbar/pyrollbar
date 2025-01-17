@@ -108,6 +108,7 @@ def shorten_tuple(obj: tuple, max_len: int) -> tuple:
 
 class ShortenerTransform(Transform):
     depth_first = False
+    priority = 10
 
     def __init__(self, safe_repr=True, keys=None, **sizes):
         super(ShortenerTransform, self).__init__()

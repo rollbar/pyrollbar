@@ -1,5 +1,6 @@
 class Transform(object):
     depth_first = True
+    priority = 100
 
     def default(self, o, key=None):
         return o

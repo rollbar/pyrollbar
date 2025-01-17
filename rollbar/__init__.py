@@ -323,6 +323,7 @@ SETTINGS = {
     'request_pool_maxsize': None,
     'request_max_retries': None,
     'batch_transforms': False,
+    'custom_transforms': [],
 }
 
 _CURRENT_LAMBDA_CONTEXT = None
@@ -426,12 +427,23 @@ def init(access_token, environment='production', scrub_fields=None, url_fields=N
                                    keys=shortener_keys,
                                    **SETTINGS['locals']['sizes'])
     _transforms = [
-        shortener,
-        ScrubRedactTransform(),
-        _serialize_transform,
-        ScrubTransform(suffixes=[(field,) for field in SETTINGS['scrub_fields']], redact_char='*'),
-        ScrubUrlTransform(suffixes=[(field,) for field in SETTINGS['url_fields']], params_to_scrub=SETTINGS['scrub_fields'])
+        shortener,  # priority: 10
+        ScrubRedactTransform(),  # priority: 20
+        _serialize_transform,  # priority: 30
+        ScrubTransform(suffixes=[(field,) for field in SETTINGS['scrub_fields']], redact_char='*'),  # priority: 40
+        ScrubUrlTransform(
+            suffixes=[(field,) for field in SETTINGS['url_fields']],
+            params_to_scrub=SETTINGS['scrub_fields'],
+        )  # priority: 50
     ]
+
+    # Add custom transforms
+    if len(SETTINGS['custom_transforms']) > 0:
+        _transforms.extend(SETTINGS['custom_transforms'])
+
+    # Sort the transforms by priority
+    _transforms = sorted(_transforms, key=lambda x: x.priority)
+
     _threads = queue.Queue()
     events.reset()
     filters.add_builtin_filters(SETTINGS)
