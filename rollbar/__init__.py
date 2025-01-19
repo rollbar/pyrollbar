@@ -268,6 +268,7 @@ SETTINGS = {
     'environment': 'production',
     'exception_level_filters': [],
     'root': None,  # root path to your code
+    'host': None,  # custom hostname of the current host
     'branch': None,  # git branch name
     'code_version': None,
     # 'blocking', 'thread' (default), 'async', 'agent', 'tornado', 'gae', 'twisted', 'httpx' or 'thread_pool'
@@ -1447,8 +1448,9 @@ def _build_server_data():
     Returns a dictionary containing information about the server environment.
     """
     # server environment
+    host = SETTINGS.get('host') or socket.gethostname()
     server_data = {
-        'host': socket.gethostname(),
+        'host': host,
         'pid': os.getpid()
     }
 

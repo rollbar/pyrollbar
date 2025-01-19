@@ -74,14 +74,16 @@ class RollbarTest(BaseTest):
         self.assertIn('argv', server_data)
         self.assertNotIn('branch', server_data)
         self.assertNotIn('root', server_data)
+        self.assertGreater(len(server_data['host']), 2)
 
+        rollbar.SETTINGS['host'] = 'test-host'
         rollbar.SETTINGS['branch'] = 'master'
         rollbar.SETTINGS['root'] = '/home/test/'
 
         server_data = rollbar._build_server_data()
 
-        self.assertIn('host', server_data)
         self.assertIn('argv', server_data)
+        self.assertEqual(server_data['host'], 'test-host')
         self.assertEqual(server_data['branch'], 'master')
         self.assertEqual(server_data['root'], '/home/test/')
 
