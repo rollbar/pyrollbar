@@ -53,3 +53,9 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic]
 version = {attr = "rollbar.__version__"}
+
+[project.scripts]
+rollbar = "rollbar.cli:main"
+
+[project.entry-points."paste.filter_app_factory"]
+pyramid = "rollbar.contrib.pyramid:create_rollbar_middleware"
