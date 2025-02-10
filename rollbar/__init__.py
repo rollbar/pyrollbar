@@ -862,6 +862,7 @@ def _report_message(message, level, request, extra_data, payload_data):
 
     if extra_data:
         extra_data = extra_data
+        data['body']['message'].update(extra_data)
         data['custom'] = extra_data
 
     request = _get_actual_request(request)
