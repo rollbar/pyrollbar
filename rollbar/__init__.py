@@ -508,7 +508,7 @@ def report_message(message, level='error', request=None, extra_data=None, payloa
     message: the string body of the message
     level: level to report at. One of: 'critical', 'error', 'warning', 'info', 'debug'
     request: the request object for the context of the message
-    extra_data: dictionary of params to include with the message. 'body' is reserved.
+    extra_data: optional, will be included in the 'custom' section of the payload
     payload_data: param names to pass in the 'data' level of the payload; overrides defaults.
     """
     try:
@@ -863,6 +863,7 @@ def _report_message(message, level, request, extra_data, payload_data):
     if extra_data:
         extra_data = extra_data
         data['body']['message'].update(extra_data)
+        data['custom'] = extra_data
 
     request = _get_actual_request(request)
     _add_request_data(data, request)

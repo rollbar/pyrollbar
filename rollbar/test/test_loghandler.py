@@ -48,6 +48,8 @@ class LogHandlerTest(BaseTest):
         self.assertEqual(payload['data']['body']['message']['body'], "Hello 1 world")
         self.assertEqual(payload['data']['body']['message']['args'], (1, 'world'))
         self.assertEqual(payload['data']['body']['message']['record']['name'], __name__)
+        self.assertEqual(payload['data']['custom']['args'], (1, 'world'))
+        self.assertEqual(payload['data']['custom']['record']['name'], __name__)
 
     @mock.patch('rollbar.send_payload')
     def test_string_or_int_level(self, send_payload):
