@@ -6,6 +6,7 @@ from rollbar.lib.transform import Transform
 
 class ScrubTransform(Transform):
     suffix_matcher = None
+    priority = 40
     def __init__(self, suffixes=None, redact_char='*', randomize_len=True):
         super(ScrubTransform, self).__init__()
         if suffixes is not None and len(suffixes) > 0:

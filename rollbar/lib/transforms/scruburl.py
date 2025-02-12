@@ -9,6 +9,7 @@ _starts_with_auth_re = re.compile(r'^[a-zA-Z0-9-_]*(:[^@/]+)?@')
 
 
 class ScrubUrlTransform(ScrubTransform):
+    priority = 50
     def __init__(self,
                  suffixes=None,
                  scrub_username=False,
