@@ -6,6 +6,7 @@ import threading
 import uuid
 
 import sys
+from collections import namedtuple
 
 try:
     from StringIO import StringIO
@@ -1463,6 +1464,29 @@ class RollbarTest(BaseTest):
 
         undecodable_message = '<Undecodable type:(%s) base64:(%s)>' % ('bytes', base64.b64encode(invalid).decode('ascii'))
         self.assertEqual(undecodable_message, payload['data']['body']['trace']['frames'][-1]['locals']['_invalid'])
+
+    @mock.patch('rollbar.send_payload')
+    def test_scrub_namedtuple(self, send_payload):
+
+        SomeTuple = namedtuple('SomeTuple', ['password', 'some_field'])
+
+        def _raise():
+            Data = SomeTuple(password='clear_text', some_field='some_field')
+
+            password = 'sensitive'
+            raise Exception((Data, password))
+
+        try:
+            _raise()
+        except:
+            rollbar.report_exc_info()
+
+        self.assertEqual(send_payload.called, True)
+
+        payload = send_payload.call_args[0][0]
+
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['password'], r'\*+')
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['Data'], 'password=\'\*+\'')
 
     @mock.patch('rollbar.send_payload')
     def test_scrub_nans(self, send_payload):

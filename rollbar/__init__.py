@@ -333,6 +333,7 @@ _LAST_RESPONSE_STATUS = None
 # Set in init()
 _transforms = []
 _serialize_transform = None
+_scrub_redact_transform = None
 
 _initialized = False
 
@@ -362,7 +363,7 @@ def init(access_token, environment='production', scrub_fields=None, url_fields=N
                  'staging', 'yourname'
     **kw: provided keyword arguments will override keys in SETTINGS.
     """
-    global SETTINGS, agent_log, _initialized, _transforms, _serialize_transform, _threads
+    global SETTINGS, agent_log, _initialized, _transforms, _serialize_transform, _scrub_redact_transform, _threads
 
     if scrub_fields is not None:
        SETTINGS['scrub_fields'] = list(scrub_fields)
@@ -405,6 +406,8 @@ def init(access_token, environment='production', scrub_fields=None, url_fields=N
     _serialize_transform = SerializableTransform(safe_repr=SETTINGS['locals']['safe_repr'],
                                                  safelist_types=SETTINGS['locals']['safelisted_types'])
 
+    _scrub_redact_transform = ScrubRedactTransform(suffixes=[(field,) for field in SETTINGS['scrub_fields']], redact_char='*')
+
     # A list of key prefixes to apply our shortener transform to. The request
     # being included in the body key is old behavior and is being retained for
     # backwards compatibility.
@@ -429,13 +432,10 @@ def init(access_token, environment='production', scrub_fields=None, url_fields=N
                                    **SETTINGS['locals']['sizes'])
     _transforms = [
         shortener,  # priority: 10
-        ScrubRedactTransform(),  # priority: 20
+        _scrub_redact_transform,  # priority: 20
         _serialize_transform,  # priority: 30
-        ScrubTransform(suffixes=[(field,) for field in SETTINGS['scrub_fields']], redact_char='*'),  # priority: 40
-        ScrubUrlTransform(
-            suffixes=[(field,) for field in SETTINGS['url_fields']],
-            params_to_scrub=SETTINGS['scrub_fields'],
-        )  # priority: 50
+        ScrubUrlTransform(suffixes=[(field,) for field in SETTINGS['url_fields']],
+                          params_to_scrub=SETTINGS['scrub_fields'])  # priority: 50
     ]
 
     # Add custom transforms
@@ -1079,7 +1079,7 @@ def _add_locals_data(trace_data, exc_info):
 def _serialize_frame_data(data):
     return transforms.transform(
         data,
-        [ScrubRedactTransform(), _serialize_transform],
+        [_scrub_redact_transform, _serialize_transform],
         batch_transforms=SETTINGS['batch_transforms']
     )
 

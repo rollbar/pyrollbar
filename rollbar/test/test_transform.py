@@ -26,7 +26,6 @@ class TransformTest(BaseTest):
             ShortenerTransform,
             ScrubRedactTransform,
             SerializableTransform,
-            ScrubTransform,
             ScrubUrlTransform,
         }, transforms)
 
@@ -49,7 +48,6 @@ class TransformTest(BaseTest):
             ShortenerTransform,
             ScrubRedactTransform,
             SerializableTransform,
-            ScrubTransform,
             ScrubUrlTransform,
             CustomTransform,
         }, transforms)
@@ -59,7 +57,6 @@ class TransformTest(BaseTest):
             ShortenerTransform,
             ScrubRedactTransform,
             SerializableTransform,
-            ScrubTransform,
             ScrubUrlTransform,
             CustomTransform,
         ], transforms_ordered)
@@ -88,6 +85,5 @@ class TransformTest(BaseTest):
             ScrubRedactTransform,  # priority 20
             SerializableTransform,  # priority 30
             CustomTransformTwo,  # priority 35
-            ScrubTransform,  # priority 40
             ScrubUrlTransform,  # priority 50
         ], transforms)
