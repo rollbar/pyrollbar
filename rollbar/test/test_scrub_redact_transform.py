@@ -58,12 +58,19 @@ class ScrubRedactTransformTest(BaseTest):
         expected = set([SCRUBBED, NOT_REDACT_REF])
         self._assertScrubbed(obj, expected)
 
-    def scrub_tuple(self):
+    def test_scrub_tuple(self):
         obj = (REDACT_REF, REDACT_REF, REDACT_REF)
         expected = (SCRUBBED, SCRUBBED, SCRUBBED)
         self._assertScrubbed(obj, expected)
 
+    def test_scrub_namedtuple(self):
+        from collections import namedtuple
+        TestNamedTuple = namedtuple('TestNamedTuple', ['scrub_me', 'dont_scrub_me'])
+        obj = TestNamedTuple(scrub_me=REDACT_REF, dont_scrub_me=NOT_REDACT_REF)
+        expected = TestNamedTuple(scrub_me=SCRUBBED, dont_scrub_me=NOT_REDACT_REF)
+        self._assertScrubbed(obj, expected)
+
     def test_scrub_dict(self):
-        obj = {'scrub_me': REDACT_REF}
-        expected = {'scrub_me': SCRUBBED}
+        obj = {'scrub_me': REDACT_REF, 'dont_scrub_me': NOT_REDACT_REF}
+        expected = {'scrub_me': SCRUBBED, 'dont_scrub_me': NOT_REDACT_REF}
         self._assertScrubbed(obj, expected)

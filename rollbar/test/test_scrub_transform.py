@@ -61,6 +61,20 @@ class ScrubTransformTest(BaseTest):
         expected = dict(obj)
         self._assertScrubbed([], obj, expected)
 
+    def test_scrub_named_tuple(self):
+        from collections import namedtuple
+        Obj = namedtuple('obj', ['hello', 'password'])
+        obj = Obj('world', 'cleartext')
+        expected = Obj('world', '*********')
+        self._assertScrubbed([['password']], obj, expected)
+
+    def test_scrub_named_tuple_in_list(self):
+        from collections import namedtuple
+        Obj = namedtuple('obj', ['hello', 'password'])
+        obj = [Obj('world', 'cleartext'), 'another element']
+        expected = [Obj('world', '*********'), 'another element']
+        self._assertScrubbed([['password']], obj, expected)
+
     def test_scrub_simple_dict(self):
         obj = {'hello': 'world', 'password': 'cleartext'}
         expected = copy.deepcopy(obj)
