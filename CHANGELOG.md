@@ -2,6 +2,15 @@
 
 The change log is also available on the [GitHub Releases Page](https://github.com/rollbar/pyrollbar/releases).
 
+**1.2.0**
+
+- Added support for custom payload transforms by @danielmorell in [#470](https://github.com/rollbar/pyrollbar/pull/470)
+- Added custom data to the message body by @waltjones in [#473](https://github.com/rollbar/pyrollbar/pull/473)
+- Added support for host override setting by @danielmorell in [#468](https://github.com/rollbar/pyrollbar/pull/468)
+- Fixed `RollbarHandler` reconfigures root logger by @ilkecan in [#463](https://github.com/rollbar/pyrollbar/pull/463)
+- Fixed `include_request_body` setting not checked for various frameworks by @danielmorell in [#469](https://github.com/rollbar/pyrollbar/pull/469)
+- Fixed `namedtuple` fields not being scrubbed by @danielmorell in [#474](https://github.com/rollbar/pyrollbar/pull/474)
+
 **1.1.2**
 
 Fixed build missing entrypoints for pyramid and cli in [#471](https://github.com/rollbar/pyrollbar/pull/471)
