@@ -65,6 +65,8 @@ jobs:
             python-version: 3.11
           - framework: TWISTED_VERSION=20.3.0
             python-version: 3.12
+          - framework: TWISTED_VERSION=20.3.0
+            python-version: 3.13
           - framework: TWISTED_VERSION=22.10.0
             python-version: 3.6
 
