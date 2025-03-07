@@ -130,6 +130,19 @@ class ShortenerTransformTest(BaseTest):
         self.assertEqual(type(result), dict)
         self.assertEqual(len(result['request']['POST']), 10)
 
+    def test_shorten_custom_rollbar_repr(self):
+        class CustomObj:
+            value = 'value'
+            def __rollbar_repr__(self):
+                return f'<custom: {self.value}>'
+
+        obj = CustomObj()
+
+        original = obj
+        shortened = '<custom: value>'
+        self.assertEqual(shortened, self.shortener.default(original, ('shorten',)))
+        self.assertEqual(original, self.shortener.default(original, ('nope',)))
+
     def test_shorten_frame(self):
         data = {
             'body': {
@@ -274,4 +287,54 @@ class ShortenerTransformTest(BaseTest):
                 (("three", "eleven"), 12),
                 (("three", "thirteen"), 14),
             ],
+        )
+
+    def test_traverse_custom_rollbar_repr(self):
+        class CustomObj:
+            foo = 1
+            bar = []
+            def __rollbar_repr__(self):
+                return {
+                    "foo": self.foo,
+                    "bar": self.bar
+                }
+
+        custom = CustomObj()
+        custom.bar = [i for i in range(1, 100)]
+        obj = {
+            "one": ["four", "five", 6, 7],
+            "two": ("eight", "nine", "ten"),
+            "three": {
+                "eleven": 12,
+                "thirteen": 14
+            },
+            "fifteen": custom,
+        }
+        shortener_instance = KeyMemShortenerTransform(
+            safe_repr=True,
+            keys=[
+                ('fifteen',),
+            ],
+            **SETTINGS['locals']['sizes']
+        )
+
+        result = transforms.transform(obj, [shortener_instance], key=())
+
+        bar = [i for i in range(1, 11)]
+        bar.append('...')
+
+        self.assertEqual(
+            {
+                "one": ["four", "five", 6, 7],
+                "two": ("eight", "nine", "ten"),
+                "three": {
+                    "eleven": 12,
+                    "thirteen": 14
+                },
+                "fifteen": {
+                    "foo": 1,
+                    "bar": bar,
+                },
+            },
+            result
         )
