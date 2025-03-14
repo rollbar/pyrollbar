@@ -74,8 +74,9 @@ class SerializableTransform(Transform):
         # preparing a stack trace. So we put a try/except around it all.
         try:
             # If the object has a __rollbar_repr__() method, use it.
-            if hasattr(o, '__rollbar_repr__'):
-                return o.__rollbar_repr__()
+            custom = Transform.rollbar_repr(o)
+            if custom is not None:
+                return custom
 
             if any(filter(lambda x: isinstance(o, x), self.safelist)):
                 try:

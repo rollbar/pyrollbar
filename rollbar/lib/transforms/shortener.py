@@ -163,8 +163,9 @@ class ShortenerTransform(Transform):
             return None
 
         # If the object has a __rollbar_repr__() method, use it.
-        if hasattr(obj, '__rollbar_repr__'):
-            return obj.__rollbar_repr__()
+        custom = Transform.rollbar_repr(obj)
+        if custom is not None:
+            return custom
 
         if self.safe_repr:
             obj = str(obj)

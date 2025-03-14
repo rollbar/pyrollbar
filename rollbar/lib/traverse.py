@@ -167,9 +167,6 @@ def traverse(
             for handler_type, handler in custom_handlers.items():
                 if isinstance(obj, handler_type):
                     return handler(obj, key=key)
-            # If the object has a __rollbar_repr__() method, call it here so we can traverse the result.
-            if hasattr(obj, "__rollbar_repr__"):
-                return traverse(obj.__rollbar_repr__(), key=key, **kw)
     except:
         # use the default handler for unknown object types
         log.debug(

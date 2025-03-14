@@ -1,3 +1,6 @@
+from typing import Optional
+
+
 class Transform(object):
     depth_first = True
     priority = 100
@@ -40,3 +43,12 @@ class Transform(object):
 
     def transform_custom(self, o, key=None):
         return self.default(o, key=key)
+
+    @staticmethod
+    def rollbar_repr(obj: object) -> Optional[str]:
+        r = None
+        if hasattr(obj, '__rollbar_repr__'):
+            r = obj.__rollbar_repr__()
+            if not isinstance(r, str):
+                raise TypeError(...)
+        return r
