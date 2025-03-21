@@ -50,5 +50,5 @@ class Transform(object):
         if hasattr(obj, '__rollbar_repr__'):
             r = obj.__rollbar_repr__()
             if not isinstance(r, str):
-                raise TypeError(...)
+                raise TypeError(f'__rollbar_repr__ returned non-string (type {type(r)})')
         return r
