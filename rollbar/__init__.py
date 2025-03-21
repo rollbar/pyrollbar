@@ -814,7 +814,7 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
 def _walk_trace_chain(cls, exc, trace):
     trace_chain = [_trace_data(cls, exc, trace)]
 
-    seen_exceptions = {exc}
+    seen_exceptions = [exc]
 
     while True:
         exc = getattr(exc, '__cause__', None) or getattr(exc, '__context__', None)
@@ -823,7 +823,7 @@ def _walk_trace_chain(cls, exc, trace):
         trace_chain.append(_trace_data(type(exc), exc, getattr(exc, '__traceback__', None)))
         if exc in seen_exceptions:
             break
-        seen_exceptions.add(exc)
+        seen_exceptions.append(exc)
 
     return trace_chain
 
