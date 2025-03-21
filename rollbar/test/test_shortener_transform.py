@@ -130,6 +130,19 @@ class ShortenerTransformTest(BaseTest):
         self.assertEqual(type(result), dict)
         self.assertEqual(len(result['request']['POST']), 10)
 
+    def test_shorten_custom_rollbar_repr(self):
+        class CustomObj:
+            value = 'value'
+            def __rollbar_repr__(self):
+                return f'<custom: {self.value}>'
+
+        obj = CustomObj()
+
+        original = obj
+        shortened = '<custom: value>'
+        self.assertEqual(shortened, self.shortener.default(original, ('shorten',)))
+        self.assertEqual(original, self.shortener.default(original, ('nope',)))
+
     def test_shorten_frame(self):
         data = {
             'body': {

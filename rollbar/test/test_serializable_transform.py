@@ -189,6 +189,16 @@ class SerializableTransformTest(BaseTest):
         del expected[invalid]
         self._assertSerialized(start, expected)
 
+    def test_encode_with_rollbar_repr(self):
+        class CustomRepr(object):
+            def __rollbar_repr__(self):
+                return 'hello'
+
+        start = {'hello': 'world', 'custom': CustomRepr()}
+        expected = copy.deepcopy(start)
+        expected['custom'] = 'hello'
+        self._assertSerialized(start, expected)
+
     def test_encode_with_custom_repr_no_safelist(self):
         class CustomRepr(object):
             def __repr__(self):

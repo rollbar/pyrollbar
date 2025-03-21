@@ -105,7 +105,6 @@ def shorten_tuple(obj: tuple, max_len: int) -> tuple:
     return obj[:max_len] + ('...',)
 
 
-
 class ShortenerTransform(Transform):
     depth_first = False
     priority = 10
@@ -162,6 +161,11 @@ class ShortenerTransform(Transform):
     def _shorten_other(self, obj):
         if obj is None:
             return None
+
+        # If the object has a __rollbar_repr__() method, use it.
+        custom = Transform.rollbar_repr(obj)
+        if custom is not None:
+            return custom
 
         if self.safe_repr:
             obj = str(obj)
