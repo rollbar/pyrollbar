@@ -40,9 +40,9 @@ Generally, PyRollbar can be used with any Python framework. However, we have off
 | Framework | Support Duration           | Tested Versions |
 |-----------|----------------------------|-----------------|
 | Celery    | Release +1 year            | None            |
-| Django    | Release or LTS end +1 year | 3.2, 4.2, 5.0   |
-| FastAPI   | Release +1 year            | 0.101, 0.112    |
-| Flask     | Release +1 year            | 1.1, 2.3, 3.0   |
+| Django    | Release or LTS end +1 year | 4.2, 5.1        |
+| FastAPI   | Release +1 year            | 0.110, 0.115    |
+| Flask     | Release +1 year            | 1.1, 2.3, 3.1   |
 | Pyramid   | Release +1 year            | 1.10, 2.0       |
 
 Official support means that we ship and maintain integrations for these frameworks. It also means that we test against these frameworks as part of our CI pipeline.
