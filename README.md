@@ -24,7 +24,7 @@ Python notifier for reporting exceptions, errors, and log messages to [Rollbar](
 
 | PyRollbar Version | Python Version Compatibility                  | Support Level       |
 |-------------------|-----------------------------------------------|---------------------|
-| 1.1.0             | 3.6, 3.7. 3.8, 3.9, 3.10, 3.11, 3.12          | Full                |
+| 1.3.0             | 3.7. 3.8, 3.9, 3.10, 3.11, 3.12, 3.13         | Full                |
 | 0.16.3            | 2.7, 3.4, 3.5, 3.6, 3.7. 3.8, 3.9, 3.10, 3.11 | Security Fixes Only |
 
 #### Support Level Definitions
@@ -40,9 +40,9 @@ Generally, PyRollbar can be used with any Python framework. However, we have off
 | Framework | Support Duration           | Tested Versions |
 |-----------|----------------------------|-----------------|
 | Celery    | Release +1 year            | None            |
-| Django    | Release or LTS end +1 year | 3.2, 4.2, 5.0   |
-| FastAPI   | Release +1 year            | 0.101, 0.112    |
-| Flask     | Release +1 year            | 1.1, 2.3, 3.0   |
+| Django    | Release or LTS end +1 year | 4.2, 5.1        |
+| FastAPI   | Release +1 year            | 0.110, 0.115    |
+| Flask     | Release +1 year            | 1.1, 2.3, 3.1   |
 | Pyramid   | Release +1 year            | 1.10, 2.0       |
 
 Official support means that we ship and maintain integrations for these frameworks. It also means that we test against these frameworks as part of our CI pipeline.
