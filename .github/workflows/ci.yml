@@ -22,7 +22,7 @@ jobs:
           - DJANGO_VERSION=5.1.7
           - PYRAMID_VERSION=1.10.8
           - PYRAMID_VERSION=2.0.2
-          - FASTAPI_VERSION=0.110.0 httpx==0.24.1 python-multipart==0.0.9
+          - FASTAPI_VERSION=0.110.3 httpx==0.24.1 python-multipart==0.0.9
           - FASTAPI_VERSION=0.115.11 httpx==0.27.0 python-multipart==0.0.9
         exclude:
           # Test frameworks on the python versions they support, according to pypi registry
