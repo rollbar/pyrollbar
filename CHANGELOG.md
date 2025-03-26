@@ -4,7 +4,7 @@ The change log is also available on the [GitHub Releases Page](https://github.co
 
 **1.3.0**
 
-- Added support for new method `__rollbar_repr__()` to change how an object is serialized by @danielmorell in [#479](https://github.com/rollbar/pyrollbar/pull/479)
+- Added support for classes to define the method `__rollbar_repr__` to control how objects are serialized by @danielmorell in [#479](https://github.com/rollbar/pyrollbar/pull/479)
 - Added support for Python 3.13 by @danielmorell in [#477](https://github.com/rollbar/pyrollbar/pull/477)
 - Removed support for Python 3.6 by @danielmorell in [#480](https://github.com/rollbar/pyrollbar/pull/480)
 - Updated framework versions tested against by @danielmorell in [#480](https://github.com/rollbar/pyrollbar/pull/480)
