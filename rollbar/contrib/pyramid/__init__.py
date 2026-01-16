@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)
 
 
 EXCEPTION_BLOCKLIST = (WSGIHTTPException,)
-EXCEPTION_SAFELIST = tuple()
+EXCEPTION_SAFELIST: tuple = tuple()
 
 
 def handle_error(request, exception, exc_info):

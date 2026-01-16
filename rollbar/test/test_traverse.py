@@ -24,7 +24,7 @@ class KeyMemTransform(Transform):
     """
     A transform that just stores the keys.
     """
-    keys = []
+    keys: list = []
 
     def default(self, o, key=None):
         self.keys.append((key, o))

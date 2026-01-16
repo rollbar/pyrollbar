@@ -9,7 +9,7 @@ from urllib.parse import urljoin
 try:
     import httpx
 except ImportError:
-    httpx = None
+    httpx = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 import rollbar
 from rollbar import DEFAULT_TIMEOUT
@@ -37,9 +37,9 @@ if sys.version_info[:2] == (3, 6):
 try:
     from contextvars import ContextVar
 except ImportError:
-    ContextVar = None
+    ContextVar = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
-if ContextVar:
+if ContextVar is not None:
     _ctx_handler = ContextVar('rollbar-handler', default=None)
 else:
     _ctx_handler = None

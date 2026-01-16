@@ -1081,7 +1081,11 @@ class RollbarTest(BaseTest):
         class tmp(object):
             @property
             def __class__(self):
-                foo()
+                return foo()
+
+            @__class__.setter
+            def __class__(self, value):
+                pass
 
         try:
             t = tmp()

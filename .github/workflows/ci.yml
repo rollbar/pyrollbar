@@ -101,4 +101,4 @@ jobs:
         run: pip install fastapi==$FASTAPI_VERSION
 
       - name: Run tests
-        run: python -m unittest rollbar.test.discover
+        run: python -m unittest rollbar.test.discover -b
