@@ -20,7 +20,7 @@ import queue
 from typing import Any, Callable, TypedDict, Unpack, Literal, cast
 from urllib.parse import parse_qs, urljoin
 
-import requests
+import requests  # type: ignore[import-untyped]
 
 from rollbar.lib import events, filters, dict_merge, transport, defaultJSONEncode
 
@@ -35,7 +35,7 @@ log = logging.getLogger(__log_name__)
 
 # import request objects from various frameworks, if available
 try:
-    from webob import BaseRequest as WebobBaseRequest
+    from webob import BaseRequest as WebobBaseRequest  # type: ignore[import-untyped]
 except ImportError:
     WebobBaseRequest = None
 
@@ -47,61 +47,61 @@ except ImportError:
 
 else:
     try:
-        from django.http import HttpRequest as DjangoHttpRequest
+        from django.http import HttpRequest as DjangoHttpRequest # type: ignore[assignment]
     except (ImportError, ImproperlyConfigured):
-        DjangoHttpRequest = None
+        DjangoHttpRequest = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
     try:
-        from rest_framework.request import Request as RestFrameworkRequest
+        from rest_framework.request import Request as RestFrameworkRequest  # type: ignore[assignment, no-redef]
     except (ImportError, ImproperlyConfigured):
-        RestFrameworkRequest = None
+        RestFrameworkRequest = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
     del ImproperlyConfigured
 
 try:
     from werkzeug.wrappers import Request as WerkzeugRequest
 except (ImportError, SyntaxError):
-    WerkzeugRequest = None
+    WerkzeugRequest = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 try:
     from werkzeug.local import LocalProxy as WerkzeugLocalProxy
 except (ImportError, SyntaxError):
-    WerkzeugLocalProxy = None
+    WerkzeugLocalProxy = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 try:
-    from tornado.httpserver import HTTPRequest as TornadoRequest
+    from tornado.httpserver import HTTPRequest as TornadoRequest  # type: ignore[import-untyped]
 except ImportError:
-    TornadoRequest = None
+    TornadoRequest = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 try:
-    from bottle import BaseRequest as BottleRequest
+    from bottle import BaseRequest as BottleRequest  # type: ignore[import-untyped]
 except ImportError:
-    BottleRequest = None
+    BottleRequest = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 try:
     from sanic.request import Request as SanicRequest
 except ImportError:
-    SanicRequest = None
+    SanicRequest = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 try:
-    from google.appengine.api.urlfetch import fetch as AppEngineFetch
+    from google.appengine.api.urlfetch import fetch as AppEngineFetch  # type: ignore[import-untyped]
 except (ImportError, KeyError):
-    AppEngineFetch = None
+    AppEngineFetch = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 try:
     from starlette.requests import Request as StarletteRequest
 except ImportError:
-    StarletteRequest = None
+    StarletteRequest = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 try:
     from fastapi.requests import Request as FastAPIRequest
 except ImportError:
-    FastAPIRequest = None
+    FastAPIRequest = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 try:
     import httpx
 except ImportError:
-    httpx = None
+    httpx = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 AsyncHTTPClient = httpx
 
@@ -113,16 +113,16 @@ def passthrough_decorator(func):
 try:
     from tornado.httpclient import AsyncHTTPClient as TornadoAsyncHTTPClient
 except ImportError:
-    TornadoAsyncHTTPClient = None
+    TornadoAsyncHTTPClient = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 try:
-    import treq
+    import treq  # type: ignore[import-not-found]
     from twisted.python import log as twisted_log
     from twisted.web.iweb import IPolicyForHTTPS
     from twisted.web.client import BrowserLikePolicyForHTTPS, Agent
     from twisted.internet.ssl import CertificateOptions
     from twisted.internet import task, defer, ssl, reactor
-    from zope.interface import implementer
+    from zope.interface import implementer  # type: ignore[import-untyped]
 
     @implementer(IPolicyForHTTPS)
     class VerifyHTTPS(object):
@@ -162,7 +162,7 @@ except ImportError:
     treq = None
 
 try:
-    from falcon import Request as FalconRequest
+    from falcon import Request as FalconRequest  # type: ignore[import-not-found]
 except ImportError:
     FalconRequest = None
 
@@ -210,14 +210,14 @@ def _get_flask_request():
 def _get_pyramid_request():
     if WebobBaseRequest is None:
         return None
-    from pyramid.threadlocal import get_current_request
+    from pyramid.threadlocal import get_current_request  # type: ignore[import-untyped]
     return get_current_request()
 
 
 def _get_pylons_request():
     if WebobBaseRequest is None:
         return None
-    from pylons import request
+    from pylons import request  # type: ignore[import-not-found]
     return request
 
 

@@ -86,16 +86,12 @@ import rollbar
 from django.core.exceptions import MiddlewareNotUsed
 from django.conf import settings
 from django.http import Http404
-
-try:
-    from django.urls import resolve
-except ImportError:
-    from django.core.urlresolvers import resolve
+from django.urls import resolve
 
 try:
     from django.utils.deprecation import MiddlewareMixin
 except ImportError:
-    from rollbar.contrib.django.utils import MiddlewareMixin
+    from rollbar.contrib.django.utils import MiddlewareMixin  # type: ignore[assignment]
 
 log = logging.getLogger(__name__)
 

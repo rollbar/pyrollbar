@@ -169,11 +169,11 @@ def undecodable_object_label(data) -> str:
 try:
     from django.utils.functional import SimpleLazyObject
 except ImportError:
-    SimpleLazyObject = None
+    SimpleLazyObject = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 
 def defaultJSONEncode(o):
-    if SimpleLazyObject and isinstance(o, SimpleLazyObject):
+    if SimpleLazyObject is not None and isinstance(o, SimpleLazyObject):
         if not o._wrapped:
             o._setup()
         return o._wrapped

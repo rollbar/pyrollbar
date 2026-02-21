@@ -4,14 +4,10 @@ import json
 import socket
 import threading
 import uuid
+from io import StringIO
 
 import sys
 from collections import namedtuple
-
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 
 from pathlib import Path
 
@@ -1782,7 +1778,7 @@ class RollbarTest(BaseTest):
         rollbar.init(_test_access_token, locals={'enabled': True}, dummy_key='asdf', handler='blocking', timeout=12345,
             scrub_fields=rollbar.SETTINGS['scrub_fields'] + ['token', 'secret', 'cookies', 'authorization'])
 
-        import webob
+        import webob  # type: ignore[import-untyped]
         request = webob.Request.blank('/the/path?q=hello&password=hunter2',
                                       base_url='http://example.com',
                                       headers={
