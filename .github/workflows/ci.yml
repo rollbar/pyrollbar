@@ -40,8 +40,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install Python Test dependencies
-        run: pip install requests webob blinker httpx
+      - name: Install package with test dependencies
+        run: pip install --group test .
 
       - name: Set the framework
         if: ${{ matrix.framework != 'NONE' }}
@@ -72,4 +72,4 @@ jobs:
         run: pip install fastapi==$FASTAPI_VERSION
 
       - name: Run tests
-        run: python -m unittest rollbar.test.discover
+        run: pytest
