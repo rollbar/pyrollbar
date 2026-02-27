@@ -26,22 +26,20 @@ class LogHandlerTest(BaseTest):
     def setUp(self):
         rollbar._initialized = False
         rollbar.SETTINGS = copy.deepcopy(_default_settings)
-
-    def _create_logger(self):
-        logger = logging.getLogger(__name__)
-        logger.setLevel(logging.DEBUG)
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.DEBUG)
 
         self.rollbar_handler = RollbarHandler(_test_access_token, _test_environment)
         self.rollbar_handler.setLevel(logging.WARNING)
 
-        logger.addHandler(self.rollbar_handler)
+        self.logger.addHandler(self.rollbar_handler)
 
-        return logger
+    def tearDown(self):
+        self.logger.removeHandler(self.rollbar_handler)
 
     @mock.patch('rollbar.send_payload')
     def test_message_gets_formatted(self, send_payload):
-        logger = self._create_logger()
-        logger.warning("Hello %d %s", 1, 'world')
+        self.logger.warning("Hello %d %s", 1, 'world')
 
         payload = send_payload.call_args[0][0]
 
@@ -53,22 +51,20 @@ class LogHandlerTest(BaseTest):
 
     @mock.patch('rollbar.send_payload')
     def test_string_or_int_level(self, send_payload):
-        logger = self._create_logger()
-        logger.setLevel(logging.ERROR)
+        self.logger.setLevel(logging.ERROR)
         self.rollbar_handler.setLevel('WARNING')
-        logger.error("I am an error")
+        self.logger.error("I am an error")
 
         payload = send_payload.call_args[0][0]
 
         self.assertEqual(payload['data']['level'], 'error')
 
         self.rollbar_handler.setLevel(logging.WARNING)
-        logger.error("I am an error")
+        self.logger.error("I am an error")
 
         self.assertEqual(payload['data']['level'], 'error')
 
     def test_request_is_get_from_log_record_if_present(self):
-        logger = self._create_logger()
         # Request objects vary depending on python frameworks or packages.
         # Using a dictionary for this test is enough.
         request = {"fake": "request", "for":  "testing purporse"}
@@ -77,7 +73,7 @@ class LogHandlerTest(BaseTest):
         # just need to be sure that proper rollbar function is called
         # with passed request as argument.
         with mock.patch("rollbar.report_message") as report_message_mock:
-            logger.warning("Warning message", extra={"request": request})
+            self.logger.warning("Warning message", extra={"request": request})
             self.assertEqual(report_message_mock.call_args[1]["request"], request)
 
         # if you call logger.exception outside of an exception
@@ -85,7 +81,7 @@ class LogHandlerTest(BaseTest):
         # won't have any
         with mock.patch("rollbar.report_exc_info") as report_exc_info:
             with mock.patch("rollbar.report_message") as report_message_mock:
-                logger.exception("Exception message", extra={"request": request})
+                self.logger.exception("Exception message", extra={"request": request})
                 report_exc_info.assert_not_called()
                 self.assertEqual(report_message_mock.call_args[1]["request"], request)
 
@@ -94,14 +90,12 @@ class LogHandlerTest(BaseTest):
                 try:
                     raise Exception()
                 except:
-                    logger.exception("Exception message", extra={"request": request})
+                    self.logger.exception("Exception message", extra={"request": request})
                     self.assertEqual(report_exc_info.call_args[1]["request"], request)
                     report_message_mock.assert_not_called()
 
     @mock.patch('rollbar.send_payload')
     def test_nested_exception_trace_chain(self, send_payload):
-        logger = self._create_logger()
-
         def _raise_context():
             bar_local = 'bar'
             raise CauseException('bar')
@@ -120,7 +114,7 @@ class LogHandlerTest(BaseTest):
                     setattr(e, '__context__', context)  # PEP-3134
                     raise e
                 except:
-                    logger.exception("Bad time")
+                    self.logger.exception("Bad time")
 
         _raise_ex()
 
@@ -139,8 +133,6 @@ class LogHandlerTest(BaseTest):
 
     @mock.patch('rollbar.send_payload')
     def test_not_nested_exception_trace_chain(self, send_payload):
-        logger = self._create_logger()
-
         def _raise_context():
             bar_local = 'bar'
             raise CauseException('bar')
@@ -149,7 +141,7 @@ class LogHandlerTest(BaseTest):
             try:
                 _raise_context()
             except:
-                logger.exception("Bad time")
+                self.logger.exception("Bad time")
 
         _raise_ex()
 
@@ -165,3 +157,34 @@ class LogHandlerTest(BaseTest):
             self.assertEqual('Bad time', payload['data']['custom']['exception']['description'])
         if trace is not None:
             self.assertEqual('Bad time', trace['exception']['description'])
+
+    @mock.patch('rollbar.send_payload')
+    def test_logging_extra(self, send_payload):
+        self.logger.error("Test error", extra=dict(test_attribute=1, test_other='test'))
+
+        payload = send_payload.call_args[0][0]
+        self.assertEqual(payload['data']['body']['message'].get('test_attribute'), 1)
+        self.assertEqual(payload['data']['body']['message'].get('test_other'), 'test')
+        self.assertEqual(payload['data']['custom'].get('test_attribute'), 1)
+        self.assertEqual(payload['data']['custom'].get('test_other'), 'test')
+
+    @mock.patch('rollbar.send_payload')
+    def test_logging_extra_data(self, send_payload):
+        self.logger.error(
+            "Test error",
+            extra=dict(extra_data=dict(test_attribute=1, test_other='test')))
+
+        payload = send_payload.call_args[0][0]
+        self.assertEqual(payload['data']['body']['message'].get('test_attribute'), 1)
+        self.assertEqual(payload['data']['body']['message'].get('test_other'), 'test')
+        self.assertEqual(payload['data']['custom'].get('test_attribute'), 1)
+        self.assertEqual(payload['data']['custom'].get('test_other'), 'test')
+
+    @mock.patch('rollbar.send_payload')
+    def test_log_formatting(self, send_payload):
+        self.rollbar_handler.formatter = logging.Formatter(
+            '%(test_other)s[%(test_attribute)s]: %(message)s'
+        )
+        self.logger.error("Test error", extra=dict(test_attribute=1, test_other='test'))
+        payload = send_payload.call_args[0][0]
+        self.assertEqual(payload['data']['body']['message']['body'], 'test[1]: Test error')
