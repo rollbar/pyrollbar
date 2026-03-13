@@ -162,7 +162,6 @@ class UtilsVersionCompareTest(BaseTest):
 
         previous_version = None
         for version in versions:
-            print(f'{version} >= {previous_version}')
             if previous_version is None:
                 previous_version = version
                 continue

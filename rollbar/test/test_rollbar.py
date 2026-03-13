@@ -8,6 +8,8 @@ import uuid
 import sys
 from collections import namedtuple
 
+from rollbar.lib.session import reset_current_session
+
 try:
     from StringIO import StringIO
 except ImportError:
@@ -45,6 +47,7 @@ class RollbarTest(BaseTest):
         rollbar._initialized = False
         rollbar.SETTINGS = copy.deepcopy(_default_settings)
         rollbar.init(_test_access_token, locals={'enabled': True}, dummy_key='asdf', handler='blocking', timeout=12345)
+        reset_current_session()
 
     def test_merged_settings(self):
         expected = {'enabled': True, 'sizes': rollbar.DEFAULT_LOCALS_SIZES, 'safe_repr': True, 'scrub_varargs': True, 'safelisted_types': [], 'whitelisted_types': []}
@@ -183,6 +186,46 @@ class RollbarTest(BaseTest):
             },
         )
 
+    def test_starlette_request_baggage_headers(self):
+        try:
+            from starlette.requests import Request
+        except ImportError:
+            self.skipTest('Requires Starlette to be installed')
+
+        scope = {
+            'type': 'http',
+            'client': ('127.0.0.1', 1453),
+            'headers': [
+                (b'accept', b'*/*'),
+                (b'content-type', b'application/x-www-form-urlencoded'),
+                (b'host', b'example.com'),
+                (b'user-agent', b'Agent'),
+                (b'baggage', b'rollbar.session.id=abcde, rollbar.execution.scope.id = fghij'),
+            ],
+            'http_version': '1.1',
+            'method': 'GET',
+            'path': '/api/test',
+            'path_params': {'param': 'test'},
+            'query_params': {
+                'format': 'json',
+                'param1': 'value1',
+                'param2': 'value2',
+            },
+            'query_string': b'format=json&param1=value1&param2=value2',
+            'scheme': 'http',
+            'server': ('example.com', 80),
+            'url': {'path': 'example.com'},
+        }
+        data = {}
+        request = Request(scope)
+        rollbar._add_request_data(data, request)
+        rollbar._add_session_data(data)
+
+        self.assertEqual(data['attributes'], [
+            {'key': 'session_id', 'value': 'abcde'},
+            {'key': 'execution_scope_id', 'value': 'fghij'},
+        ])
+
     def test_starlette_request_data_with_consumed_body(self):
         try:
             from starlette.requests import Request
@@ -289,6 +332,46 @@ class RollbarTest(BaseTest):
             },
         )
 
+    def test_fastapi_request_baggage_headers(self):
+        try:
+            from fastapi.requests import Request
+        except ImportError:
+            self.skipTest('Requires FastAPI to be installed')
+
+        scope = {
+            'type': 'http',
+            'client': ('127.0.0.1', 1453),
+            'headers': [
+                (b'accept', b'*/*'),
+                (b'content-type', b'application/x-www-form-urlencoded'),
+                (b'host', b'example.com'),
+                (b'user-agent', b'Agent'),
+                (b'baggage', b'rollbar.session.id=abcde, rollbar.execution.scope.id = fghij'),
+            ],
+            'http_version': '1.1',
+            'method': 'GET',
+            'path': '/api/test',
+            'path_params': {'param': 'test'},
+            'query_params': {
+                'format': 'json',
+                'param1': 'value1',
+                'param2': 'value2',
+            },
+            'query_string': b'format=json&param1=value1&param2=value2',
+            'scheme': 'http',
+            'server': ('example.com', 80),
+            'url': {'path': 'example.com'},
+        }
+        data = {}
+        request = Request(scope)
+        rollbar._add_request_data(data, request)
+        rollbar._add_session_data(data)
+
+        self.assertEqual(data['attributes'], [
+            {'key': 'session_id', 'value': 'abcde'},
+            {'key': 'execution_scope_id', 'value': 'fghij'},
+        ])
+
     def test_fastapi_request_data_with_consumed_body(self):
         try:
             from fastapi import Request
@@ -374,6 +457,32 @@ class RollbarTest(BaseTest):
         self.assertDictEqual(
             data, {'id': '123', 'username': 'admin', 'email': 'admin@example.org'}
         )
+
+    def test_django_baggage_headers(self):
+        try:
+            import django
+            from django.conf import settings
+        except ImportError:
+            self.skipTest('Requires Django to be installed')
+        else:
+            settings.configure(
+                INSTALLED_APPS=['django.contrib.auth', 'django.contrib.contenttypes']
+            )
+            django.setup()
+
+        from django.http import HttpRequest
+
+        request = HttpRequest()
+        request.META['HTTP_BAGGAGE'] = 'rollbar.session.id=abcde, rollbar.execution.scope.id = fghij'
+
+        data = {}
+        rollbar._add_request_data(data, request)
+        rollbar._add_session_data(data)
+
+        self.assertEqual(data['attributes'], [
+            {'key': 'session_id', 'value': 'abcde'},
+            {'key': 'execution_scope_id', 'value': 'fghij'},
+        ])
 
     def test_starlette_build_person_data_if_user_authenticated(self):
         try:

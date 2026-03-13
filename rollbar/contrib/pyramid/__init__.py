@@ -11,6 +11,8 @@ from pyramid.util import DottedNameResolver
 from pyramid.settings import asbool
 
 import rollbar
+from rollbar import set_current_session
+from rollbar.lib.session import reset_current_session
 
 DEFAULT_WEB_BASE = 'https://rollbar.com'
 BOOLEAN_SETTINGS = [
@@ -51,6 +53,7 @@ def rollbar_tween_factory(pyramid_handler, registry):
 
     def rollbar_tween(request):
         # for testing out the integration
+        set_current_session(dict(request.headers))
         try:
             if (settings.get('allow_test', 'true') == 'true' and
                     request.GET.get('pyramid_rollbar_test') == 'true'):
@@ -66,6 +69,8 @@ def rollbar_tween_factory(pyramid_handler, registry):
         except Exception as exc:
             handle_error(request, exc, sys.exc_info())
             raise
+        finally:
+            reset_current_session()
         if request.exception is not None:
             handle_error(request, request.exception, request.exc_info)
         return response

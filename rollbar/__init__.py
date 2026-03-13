@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, annotations
 from __future__ import unicode_literals
 
 import copy
@@ -22,6 +22,7 @@ from urllib.parse import parse_qs, urljoin
 import requests
 
 from rollbar.lib import events, filters, dict_merge, transport, defaultJSONEncode
+from rollbar.lib.session import get_current_session, set_current_session
 
 
 __version__ = '1.3.0'
@@ -800,6 +801,7 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     _add_request_data(data, request)
     _add_person_data(data, request)
     _add_lambda_context_data(data)
+    _add_session_data(data)
     data['server'] = _build_server_data()
 
     if payload_data:
@@ -881,6 +883,7 @@ def _report_message(message, level, request, extra_data, payload_data):
     _add_request_data(data, request)
     _add_person_data(data, request)
     _add_lambda_context_data(data)
+    _add_session_data(data)
     data['server'] = _build_server_data()
 
     if payload_data:
@@ -890,6 +893,35 @@ def _report_message(message, level, request, extra_data, payload_data):
     send_payload(payload, payload.get('access_token'))
 
     return data['uuid']
+
+
+def _add_session_data(data: dict) -> None:
+    """
+    Adds session data to the payload data if it can be found in the current session or request.
+    """
+    session_data = get_current_session()
+    if session_data:
+        data['attributes'] = session_data
+        return
+
+    request = _session_data_from_request(data)
+    if request is None:
+        return
+    set_current_session(request.get('headers', None))
+
+    session_data = get_current_session()
+    if session_data:
+        data['attributes'] = session_data
+
+
+def _session_data_from_request(data: dict) -> dict:
+    """
+    Tries to find session data in the request object. Use the request object if provided, otherwise check the data as
+    it may already contain the request object. This is true for some frameworks (e.g. Django).
+    """
+    if data is not None and 'request' in data:
+        return data.get('request', None)
+    return _get_actual_request(_build_request_data(get_request()))
 
 
 def _check_config():
