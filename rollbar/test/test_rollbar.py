@@ -436,9 +436,11 @@ class RollbarTest(BaseTest):
             from django.conf import settings
         except ImportError:
             self.skipTest('Requires Django to be installed')
-        else:
+
+        if not settings.configured:
             settings.configure(
-                INSTALLED_APPS=['django.contrib.auth', 'django.contrib.contenttypes']
+                INSTALLED_APPS=['django.contrib.auth', 'django.contrib.contenttypes'],
+                SERVER_NAME = 'example.com',
             )
             if django.VERSION >= (1, 7):
                 django.setup()
@@ -464,18 +466,23 @@ class RollbarTest(BaseTest):
             from django.conf import settings
         except ImportError:
             self.skipTest('Requires Django to be installed')
-        else:
+
+        if not settings.configured:
             settings.configure(
-                INSTALLED_APPS=['django.contrib.auth', 'django.contrib.contenttypes']
+                INSTALLED_APPS=['django.contrib.auth', 'django.contrib.contenttypes'],
+                DEFAULT_CHARSET='utf-8',
+                ALLOWED_HOSTS = ['example.com'],
             )
             django.setup()
 
-        from django.http import HttpRequest
-
+        from django.http.request import HttpRequest
         request = HttpRequest()
         request.META['HTTP_BAGGAGE'] = 'rollbar.session.id=abcde, rollbar.execution.scope.id = fghij'
+        request.META['SERVER_NAME'] = 'example.com'
+        request.META['SERVER_PORT'] = 80
+        request.META['REMOTE_ADDR'] = '0.0.0.0'
 
-        data = {}
+        data = dict()
         rollbar._add_request_data(data, request)
         rollbar._add_session_data(data)
 

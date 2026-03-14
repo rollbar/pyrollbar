@@ -16,7 +16,6 @@ def set_current_session(headers: dict[str, str]) -> None:
 
     The session data should be a dictionary with string keys and string values.
     """
-    print(f"Setting current session with headers: {headers}")
     session_data = _parse_session_request_baggage_headers(headers)
     _context_session.set(session_data)
     _thread_session.data = session_data
