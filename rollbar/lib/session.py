@@ -50,7 +50,7 @@ def parse_session_request_baggage_headers(headers: dict) -> list[Attribute]:
     the session attributes.
     """
     if not headers:
-        return _build_new_session_attributes()
+        return _build_new_scope_attributes()
 
     baggage_header = None
 
@@ -61,10 +61,11 @@ def parse_session_request_baggage_headers(headers: dict) -> list[Attribute]:
             break
 
     if not baggage_header:
-        return _build_new_session_attributes()
+        return _build_new_scope_attributes()
 
     baggage_items = baggage_header.split(',')
     baggage_data = []
+    has_scope_id = False
     for item in baggage_items:
         if '=' not in item:
             continue
@@ -73,22 +74,34 @@ def parse_session_request_baggage_headers(headers: dict) -> list[Attribute]:
         if key == 'rollbar.session.id':
             baggage_data.append({'key': 'session_id', 'value': value.strip()})
         if key == 'rollbar.execution.scope.id':
+            has_scope_id = True
             baggage_data.append({'key': 'execution_scope_id', 'value': value.strip()})
 
     if not baggage_data:
-        return _build_new_session_attributes()
+        return _build_new_scope_attributes()
+
+    # Always ensure we have an execution scope ID, even if the baggage header is present but doesn't contain it.
+    if not has_scope_id:
+        baggage_data.extend(_build_new_scope_attributes())
 
     return baggage_data
 
 
-def _build_new_session_attributes() -> list[Attribute]:
-    new_id = _new_session_id()
+def _build_new_scope_attributes() -> list[Attribute]:
+    """
+    Generates a new value for the `rollbar.execution.scope.id` attribute.
+    """
+    new_id = _new_scope_id()
     if new_id is None:
         return []
-    return [{'key': 'session_id', 'value': new_id}]
+    return [{'key': 'execution_scope_id', 'value': new_id}]
 
 
-def _new_session_id() -> str | None:
+def _new_scope_id() -> str | None:
+    """
+    Generate a new random ID with 128 bits of randomness, formatted as a 32-character hexadecimal string. To be used as
+    an execution scope ID.
+    """
     try:
         # Generate a random integer with exactly 128 random bits
         num = random.getrandbits(128)
