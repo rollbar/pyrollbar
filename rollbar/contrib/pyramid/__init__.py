@@ -52,8 +52,8 @@ def rollbar_tween_factory(pyramid_handler, registry):
     settings = parse_settings(registry.settings)
 
     def rollbar_tween(request):
-        # for testing out the integration
         set_current_session(dict(request.headers))
+        # for testing out the integration
         try:
             if (settings.get('allow_test', 'true') == 'true' and
                     request.GET.get('pyramid_rollbar_test') == 'true'):
