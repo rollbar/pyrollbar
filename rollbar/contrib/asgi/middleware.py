@@ -11,15 +11,6 @@ from rollbar.lib.session import set_current_session, reset_current_session
 log = logging.getLogger(__name__)
 
 
-def _format_headers(headers: Iterable[tuple[bytes, bytes]]) -> dict[str, str]:
-    """
-    Convert list of header tuples to a dictionary with string keys and values.
-
-    Headers are expected to be in the format: [(b'header-name', b'header-value'), ...]
-    """
-    return {key.decode('latin-1'): value.decode('latin-1') for key, value in headers}
-
-
 @integrate(framework_name='asgi')
 class ReporterMiddleware(IntegrationBase):
     def __init__(self, app: ASGIApp) -> None:
@@ -29,7 +20,7 @@ class ReporterMiddleware(IntegrationBase):
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope['type'] == 'http':
-            set_current_session(_format_headers(scope['headers']))
+            set_current_session(self._format_headers(scope['headers']))
         try:
             await self.app(scope, receive, send)
         except Exception:
@@ -47,3 +38,12 @@ class ReporterMiddleware(IntegrationBase):
         finally:
             if scope['type'] == 'http':
                 reset_current_session()
+
+    @staticmethod
+    def _format_headers(headers: Iterable[tuple[bytes, bytes]]) -> dict[str, str]:
+        """
+        Convert list of header tuples to a dictionary with string keys and values.
+
+        Headers are expected to be in the format: [(b'header-name', b'header-value'), ...]
+        """
+        return {key.decode('latin-1'): value.decode('latin-1') for key, value in headers}
