@@ -7,8 +7,6 @@ from typing import Optional, Union
 from starlette.requests import Request
 from starlette.types import Receive, Scope
 
-from rollbar.lib.session import set_current_session
-
 log = logging.getLogger(__name__)
 
 if sys.version_info[:2] == (3, 6):
@@ -65,13 +63,6 @@ def store_current_request(
         request = None
 
     _current_request.set(request)
-    if request is not None:
-        headers = {}
-        if isinstance(request, dict):
-            headers = request.get('headers', {})
-        elif hasattr(request, 'headers'):
-            headers = request.headers
-        set_current_session(headers)
     return request
 
 

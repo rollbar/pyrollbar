@@ -335,7 +335,7 @@ class ReporterMiddlewareTest(BaseTest):
 
         with mock.patch('rollbar.report_exc_info') as mock_report:
             with self.assertRaises(RuntimeError):
-                run(testapp({'type': 'http'}, None, None))
+                run(testapp({'type': 'http', 'headers': []}, None, None))
 
             mock_report.assert_called_once()
 

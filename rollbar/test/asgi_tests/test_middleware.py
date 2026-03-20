@@ -31,7 +31,7 @@ class ReporterMiddlewareTest(BaseTest):
         testapp = ReporterMiddleware(FailingTestASGIApp())
 
         with self.assertRaises(RuntimeError):
-            run(testapp({'type': 'http'}, None, None))
+            run(testapp({'type': 'http', 'headers': []}, None, None))
 
         self.assertTrue(mock_report.called)
 
@@ -73,7 +73,7 @@ class ReporterMiddlewareTest(BaseTest):
         testapp = ReporterMiddleware(FailingTestASGIApp())
 
         with self.assertRaises(RuntimeError):
-            run(testapp({'type': 'http'}, None, None))
+            run(testapp({'type': 'http', 'headers': []}, None, None))
 
         self.assertTrue(async_report_exc_info.called)
         self.assertFalse(sync_report_exc_info.called)
@@ -92,7 +92,7 @@ class ReporterMiddlewareTest(BaseTest):
         testapp = ReporterMiddleware(FailingTestASGIApp())
 
         with self.assertRaises(RuntimeError):
-            run(testapp({'type': 'http'}, None, None))
+            run(testapp({'type': 'http', 'headers': []}, None, None))
 
         self.assertTrue(async_report_exc_info.called)
         self.assertFalse(sync_report_exc_info.called)
@@ -112,7 +112,7 @@ class ReporterMiddlewareTest(BaseTest):
         testapp = ReporterMiddleware(FailingTestASGIApp())
 
         with self.assertRaises(RuntimeError):
-            run(testapp({'type': 'http'}, None, None))
+            run(testapp({'type': 'http', 'headers': []}, None, None))
 
         self.assertFalse(async_report_exc_info.called)
         self.assertTrue(sync_report_exc_info.called)
@@ -128,7 +128,7 @@ class ReporterMiddlewareTest(BaseTest):
 
         with mock.patch('rollbar.report_exc_info') as mock_report:
             with self.assertRaises(RuntimeError):
-                run(testapp({'type': 'http'}, None, None))
+                run(testapp({'type': 'http', 'headers': []}, None, None))
 
             self.assertTrue(mock_report.called)
 
