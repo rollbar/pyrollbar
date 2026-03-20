@@ -36,7 +36,7 @@ class SessionTest(BaseTest):
         headers = {
             'Baggage': 'rollbar.session.id=abc123, rollbar.execution.scope.id=def456',
         }
-        attributes = session._parse_session_request_baggage_headers(headers)
+        attributes = session.parse_session_request_baggage_headers(headers)
         self.assertEqual([
             {'key': 'session_id', 'value': 'abc123'},
             {'key': 'execution_scope_id', 'value': 'def456'},
@@ -46,7 +46,7 @@ class SessionTest(BaseTest):
         headers = {
             'baggage': 'rollbar.session.id=abc123',
         }
-        attributes = session._parse_session_request_baggage_headers(headers)
+        attributes = session.parse_session_request_baggage_headers(headers)
         self.assertEqual([
             {'key': 'session_id', 'value': 'abc123'},
         ], attributes)
@@ -55,7 +55,7 @@ class SessionTest(BaseTest):
         headers = {
             'baggage': 'rollbar.execution.scope.id=def456',
         }
-        attributes = session._parse_session_request_baggage_headers(headers)
+        attributes = session.parse_session_request_baggage_headers(headers)
         self.assertEqual([
             {'key': 'execution_scope_id', 'value': 'def456'},
         ], attributes)
@@ -64,8 +64,8 @@ class SessionTest(BaseTest):
         headers = {
             'baggage': '',
         }
-        attributes = session._parse_session_request_baggage_headers(headers)
         # Ensure that we still generate a session ID if the baggage header is empty.
+        attributes = session.parse_session_request_baggage_headers(headers)
         self.assertEqual(len(attributes), 1)
         self.assertEqual(attributes[0]['key'], 'session_id')
         self.assertEqual(len(attributes[0]['value']), 32)
@@ -74,8 +74,8 @@ class SessionTest(BaseTest):
         headers = {
             'baggage': 'some.id=xyz789',
         }
-        attributes = session._parse_session_request_baggage_headers(headers)
         # Ensure that we still generate a session ID if the baggage header doesn't contain the expected keys.
+        attributes = session.parse_session_request_baggage_headers(headers)
         self.assertEqual(len(attributes), 1)
         self.assertEqual(attributes[0]['key'], 'session_id')
         self.assertEqual(len(attributes[0]['value']), 32)

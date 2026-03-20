@@ -16,7 +16,7 @@ def set_current_session(headers: dict[str, str]) -> None:
 
     The session data should be a dictionary with string keys and string values.
     """
-    session_data = _parse_session_request_baggage_headers(headers)
+    session_data = parse_session_request_baggage_headers(headers)
     _context_session.set(session_data)
     _thread_session.data = session_data
 
@@ -43,10 +43,11 @@ def reset_current_session() -> None:
     _thread_session.data = None
 
 
-def _parse_session_request_baggage_headers(headers: dict) -> list[Attribute]:
+def parse_session_request_baggage_headers(headers: dict) -> list[Attribute]:
     """
     Parse the 'baggage' header from the request headers to extract session information. If the 'baggage' header is not
-    present or does not contain the expected keys, a new session ID will be generated and returned as part of the session attributes.
+    present or does not contain the expected keys, a new execution scope ID will be generated and returned as part of
+    the session attributes.
     """
     if not headers:
         return _build_new_session_attributes()

@@ -22,8 +22,8 @@ from urllib.parse import parse_qs, urljoin
 import requests
 
 from rollbar.lib import events, filters, dict_merge, transport, defaultJSONEncode
-from rollbar.lib.session import get_current_session, set_current_session
-
+from rollbar.lib.payload import Attribute
+from rollbar.lib.session import get_current_session, set_current_session, parse_session_request_baggage_headers
 
 __version__ = '1.3.0'
 __log_name__ = 'rollbar'
@@ -901,17 +901,32 @@ def _add_session_data(data: dict) -> None:
     """
     session_data = get_current_session()
     if session_data:
-        data['attributes'] = session_data
+        _add_session_attributes(data, session_data)
         return
 
     request = _session_data_from_request(data)
     if request is None:
         return
-    set_current_session(request.get('headers', None))
+    session_data = parse_session_request_baggage_headers(request.get('headers', None))
 
-    session_data = get_current_session()
     if session_data:
+        _add_session_attributes(data, session_data)
+
+
+def _add_session_attributes(data: dict, session_data: list[Attribute]) -> None:
+    """
+    Adds session attributes to the payload data. This function is careful to not overwrite any existing data in the
+    payload.
+    """
+    if 'attributes' not in data:
         data['attributes'] = session_data
+        return
+
+    existing_keys = {a['key'] for a in data['attributes']}
+
+    for attribute in session_data:
+        if attribute['key'] not in existing_keys:
+            data['attributes'].append(attribute)
 
 
 def _session_data_from_request(data: dict) -> dict:
