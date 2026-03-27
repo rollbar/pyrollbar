@@ -16,7 +16,7 @@ def set_current_session(headers: dict[str, str]) -> None:
 
     The session data should be a dictionary with string keys and string values.
     """
-    session_data = parse_session_request_baggage_headers(headers)
+    session_data = parse_session_request_baggage_headers(headers, generate_missing=True)
     _context_session.set(session_data)
     _thread_session.data = session_data
 
@@ -43,14 +43,22 @@ def reset_current_session() -> None:
     _thread_session.data = None
 
 
-def parse_session_request_baggage_headers(headers: dict) -> list[Attribute]:
+def parse_session_request_baggage_headers(headers: dict, generate_missing: bool = False) -> list[Attribute]:
     """
     Parse the 'baggage' header from the request headers to extract session information. If the 'baggage' header is not
     present or does not contain the expected keys, a new execution scope ID will be generated and returned as part of
     the session attributes.
+
+    :param headers: The request headers as a dictionary.
+    :param generate_missing: If True, generates a new execution scope ID if it's missing from the baggage header. If
+                             False, it is not generated. This should only be set to True when the session data is being
+                             stored for the first time in the request context. Generally, `set_current_session()`, and
+                             `get_current_session()` should be used instead.
     """
     if not headers:
-        return _build_new_scope_attributes()
+        if generate_missing:
+            return _build_new_scope_attributes()
+        return []
 
     baggage_header = None
 
@@ -61,7 +69,9 @@ def parse_session_request_baggage_headers(headers: dict) -> list[Attribute]:
             break
 
     if not baggage_header:
-        return _build_new_scope_attributes()
+        if generate_missing:
+            return _build_new_scope_attributes()
+        return []
 
     baggage_items = baggage_header.split(',')
     baggage_data = []
@@ -78,10 +88,12 @@ def parse_session_request_baggage_headers(headers: dict) -> list[Attribute]:
             baggage_data.append({'key': 'execution_scope_id', 'value': value.strip()})
 
     if not baggage_data:
-        return _build_new_scope_attributes()
+        if generate_missing:
+            return _build_new_scope_attributes()
+        return []
 
     # Always ensure we have an execution scope ID, even if the baggage header is present but doesn't contain it.
-    if not has_scope_id:
+    if not has_scope_id and generate_missing:
         baggage_data.extend(_build_new_scope_attributes())
 
     return baggage_data
