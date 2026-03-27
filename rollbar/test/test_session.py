@@ -75,6 +75,13 @@ class SessionTest(BaseTest):
             'baggage': '',
         }
         attributes = session.parse_session_request_baggage_headers(headers)
+        self.assertEqual(len(attributes), 0)
+
+    def test_parse_session_request_baggage_headers_empty_generate(self):
+        headers = {
+            'baggage': '',
+        }
+        attributes = session.parse_session_request_baggage_headers(headers, generate_missing=True)
         # Ensure that we still generate an execution scope ID if the baggage header is empty.
         self.assertEqual(len(attributes), 1)
         self.assertEqual(attributes[0]['key'], 'execution_scope_id')
@@ -85,6 +92,13 @@ class SessionTest(BaseTest):
             'baggage': 'some.id=xyz789',
         }
         attributes = session.parse_session_request_baggage_headers(headers)
+        self.assertEqual(len(attributes), 0)
+
+    def test_parse_session_request_baggage_headers_other_generate(self):
+        headers = {
+            'baggage': 'some.id=xyz789',
+        }
+        attributes = session.parse_session_request_baggage_headers(headers, generate_missing=True)
         # Ensure that we still generate an execution scope ID if the baggage header doesn't contain the expected keys.
         self.assertEqual(len(attributes), 1)
         self.assertEqual(attributes[0]['key'], 'execution_scope_id')
