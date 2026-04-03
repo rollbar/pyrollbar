@@ -2,6 +2,11 @@
 
 The change log is also available on the [GitHub Releases Page](https://github.com/rollbar/pyrollbar/releases).
 
+**1.4.0-beta**
+
+- Added support for Python 3.14 by @danielmorell in [#484](https://github.com/rollbar/pyrollbar/pull/484)
+- Added support for error correlation headers. by @danielmorell in [#491](https://github.com/rollbar/pyrollbar/pull/491)
+
 **1.3.0**
 
 - Added support for classes to define the method `__rollbar_repr__` to control how objects are serialized by @danielmorell in [#479](https://github.com/rollbar/pyrollbar/pull/479)
