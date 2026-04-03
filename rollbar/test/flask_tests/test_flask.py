@@ -9,6 +9,7 @@ import os
 from unittest import mock
 
 import rollbar
+from rollbar.lib.session import reset_current_session
 
 from rollbar.test import BaseTest
 
@@ -64,6 +65,7 @@ if ALLOWED_PYTHON_VERSION and FLASK_INSTALLED:
             self.app = create_app()
             init_rollbar(self.app)
             self.client = self.app.test_client()
+            reset_current_session()
 
         def test_index(self):
             resp = self.client.get('/')
@@ -113,6 +115,26 @@ if ALLOWED_PYTHON_VERSION and FLASK_INSTALLED:
             self.assertEqual(data['request']['user_ip'], '1.2.3.4')
             self.assertEqual(data['request']['method'], 'GET')
             self.assertEqual(data['request']['headers']['User-Agent'], 'Flask Test')
+
+        @mock.patch('rollbar.send_payload')
+        def test_uncaught_baggage_header(self, send_payload):
+            rollbar.SETTINGS['include_request_body'] = True
+            resp = self.client.get('/cause_error?foo=bar',
+                headers={
+                    'X-Real-Ip': '1.2.3.4',
+                    'User-Agent': 'Flask Test',
+                    'Baggage': 'rollbar.session.id=abcde, rollbar.execution.scope.id = fghij',
+                })
+            self.assertEqual(resp.status_code, 500)
+
+            self.assertEqual(send_payload.called, True)
+            payload = send_payload.call_args[0][0]
+            data = payload['data']
+
+            self.assertEqual(data['attributes'], [
+                {'key': 'session_id', 'value': 'abcde'},
+                {'key': 'execution_scope_id', 'value': 'fghij'},
+            ])
 
         @mock.patch('rollbar.send_payload')
         def test_uncaught_json_request(self, send_payload):

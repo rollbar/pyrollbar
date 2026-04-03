@@ -10,6 +10,7 @@ from .requests import store_current_request
 from rollbar.contrib.asgi import ReporterMiddleware as ASGIReporterMiddleware
 from rollbar.contrib.asgi.integration import integrate
 from rollbar.lib._async import RollbarAsyncError, try_report
+from rollbar.lib.session import set_current_session, reset_current_session
 
 log = logging.getLogger(__name__)
 
@@ -17,6 +18,8 @@ log = logging.getLogger(__name__)
 @integrate(framework_name=f'starlette {__version__}')
 class ReporterMiddleware(ASGIReporterMiddleware):
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope['type'] == 'http':
+            set_current_session(self._format_headers(scope['headers']))
         try:
             store_current_request(scope, receive)
             await self.app(scope, receive, send)
@@ -43,3 +46,6 @@ class ReporterMiddleware(ASGIReporterMiddleware):
                     )
                     rollbar.report_exc_info(exc_info, request)
             raise
+        finally:
+            if scope['type'] == 'http':
+                reset_current_session()
