@@ -17,9 +17,18 @@ import uuid
 import wsgiref.util
 import warnings
 import queue
+from typing import Any, Callable, TypedDict, Literal, cast
 from urllib.parse import parse_qs, urljoin
 
-import requests
+try:
+    # Python 3.11+
+    # This is ignored for mypy to be happy with Python versions before 3.11.
+    from typing import Unpack  # type: ignore
+except ImportError:
+    # Python 3.9 and 3.10
+    from typing_extensions import Unpack
+
+import requests  # type: ignore[import-untyped]
 
 from rollbar.lib import events, filters, dict_merge, transport, defaultJSONEncode
 from rollbar.lib.payload import Attribute
@@ -27,12 +36,15 @@ from rollbar.lib.session import get_current_session, set_current_session, parse_
 
 __version__ = '1.4.0-beta'
 __log_name__ = 'rollbar'
+
+from rollbar.lib.transform import Transform
+
 log = logging.getLogger(__log_name__)
 
 
 # import request objects from various frameworks, if available
 try:
-    from webob import BaseRequest as WebobBaseRequest
+    from webob import BaseRequest as WebobBaseRequest  # type: ignore[import-untyped]
 except ImportError:
     WebobBaseRequest = None
 
@@ -44,61 +56,61 @@ except ImportError:
 
 else:
     try:
-        from django.http import HttpRequest as DjangoHttpRequest
+        from django.http import HttpRequest as DjangoHttpRequest # type: ignore[assignment]
     except (ImportError, ImproperlyConfigured):
-        DjangoHttpRequest = None
+        DjangoHttpRequest = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
     try:
-        from rest_framework.request import Request as RestFrameworkRequest
+        from rest_framework.request import Request as RestFrameworkRequest  # type: ignore[assignment, no-redef]
     except (ImportError, ImproperlyConfigured):
-        RestFrameworkRequest = None
+        RestFrameworkRequest = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
     del ImproperlyConfigured
 
 try:
     from werkzeug.wrappers import Request as WerkzeugRequest
 except (ImportError, SyntaxError):
-    WerkzeugRequest = None
+    WerkzeugRequest = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 try:
     from werkzeug.local import LocalProxy as WerkzeugLocalProxy
 except (ImportError, SyntaxError):
-    WerkzeugLocalProxy = None
+    WerkzeugLocalProxy = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 try:
-    from tornado.httpserver import HTTPRequest as TornadoRequest
+    from tornado.httpserver import HTTPRequest as TornadoRequest  # type: ignore[import-untyped]
 except ImportError:
-    TornadoRequest = None
+    TornadoRequest = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 try:
-    from bottle import BaseRequest as BottleRequest
+    from bottle import BaseRequest as BottleRequest  # type: ignore[import-untyped]
 except ImportError:
-    BottleRequest = None
+    BottleRequest = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 try:
     from sanic.request import Request as SanicRequest
 except ImportError:
-    SanicRequest = None
+    SanicRequest = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 try:
-    from google.appengine.api.urlfetch import fetch as AppEngineFetch
+    from google.appengine.api.urlfetch import fetch as AppEngineFetch  # type: ignore[import-untyped, import-not-found]
 except (ImportError, KeyError):
-    AppEngineFetch = None
+    AppEngineFetch = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 try:
-    from starlette.requests import Request as StarletteRequest
+    from starlette.requests import Request as StarletteRequest, State as StarletteState
 except ImportError:
-    StarletteRequest = None
+    StarletteRequest = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 try:
     from fastapi.requests import Request as FastAPIRequest
 except ImportError:
-    FastAPIRequest = None
+    FastAPIRequest = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 try:
     import httpx
 except ImportError:
-    httpx = None
+    httpx = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 AsyncHTTPClient = httpx
 
@@ -110,16 +122,16 @@ def passthrough_decorator(func):
 try:
     from tornado.httpclient import AsyncHTTPClient as TornadoAsyncHTTPClient
 except ImportError:
-    TornadoAsyncHTTPClient = None
+    TornadoAsyncHTTPClient = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 try:
-    import treq
+    import treq  # type: ignore[import-not-found]
     from twisted.python import log as twisted_log
     from twisted.web.iweb import IPolicyForHTTPS
     from twisted.web.client import BrowserLikePolicyForHTTPS, Agent
     from twisted.internet.ssl import CertificateOptions
     from twisted.internet import task, defer, ssl, reactor
-    from zope.interface import implementer
+    from zope.interface import implementer  # type: ignore[import-untyped]
 
     @implementer(IPolicyForHTTPS)
     class VerifyHTTPS(object):
@@ -159,7 +171,7 @@ except ImportError:
     treq = None
 
 try:
-    from falcon import Request as FalconRequest
+    from falcon import Request as FalconRequest  # type: ignore[import-not-found]
 except ImportError:
     FalconRequest = None
 
@@ -207,14 +219,14 @@ def _get_flask_request():
 def _get_pyramid_request():
     if WebobBaseRequest is None:
         return None
-    from pyramid.threadlocal import get_current_request
+    from pyramid.threadlocal import get_current_request  # type: ignore[import-untyped]
     return get_current_request()
 
 
 def _get_pylons_request():
     if WebobBaseRequest is None:
         return None
-    from pylons import request
+    from pylons import request  # type: ignore[import-not-found]
     return request
 
 
@@ -238,13 +250,13 @@ def _get_fastapi_request():
     return get_current_request()
 
 
-BASE_DATA_HOOK = None
+BASE_DATA_HOOK: Callable[[Any, dict[str, Any]], dict[str, Any]] | None = None
 
-agent_log = None
+agent_log: logging.Logger | None = None
 
-VERSION = __version__
-DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/'
-DEFAULT_TIMEOUT = 3
+VERSION: str = __version__
+DEFAULT_ENDPOINT: str = 'https://api.rollbar.com/api/1/'
+DEFAULT_TIMEOUT: int = 3
 ANONYMIZE = 'anonymize'
 
 DEFAULT_LOCALS_SIZES = {
@@ -261,9 +273,77 @@ DEFAULT_LOCALS_SIZES = {
     'maxother': 100,
 }
 
+Level = Literal['ignored', 'debug', 'info', 'warning', 'error', 'critical']
+IgnorableLevel = Literal['ignored', 'debug', 'info', 'warning', 'error', 'critical']
+
+
+class NotifierSettings(TypedDict, total=False):
+    name: str
+    version: str
+
+
+class LocalsSettings(TypedDict, total=False):
+    enabled: bool
+    safe_repr: bool
+    scrub_varargs: bool
+    sizes: dict[str, int]
+    safelisted_types: list[type]
+    whitelisted_types: list[type]  # deprecated, use safelisted_types instead
+
+
+class SettingsParams(TypedDict, total=False):
+    enabled: bool
+    # List of tuples in the form (class, level) where class is an Exception class you want to always filter to the
+    # respective level. Any subclasses of the given class will also be matched.
+    # If class is a string, it will be lazy-evaluated to find the class by that name.
+    exception_level_filters: list[tuple[type | str, IgnorableLevel]]
+    root: str | None
+    host: str | None
+    branch: str | None
+    code_version: str | None
+    handler: Literal['default', 'blocking', 'thread', 'async', 'agent', 'tornado', 'gae', 'twisted', 'httpx', 'thread_pool']
+    thread_pool_workers: int | None
+    endpoint: str
+    timeout: int
+    agent_log_file: str
+    notifier: NotifierSettings
+    allow_logging_basic_config: bool
+    locals: LocalsSettings
+    verify_https: bool
+    shortener_keys: list[tuple[str, ...]]
+    suppress_reinit_warning: bool
+    capture_email: bool
+    capture_username: bool
+    capture_ip: bool | Literal['anonymize']
+    log_all_rate_limited_items: bool
+    log_payload_on_error: bool
+    http_proxy: str | None
+    http_proxy_user: str | None
+    http_proxy_password: str | None
+    include_request_body: bool
+    request_pool_connections: int | None
+    request_pool_maxsize: int | None
+    request_max_retries: int | None
+    batch_transforms: bool
+    custom_transforms: list[Transform]
+
+
+# Deprecated, will be removed in version 2.0.0
+SettingsIrregular = TypedDict('SettingsIrregular', {
+    'agent.log_file': str,
+})
+
+
+class Settings(TypedDict, SettingsParams, SettingsIrregular):
+    access_token: str | None
+    environment: str
+    scrub_fields: list[str]
+    url_fields: list[str]
+
+
 # configuration settings
 # configure by calling init() or overriding directly
-SETTINGS = {
+SETTINGS: Settings = {
     'access_token': None,
     'enabled': True,
     'environment': 'production',
@@ -280,7 +360,9 @@ SETTINGS = {
     'thread_pool_workers': None,
     'endpoint': DEFAULT_ENDPOINT,
     'timeout': DEFAULT_TIMEOUT,
+    # Deprecated, use 'agent_log_file' instead. Will be removed in version 2.0.0
     'agent.log_file': 'log.rollbar',
+    'agent_log_file': 'log.rollbar',
     'scrub_fields': [
         'pw',
         'passwd',
@@ -333,9 +415,10 @@ _CURRENT_LAMBDA_CONTEXT = None
 _LAST_RESPONSE_STATUS = None
 
 # Set in init()
-_transforms = []
-_serialize_transform = None
-_scrub_redact_transform = None
+_transforms: list[Transform] = []
+_serialize_transform: Transform | None = None
+_scrub_redact_transform: Transform | None = None
+_threads: queue.Queue
 
 _initialized = False
 
@@ -353,17 +436,69 @@ from rollbar.lib.transforms.batched import BatchedTransform
 
 ## public api
 
-def init(access_token, environment='production', scrub_fields=None, url_fields=None, **kw):
+def init(
+    access_token: str,
+    environment: str = 'production',
+    scrub_fields: list[str] | None = None,
+    url_fields: list[str] | None = None,
+    **kw: Unpack[SettingsParams],
+) -> None:
     """
     Saves configuration variables in this module's SETTINGS.
 
-    access_token: project access token. Get this from the Rollbar UI:
-                  - click "Settings" in the top nav
-                  - click "Projects" in the left nav
-                  - copy-paste the appropriate token.
-    environment: environment name. Can be any string; suggestions: 'production', 'development',
-                 'staging', 'yourname'
-    **kw: provided keyword arguments will override keys in SETTINGS.
+    :param access_token: Project access token.
+    :param environment: Environment name. Any string up to 255 chars is OK. For best results, use production for your
+                        production environment.
+    :param scrub_fields: List of sensitive field names to scrub out of request params and locals. Values will be
+                         replaced with asterisks. If overriding, make sure to list all fields you want to scrub, not
+                         just fields you want to add to the default. Param names are converted to lowercase before
+                         comparing against the scrub list.
+    :param url_fields: List of fields treated as URLs to be parsed and scrubbed.
+    :param agent_log_file: If using the 'agent' handler, the path to the log file to write to. Filename must end with
+                           `.rollbar`, Defaults to `log.rollbar`.
+    :param allow_logging_basic_config: When `True`, `logging.basicConfig()` will be called to set up the logging system.
+                                       Set to `False` to skip this call. If using Flask, you'll want to set to False. If
+                                       using Pyramid or Django, `True` should be fine.
+    :param batch_transforms: If `True`, enables batching of transforms for improved performance. Default: `False`.
+    :param branch: Name of the checked-out branch.
+    :param capture_ip: If equal to `True`, we will attempt to capture the full client IP address from a request. If
+                       equal to the string `anonymize`, we will capture the client IP address, but then semi-anonymize
+                       it  by masking out the least significant bits. If equal to False, we will not capture the client
+                       IP address from a request. Default: `True`.
+    :param capture_email: If set to `True`, we will attempt to enrich person data with an email address if available.
+    :param capture_username: If set to `True`, we will attempt to enrich person data with a username if available.
+    :param code_version: A string describing the current code revision/version (i.e. a git sha). Max 40 characters.
+    :param custom_transforms: A list of custom Transform instances to apply to payloads.
+    :param enabled: Whether Rollbar error reporting is enabled.
+    :param endpoint: URL items are posted to. Default: `https://api.rollbar.com/api/1/`.
+    :param exception_level_filters: List of tuples in the form (class, level) where class is an Exception class you want
+                                    to always filter to the respective level. Any subclasses of the given class will
+                                    also be matched. If class is a string, it will be lazy-evaluated to find the class
+                                    by that name.
+    :param handler: The method for reporting rollbar items to api.rollbar.com. Default: `default`.
+    :param host: Custom hostname of the current host. If not set, will use the system hostname.
+    :param http_proxy: The HTTP proxy host and optional port e.g. `myhttpproxy.com:5000`. This should not include the
+                       URL scheme. If set all reports to the Rollbar service will be sent through the proxy.
+    :param http_proxy_user: The basic auth user to use with the HTTP proxy.
+    :param http_proxy_password: The basic auth password to use with the HTTP proxy. Basic auth will only work if both
+                                `http_proxy_user` and `http_proxy_password` are present.
+    :param include_request_body: Set to `True` to add the raw HTTP request body to the error report. Currently, works
+                                 with Django, Starlette, and FastAPI. Default: `False`.
+    :param locals: Configuration for collecting local variables.
+    :param log_all_rate_limited_items: Rollbar will log a warning if you have crossed your limit for logged items.
+    :param request_pool_connections: If not `None`, used by requests to set the number of `urllib3` connection pools to
+                                     cache. Default: `None`.
+    :param request_pool_maxsize: If not `None`, used by requests to set the maximum number of connections to save in the
+                                 pool. Default: `None`.
+    :param request_max_retries: If not `None`, used by requests to set the maximum number of retries each connection
+                                should attempt. Default: `None`.
+    :param root: Absolute path to the root of your application, not including the final /.
+    :param shortener_keys: A list of key prefixes (as tuple) to apply our shortener transform to. Added to built-in
+                           list.
+    :param suppress_reinit_warning: If `True`, suppresses the warning normally shown when `rollbar.init()` is called
+                                    multiple times.
+    :param timeout: Timeout for any HTTP requests made to the Rollbar API (in seconds).
+    :param verify_https: If `True`, network requests will fail unless encountering a valid certificate. Default `True`.
     """
     global SETTINGS, agent_log, _initialized, _transforms, _serialize_transform, _scrub_redact_transform, _threads
 
@@ -373,7 +508,8 @@ def init(access_token, environment='production', scrub_fields=None, url_fields=N
        SETTINGS['url_fields'] = list(url_fields)
 
     # Merge the extra config settings into SETTINGS
-    SETTINGS = dict_merge(SETTINGS, kw)
+    # Both cast() and dict() are needed to satisfy MyPy
+    SETTINGS = cast(Settings, dict_merge(dict(SETTINGS), dict(kw)))
     if _initialized:
         # NOTE: Temp solution to not being able to re-init.
         # New versions of pyrollbar will support re-initialization
@@ -413,7 +549,7 @@ def init(access_token, environment='production', scrub_fields=None, url_fields=N
     # A list of key prefixes to apply our shortener transform to. The request
     # being included in the body key is old behavior and is being retained for
     # backwards compatibility.
-    shortener_keys = [
+    shortener_keys: list[tuple[str, ...]] = [
         ('request', 'POST'),
         ('request', 'json'),
         ('body', 'request', 'POST'),
@@ -487,7 +623,9 @@ def lambda_function(f):
     return wrapper
 
 
-def report_exc_info(exc_info=None, request=None, extra_data=None, payload_data=None, level=None, **kw):
+def report_exc_info(
+        exc_info: tuple[type[BaseException], BaseException, types.TracebackType] | tuple[None, None, None] | None = None,
+        request=None, extra_data=None, payload_data=None, level=None, **kw):
     """
     Reports an exception to Rollbar, using exc_info (from calling sys.exc_info())
 
@@ -515,7 +653,7 @@ def report_exc_info(exc_info=None, request=None, extra_data=None, payload_data=N
         log.exception("Exception while reporting exc_info to Rollbar. %r", e)
 
 
-def report_message(message, level='error', request=None, extra_data=None, payload_data=None):
+def report_message(message: str, level: Level = 'error', request=None, extra_data=None, payload_data=None):
     """
     Reports an arbitrary string message to Rollbar.
 
@@ -531,7 +669,7 @@ def report_message(message, level='error', request=None, extra_data=None, payloa
         log.exception("Exception while reporting message to Rollbar. %r", e)
 
 
-def send_payload(payload, access_token):
+def send_payload(payload, access_token: str):
     """
     Sends a payload object, (the result of calling _build_payload() + _serialize_payload()).
     Uses the configured handler from SETTINGS['handler']
@@ -564,6 +702,9 @@ def send_payload(payload, access_token):
     if handler == 'blocking':
         _send_payload(payload_str, access_token)
     elif handler == 'agent':
+        if agent_log is None:
+            log.error('Rollbar agent log not initialized')
+            return
         agent_log.error(payload_str)
     elif handler == 'tornado':
         if TornadoAsyncHTTPClient is None:
@@ -713,7 +854,7 @@ def _resolve_exception_class(idx, filter):
     return cls, level
 
 
-def _filtered_level(exception):
+def _filtered_level(exception: BaseException):
     for i, filter in enumerate(SETTINGS['exception_level_filters']):
         cls, level = _resolve_exception_class(i, filter)
         if cls and isinstance(exception, cls):
@@ -908,7 +1049,7 @@ def _add_session_data(data: dict) -> None:
     request = _session_data_from_request(data)
     if request is None:
         return
-    session_data = parse_session_request_baggage_headers(request.get('headers', None))
+    session_data = parse_session_request_baggage_headers(request.get('headers', {}))
 
     if session_data:
         _add_session_attributes(data, session_data)
@@ -930,7 +1071,7 @@ def _add_session_attributes(data: dict, session_data: list[Attribute]) -> None:
             data['attributes'].append(attribute)
 
 
-def _session_data_from_request(data: dict) -> dict:
+def _session_data_from_request(data: dict) -> dict | None:
     """
     Tries to find session data in the request object. Use the request object if provided, otherwise check the data as
     it may already contain the request object. This is true for some frameworks (e.g. Django).
@@ -957,7 +1098,7 @@ def _check_config():
     return True
 
 
-def _build_base_data(request, level='error'):
+def _build_base_data(request, level='error') -> dict[str, Any]:
     data = {
         'timestamp': int(time.time()),
         'environment': SETTINGS['environment'],
@@ -970,7 +1111,7 @@ def _build_base_data(request, level='error'):
     if SETTINGS.get('code_version'):
         data['code_version'] = SETTINGS['code_version']
 
-    if BASE_DATA_HOOK:
+    if BASE_DATA_HOOK is not None:
         BASE_DATA_HOOK(request, data)
 
     return data
@@ -1004,10 +1145,11 @@ def _build_person_data(request):
         else:
             return None
 
-    if StarletteRequest:
+    if StarletteRequest is not None:
         from rollbar.contrib.starlette.requests import hasuser
     else:
-        def hasuser(request): return True
+        def hasuser(request: StarletteRequest[StarletteState]) -> bool:
+            return True
 
     if hasuser(request) and hasattr(request, 'user'):
         user_prop = request.user
@@ -1053,7 +1195,7 @@ def _get_func_from_frame(frame):
     return func
 
 
-def _add_locals_data(trace_data, exc_info):
+def _add_locals_data(trace_data, exc_info) -> None:
     if not SETTINGS['locals']['enabled']:
         return
 
@@ -1079,7 +1221,7 @@ def _add_locals_data(trace_data, exc_info):
         argspec = None
         varargspec = None
         keywordspec = None
-        _locals = {}
+        _locals: dict[str, Any] = {}
 
         try:
             arginfo = inspect.getargvalues(tb_frame)
@@ -1190,8 +1332,8 @@ def _check_add_locals(frame, frame_num, total_frames):
                 ('root' in SETTINGS and (frame.get('filename') or '').lower().startswith(root.lower()))))
 
 
-def _get_actual_request(request):
-    if WerkzeugLocalProxy and isinstance(request, WerkzeugLocalProxy):
+def _get_actual_request(request) -> dict | None:
+    if WerkzeugLocalProxy is not None and isinstance(request, WerkzeugLocalProxy):
         try:
             actual_request = request._get_current_object()
         except RuntimeError:
@@ -1206,35 +1348,35 @@ def _build_request_data(request):
     """
 
     # webob (pyramid)
-    if WebobBaseRequest and isinstance(request, WebobBaseRequest):
+    if WebobBaseRequest is not None and isinstance(request, WebobBaseRequest):
         return _build_webob_request_data(request)
 
     # django
-    if DjangoHttpRequest and isinstance(request, DjangoHttpRequest):
+    if DjangoHttpRequest is not None and isinstance(request, DjangoHttpRequest):
         return _build_django_request_data(request)
 
     # django rest framework
-    if RestFrameworkRequest and isinstance(request, RestFrameworkRequest):
+    if RestFrameworkRequest is not None and isinstance(request, RestFrameworkRequest):
         return _build_django_request_data(request)
 
     # werkzeug (flask)
-    if WerkzeugRequest and isinstance(request, WerkzeugRequest):
+    if WerkzeugRequest is not None and isinstance(request, WerkzeugRequest):
         return _build_werkzeug_request_data(request)
 
     # tornado
-    if TornadoRequest and isinstance(request, TornadoRequest):
+    if TornadoRequest is not None and isinstance(request, TornadoRequest):
         return _build_tornado_request_data(request)
 
     # bottle
-    if BottleRequest and isinstance(request, BottleRequest):
+    if BottleRequest is not None and isinstance(request, BottleRequest):
         return _build_bottle_request_data(request)
 
     # Sanic
-    if SanicRequest and isinstance(request, SanicRequest):
+    if SanicRequest is not None and isinstance(request, SanicRequest):
         return _build_sanic_request_data(request)
 
     # falcon
-    if FalconRequest and isinstance(request, FalconRequest):
+    if FalconRequest is not None and isinstance(request, FalconRequest):
         return _build_falcon_request_data(request)
 
     # Plain wsgi (should be last)
@@ -1242,11 +1384,11 @@ def _build_request_data(request):
         return _build_wsgi_request_data(request)
 
     # FastAPI (built on top of Starlette, so keep the order)
-    if FastAPIRequest and isinstance(request, FastAPIRequest):
+    if FastAPIRequest is not None and isinstance(request, FastAPIRequest):
         return _build_fastapi_request_data(request)
 
     # Starlette (should be the last one for Starlette based frameworks)
-    if StarletteRequest and isinstance(request, StarletteRequest):
+    if StarletteRequest is not None and isinstance(request, StarletteRequest):
         return _build_starlette_request_data(request)
 
     return None
@@ -1529,7 +1671,7 @@ def _build_server_data():
     return server_data
 
 
-def _transform(obj, key=None):
+def _transform(obj: Any, key: tuple[str] | None = None):
     return transforms.transform(
         obj,
         _transforms,
@@ -1538,7 +1680,7 @@ def _transform(obj, key=None):
     )
 
 
-def _build_payload(data):
+def _build_payload(data: dict) -> dict:
     """
     Returns the full payload as a string.
     """

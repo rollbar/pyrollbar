@@ -17,6 +17,7 @@ from rollbar.contrib.starlette import LoggerMiddleware
 from rollbar.logger import RollbarHandler
 from starlette.applications import Starlette
 from starlette.responses import PlainTextResponse
+from starlette.routing import Route
 
 # Initialize Rollbar SDK with your server-side ACCESS_TOKEN
 rollbar.init(
@@ -36,14 +37,9 @@ rollbar_handler.setLevel(logging.ERROR)
 # Attach Rollbar handler to the root logger
 logger.addHandler(rollbar_handler)
 
-# Integrate Rollbar with Starlette application
-app = Starlette()
-app.add_middleware(LoggerMiddleware)  # should be added as the last middleware
-
 
 # GET query params will be sent to Rollbar and available in the UI
 # $ curl http://localhost:8888?param1=hello&param2=world
-@app.route('/')
 async def root(request):
     # Report log entries
     logger.critical('Critical message sent to Rollbar')
@@ -56,6 +52,14 @@ async def root(request):
 
     return PlainTextResponse('hello world')
 
+
+routes = [
+    Route('/', endpoint=root),
+]
+
+# Integrate Rollbar with Starlette application
+app = Starlette()
+app.add_middleware(LoggerMiddleware)  # should be added as the last middleware
 
 if __name__ == '__main__':
     uvicorn.run(app, host='localhost', port=8888)

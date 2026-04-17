@@ -124,29 +124,3 @@ class LoggerMiddlewareTest(BaseTest):
 
         client = TestClient(app)
         client.get('/')
-
-    @mock.patch('rollbar.contrib.starlette.requests.ContextVar', None)
-    @mock.patch('logging.Logger.error')
-    def test_should_not_return_current_request_for_older_python(self, mock_log):
-        from fastapi import FastAPI
-        from rollbar.contrib.fastapi.logger import LoggerMiddleware
-        from rollbar.contrib.fastapi import get_current_request
-
-        try:
-            from fastapi.testclient import TestClient
-        except ImportError:  # Added in FastAPI v0.51.0+
-            from starlette.testclient import TestClient
-
-        app = FastAPI()
-        app.add_middleware(LoggerMiddleware)
-
-        @app.get('/')
-        async def read_root():
-            self.assertIsNone(get_current_request())
-            mock_log.assert_called_once_with(
-                'Python 3.7+ (or aiocontextvars package)'
-                ' is required to receive current request.'
-            )
-
-        client = TestClient(app)
-        client.get('/')

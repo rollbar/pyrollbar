@@ -52,6 +52,36 @@ test = [
     "webob",
 ]
 
+type = [
+    "bottle",
+    "djangorestframework-stubs[compatible-mypy]",
+    "django-stubs",
+    "fastapi",
+    "mypy",
+    "pyramid",
+    "quart",
+    "sanic",
+    "starlette",
+    "tornado",
+    "twisted",
+    "uvicorn",
+]
+
+#type = [
+#    "bottle>=0.13.4",
+#    "djangorestframework-stubs[compatible-mypy]>=3.14.2",
+#    "django-stubs>=4.2.30",
+#    "fastapi>=0.128.8",
+#    "mypy>=1.19.1",
+#    "pyramid>=2.0.2",
+#    "quart>=0.20.0",
+#    "sanic>=25.3.0",
+#    "starlette>=0.49.3",
+#    "tornado>=6.5.4",
+#    "twisted>=25.5.0",
+#    "uvicorn>=0.39.0",
+#]
+
 [project.urls]
 Homepage = "https://rollbar.com/"
 Documentation = "https://docs.rollbar.com/docs/python"
@@ -63,6 +93,9 @@ rollbar = "rollbar.cli:main"
 
 [project.entry-points."paste.filter_app_factory"]
 pyramid = "rollbar.contrib.pyramid:create_rollbar_middleware"
+
+[tool.mypy]
+packages = ["rollbar"]
 
 [tool.pytest]
 testpaths = [

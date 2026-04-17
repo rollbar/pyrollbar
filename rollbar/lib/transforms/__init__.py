@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Callable, TypedDict, Any
 from collections.abc import Iterable
 
 from rollbar.lib import (
@@ -10,23 +12,37 @@ from rollbar.lib import (
 # The `Transform` class was moved out of this file to prevent a cyclical dependency issue.
 from rollbar.lib.transform import Transform
 from rollbar.lib.transforms.batched import BatchedTransform
+from rollbar.lib.type_info import KeyType
 
-_ALLOWED_CIRCULAR_REFERENCE_TYPES = [binary_type, bool, type(None)]
+_ALLOWED_CIRCULAR_REFERENCE_TYPES: tuple = (binary_type, bool, type(None))
 
 if isinstance(string_types, tuple):
-    _ALLOWED_CIRCULAR_REFERENCE_TYPES.extend(string_types)
+    _ALLOWED_CIRCULAR_REFERENCE_TYPES = (_ALLOWED_CIRCULAR_REFERENCE_TYPES, *string_types)
 else:
-    _ALLOWED_CIRCULAR_REFERENCE_TYPES.append(string_types)
+    _ALLOWED_CIRCULAR_REFERENCE_TYPES = (_ALLOWED_CIRCULAR_REFERENCE_TYPES, string_types)
 
 if isinstance(number_types, tuple):
-    _ALLOWED_CIRCULAR_REFERENCE_TYPES.extend(number_types)
+    _ALLOWED_CIRCULAR_REFERENCE_TYPES = (_ALLOWED_CIRCULAR_REFERENCE_TYPES, *number_types)
 else:
-    _ALLOWED_CIRCULAR_REFERENCE_TYPES.append(number_types)
+    _ALLOWED_CIRCULAR_REFERENCE_TYPES = (_ALLOWED_CIRCULAR_REFERENCE_TYPES, number_types)
 
 _ALLOWED_CIRCULAR_REFERENCE_TYPES = tuple(_ALLOWED_CIRCULAR_REFERENCE_TYPES)
 
 
-def transform(obj, transforms, key=None, batch_transforms=False):
+class Handlers(TypedDict, total=False):
+    string_handler: Callable
+    tuple_handler: Callable
+    namedtuple_handler: Callable
+    list_handler: Callable
+    set_handler: Callable
+    mapping_handler: Callable
+    path_handler: Callable
+    circular_reference_handler: Callable
+    default_handler: Callable
+    allowed_circular_reference_types: tuple | None
+
+
+def transform(obj, transforms: Transform | list[Transform], key: tuple[KeyType, ...] | None = None, batch_transforms: bool = False):
     if isinstance(transforms, Transform):
         transforms = [transforms]
 
@@ -41,22 +57,22 @@ def transform(obj, transforms, key=None, batch_transforms=False):
     return obj
 
 
-def _transform(obj, transform, key=None):
+def _transform(obj: Any, transform: Transform, key: tuple[KeyType, ...] | None = None) -> Any:
     key = key or ()
 
-    def do_transform(type_name, val, key=None, **kw):
+    def do_transform(type_name: str, val: Any, key: tuple[KeyType, ...] | None = None, **kw) -> Any:
         fn = getattr(transform, "transform_%s" % type_name, transform.transform_custom)
         val = fn(val, key=key, **kw)
 
         return val
 
-    def string_handler(s, key=None):
+    def string_handler(s: str | bytes, key: tuple[KeyType, ...] | None = None):
         if isinstance(s, bytes):
             return do_transform("bytes", s, key=key)
-        elif isinstance(s, str):
-            return do_transform("unicode", s, key=key)
+        # Otherwise it's a string
+        return do_transform("unicode", s, key=key)
 
-    def default_handler(o, key=None):
+    def default_handler(o, key: tuple[KeyType, ...] | None = None):
         if isinstance(o, bool):
             return do_transform("boolean", o, key=key)
 
@@ -72,7 +88,7 @@ def _transform(obj, transform, key=None):
 
         return do_transform("custom", o, key=key)
 
-    handlers = {
+    handlers: Handlers = {
         "string_handler": string_handler,
         "tuple_handler": lambda o, key=None: do_transform("tuple", o, key=key),
         "namedtuple_handler": lambda o, key=None: do_transform(

@@ -1,6 +1,6 @@
 from typing import Optional
 
-import requests
+import requests  # type: ignore[import-untyped]
 import threading
 
 
@@ -28,6 +28,7 @@ def _get_proxy_cfg(kw: dict) -> Optional[dict]:
             'http': f'http://{proxy}',
             'https': f'http://{proxy}',
         }
+    return None
 
 
 def configure_pool(**kw):

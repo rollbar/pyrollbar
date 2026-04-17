@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 __all__ = ['add_to']
 
 import logging
 import sys
-from typing import Callable, Optional, Type, Union
+from typing import Callable, Optional, Type
 
 from fastapi import APIRouter, FastAPI, __version__
 from fastapi.routing import APIRoute
@@ -27,7 +29,7 @@ log = logging.getLogger(__name__)
 
 @fastapi_min_version('0.41.0')
 @integrate(framework_name=f'fastapi {__version__}')
-def add_to(app_or_router: Union[FastAPI, APIRouter]) -> Optional[Type[APIRoute]]:
+def add_to(app_or_router: FastAPI | APIRouter) -> Optional[Type[APIRoute]]:
     """
     Adds RollbarLoggingRoute handler to the router app.
 

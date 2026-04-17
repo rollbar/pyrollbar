@@ -3,7 +3,7 @@ from unittest import mock
 from rollbar.test import BaseTest
 
 try:
-    from pyramid.request import Request
+    from pyramid.request import Request  # type: ignore[import-untyped, import-not-found]
 
     PYRAMID_INSTALLED = True
 except ImportError:
