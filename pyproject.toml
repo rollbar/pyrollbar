@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "rollbar"
 dynamic = ["version"]
@@ -40,21 +44,38 @@ dependencies = [
     "requests>=0.12.1",
 ]
 
+[dependency-groups]
+test = [
+    "blinker",
+    "httpx",
+    "pytest",
+    "webob",
+]
+
 [project.urls]
 Homepage = "https://rollbar.com/"
 Documentation = "https://docs.rollbar.com/docs/python"
 Changes = "https://github.com/rollbar/pyrollbar/blob/master/CHANGELOG.md"
 Source = "https://github.com/rollbar/pyrollbar/"
 
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools.dynamic]
-version = {attr = "rollbar.__version__"}
-
 [project.scripts]
 rollbar = "rollbar.cli:main"
 
 [project.entry-points."paste.filter_app_factory"]
 pyramid = "rollbar.contrib.pyramid:create_rollbar_middleware"
+
+[tool.pytest]
+testpaths = [
+    "rollbar/test",
+]
+
+[tool.setuptools.dynamic]
+version = {attr = "rollbar.__version__"}
+
+[tool.tox]
+requires = ["tox>=4.22"]
+
+[tool.tox.env_run_base]
+dependency_groups = ["test"]
+description = "run unit tests"
+commands = [["pytest", "{posargs}"]]
