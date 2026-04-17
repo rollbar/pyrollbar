@@ -17,8 +17,16 @@ import uuid
 import wsgiref.util
 import warnings
 import queue
-from typing import Any, Callable, TypedDict, Unpack, Literal, cast
+from typing import Any, Callable, TypedDict, Literal, cast
 from urllib.parse import parse_qs, urljoin
+
+try:
+    # Python 3.11+
+    # This is ignored for mypy to be happy with Python versions before 3.11.
+    from typing import Unpack  # type: ignore
+except ImportError:
+    # Python 3.9 and 3.10
+    from typing_extensions import Unpack
 
 import requests  # type: ignore[import-untyped]
 
@@ -85,12 +93,12 @@ except ImportError:
     SanicRequest = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 try:
-    from google.appengine.api.urlfetch import fetch as AppEngineFetch  # type: ignore[import-untyped]
+    from google.appengine.api.urlfetch import fetch as AppEngineFetch  # type: ignore[import-untyped, import-not-found]
 except (ImportError, KeyError):
     AppEngineFetch = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 try:
-    from starlette.requests import Request as StarletteRequest
+    from starlette.requests import Request as StarletteRequest, State as StarletteState
 except ImportError:
     StarletteRequest = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
@@ -308,6 +316,7 @@ class SettingsParams(TypedDict, total=False):
     capture_username: bool
     capture_ip: bool | Literal['anonymize']
     log_all_rate_limited_items: bool
+    log_payload_on_error: bool
     http_proxy: str | None
     http_proxy_user: str | None
     http_proxy_password: str | None
@@ -1040,7 +1049,7 @@ def _add_session_data(data: dict) -> None:
     request = _session_data_from_request(data)
     if request is None:
         return
-    session_data = parse_session_request_baggage_headers(request.get('headers', None))
+    session_data = parse_session_request_baggage_headers(request.get('headers', {}))
 
     if session_data:
         _add_session_attributes(data, session_data)
@@ -1062,7 +1071,7 @@ def _add_session_attributes(data: dict, session_data: list[Attribute]) -> None:
             data['attributes'].append(attribute)
 
 
-def _session_data_from_request(data: dict) -> dict:
+def _session_data_from_request(data: dict) -> dict | None:
     """
     Tries to find session data in the request object. Use the request object if provided, otherwise check the data as
     it may already contain the request object. This is true for some frameworks (e.g. Django).
@@ -1139,7 +1148,8 @@ def _build_person_data(request):
     if StarletteRequest is not None:
         from rollbar.contrib.starlette.requests import hasuser
     else:
-        def hasuser(request): return True
+        def hasuser(request: StarletteRequest[StarletteState]) -> bool:
+            return True
 
     if hasuser(request) and hasattr(request, 'user'):
         user_prop = request.user
@@ -1185,7 +1195,7 @@ def _get_func_from_frame(frame):
     return func
 
 
-def _add_locals_data(trace_data, exc_info):
+def _add_locals_data(trace_data, exc_info) -> None:
     if not SETTINGS['locals']['enabled']:
         return
 
@@ -1211,7 +1221,7 @@ def _add_locals_data(trace_data, exc_info):
         argspec = None
         varargspec = None
         keywordspec = None
-        _locals = {}
+        _locals: dict[str, Any] = {}
 
         try:
             arginfo = inspect.getargvalues(tb_frame)
@@ -1322,7 +1332,7 @@ def _check_add_locals(frame, frame_num, total_frames):
                 ('root' in SETTINGS and (frame.get('filename') or '').lower().startswith(root.lower()))))
 
 
-def _get_actual_request(request):
+def _get_actual_request(request) -> dict | None:
     if WerkzeugLocalProxy is not None and isinstance(request, WerkzeugLocalProxy):
         try:
             actual_request = request._get_current_object()

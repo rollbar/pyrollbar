@@ -1,18 +1,7 @@
 from __future__ import annotations
-from typing import Callable, TypeVar, Literal
-try:
-    # Python 3.10+ has ParamSpec/Concatenate in typing. However, mypy sees them
-    # as different from the typing_extensions versions, so we ignore type
-    # checking here.
-    from typing import ParamSpec, Concatenate  # type: ignore
-except Exception:
-    # for older Pythons install typing_extensions
-    from typing_extensions import ParamSpec, Concatenate  # type: ignore
+from typing import Any, Callable, Literal, Optional, Union
 
-P = ParamSpec("P")
-T = TypeVar("T")
-
-EventHandler = Callable[Concatenate[T, P], T | Literal[False]]
+EventHandler = Callable[..., Union[Any, Literal[False]]]
 
 EXCEPTION_INFO: Literal['exception_info'] = 'exception_info'
 MESSAGE: Literal['message'] = 'message'
@@ -32,16 +21,16 @@ def _check_type(typ: str):
         raise ValueError('Unknown type: %s. Must be one of %s' % (typ, _event_handlers.keys()))
 
 
-def _add_handler(typ: EventType, handler_fn: EventHandler, pos: int|None = None):
+def _add_handler(typ: EventType, handler_fn: EventHandler, pos: Optional[int] = None) -> None:
     _check_type(typ)
 
-    pos = pos if pos is not None else -1
+    insert_pos = pos if pos is not None else -1
     handlers = _event_handlers[typ]
 
     try:
         handlers.index(handler_fn)
     except ValueError:
-        handlers.insert(pos, handler_fn)
+        handlers.insert(insert_pos, handler_fn)
 
 
 def _remove_handler(typ: EventType, handler_fn: EventHandler):
@@ -72,27 +61,27 @@ def _on_event(typ: EventType, target, **kw):
 
 # Add/remove event handlers
 
-def add_exception_info_handler(handler_fn: EventHandler, pos: int|None = None):
+def add_exception_info_handler(handler_fn: EventHandler, pos: Optional[int] = None) -> None:
     _add_handler(EXCEPTION_INFO, handler_fn, pos)
 
 
-def remove_exception_info_handler(handler_fn: EventHandler):
+def remove_exception_info_handler(handler_fn: EventHandler) -> None:
     _remove_handler(EXCEPTION_INFO, handler_fn)
 
 
-def add_message_handler(handler_fn: EventHandler, pos: int|None = None):
+def add_message_handler(handler_fn: EventHandler, pos: Optional[int] = None) -> None:
     _add_handler(MESSAGE, handler_fn, pos)
 
 
-def remove_message_handler(handler_fn: EventHandler):
+def remove_message_handler(handler_fn: EventHandler) -> None:
     _remove_handler(MESSAGE, handler_fn)
 
 
-def add_payload_handler(handler_fn: EventHandler, pos: int|None = None):
+def add_payload_handler(handler_fn: EventHandler, pos: Optional[int] = None) -> None:
     _add_handler(PAYLOAD, handler_fn, pos)
 
 
-def remove_payload_handler(handler_fn: EventHandler):
+def remove_payload_handler(handler_fn: EventHandler) -> None:
     _remove_handler(PAYLOAD, handler_fn)
 
 

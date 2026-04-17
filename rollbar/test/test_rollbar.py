@@ -1602,7 +1602,7 @@ class RollbarTest(BaseTest):
         payload = send_payload.call_args[0][0]
 
         self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['password'], r'\*+')
-        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['Data'], 'password=\'\*+\'')
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['Data'], 'password=\'\\*+\'')
 
     @mock.patch('rollbar.send_payload')
     def test_scrub_nans(self, send_payload):

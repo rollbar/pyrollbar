@@ -74,7 +74,7 @@ def parse_session_request_baggage_headers(headers: dict, generate_missing: bool 
         return []
 
     baggage_items = baggage_header.split(',')
-    baggage_data = []
+    baggage_data: list[Attribute] = []
     has_scope_id = False
     for item in baggage_items:
         if '=' not in item:

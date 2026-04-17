@@ -109,7 +109,7 @@ def build_key_matcher(prefixes_or_suffixes, type='prefix', case_sensitive=False)
     return matcher
 
 
-def is_builtin_type(obj):
+def is_builtin_type(obj) -> bool:
     return obj.__class__.__module__ in ('__builtin__', 'builtins')
 
 T = TypeVar('T', bound=Union[dict, MutableMapping[str, Any]])

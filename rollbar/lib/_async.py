@@ -1,8 +1,8 @@
 import asyncio
-import contextlib
 import inspect
 import logging
 import sys
+from contextvars import ContextVar
 from unittest import mock
 from urllib.parse import urljoin
 
@@ -34,15 +34,7 @@ if sys.version_info[:2] == (3, 6):
             ' Please upgrade Python or install `aiocontextvars`.'
         )
 
-try:
-    from contextvars import ContextVar
-except ImportError:
-    ContextVar = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
-
-if ContextVar is not None:
-    _ctx_handler = ContextVar('rollbar-handler', default=None)
-else:
-    _ctx_handler = None
+_ctx_handler = ContextVar('rollbar-handler', default=None)
 
 
 class RollbarAsyncError(Exception):

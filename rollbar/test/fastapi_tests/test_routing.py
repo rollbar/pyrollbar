@@ -183,7 +183,7 @@ class LoggingRouteTest(BaseTest):
     @mock.patch('rollbar._check_config', return_value=True)
     @mock.patch('rollbar._serialize_frame_data')
     @mock.patch('rollbar.send_payload')
-    def test_should_send_payload_with_request_body(self, mock_send_payload, *mocks):
+    def test_should_send_payload_with_request_body(self, mock_send_payload, *mocks) -> None:
         from fastapi import Body, FastAPI
         from pydantic import BaseModel
         from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
