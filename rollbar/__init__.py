@@ -26,7 +26,7 @@ from rollbar.lib import events, filters, dict_merge, transport, defaultJSONEncod
 from rollbar.lib.payload import Attribute
 from rollbar.lib.session import get_current_session, set_current_session, parse_session_request_baggage_headers
 
-__version__ = '1.3.0'
+__version__ = '1.4.0-beta'
 __log_name__ = 'rollbar'
 
 from rollbar.lib.transform import Transform
@@ -390,6 +390,7 @@ SETTINGS: Settings = {
     'capture_username': False,
     'capture_ip': True,
     'log_all_rate_limited_items': True,
+    'log_payload_on_error': True,
     'http_proxy': None,
     'http_proxy_user': None,
     'http_proxy_password': None,
@@ -1906,7 +1907,9 @@ def _parse_response(path, access_token, params, resp, endpoint=None):
 
     if resp.status_code == 429:
         if SETTINGS['log_all_rate_limited_items'] or not last_response_was_429:
-            log.warning("Rollbar: over rate limit, data was dropped. Payload was: %r", params)
+            log.warning("Rollbar: over rate limit, data was dropped.")
+            if SETTINGS['log_payload_on_error']:
+                log.warning("Payload was: %r", params)
         return
     elif resp.status_code == 502:
         log.exception('Rollbar api returned a 502')
@@ -1919,7 +1922,9 @@ def _parse_response(path, access_token, params, resp, endpoint=None):
             payload = json.loads(params)
             uuid = payload['data']['uuid']
             host = payload['data']['server']['host']
-            log.error("Rollbar: request entity too large for UUID %r\n. Payload:\n%r", uuid, payload)
+            log.error("Rollbar: request entity too large for UUID %r\n.", uuid)
+            if SETTINGS['log_payload_on_error']:
+                log.error("Payload:\n%r", payload)
         except (TypeError, ValueError):
             log.exception('Unable to decode JSON for failsafe.')
         except KeyError:

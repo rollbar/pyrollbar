@@ -9,7 +9,7 @@
 </p>
 
 
-![Build Status](https://github.com/rollbar/pyrollbar/workflows/Pyrollbar%20CI/badge.svg?tag=latest)
+[![Build Status](https://github.com/rollbar/pyrollbar/workflows/Pyrollbar%20CI/badge.svg?tag=latest)](https://github.com/rollbar/pyrollbar/actions)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/rollbar)
 
 Python notifier for reporting exceptions, errors, and log messages to [Rollbar](https://rollbar.com).
