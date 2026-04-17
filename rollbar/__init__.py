@@ -23,7 +23,8 @@ from urllib.parse import parse_qs, urljoin
 import requests  # type: ignore[import-untyped]
 
 from rollbar.lib import events, filters, dict_merge, transport, defaultJSONEncode
-
+from rollbar.lib.payload import Attribute
+from rollbar.lib.session import get_current_session, set_current_session, parse_session_request_baggage_headers
 
 __version__ = '1.3.0'
 __log_name__ = 'rollbar'
@@ -932,6 +933,7 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     _add_request_data(data, request)
     _add_person_data(data, request)
     _add_lambda_context_data(data)
+    _add_session_data(data)
     data['server'] = _build_server_data()
 
     if payload_data:
@@ -1013,6 +1015,7 @@ def _report_message(message, level, request, extra_data, payload_data):
     _add_request_data(data, request)
     _add_person_data(data, request)
     _add_lambda_context_data(data)
+    _add_session_data(data)
     data['server'] = _build_server_data()
 
     if payload_data:
@@ -1022,6 +1025,50 @@ def _report_message(message, level, request, extra_data, payload_data):
     send_payload(payload, payload.get('access_token'))
 
     return data['uuid']
+
+
+def _add_session_data(data: dict) -> None:
+    """
+    Adds session data to the payload data if it can be found in the current session or request.
+    """
+    session_data = get_current_session()
+    if session_data:
+        _add_session_attributes(data, session_data)
+        return
+
+    request = _session_data_from_request(data)
+    if request is None:
+        return
+    session_data = parse_session_request_baggage_headers(request.get('headers', None))
+
+    if session_data:
+        _add_session_attributes(data, session_data)
+
+
+def _add_session_attributes(data: dict, session_data: list[Attribute]) -> None:
+    """
+    Adds session attributes to the payload data. This function is careful to not overwrite any existing data in the
+    payload.
+    """
+    if 'attributes' not in data:
+        data['attributes'] = session_data
+        return
+
+    existing_keys = {a['key'] for a in data['attributes']}
+
+    for attribute in session_data:
+        if attribute['key'] not in existing_keys:
+            data['attributes'].append(attribute)
+
+
+def _session_data_from_request(data: dict) -> dict:
+    """
+    Tries to find session data in the request object. Use the request object if provided, otherwise check the data as
+    it may already contain the request object. This is true for some frameworks (e.g. Django).
+    """
+    if data is not None and 'request' in data:
+        return data.get('request', None)
+    return _get_actual_request(_build_request_data(get_request()))
 
 
 def _check_config():
@@ -1375,10 +1422,7 @@ def _extract_wsgi_headers(items):
 
 
 def _build_django_request_data(request):
-    try:
-        url = request.get_raw_uri()
-    except AttributeError:
-        url = request.build_absolute_uri()
+    url = request.build_absolute_uri()
 
     request_data = {
         'url': url,

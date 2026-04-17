@@ -9,6 +9,8 @@ from typing import Callable, Optional, Type
 from fastapi import APIRouter, FastAPI, __version__
 from fastapi.routing import APIRoute
 
+from rollbar.lib.session import reset_current_session, set_current_session
+
 try:
     from fastapi import Request, Response
 except ImportError:
@@ -82,6 +84,7 @@ class RollbarLoggingRoute(APIRoute):
         router_handler = super().get_route_handler()
 
         async def rollbar_route_handler(request: Request) -> Response:
+            set_current_session(dict(request.headers))
             try:
                 store_current_request(request)
                 return await router_handler(request)
@@ -101,6 +104,8 @@ class RollbarLoggingRoute(APIRoute):
                     )
                     rollbar.report_exc_info(exc_info, request)
                 raise
+            finally:
+                reset_current_session()
 
         return rollbar_route_handler
 
