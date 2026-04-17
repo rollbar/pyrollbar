@@ -32,6 +32,18 @@ except ImportError:
     _checkLevel = lambda lvl: lvl
 
 
+EXCLUDE_RECORD_KEYS = {
+    # Attributes that are disallowed in `logging.Logger.makeRecord`
+    'asctime',
+    'message',
+    # Attributes that are used internally by pyrollbar
+    'extra_data',
+    'payload_data',
+    'request',
+    *vars(logging.makeLogRecord({})).keys(),
+}
+
+
 def resolve_logging_types(obj):
     if isinstance(obj, (dict, ConvertingDict)):
         return {k: resolve_logging_types(v) for k, v in obj.items()}
@@ -116,9 +128,10 @@ class RollbarHandler(logging.Handler):
                 'thread': record.thread,
                 'threadName': record.threadName
             }
-        }
-
-        extra_data.update(getattr(record, 'extra_data', {}))
+        } | {  # include any extras
+            k: v for k, v in vars(record).items()
+            if k not in EXCLUDE_RECORD_KEYS
+        } | getattr(record, 'extra_data', {})  # include historical extra_data
 
         payload_data = getattr(record, 'payload_data', {})
 
@@ -133,6 +146,17 @@ class RollbarHandler(logging.Handler):
         # load the request
         request = getattr(record, "request", None) or rollbar.get_request()
 
+        # Rather than copy the log record and disable exception and stack trace
+        # formatting, this does the same steps to prepare the log record
+        # as `logging.Formatter.format` does before calling
+        # `logging.Formatter.formatMessage`.
+        formatter = self.formatter or logging._defaultFormatter
+        record.message = record.getMessage()
+        if formatter.usesTime():
+            record.asctime = formatter.formatTime(record, formatter.datefmt)
+
+        message = formatter.formatMessage(record)
+
         uuid = None
         try:
             # when not in an exception handler, exc_info == (None, None, None)
@@ -140,11 +164,7 @@ class RollbarHandler(logging.Handler):
                 if record.msg:
                     message_template = {
                         'body': {
-                            'trace': {
-                                'exception': {
-                                    'description': record.getMessage()
-                                }
-                            }
+                            'trace': {'exception': {'description': message}}
                         }
                     }
                     payload_data = rollbar.dict_merge(
@@ -156,7 +176,7 @@ class RollbarHandler(logging.Handler):
                                                extra_data=extra_data,
                                                payload_data=payload_data)
             else:
-                uuid = rollbar.report_message(record.getMessage(),
+                uuid = rollbar.report_message(message,
                                               level=level,
                                               request=request,
                                               extra_data=extra_data,
