@@ -183,7 +183,7 @@ class LoggingRouteTest(BaseTest):
     @mock.patch('rollbar._check_config', return_value=True)
     @mock.patch('rollbar._serialize_frame_data')
     @mock.patch('rollbar.send_payload')
-    def test_should_send_payload_with_request_body(self, mock_send_payload, *mocks):
+    def test_should_send_payload_with_request_body(self, mock_send_payload, *mocks) -> None:
         from fastapi import Body, FastAPI
         from pydantic import BaseModel
         from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
@@ -753,37 +753,6 @@ class LoggingRouteTest(BaseTest):
             request = get_current_request()
 
             self.assertEqual(request, original_request)
-
-        client = TestClient(app)
-        client.get('/')
-
-    @mock.patch('rollbar.contrib.starlette.requests.ContextVar', None)
-    @mock.patch('logging.Logger.error')
-    def test_should_not_return_current_request_for_older_python(self, mock_log):
-        from fastapi import FastAPI
-        from rollbar.contrib.fastapi import get_current_request
-        from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
-
-        try:
-            from fastapi import Request
-            from fastapi.testclient import TestClient
-        except ImportError:  # Added in FastAPI v0.51.0+
-            from starlette.requests import Request
-            from starlette.testclient import TestClient
-
-        app = FastAPI()
-        rollbar_add_to(app)
-
-        @app.get('/')
-        async def read_root(original_request: Request):
-            request = get_current_request()
-
-            self.assertIsNone(request)
-            self.assertNotEqual(request, original_request)
-            mock_log.assert_called_once_with(
-                'Python 3.7+ (or aiocontextvars package)'
-                ' is required to receive current request.'
-            )
 
         client = TestClient(app)
         client.get('/')

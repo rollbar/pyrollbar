@@ -331,37 +331,6 @@ class ReporterMiddlewareTest(BaseTest):
         client = TestClient(app)
         client.get('/')
 
-    @mock.patch('rollbar.contrib.starlette.requests.ContextVar', None)
-    @mock.patch('logging.Logger.error')
-    def test_should_not_return_current_request_for_older_python(self, mock_log):
-        from fastapi import FastAPI
-        from rollbar.contrib.fastapi.middleware import ReporterMiddleware
-        from rollbar.contrib.fastapi import get_current_request
-
-        try:
-            from fastapi import Request
-            from fastapi.testclient import TestClient
-        except ImportError:  # Added in FastAPI v0.51.0+
-            from starlette.requests import Request
-            from starlette.testclient import TestClient
-
-        app = FastAPI()
-        app.add_middleware(ReporterMiddleware)
-
-        @app.get('/')
-        async def read_root(original_request: Request):
-            request = get_current_request()
-
-            self.assertIsNone(request)
-            self.assertNotEqual(request, original_request)
-            mock_log.assert_called_once_with(
-                'Python 3.7+ (or aiocontextvars package)'
-                ' is required to receive current request.'
-            )
-
-        client = TestClient(app)
-        client.get('/')
-
     def test_should_support_http_only(self):
         from rollbar.contrib.fastapi.middleware import ReporterMiddleware
         from rollbar.lib._async import FailingTestASGIApp, run

@@ -11,10 +11,7 @@ class NotRedactRef():
 
 NOT_REDACT_REF = NotRedactRef()
 
-try:
-    SCRUBBED = '*' * len(REDACT_REF)
-except:
-    SCRUBBED = '*' * len(str(REDACT_REF))
+SCRUBBED = '*' * len(str(REDACT_REF))
 
 
 class ScrubRedactTransformTest(BaseTest):

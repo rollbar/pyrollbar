@@ -1,4 +1,6 @@
-import bottle, rollbar, sys
+import sys
+import bottle  # type: ignore[import-untyped]
+import rollbar
 
 class RollbarBottleReporter(object):
     '''

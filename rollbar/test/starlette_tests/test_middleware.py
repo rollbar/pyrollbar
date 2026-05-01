@@ -299,34 +299,6 @@ class ReporterMiddlewareTest(BaseTest):
         client = TestClient(app)
         client.get('/')
 
-    @mock.patch('rollbar.contrib.starlette.requests.ContextVar', None)
-    @mock.patch('logging.Logger.error')
-    def test_should_not_return_current_request_for_older_python(self, mock_log):
-        from starlette.applications import Starlette
-        from starlette.responses import PlainTextResponse
-        from starlette.testclient import TestClient
-        from rollbar.contrib.starlette.middleware import ReporterMiddleware
-        from rollbar.contrib.starlette import get_current_request
-
-        app = Starlette()
-        app.add_middleware(ReporterMiddleware)
-
-        @app.route('/')
-        async def root(original_request):
-            request = get_current_request()
-
-            self.assertIsNone(request)
-            self.assertNotEqual(request, original_request)
-            mock_log.assert_called_once_with(
-                'Python 3.7+ (or aiocontextvars package)'
-                ' is required to receive current request.'
-            )
-
-            return PlainTextResponse('OK')
-
-        client = TestClient(app)
-        client.get('/')
-
     def test_should_support_http_only(self):
         from rollbar.contrib.starlette.middleware import ReporterMiddleware
         from rollbar.lib._async import FailingTestASGIApp, run

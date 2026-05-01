@@ -5,10 +5,10 @@ Plugin for Pyramid apps to submit errors to Rollbar
 import logging
 import sys
 
-from pyramid.httpexceptions import WSGIHTTPException
-from pyramid.tweens import EXCVIEW
-from pyramid.util import DottedNameResolver
-from pyramid.settings import asbool
+from pyramid.httpexceptions import WSGIHTTPException  # type: ignore[import-untyped]
+from pyramid.tweens import EXCVIEW  # type: ignore[import-untyped]
+from pyramid.util import DottedNameResolver  # type: ignore[import-untyped]
+from pyramid.settings import asbool  # type: ignore[import-untyped]
 
 import rollbar
 from rollbar import set_current_session
@@ -24,7 +24,7 @@ log = logging.getLogger(__name__)
 
 
 EXCEPTION_BLOCKLIST = (WSGIHTTPException,)
-EXCEPTION_SAFELIST = tuple()
+EXCEPTION_SAFELIST: tuple = tuple()
 
 
 def handle_error(request, exception, exc_info):
@@ -83,7 +83,7 @@ def patch_debugtoolbar(settings):
     Patches the pyramid_debugtoolbar (if installed) to display a link to the related rollbar item.
     """
     try:
-        from pyramid_debugtoolbar import tbtools
+        from pyramid_debugtoolbar import tbtools  # type: ignore[import-not-found]
     except ImportError:
         return
 
@@ -182,6 +182,6 @@ class RollbarMiddleware(object):
         try:
             return self.app(environ, start_resp)
         except Exception as exc:
-            from pyramid.request import Request
+            from pyramid.request import Request  # type: ignore[import-untyped]
             handle_error(Request(environ), exc, sys.exc_info())
             raise

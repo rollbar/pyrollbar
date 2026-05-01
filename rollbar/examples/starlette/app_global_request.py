@@ -13,10 +13,7 @@ import uvicorn
 from rollbar.contrib.starlette import LoggerMiddleware
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse
-
-# Integrate Rollbar with Starlette application
-app = Starlette()
-app.add_middleware(LoggerMiddleware)  # should be added as the last middleware
+from starlette.routing import Route
 
 
 async def get_user_agent():
@@ -28,11 +25,18 @@ async def get_user_agent():
 
 
 # $ curl -i http://localhost:8888
-@app.route('/')
 async def root(request):
     user_agent = await get_user_agent()
     return JSONResponse({'user-agent': user_agent})
 
+
+routes = [
+    Route('/', endpoint=root),
+]
+
+# Integrate Rollbar with Starlette application
+app = Starlette(routes=routes)
+app.add_middleware(LoggerMiddleware)  # should be added as the last middleware
 
 if __name__ == '__main__':
     uvicorn.run(app, host='localhost', port=8888)

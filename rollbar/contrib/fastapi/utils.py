@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import functools
 import logging
-from typing import Union
 
 import fastapi
 from fastapi import APIRouter, FastAPI
+from starlette.routing import Route
 
 from . import ReporterMiddleware as FastAPIReporterMiddleware
 from rollbar.contrib.starlette import ReporterMiddleware as StarletteReporterMiddleware
@@ -97,7 +99,7 @@ def get_installed_middlewares(app):
     return middlewares
 
 
-def has_bare_routing(app_or_router: Union[FastAPI, APIRouter]):
+def has_bare_routing(app_or_router: FastAPI | APIRouter):
     if not isinstance(app_or_router, (FastAPI, APIRouter)):
         return False
 
@@ -109,7 +111,7 @@ def has_bare_routing(app_or_router: Union[FastAPI, APIRouter]):
     ]
 
     for route in app_or_router.routes:
-        if route is None or route.path in urls:
+        if route is None or not isinstance(route, Route) or route.path in urls:
             continue
         return False
 

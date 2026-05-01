@@ -18,6 +18,8 @@ Usage:
     logger.addHandler(rollbar_handler)
 
 """
+from __future__ import annotations
+
 import logging
 import threading
 
@@ -25,11 +27,33 @@ from logging.config import ConvertingDict, ConvertingList, ConvertingTuple
 
 import rollbar
 
-# hack to fix backward compatibility in Python3
-try:
-    from logging import _checkLevel
-except ImportError:
-    _checkLevel = lambda lvl: lvl
+# Mapping of level names to logging module levels.
+_levels = {
+    'CRITICAL': logging.CRITICAL,
+    'FATAL': logging.FATAL,
+    'ERROR': logging.ERROR,
+    'WARN': logging.WARNING,
+    'WARNING': logging.WARNING,
+    'INFO': logging.INFO,
+    'DEBUG': logging.DEBUG,
+    'NOTSET': logging.NOTSET,
+}
+
+
+def check_level(level: str | int ) -> int:
+    """
+    Convert level to numeric logging level.
+    """
+    if isinstance(level, int):
+        return level
+    elif isinstance(level, str):
+        # Note: getLevelName() returns an `int` if the arg is a valid level name `str` and returns a `str` if the arg is
+        # a valid level `int`.
+        result = logging.getLevelName(level)
+        if isinstance(result, int):
+            return result
+        raise ValueError(f"Unknown level: {level!r}")
+    raise TypeError(f"Level not an integer or a valid string: {level!r}")
 
 
 EXCLUDE_RECORD_KEYS = {
@@ -76,7 +100,7 @@ class RollbarHandler(logging.Handler):
                 allow_logging_basic_config=False,   # a handler shouldn't configure the root logger
                 **resolve_logging_types(kw))
 
-        self.notify_level = _checkLevel(level)
+        self.notify_level = check_level(level)
 
         self.history_size = history_size
         if history_size > 0:
@@ -90,7 +114,7 @@ class RollbarHandler(logging.Handler):
         log records we notify Rollbar about instead of which
         records we save to the history.
         """
-        self.notify_level = _checkLevel(level)
+        self.notify_level = check_level(level)
 
     def setHistoryLevel(self, level):
         """

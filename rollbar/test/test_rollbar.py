@@ -4,16 +4,12 @@ import json
 import socket
 import threading
 import uuid
+from io import StringIO
 
 import sys
 from collections import namedtuple
 
 from rollbar.lib.session import reset_current_session
-
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 
 from pathlib import Path
 
@@ -1197,7 +1193,11 @@ class RollbarTest(BaseTest):
         class tmp(object):
             @property
             def __class__(self):
-                foo()
+                return foo()
+
+            @__class__.setter
+            def __class__(self, value):
+                pass
 
         try:
             t = tmp()
@@ -1602,7 +1602,7 @@ class RollbarTest(BaseTest):
         payload = send_payload.call_args[0][0]
 
         self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['password'], r'\*+')
-        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['Data'], 'password=\'\*+\'')
+        self.assertRegex(payload['data']['body']['trace']['frames'][-1]['locals']['Data'], 'password=\'\\*+\'')
 
     @mock.patch('rollbar.send_payload')
     def test_scrub_nans(self, send_payload):
@@ -1894,7 +1894,7 @@ class RollbarTest(BaseTest):
         rollbar.init(_test_access_token, locals={'enabled': True}, dummy_key='asdf', handler='blocking', timeout=12345,
             scrub_fields=rollbar.SETTINGS['scrub_fields'] + ['token', 'secret', 'cookies', 'authorization'])
 
-        import webob
+        import webob  # type: ignore[import-untyped]
         request = webob.Request.blank('/the/path?q=hello&password=hunter2',
                                       base_url='http://example.com',
                                       headers={

@@ -73,3 +73,28 @@ jobs:
 
       - name: Run tests
         run: pytest
+
+  types:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9, '3.10', 3.11, 3.12, 3.13, 3.14]
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Dependencies
+        run: |
+          pip install --group test .
+          pip install --group type .
+          
+
+      - name: Check Types
+        run: mypy
