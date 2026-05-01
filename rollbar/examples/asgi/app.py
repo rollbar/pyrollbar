@@ -59,7 +59,7 @@ routes = [
 ]
 
 # Integrate Rollbar with Starlette application
-app = Starlette()
+app = Starlette(routes=routes)
 app.add_middleware(RollbarMiddleware)  # should be added as the first middleware
 
 if __name__ == '__main__':
