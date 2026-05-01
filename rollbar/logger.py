@@ -43,18 +43,17 @@ _levels = {
 def check_level(level: str | int ) -> int:
     """
     Convert level to numeric logging level.
-
-    Modeled after logging._checkLevel to avoid dependency on private API.
     """
     if isinstance(level, int):
-        rv = level
-    elif str(level) == level:
-        if level not in _levels:
-            raise ValueError(f"Unknown level: {level!r}")
-        rv = _levels[level]
-    else:
-        raise TypeError(f"Level not an integer or a valid string: {level!r}")
-    return rv
+        return level
+    elif isinstance(level, str):
+        # Note: getLevelName() returns an `int` if the arg is a valid level name `str` and returns a `str` if the arg is
+        # a valid level `int`.
+        result = logging.getLevelName(level)
+        if isinstance(result, int):
+            return result
+        raise ValueError(f"Unknown level: {level!r}")
+    raise TypeError(f"Level not an integer or a valid string: {level!r}")
 
 
 EXCLUDE_RECORD_KEYS = {
