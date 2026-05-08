@@ -111,7 +111,7 @@ def has_bare_routing(app_or_router: FastAPI | APIRouter):
     ]
 
     for route in app_or_router.routes:
-        if route is None or not isinstance(route, Route) or route.path in urls:
+        if route is None or (isinstance(route, Route) and route.path in urls):
             continue
         return False
 

@@ -179,26 +179,17 @@ class AsyncHandler:
 
         return _ctx_handler.get()
 
-    def with_global_handler(self):
-        return self.global_handler
-
     def __enter__(self):
         self.global_handler = rollbar.SETTINGS.get('handler')
 
-        if _ctx_handler:
-            return self.with_ctx_handler()
-        else:
-            return self.with_global_handler()
+        return self.with_ctx_handler()
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if _ctx_handler and self.token:
+        if self.token:
             _ctx_handler.reset(self.token)
 
 
 def get_current_handler():
-    if _ctx_handler is None:
-        return rollbar.SETTINGS.get('handler')
-
     handler = _ctx_handler.get()
 
     if handler is None:

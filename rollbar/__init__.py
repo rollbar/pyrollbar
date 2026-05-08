@@ -1688,7 +1688,7 @@ def _transform(obj: Any, key: tuple[KeyType, ...] | None = None):
 
 def _build_payload(data: dict) -> dict:
     """
-    Returns the full payload as a string.
+    Returns the full payload as a dict.
     """
 
     for k, v in data.items():
