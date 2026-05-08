@@ -253,7 +253,7 @@ def _get_fastapi_request():
     return get_current_request()
 
 
-BASE_DATA_HOOK: Callable[[Any, dict[str, Any]], dict[str, Any]] | None = None
+BASE_DATA_HOOK: Callable[[Any, dict[str, Any]], None] | None = None
 
 agent_log: logging.Logger | None = None
 
@@ -1338,7 +1338,7 @@ def _check_add_locals(frame, frame_num, total_frames):
                 ('root' in SETTINGS and (frame.get('filename') or '').lower().startswith(root.lower()))))
 
 
-def _get_actual_request(request) -> dict | None:
+def _get_actual_request(request: Any | None) -> Any | None:
     if WerkzeugLocalProxy is not None and isinstance(request, WerkzeugLocalProxy):
         try:
             actual_request = request._get_current_object()
@@ -1348,7 +1348,7 @@ def _get_actual_request(request) -> dict | None:
     return request
 
 
-def _build_request_data(request):
+def _build_request_data(request: Any) -> dict | None:
     """
     Returns a dictionary containing data from the request.
     """
@@ -1400,7 +1400,7 @@ def _build_request_data(request):
     return None
 
 
-def _build_webob_request_data(request):
+def _build_webob_request_data(request) -> dict:
     request_data = {
         'url': request.url,
         'GET': dict(request.GET),
@@ -1438,7 +1438,7 @@ def _extract_wsgi_headers(items):
     return headers
 
 
-def _build_django_request_data(request):
+def _build_django_request_data(request) -> dict:
     url = request.build_absolute_uri()
 
     request_data = {
@@ -1460,7 +1460,7 @@ def _build_django_request_data(request):
     return request_data
 
 
-def _build_werkzeug_request_data(request):
+def _build_werkzeug_request_data(request) -> dict:
     request_data = {
         'url': request.url,
         'GET': dict(request.args),
@@ -1481,7 +1481,7 @@ def _build_werkzeug_request_data(request):
     return request_data
 
 
-def _build_tornado_request_data(request):
+def _build_tornado_request_data(request) -> dict:
     request_data = {
         'url': request.full_url(),
         'user_ip': request.remote_ip,
@@ -1495,7 +1495,7 @@ def _build_tornado_request_data(request):
     return request_data
 
 
-def _build_bottle_request_data(request):
+def _build_bottle_request_data(request) -> dict:
     request_data = {
         'url': request.url,
         'user_ip': request.remote_addr,
@@ -1517,7 +1517,7 @@ def _build_bottle_request_data(request):
     return request_data
 
 
-def _build_sanic_request_data(request):
+def _build_sanic_request_data(request) -> dict:
     request_data = {
         'url': request.url,
         'user_ip': request.remote_addr,
@@ -1538,7 +1538,7 @@ def _build_sanic_request_data(request):
     return request_data
 
 
-def _build_falcon_request_data(request):
+def _build_falcon_request_data(request) -> dict:
     request_data = {
         'url': request.url,
         'user_ip': _wsgi_extract_user_ip(request.env),
@@ -1551,7 +1551,7 @@ def _build_falcon_request_data(request):
     return request_data
 
 
-def _build_wsgi_request_data(request):
+def _build_wsgi_request_data(request) -> dict:
     request_data = {
         'url': wsgiref.util.request_uri(request),
         'user_ip': _wsgi_extract_user_ip(request),
@@ -1578,7 +1578,7 @@ def _build_wsgi_request_data(request):
 
     return request_data
 
-def _build_starlette_request_data(request):
+def _build_starlette_request_data(request) -> dict:
     from starlette.datastructures import UploadFile
 
     request_data = {
@@ -1622,7 +1622,7 @@ def _build_starlette_request_data(request):
 
     return request_data
 
-def _build_fastapi_request_data(request):
+def _build_fastapi_request_data(request) -> dict:
     return _build_starlette_request_data(request)
 
 

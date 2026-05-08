@@ -3,13 +3,7 @@ from __future__ import annotations
 import logging
 from os import PathLike
 from pathlib import Path
-from typing import Any, NamedTuple, TypeVar, Callable, Optional
-
-try:
-    # See comment in events.py
-    from typing import ParamSpec  # type: ignore
-except Exception:
-    from typing_extensions import ParamSpec  # type: ignore
+from typing import Any, NamedTuple, Callable, Optional
 
 from rollbar.lib import circular_reference_label
 
@@ -64,10 +58,6 @@ def _noop_mapping(a, **_) -> dict:
 
 def _noop_path(a: PathLike, **_) -> PathLike:
     return Path(a)
-
-
-T = TypeVar('T')
-P = ParamSpec('P')
 
 # A generic handler: accepts arbitrary args/kwargs and returns Any.
 Handler = Callable[..., Any]
