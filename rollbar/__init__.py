@@ -17,8 +17,10 @@ import uuid
 import wsgiref.util
 import warnings
 import queue
-from typing import Any, Callable, TypedDict, Literal, cast
+from typing import Any, Callable, TypedDict, Literal, cast, Optional, Union
 from urllib.parse import parse_qs, urljoin
+
+from rollbar.lib.type_info import KeyType
 
 try:
     # Python 3.11+
@@ -101,6 +103,7 @@ try:
     from starlette.requests import Request as StarletteRequest, State as StarletteState
 except ImportError:
     StarletteRequest = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
+    StarletteState = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 try:
     from fastapi.requests import Request as FastAPIRequest
@@ -273,8 +276,8 @@ DEFAULT_LOCALS_SIZES = {
     'maxother': 100,
 }
 
-Level = Literal['ignored', 'debug', 'info', 'warning', 'error', 'critical']
-IgnorableLevel = Literal['ignored', 'debug', 'info', 'warning', 'error', 'critical']
+Level = Literal['debug', 'info', 'warning', 'error', 'critical']
+IgnorableLevel = Union[Level, Literal['ignored']]
 
 
 class NotifierSettings(TypedDict, total=False):
@@ -330,7 +333,7 @@ class SettingsParams(TypedDict, total=False):
 
 # Deprecated, will be removed in version 2.0.0
 SettingsIrregular = TypedDict('SettingsIrregular', {
-    'agent.log_file': str,
+    'agent.log_file': Optional[str],
 })
 
 
@@ -361,7 +364,7 @@ SETTINGS: Settings = {
     'endpoint': DEFAULT_ENDPOINT,
     'timeout': DEFAULT_TIMEOUT,
     # Deprecated, use 'agent_log_file' instead. Will be removed in version 2.0.0
-    'agent.log_file': 'log.rollbar',
+    'agent.log_file': None,
     'agent_log_file': 'log.rollbar',
     'scrub_fields': [
         'pw',
@@ -871,11 +874,14 @@ def _create_agent_log():
     """
     Creates .rollbar log file for use with rollbar-agent
     """
-    log_file = SETTINGS['agent.log_file']
+    log_file = SETTINGS['agent_log_file']
+    legacy_log_file = SETTINGS.get('agent.log_file')
+    if isinstance(legacy_log_file, str) and legacy_log_file:
+        log_file = legacy_log_file
     if not log_file.endswith('.rollbar'):
         log.error("Provided agent log file does not end with .rollbar, which it must. "
                   "Using default instead.")
-        log_file = DEFAULTS['agent.log_file']
+        log_file = 'log.rollbar'
 
     retval = logging.getLogger('rollbar_agent')
     handler = logging.FileHandler(log_file, 'a', 'utf-8')
@@ -1671,7 +1677,7 @@ def _build_server_data():
     return server_data
 
 
-def _transform(obj: Any, key: tuple[str] | None = None):
+def _transform(obj: Any, key: tuple[KeyType, ...] | None = None):
     return transforms.transform(
         obj,
         _transforms,

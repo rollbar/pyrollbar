@@ -27,18 +27,6 @@ from logging.config import ConvertingDict, ConvertingList, ConvertingTuple
 
 import rollbar
 
-# Mapping of level names to logging module levels.
-_levels = {
-    'CRITICAL': logging.CRITICAL,
-    'FATAL': logging.FATAL,
-    'ERROR': logging.ERROR,
-    'WARN': logging.WARNING,
-    'WARNING': logging.WARNING,
-    'INFO': logging.INFO,
-    'DEBUG': logging.DEBUG,
-    'NOTSET': logging.NOTSET,
-}
-
 
 def check_level(level: str | int ) -> int:
     """
