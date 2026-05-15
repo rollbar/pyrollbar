@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable, TypedDict, Any
+from typing import Callable, TypedDict, Any, TYPE_CHECKING
 from collections.abc import Iterable
 
 from rollbar.lib import (
@@ -12,7 +12,9 @@ from rollbar.lib import (
 # The `Transform` class was moved out of this file to prevent a cyclical dependency issue.
 from rollbar.lib.transform import Transform
 from rollbar.lib.transforms.batched import BatchedTransform
-from rollbar.lib.type_info import KeyType
+
+if TYPE_CHECKING:
+    from rollbar.lib.type_info import KeyType
 
 _ALLOWED_CIRCULAR_REFERENCE_TYPES: tuple = (binary_type, bool, type(None))
 

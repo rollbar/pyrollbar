@@ -1,8 +1,9 @@
 from __future__ import annotations
 from os import PathLike
-from typing import TypeVar
+from typing import TypeVar, TYPE_CHECKING
 
-from rollbar.lib.type_info import KeyType
+if TYPE_CHECKING:
+    from rollbar.lib.type_info import KeyType
 
 T = TypeVar('T')
 

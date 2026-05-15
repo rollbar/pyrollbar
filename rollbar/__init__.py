@@ -17,10 +17,8 @@ import uuid
 import wsgiref.util
 import warnings
 import queue
-from typing import Any, Callable, TypedDict, Literal, cast, Optional
+from typing import Any, Callable, TypedDict, Literal, cast, Optional, TYPE_CHECKING
 from urllib.parse import parse_qs, urljoin
-
-from rollbar.lib.type_info import KeyType
 
 try:
     # Python 3.11+
@@ -33,8 +31,11 @@ except ImportError:
 import requests  # type: ignore[import-untyped]
 
 from rollbar.lib import events, filters, dict_merge, transport, defaultJSONEncode
-from rollbar.lib.payload import Attribute
 from rollbar.lib.session import get_current_session, set_current_session, parse_session_request_baggage_headers
+
+if TYPE_CHECKING:
+    from rollbar.lib.payload import Attribute
+    from rollbar.lib.type_info import KeyType
 
 __version__ = '1.4.0-beta'
 __log_name__ = 'rollbar'

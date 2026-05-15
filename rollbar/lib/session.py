@@ -3,8 +3,10 @@ from __future__ import annotations
 import random
 import threading
 from contextvars import ContextVar
+from typing import TYPE_CHECKING
 
-from rollbar.lib.payload import Attribute
+if TYPE_CHECKING:
+    from rollbar.lib.payload import Attribute
 
 _context_session: ContextVar[list[Attribute]|None] = ContextVar('rollbar-session', default=None)
 _thread_session: threading.local = threading.local()
