@@ -27,7 +27,7 @@ try:
     # This is ignored for mypy to be happy with Python versions before 3.11.
     from typing import Unpack  # type: ignore
 except ImportError:
-    # Python 3.9 and 3.10
+    # Python 3.10
     from typing_extensions import Unpack
 
 import requests  # type: ignore[import-untyped]

@@ -39,7 +39,7 @@ classifiers = [
     "Topic :: System :: Logging",
     "Topic :: System :: Monitoring",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "requests>=0.12.1",
     "typing_extensions; python_version < \"3.11\""
