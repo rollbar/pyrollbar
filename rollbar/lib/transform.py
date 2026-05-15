@@ -1,6 +1,6 @@
 from __future__ import annotations
 from os import PathLike
-from typing import Optional, TypeVar
+from typing import TypeVar
 
 from rollbar.lib.type_info import KeyType
 
@@ -50,7 +50,7 @@ class Transform(object):
         return self.default(o, key=key)
 
     @staticmethod
-    def rollbar_repr(obj: object) -> Optional[str]:
+    def rollbar_repr(obj: object) -> str | None:
         r = None
         if hasattr(obj, '__rollbar_repr__'):
             r = obj.__rollbar_repr__()

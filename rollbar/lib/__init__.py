@@ -6,7 +6,7 @@ import copy
 from array import array
 
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union, MutableMapping
+from typing import Any, TypeVar, MutableMapping
 
 binary_type = bytes
 integer_types = int
@@ -112,12 +112,12 @@ def build_key_matcher(prefixes_or_suffixes, type='prefix', case_sensitive=False)
 def is_builtin_type(obj) -> bool:
     return obj.__class__.__module__ in ('__builtin__', 'builtins')
 
-T = TypeVar('T', bound=Union[dict, MutableMapping[str, Any]])
-U = TypeVar('U', bound=Union[dict, Mapping[str, Any]])
+T = TypeVar('T', bound=dict | MutableMapping[str, Any])
+U = TypeVar('U', bound=dict | Mapping[str, Any])
 
 
 # http://www.xormedia.com/recursively-merge-dictionaries-in-python.html
-def dict_merge(a: T, b: U, silence_errors: bool = False) -> Union[T, U]:
+def dict_merge(a: T, b: U, silence_errors: bool = False) -> T | U:
     """
     Recursively merges dict's. not just simple a['key'] = b['key'], if
     both a and b have a key whose value is a dict then dict_merge is called

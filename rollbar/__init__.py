@@ -17,7 +17,7 @@ import uuid
 import wsgiref.util
 import warnings
 import queue
-from typing import Any, Callable, TypedDict, Literal, cast, Optional, Union
+from typing import Any, Callable, TypedDict, Literal, cast, Optional
 from urllib.parse import parse_qs, urljoin
 
 from rollbar.lib.type_info import KeyType
@@ -277,7 +277,7 @@ DEFAULT_LOCALS_SIZES = {
 }
 
 Level = Literal['debug', 'info', 'warning', 'error', 'critical']
-IgnorableLevel = Union[Level, Literal['ignored']]
+IgnorableLevel = Level | Literal['ignored']
 
 
 class NotifierSettings(TypedDict, total=False):

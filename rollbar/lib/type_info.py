@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Hashable, Union
+from typing import Hashable
 
 from rollbar.lib import binary_type, string_types
 
@@ -45,7 +45,7 @@ def get_type(obj):
     return DEFAULT
 
 # The keys will be coming from data objects in the payload, so they could be just about anything hashable.
-KeyType = Union[str, int, float, binary_type, Hashable]
+KeyType = str | int | float | binary_type | Hashable
 
 
 __all__ = [

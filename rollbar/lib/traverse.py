@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from os import PathLike
 from pathlib import Path
-from typing import Any, NamedTuple, Callable, Optional
+from typing import Any, NamedTuple, Callable
 
 from rollbar.lib import circular_reference_label
 
@@ -88,8 +88,8 @@ def traverse(
     path_handler: Handler = _default_handlers[PATH],
     default_handler: Handler = _default_handlers[DEFAULT],
     circular_reference_handler: Handler = _default_handlers[CIRCULAR],
-    allowed_circular_reference_types: Optional[type | tuple[type, ...]] = None,
-    memo: Optional[dict[int, tuple[KeyType, ...]]] = None,
+    allowed_circular_reference_types: type | tuple[type, ...] | None = None,
+    memo: dict[int, tuple[KeyType, ...]] | None = None,
     depth_first: bool = True,
     **custom_handlers: Handler,
 ) -> Any:

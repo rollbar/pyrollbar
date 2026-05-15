@@ -1,7 +1,7 @@
 from __future__ import annotations
-from typing import Any, Callable, Literal, Optional, Union
+from typing import Any, Callable, Literal
 
-EventHandler = Callable[..., Union[Any, Literal[False]]]
+EventHandler = Callable[..., Literal[False] | Any]
 
 EXCEPTION_INFO: Literal['exception_info'] = 'exception_info'
 MESSAGE: Literal['message'] = 'message'
@@ -21,7 +21,7 @@ def _check_type(typ: str):
         raise ValueError('Unknown type: %s. Must be one of %s' % (typ, _event_handlers.keys()))
 
 
-def _add_handler(typ: EventType, handler_fn: EventHandler, pos: Optional[int] = None) -> None:
+def _add_handler(typ: EventType, handler_fn: EventHandler, pos: int | None = None) -> None:
     _check_type(typ)
 
     insert_pos = pos if pos is not None else -1
@@ -61,7 +61,7 @@ def _on_event(typ: EventType, target, **kw):
 
 # Add/remove event handlers
 
-def add_exception_info_handler(handler_fn: EventHandler, pos: Optional[int] = None) -> None:
+def add_exception_info_handler(handler_fn: EventHandler, pos: int | None = None) -> None:
     _add_handler(EXCEPTION_INFO, handler_fn, pos)
 
 
@@ -69,7 +69,7 @@ def remove_exception_info_handler(handler_fn: EventHandler) -> None:
     _remove_handler(EXCEPTION_INFO, handler_fn)
 
 
-def add_message_handler(handler_fn: EventHandler, pos: Optional[int] = None) -> None:
+def add_message_handler(handler_fn: EventHandler, pos: int | None = None) -> None:
     _add_handler(MESSAGE, handler_fn, pos)
 
 
@@ -77,7 +77,7 @@ def remove_message_handler(handler_fn: EventHandler) -> None:
     _remove_handler(MESSAGE, handler_fn)
 
 
-def add_payload_handler(handler_fn: EventHandler, pos: Optional[int] = None) -> None:
+def add_payload_handler(handler_fn: EventHandler, pos: int | None = None) -> None:
     _add_handler(PAYLOAD, handler_fn, pos)
 
 

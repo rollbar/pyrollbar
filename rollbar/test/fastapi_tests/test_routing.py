@@ -758,7 +758,7 @@ class LoggingRouteTest(BaseTest):
         client.get('/')
 
     def test_should_support_type_hints(self):
-        from typing import Optional, Type, Union
+        from typing import Type
         from fastapi import APIRouter, FastAPI
         from fastapi.routing import APIRoute
         import rollbar.contrib.fastapi.routing
@@ -766,7 +766,7 @@ class LoggingRouteTest(BaseTest):
         self.assertDictEqual(
             rollbar.contrib.fastapi.routing.add_to.__annotations__,
             {
-                'app_or_router': Union[FastAPI, APIRouter],
-                'return': Optional[Type[APIRoute]],
+                'app_or_router': FastAPI | APIRouter,
+                'return': Type[APIRoute] | None,
             },
         )
