@@ -58,7 +58,7 @@ type = [
     "djangorestframework-stubs[compatible-mypy]",
     "django-stubs",
     "fastapi",
-    "mypy",
+    "mypy ~= 1.20.2",
     "pyramid",
     "quart",
     "sanic",
