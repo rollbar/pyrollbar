@@ -3,13 +3,14 @@ import importlib
 import json
 import sys
 
+from packaging.version import Version
 from unittest import mock
 
 try:
     import fastapi
 
     FASTAPI_INSTALLED = True
-    ALLOWED_FASTAPI_VERSION = fastapi.__version__ >= '0.41.0'
+    ALLOWED_FASTAPI_VERSION = Version(fastapi.__version__) >= Version('0.41.0')
 except ImportError:
     FASTAPI_INSTALLED = False
     ALLOWED_FASTAPI_VERSION = False
@@ -218,14 +219,14 @@ class LoggingRouteTest(BaseTest):
         self.assertEqual(payload_request['method'], 'POST')
         self.assertEqual(payload_request['user_ip'], 'testclient')
         self.assertEqual(payload_request['url'], 'http://testserver/')
-        self.assertEqual(payload_request['body'], json.dumps(expected_body))
+        self.assertEqual(payload_request['body'], json.dumps(expected_body, separators=(",", ":")))
         self.assertDictEqual(
             payload_request['headers'],
             {
                 'accept': '*/*',
                 'accept-encoding': 'gzip, deflate',
                 'connection': 'keep-alive',
-                'content-length': str(len(json.dumps(expected_body))),
+                'content-length': str(len(json.dumps(expected_body, separators=(",", ":")))),
                 'content-type': 'application/json',
                 'host': 'testserver',
                 'user-agent': 'testclient',
@@ -258,7 +259,7 @@ class LoggingRouteTest(BaseTest):
         with self.assertRaises(ZeroDivisionError):
             r = client.post(
                 '/',
-                data=expected_body,
+                content=expected_body,
                 headers={'Content-Type': 'application/x-www-form-urlencoded'},
             )
 
@@ -443,16 +444,16 @@ class LoggingRouteTest(BaseTest):
         self, mock_log
     ):
         from fastapi import FastAPI
+        from starlette.routing import Route
         from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
 
-        app = FastAPI()
-        old_route_class = app.router.route_class
-        self.assertEqual(len(app.routes), 4)
-
-        @app.get('/')
         async def read_root():
             ...
 
+        app = FastAPI(routes=[
+            Route('/', read_root),
+        ])
+        old_route_class = app.router.route_class
         self.assertEqual(len(app.routes), 5)
 
         new_route_class = rollbar_add_to(app)
@@ -689,6 +690,7 @@ class LoggingRouteTest(BaseTest):
     @mock.patch('rollbar.contrib.fastapi.routing.store_current_request')
     def test_should_store_current_request(self, store_current_request):
         from fastapi import FastAPI
+        from starlette.routing import Route
         from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
 
         try:
@@ -728,7 +730,7 @@ class LoggingRouteTest(BaseTest):
         store_current_request.assert_called_once()
 
         scope = store_current_request.call_args[0][0]
-        self.assertEqual(scope, {**expected_scope, **scope})
+        self.assertEqual(scope.scope, {**expected_scope, **scope})
 
     @unittest.skipUnless(
         sys.version_info >= (3, 6), 'Global request access is supported in Python 3.6+'
@@ -766,7 +768,7 @@ class LoggingRouteTest(BaseTest):
         self.assertDictEqual(
             rollbar.contrib.fastapi.routing.add_to.__annotations__,
             {
-                'app_or_router': FastAPI | APIRouter,
-                'return': Type[APIRoute] | None,
+                'app_or_router': 'FastAPI | APIRouter',
+                'return': 'Type[APIRoute] | None',
             },
         )

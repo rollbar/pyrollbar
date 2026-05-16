@@ -53,6 +53,10 @@ def add_to(app_or_router: FastAPI | APIRouter) -> Type[APIRoute] | None:
 
     """
 
+    if not isinstance(app_or_router, (FastAPI, APIRouter)):
+        log.error('Error adding RollbarLoggingRoute to application.')
+        return None
+
     if not has_bare_routing(app_or_router):
         log.error(
             'RollbarLoggingRoute must to be added to a bare router'
@@ -72,9 +76,6 @@ def add_to(app_or_router: FastAPI | APIRouter) -> Type[APIRoute] | None:
         _add_to_app(app_or_router)
     elif isinstance(app_or_router, APIRouter):
         _add_to_router(app_or_router)
-    else:
-        log.error('Error adding RollbarLoggingRoute to application.')
-        return None
 
     return RollbarLoggingRoute
 

@@ -50,6 +50,7 @@ test = [
     "blinker",
     "httpx",
     "pytest",
+    "python-multipart",
     "webob",
 ]
 
