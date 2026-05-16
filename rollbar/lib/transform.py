@@ -32,10 +32,10 @@ class Transform(object):
     def transform_dict(self, o: dict, key: tuple[KeyType, ...]|None = None) -> dict:
         return self.default(o, key=key)
 
-    def transform_number(self, o: float | int, key: tuple[KeyType, ...]|None = None) -> float | int:
+    def transform_number(self, o: float | int, key: tuple[KeyType, ...]|None = None) -> float | int | str:
         return self.default(o, key=key)
 
-    def transform_bytes(self, o: bytes, key: tuple[KeyType, ...]|None = None) -> bytes:
+    def transform_bytes(self, o: bytes, key: tuple[KeyType, ...]|None = None) -> bytes | str:
         return self.default(o, key=key)
 
     def transform_unicode(self, o: str, key: tuple[KeyType, ...]|None = None) -> str:

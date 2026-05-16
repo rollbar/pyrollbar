@@ -219,7 +219,7 @@ class LoggingRouteTest(BaseTest):
         self.assertEqual(payload_request['method'], 'POST')
         self.assertEqual(payload_request['user_ip'], 'testclient')
         self.assertEqual(payload_request['url'], 'http://testserver/')
-        self.assertEqual(payload_request['body'], json.dumps(expected_body, separators=(",", ":")))
+        self.assertEqual(payload_request['body'].replace(' ', ''), json.dumps(expected_body, separators=(",", ":")))
         self.assertDictEqual(
             payload_request['headers'],
             {

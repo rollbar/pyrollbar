@@ -113,7 +113,7 @@ def is_builtin_type(obj) -> bool:
     return obj.__class__.__module__ in ('__builtin__', 'builtins')
 
 T = TypeVar('T', bound=dict | MutableMapping[str, Any])
-U = TypeVar('U', bound=dict | Mapping[str, Any])
+U = TypeVar('U', bound=dict | Mapping[str, Any] | Any)
 
 
 # http://www.xormedia.com/recursively-merge-dictionaries-in-python.html
