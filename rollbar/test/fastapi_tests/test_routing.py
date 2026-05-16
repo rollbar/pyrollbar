@@ -187,6 +187,7 @@ class LoggingRouteTest(BaseTest):
     def test_should_send_payload_with_request_body(self, mock_send_payload, *mocks) -> None:
         from fastapi import Body, FastAPI
         from pydantic import BaseModel
+        from httpx.__version__ import __version__ as httpx_version
         from rollbar.contrib.fastapi.routing import add_to as rollbar_add_to
 
         try:
@@ -219,14 +220,21 @@ class LoggingRouteTest(BaseTest):
         self.assertEqual(payload_request['method'], 'POST')
         self.assertEqual(payload_request['user_ip'], 'testclient')
         self.assertEqual(payload_request['url'], 'http://testserver/')
-        self.assertEqual(payload_request['body'].replace(' ', ''), json.dumps(expected_body, separators=(",", ":")))
+
+        # Starting in httpx 0.28.0 the encoded JSON was compacted.
+        if Version(httpx_version) >= Version('0.28.0'):
+            body = json.dumps(expected_body, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
+        else:
+            body = json.dumps(expected_body)
+
+        self.assertEqual(payload_request['body'].replace(' ', ''), body)
         self.assertDictEqual(
             payload_request['headers'],
             {
                 'accept': '*/*',
                 'accept-encoding': 'gzip, deflate',
                 'connection': 'keep-alive',
-                'content-length': str(len(json.dumps(expected_body, separators=(",", ":")))),
+                'content-length': str(len(body)),
                 'content-type': 'application/json',
                 'host': 'testserver',
                 'user-agent': 'testclient',
