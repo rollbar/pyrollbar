@@ -227,7 +227,7 @@ class LoggingRouteTest(BaseTest):
         else:
             body = json.dumps(expected_body)
 
-        self.assertEqual(payload_request['body'].replace(' ', ''), body)
+        self.assertEqual(payload_request['body'], body)
         self.assertDictEqual(
             payload_request['headers'],
             {
