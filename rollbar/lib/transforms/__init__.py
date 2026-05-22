@@ -32,15 +32,15 @@ _ALLOWED_CIRCULAR_REFERENCE_TYPES = tuple(_ALLOWED_CIRCULAR_REFERENCE_TYPES)
 
 
 class Handlers(TypedDict, total=False):
-    string_handler: Callable
-    tuple_handler: Callable
-    namedtuple_handler: Callable
-    list_handler: Callable
-    set_handler: Callable
-    mapping_handler: Callable
-    path_handler: Callable
-    circular_reference_handler: Callable
-    default_handler: Callable
+    string_handler: Callable[[Any, Any | None], Any]
+    tuple_handler: Callable[[Any, Any | None], Any]
+    namedtuple_handler: Callable[[Any, Any | None], Any]
+    list_handler: Callable[[Any, Any | None], Any]
+    set_handler: Callable[[Any, Any | None], Any]
+    mapping_handler: Callable[[Any, Any | None], Any]
+    path_handler: Callable[[Any, Any | None], Any]
+    circular_reference_handler: Callable[[Any, Any | None], Any]
+    default_handler: Callable[[Any, Any | None], Any]
     allowed_circular_reference_types: tuple | None
 
 
@@ -74,6 +74,31 @@ def _transform(obj: Any, transform: Transform, key: tuple[KeyType, ...] | None =
         # Otherwise it's a string
         return do_transform("unicode", s, key=key)
 
+    def tuple_handler(o: Any, key: tuple[KeyType, ...] | None = None) -> Any:
+        return do_transform("tuple", o, key=key)
+
+    def namedtuple_handler(o: Any, key: tuple[KeyType, ...] | None = None) -> Any:
+        return do_transform("namedtuple", o, key=key)
+
+    def list_handler(o: Any, key: tuple[KeyType, ...] | None = None) -> Any:
+        return do_transform("list", o, key=key)
+
+    def set_handler(o: Any, key: tuple[KeyType, ...] | None = None) -> Any:
+        return do_transform("set", o, key=key)
+
+    def mapping_handler(o: Any, key: tuple[KeyType, ...] | None = None) -> Any:
+        return do_transform("dict", o, key=key)
+
+    def path_handler(o: Any, key: tuple[KeyType, ...] | None = None) -> Any:
+        return do_transform("path", o, key=key)
+
+    def circular_reference_handler(
+            o: Any,
+            key: tuple[KeyType, ...] | None = None,
+            ref_key: Any | None = None,
+    ) -> Any:
+        return do_transform("circular_reference", o, key=key, ref_key=ref_key)
+
     def default_handler(o, key: tuple[KeyType, ...] | None = None):
         if isinstance(o, bool):
             return do_transform("boolean", o, key=key)
@@ -92,17 +117,13 @@ def _transform(obj: Any, transform: Transform, key: tuple[KeyType, ...] | None =
 
     handlers: Handlers = {
         "string_handler": string_handler,
-        "tuple_handler": lambda o, key=None: do_transform("tuple", o, key=key),
-        "namedtuple_handler": lambda o, key=None: do_transform(
-            "namedtuple", o, key=key
-        ),
-        "list_handler": lambda o, key=None: do_transform("list", o, key=key),
-        "set_handler": lambda o, key=None: do_transform("set", o, key=key),
-        "mapping_handler": lambda o, key=None: do_transform("dict", o, key=key),
-        "path_handler": lambda o, key=None: do_transform("path", o, key=key),
-        "circular_reference_handler": lambda o, key=None, ref_key=None: do_transform(
-            "circular_reference", o, key=key, ref_key=ref_key
-        ),
+        "tuple_handler": tuple_handler,
+        "namedtuple_handler": namedtuple_handler,
+        "list_handler": list_handler,
+        "set_handler": set_handler,
+        "mapping_handler": mapping_handler,
+        "path_handler": path_handler,
+        "circular_reference_handler": circular_reference_handler,
         "default_handler": default_handler,
         "allowed_circular_reference_types": _ALLOWED_CIRCULAR_REFERENCE_TYPES,
     }
