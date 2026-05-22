@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import math
 
 from rollbar.lib import binary_type, string_types
@@ -27,7 +29,7 @@ class SerializableTransform(Transform):
 
         return '<%s>' % str(o._make(new_vals))
 
-    def transform_number(self, o, key=None):
+    def transform_number(self, o: float | int, key=None) -> float | int | str:
         if math.isnan(o):
             return float_nan_label(o)
         elif math.isinf(o):
@@ -35,7 +37,7 @@ class SerializableTransform(Transform):
         else:
             return o
 
-    def transform_bytes(self, o, key=None):
+    def transform_bytes(self, o, key=None) -> bytes | str:
         try:
             o.decode('utf8')
         except UnicodeDecodeError:

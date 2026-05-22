@@ -226,31 +226,6 @@ class AsyncLibTest(BaseTest):
         rollbar.SETTINGS['handler'] = 'thread'
 
     @mock.patch('logging.Logger.warning')
-    def test_ctx_manager_should_use_global_handler_if_contextvar_is_not_supported(
-        self, mock_log
-    ):
-        import rollbar
-        import rollbar.lib._async
-        from rollbar.lib._async import AsyncHandler
-
-        try:
-            # simulate missing `contextvars` module
-            _ctx_handler = rollbar.lib._async._ctx_handler
-            rollbar.lib._async._ctx_handler = None
-
-            rollbar.SETTINGS['handler'] = 'thread'
-            self.assertEqual(rollbar.SETTINGS['handler'], 'thread')
-
-            with AsyncHandler() as handler:
-                self.assertEqual(handler, 'thread')
-                mock_log.assert_not_called()
-
-            self.assertEqual(rollbar.SETTINGS['handler'], 'thread')
-        finally:
-            # restore original _ctx_handler
-            rollbar.lib._async._ctx_handler = _ctx_handler
-
-    @mock.patch('logging.Logger.warning')
     def test_ctx_manager_should_not_substitute_global_handler(self, mock_log):
         import rollbar
         from rollbar.lib._async import AsyncHandler

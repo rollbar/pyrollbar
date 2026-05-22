@@ -42,7 +42,7 @@ else:
         MIDDLEWARE_CLASSES = MIDDLEWARE_CONFIG,
     )
 
-from django.conf.urls import url
+from django.urls import re_path
 from django.http import HttpResponse
 
 
@@ -55,8 +55,8 @@ def error(request):
 
 
 urlpatterns = (
-    url(r'^$', index),
-    url(r'^error$', error),
+    re_path(r'^$', index),
+    re_path(r'^error$', error),
 )
 
 if __name__ == "__main__":

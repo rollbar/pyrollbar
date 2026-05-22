@@ -3,8 +3,10 @@ from __future__ import annotations
 import random
 import threading
 from contextvars import ContextVar
+from typing import TYPE_CHECKING
 
-from rollbar.lib.payload import Attribute
+if TYPE_CHECKING:
+    from rollbar.lib.payload import Attribute
 
 _context_session: ContextVar[list[Attribute]|None] = ContextVar('rollbar-session', default=None)
 _thread_session: threading.local = threading.local()
@@ -74,7 +76,7 @@ def parse_session_request_baggage_headers(headers: dict, generate_missing: bool 
         return []
 
     baggage_items = baggage_header.split(',')
-    baggage_data = []
+    baggage_data: list[Attribute] = []
     has_scope_id = False
     for item in baggage_items:
         if '=' not in item:

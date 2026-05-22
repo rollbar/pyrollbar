@@ -1,15 +1,15 @@
 import asyncio
-import contextlib
 import inspect
 import logging
 import sys
+from contextvars import ContextVar
 from unittest import mock
 from urllib.parse import urljoin
 
 try:
     import httpx
 except ImportError:
-    httpx = None
+    httpx = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 import rollbar
 from rollbar import DEFAULT_TIMEOUT
@@ -34,15 +34,7 @@ if sys.version_info[:2] == (3, 6):
             ' Please upgrade Python or install `aiocontextvars`.'
         )
 
-try:
-    from contextvars import ContextVar
-except ImportError:
-    ContextVar = None
-
-if ContextVar:
-    _ctx_handler = ContextVar('rollbar-handler', default=None)
-else:
-    _ctx_handler = None
+_ctx_handler = ContextVar('rollbar-handler', default=None)
 
 
 class RollbarAsyncError(Exception):
@@ -187,26 +179,17 @@ class AsyncHandler:
 
         return _ctx_handler.get()
 
-    def with_global_handler(self):
-        return self.global_handler
-
     def __enter__(self):
         self.global_handler = rollbar.SETTINGS.get('handler')
 
-        if _ctx_handler:
-            return self.with_ctx_handler()
-        else:
-            return self.with_global_handler()
+        return self.with_ctx_handler()
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if _ctx_handler and self.token:
+        if self.token:
             _ctx_handler.reset(self.token)
 
 
 def get_current_handler():
-    if _ctx_handler is None:
-        return rollbar.SETTINGS.get('handler')
-
     handler = _ctx_handler.get()
 
     if handler is None:

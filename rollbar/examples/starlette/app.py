@@ -15,6 +15,7 @@ import uvicorn
 from rollbar.contrib.starlette import ReporterMiddleware as RollbarMiddleware
 from starlette.applications import Starlette
 from starlette.responses import PlainTextResponse
+from starlette.routing import Route
 
 # Initialize Rollbar SDK with your server-side ACCESS_TOKEN
 rollbar.init(
@@ -23,15 +24,10 @@ rollbar.init(
     handler='async',  # For asynchronous reporting use: default, async or httpx
 )
 
-# Integrate Rollbar with Starlette application
-app = Starlette()
-app.add_middleware(RollbarMiddleware)  # should be added as the first middleware
-
 
 # Verify application runs correctly
 #
 # $ curl http://localhost:8888
-@app.route('/')
 async def root(request):
     return PlainTextResponse('hello world')
 
@@ -47,11 +43,19 @@ async def localfunc(arg1, arg2, arg3):
     cause_error_with_local_variables
 
 
-@app.route('/error')
 async def error(request):
     await localfunc('func_arg1', 'func_arg2', 1)
     return PlainTextResponse("You shouldn't be seeing this")
 
+
+routes = [
+    Route('/', endpoint=root),
+    Route('/error', endpoint=error),
+]
+
+# Integrate Rollbar with Starlette application
+app = Starlette(routes=routes)
+app.add_middleware(RollbarMiddleware)  # should be added as the first middleware
 
 if __name__ == '__main__':
     uvicorn.run(app, host='localhost', port=8888)

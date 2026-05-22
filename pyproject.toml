@@ -12,7 +12,6 @@ maintainers = [{name = "Rollbar, Inc.", email = "support@rollbar.com"}]
 classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -39,17 +38,35 @@ classifiers = [
     "Topic :: System :: Logging",
     "Topic :: System :: Monitoring",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "requests>=0.12.1",
+    "typing_extensions; python_version < \"3.11\""
 ]
 
 [dependency-groups]
 test = [
     "blinker",
     "httpx",
+    "packaging",
     "pytest",
+    "python-multipart",
     "webob",
+]
+
+type = [
+    "bottle",
+    "djangorestframework-stubs[compatible-mypy]",
+    "django-stubs",
+    "fastapi",
+    "mypy ~= 1.20.2",
+    "pyramid",
+    "quart",
+    "sanic",
+    "starlette",
+    "tornado",
+    "twisted",
+    "uvicorn",
 ]
 
 [project.urls]
@@ -63,6 +80,9 @@ rollbar = "rollbar.cli:main"
 
 [project.entry-points."paste.filter_app_factory"]
 pyramid = "rollbar.contrib.pyramid:create_rollbar_middleware"
+
+[tool.mypy]
+packages = ["rollbar"]
 
 [tool.pytest]
 testpaths = [

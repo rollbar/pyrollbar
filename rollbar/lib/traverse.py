@@ -1,7 +1,11 @@
-import logging
-from pathlib import Path
+from __future__ import annotations
 
-from rollbar.lib import binary_type, string_types, circular_reference_label
+import logging
+from os import PathLike
+from pathlib import Path
+from typing import Any, NamedTuple, Callable
+
+from rollbar.lib import circular_reference_label
 
 # NOTE: Don't remove this line of code as it would cause a breaking change
 # to the library's API. The items imported here were originally in this file
@@ -17,44 +21,49 @@ from rollbar.lib.type_info import (
     SET,
     STRING,
     PATH,
+    KeyType,
 )
 
 
 log = logging.getLogger(__name__)
 
 
-def _noop_circular(a, **kw):
+def _noop_circular(a, **kw) -> str:
     return circular_reference_label(a, ref_key=kw.get("ref_key"))
 
 
-def _noop(a, **_):
+def _noop(a: Any, **_) -> Any:
     return a
 
 
-def _noop_tuple(a, **_):
+def _noop_tuple(a: tuple, **_) -> tuple:
     return tuple(a)
 
 
-def _noop_namedtuple(a, **_):
+def _noop_namedtuple(a: NamedTuple, **_) -> NamedTuple:
     return a._make(a)
 
 
-def _noop_list(a, **_):
+def _noop_list(a: list, **_) -> list:
     return list(a)
 
 
-def _noop_set(a, **_):
+def _noop_set(a: set, **_) -> set:
     return set(a)
 
 
-def _noop_mapping(a, **_):
+def _noop_mapping(a, **_) -> dict:
     return dict(a)
 
-def _noop_path(a, **_):
+
+def _noop_path(a: PathLike, **_) -> PathLike:
     return Path(a)
 
+# A generic handler: accepts arbitrary args/kwargs and returns Any.
+Handler = Callable[..., Any]
 
-_default_handlers = {
+
+_default_handlers: dict[int, Handler] = {
     CIRCULAR: _noop_circular,
     DEFAULT: _noop,
     STRING: _noop,
@@ -68,22 +77,22 @@ _default_handlers = {
 
 
 def traverse(
-    obj,
-    key=(),
-    string_handler=_default_handlers[STRING],
-    tuple_handler=_default_handlers[TUPLE],
-    namedtuple_handler=_default_handlers[NAMEDTUPLE],
-    list_handler=_default_handlers[LIST],
-    set_handler=_default_handlers[SET],
-    mapping_handler=_default_handlers[MAPPING],
-    path_handler=_default_handlers[PATH],
-    default_handler=_default_handlers[DEFAULT],
-    circular_reference_handler=_default_handlers[CIRCULAR],
-    allowed_circular_reference_types=None,
-    memo=None,
-    depth_first=True,
-    **custom_handlers
-):
+    obj: Any,
+    key: tuple[KeyType, ...] = (),
+    string_handler: Handler = _default_handlers[STRING],
+    tuple_handler: Handler = _default_handlers[TUPLE],
+    namedtuple_handler: Handler = _default_handlers[NAMEDTUPLE],
+    list_handler: Handler = _default_handlers[LIST],
+    set_handler: Handler = _default_handlers[SET],
+    mapping_handler: Handler = _default_handlers[MAPPING],
+    path_handler: Handler = _default_handlers[PATH],
+    default_handler: Handler = _default_handlers[DEFAULT],
+    circular_reference_handler: Handler = _default_handlers[CIRCULAR],
+    allowed_circular_reference_types: type | tuple[type, ...] | None = None,
+    memo: dict[int, tuple[KeyType, ...]] | None = None,
+    depth_first: bool = True,
+    **custom_handlers: Handler,
+) -> Any:
     memo = memo or {}
     obj_id = id(obj)
     obj_type = get_type(obj)
@@ -97,7 +106,7 @@ def traverse(
 
     memo[obj_id] = key
 
-    kw = {
+    kw: dict[str, Any] = {
         "string_handler": string_handler,
         "tuple_handler": tuple_handler,
         "namedtuple_handler": namedtuple_handler,
@@ -164,8 +173,12 @@ def traverse(
         elif obj_type is PATH:
             return path_handler(obj, key=key)
         elif obj_type is DEFAULT:
-            for handler_type, handler in custom_handlers.items():
-                if isinstance(obj, handler_type):
+            for handler_type, handler in (custom_handlers or {}).items():
+                # Check the full module path first e.g. "my_module.MyClass" or "builtin.complex"
+                if f"{type(obj).__module__}.{type(obj).__name__}" == handler_type:
+                    return handler(obj, key=key)
+                # Fallback to just the name e.g. "MyClass" or "complex".
+                if type(obj).__name__ == handler_type:
                     return handler(obj, key=key)
     except:
         # use the default handler for unknown object types

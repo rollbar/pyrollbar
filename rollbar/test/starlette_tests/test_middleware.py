@@ -35,15 +35,17 @@ class ReporterMiddlewareTest(BaseTest):
     @mock.patch('rollbar.report_exc_info')
     def test_should_catch_and_report_errors(self, mock_report):
         from starlette.applications import Starlette
+        from starlette.routing import Route
         from starlette.testclient import TestClient
         from rollbar.contrib.starlette.middleware import ReporterMiddleware
 
-        app = Starlette()
-        app.add_middleware(ReporterMiddleware)
-
-        @app.route('/')
         async def root(request):
             1 / 0
+
+        app = Starlette(routes=[
+            Route('/', root),
+        ])
+        app.add_middleware(ReporterMiddleware)
 
         client = TestClient(app)
         with self.assertRaises(ZeroDivisionError):
@@ -62,16 +64,18 @@ class ReporterMiddlewareTest(BaseTest):
     @mock.patch('rollbar.report_exc_info')
     def test_should_report_with_request_data(self, mock_report):
         from starlette.applications import Starlette
+        from starlette.routing import Route
         from starlette.requests import Request
         from starlette.testclient import TestClient
         from rollbar.contrib.starlette.middleware import ReporterMiddleware
 
-        app = Starlette()
-        app.add_middleware(ReporterMiddleware)
-
-        @app.route('/')
         async def root(request):
             1 / 0
+
+        app = Starlette(routes=[
+            Route('/', root),
+        ])
+        app.add_middleware(ReporterMiddleware)
 
         client = TestClient(app)
         with self.assertRaises(ZeroDivisionError):
@@ -87,16 +91,17 @@ class ReporterMiddlewareTest(BaseTest):
     @mock.patch('rollbar.send_payload')
     def test_should_send_payload_with_request_data(self, mock_send_payload, *mocks):
         from starlette.applications import Starlette
-        from starlette.requests import Request
+        from starlette.routing import Route
         from starlette.testclient import TestClient
         from rollbar.contrib.starlette.middleware import ReporterMiddleware
 
-        app = Starlette()
-        app.add_middleware(ReporterMiddleware)
-
-        @app.route('/{path}')
         async def root(request):
             1 / 0
+
+        app = Starlette(routes=[
+            Route('/{path}', root),
+        ])
+        app.add_middleware(ReporterMiddleware)
 
         client = TestClient(app)
         with self.assertRaises(ZeroDivisionError):
@@ -155,18 +160,20 @@ class ReporterMiddlewareTest(BaseTest):
         self, sync_report_exc_info, async_report_exc_info
     ):
         from starlette.applications import Starlette
+        from starlette.routing import Route
         from starlette.testclient import TestClient
         import rollbar
         from rollbar.contrib.starlette.middleware import ReporterMiddleware
 
         rollbar.SETTINGS['handler'] = 'default'
 
-        app = Starlette()
-        app.add_middleware(ReporterMiddleware)
-
-        @app.route('/')
         async def root(request):
             1 / 0
+
+        app = Starlette(routes=[
+            Route('/', endpoint=root),
+        ])
+        app.add_middleware(ReporterMiddleware)
 
         client = TestClient(app)
         with self.assertRaises(ZeroDivisionError):
@@ -181,18 +188,20 @@ class ReporterMiddlewareTest(BaseTest):
         self, sync_report_exc_info, async_report_exc_info
     ):
         from starlette.applications import Starlette
+        from starlette.routing import Route
         from starlette.testclient import TestClient
         import rollbar
         from rollbar.contrib.starlette.middleware import ReporterMiddleware
 
         rollbar.SETTINGS['handler'] = 'httpx'
 
-        app = Starlette()
-        app.add_middleware(ReporterMiddleware)
-
-        @app.route('/')
         async def root(request):
             1 / 0
+
+        app = Starlette(routes=[
+            Route('/', endpoint=root),
+        ])
+        app.add_middleware(ReporterMiddleware)
 
         client = TestClient(app)
         with self.assertRaises(ZeroDivisionError):
@@ -208,18 +217,20 @@ class ReporterMiddlewareTest(BaseTest):
         self, sync_report_exc_info, async_report_exc_info, mock_log
     ):
         from starlette.applications import Starlette
+        from starlette.routing import Route
         from starlette.testclient import TestClient
         import rollbar
         from rollbar.contrib.starlette.middleware import ReporterMiddleware
 
         rollbar.SETTINGS['handler'] = 'threading'
 
-        app = Starlette()
-        app.add_middleware(ReporterMiddleware)
-
-        @app.route('/')
         async def root(request):
             1 / 0
+
+        app = Starlette(routes=[
+            Route('/', endpoint=root),
+        ])
+        app.add_middleware(ReporterMiddleware)
 
         client = TestClient(app)
         with self.assertRaises(ZeroDivisionError):
@@ -237,6 +248,7 @@ class ReporterMiddlewareTest(BaseTest):
     @mock.patch('rollbar.contrib.starlette.middleware.store_current_request')
     def test_should_store_current_request(self, store_current_request):
         from starlette.applications import Starlette
+        from starlette.routing import Route
         from starlette.responses import PlainTextResponse
         from starlette.testclient import TestClient
         from rollbar.contrib.starlette.middleware import ReporterMiddleware
@@ -260,12 +272,13 @@ class ReporterMiddlewareTest(BaseTest):
             'type': 'http',
         }
 
-        app = Starlette()
-        app.add_middleware(ReporterMiddleware)
-
-        @app.route('/{param}')
         async def root(request):
             return PlainTextResponse('OK')
+
+        app = Starlette(routes=[
+            Route('/{param}', endpoint=root),
+        ])
+        app.add_middleware(ReporterMiddleware)
 
         client = TestClient(app)
         client.get('/')
@@ -280,15 +293,12 @@ class ReporterMiddlewareTest(BaseTest):
     )
     def test_should_return_current_request(self):
         from starlette.applications import Starlette
+        from starlette.routing import Route
         from starlette.responses import PlainTextResponse
         from starlette.testclient import TestClient
         from rollbar.contrib.starlette.middleware import ReporterMiddleware
         from rollbar.contrib.starlette import get_current_request
 
-        app = Starlette()
-        app.add_middleware(ReporterMiddleware)
-
-        @app.route('/')
         async def root(original_request):
             request = get_current_request()
 
@@ -296,33 +306,10 @@ class ReporterMiddlewareTest(BaseTest):
 
             return PlainTextResponse('OK')
 
-        client = TestClient(app)
-        client.get('/')
-
-    @mock.patch('rollbar.contrib.starlette.requests.ContextVar', None)
-    @mock.patch('logging.Logger.error')
-    def test_should_not_return_current_request_for_older_python(self, mock_log):
-        from starlette.applications import Starlette
-        from starlette.responses import PlainTextResponse
-        from starlette.testclient import TestClient
-        from rollbar.contrib.starlette.middleware import ReporterMiddleware
-        from rollbar.contrib.starlette import get_current_request
-
-        app = Starlette()
+        app = Starlette(routes=[
+            Route('/', endpoint=root),
+        ])
         app.add_middleware(ReporterMiddleware)
-
-        @app.route('/')
-        async def root(original_request):
-            request = get_current_request()
-
-            self.assertIsNone(request)
-            self.assertNotEqual(request, original_request)
-            mock_log.assert_called_once_with(
-                'Python 3.7+ (or aiocontextvars package)'
-                ' is required to receive current request.'
-            )
-
-            return PlainTextResponse('OK')
 
         client = TestClient(app)
         client.get('/')

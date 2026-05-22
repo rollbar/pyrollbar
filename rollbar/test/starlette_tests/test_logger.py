@@ -60,6 +60,7 @@ class LoggerMiddlewareTest(BaseTest):
     @mock.patch('rollbar.contrib.starlette.logger.store_current_request')
     def test_should_store_current_request(self, store_current_request):
         from starlette.applications import Starlette
+        from starlette.routing import Route
         from starlette.responses import PlainTextResponse
         from starlette.testclient import TestClient
         from rollbar.contrib.starlette.logger import LoggerMiddleware
@@ -83,12 +84,13 @@ class LoggerMiddlewareTest(BaseTest):
             'type': 'http',
         }
 
-        app = Starlette()
-        app.add_middleware(LoggerMiddleware)
-
-        @app.route('/{param}')
         async def root(request):
             return PlainTextResponse('OK')
+
+        app = Starlette(routes=[
+            Route('/', endpoint=root),
+        ])
+        app.add_middleware(LoggerMiddleware)
 
         client = TestClient(app)
         client.get('/')
@@ -100,43 +102,21 @@ class LoggerMiddlewareTest(BaseTest):
 
     def test_should_return_current_request(self):
         from starlette.applications import Starlette
+        from starlette.routing import Route
         from starlette.responses import PlainTextResponse
         from starlette.testclient import TestClient
         from rollbar.contrib.starlette import get_current_request
         from rollbar.contrib.starlette.logger import LoggerMiddleware
 
-        app = Starlette()
-        app.add_middleware(LoggerMiddleware)
-
-        @app.route('/')
         async def root(request):
             self.assertIsNotNone(get_current_request())
 
             return PlainTextResponse('OK')
 
-        client = TestClient(app)
-        client.get('/')
-
-    @mock.patch('rollbar.contrib.starlette.requests.ContextVar', None)
-    @mock.patch('logging.Logger.error')
-    def test_should_not_return_current_request_for_older_python(self, mock_log):
-        from starlette.applications import Starlette
-        from starlette.responses import PlainTextResponse
-        from starlette.testclient import TestClient
-        from rollbar.contrib.starlette import get_current_request
-        from rollbar.contrib.starlette.logger import LoggerMiddleware
-
-        app = Starlette()
+        app = Starlette(routes=[
+            Route('/', endpoint=root),
+        ])
         app.add_middleware(LoggerMiddleware)
-
-        @app.route('/')
-        async def root(request):
-            self.assertIsNone(get_current_request())
-            mock_log.assert_called_once_with(
-                'Python 3.7+ (or aiocontextvars package) is required to receive current request.'
-            )
-
-            return PlainTextResponse('OK')
 
         client = TestClient(app)
         client.get('/')

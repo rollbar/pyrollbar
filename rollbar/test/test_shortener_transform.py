@@ -5,6 +5,7 @@ from collections import deque
 from rollbar import DEFAULT_LOCALS_SIZES, SETTINGS
 from rollbar.lib import transforms
 from rollbar.lib.transforms.shortener import ShortenerTransform
+from rollbar.lib.type_info import KeyType
 from rollbar.test import BaseTest
 
 
@@ -16,9 +17,9 @@ class KeyMemShortenerTransform(ShortenerTransform):
     """
     A shortener that just stores the keys.
     """
-    keysUsed = []
+    keysUsed: list[KeyType] = []
 
-    def default(self, o, key=None):
+    def default(self, o, key: KeyType = None):
         self.keysUsed.append((key, o))
         return super(KeyMemShortenerTransform, self).default(o, key=key)
 
