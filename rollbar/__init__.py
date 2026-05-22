@@ -628,7 +628,8 @@ def lambda_function(f):
 
 
 def report_exc_info(
-        exc_info: tuple[type[BaseException], BaseException, types.TracebackType] | tuple[None, None, None] | None = None,
+        exc_info: tuple[type[BaseException], BaseException, types.TracebackType | None] | tuple[
+            None, None, None] | None = None,
         request=None, extra_data=None, payload_data=None, level=None, **kw):
     """
     Reports an exception to Rollbar, using exc_info (from calling sys.exc_info())

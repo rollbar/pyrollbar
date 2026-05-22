@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Hashable
+from typing import Hashable, Any
 
 from rollbar.lib import binary_type, string_types
 
@@ -20,7 +20,7 @@ STRING = 6
 PATH = 7
 
 
-def get_type(obj):
+def get_type(obj: Any) -> int:
     if isinstance(obj, (string_types, binary_type)):
         return STRING
 

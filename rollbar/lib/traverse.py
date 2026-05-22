@@ -173,9 +173,12 @@ def traverse(
         elif obj_type is PATH:
             return path_handler(obj, key=key)
         elif obj_type is DEFAULT:
-            for handler_type, handler in custom_handlers.items():
-                # Only attempt isinstance checks when the key is a type (or tuple of types).
-                if isinstance(handler_type, (type, tuple)) and isinstance(obj, handler_type):
+            for handler_type, handler in (custom_handlers or {}).items():
+                # Check the full module path first e.g. "my_module.MyClass" or "builtin.complex"
+                if f"{type(obj).__module__}.{type(obj).__name__}" == handler_type:
+                    return handler(obj, key=key)
+                # Fallback to just the name e.g. "MyClass" or "complex".
+                if type(obj).__name__ == handler_type:
                     return handler(obj, key=key)
     except:
         # use the default handler for unknown object types

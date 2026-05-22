@@ -48,6 +48,7 @@ dependencies = [
 test = [
     "blinker",
     "httpx",
+    "packaging",
     "pytest",
     "python-multipart",
     "webob",

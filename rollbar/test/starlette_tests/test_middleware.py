@@ -307,7 +307,7 @@ class ReporterMiddlewareTest(BaseTest):
             return PlainTextResponse('OK')
 
         app = Starlette(routes=[
-            Route('/{param}', endpoint=root),
+            Route('/', endpoint=root),
         ])
         app.add_middleware(ReporterMiddleware)
 
