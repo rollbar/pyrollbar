@@ -34,6 +34,7 @@ from rollbar.lib import events, filters, dict_merge, transport, defaultJSONEncod
 from rollbar.lib.session import get_current_session, set_current_session, parse_session_request_baggage_headers
 
 if TYPE_CHECKING:
+    import re
     from rollbar.lib.payload import Attribute
     from rollbar.lib.type_info import KeyType
 
@@ -281,6 +282,21 @@ Level = Literal['debug', 'info', 'warning', 'error', 'critical']
 IgnorableLevel = Level | Literal['ignored']
 
 
+class PropagationSettings(TypedDict, total=False):
+    # List of headers to propagate session data on outgoing requests. Default: `['baggage']`. Only headers that are in
+    # this list will be injected with session data. Header names are case-insensitive.
+    enabled_headers: list[str]
+    # List of URLs to propagate session data on outgoing requests. Default: `[]`. This can be a list of strings or
+    # compiled regex patterns. If a string is provided, it must match the full URL exactly. If a regex pattern is
+    # provided, it will be matched against the full URL. Only URLs that match one of the provided patterns will have
+    # session data propagated.
+    enabled_urls: list[str | re.Pattern[str]]
+
+
+class TracingSettings(TypedDict, total=False):
+    propagation: PropagationSettings
+
+
 class NotifierSettings(TypedDict, total=False):
     name: str
     version: str
@@ -316,6 +332,7 @@ class SettingsParams(TypedDict, total=False):
     verify_https: bool
     shortener_keys: list[tuple[str, ...]]
     suppress_reinit_warning: bool
+    tracing: TracingSettings
     capture_email: bool
     capture_username: bool
     capture_ip: bool | Literal['anonymize']
@@ -399,6 +416,12 @@ SETTINGS: Settings = {
     'verify_https': True,
     'shortener_keys': [],
     'suppress_reinit_warning': False,
+    'tracing': {
+        'propagation': {
+            'enabled_headers': ['baggage'],
+            'enabled_urls': [],
+        },
+    },
     'capture_email': False,
     'capture_username': False,
     'capture_ip': True,
@@ -502,6 +525,7 @@ def init(
     :param suppress_reinit_warning: If `True`, suppresses the warning normally shown when `rollbar.init()` is called
                                     multiple times.
     :param timeout: Timeout for any HTTP requests made to the Rollbar API (in seconds).
+    :param tracing: Configuration for tracing errors across services.
     :param verify_https: If `True`, network requests will fail unless encountering a valid certificate. Default `True`.
     """
     global SETTINGS, agent_log, _initialized, _transforms, _serialize_transform, _scrub_redact_transform, _threads
@@ -590,6 +614,7 @@ def init(
     _threads = queue.Queue()
     events.reset()
     filters.add_builtin_filters(SETTINGS)
+    _init_tracing_propagation()
 
     _initialized = True
 
@@ -606,6 +631,40 @@ def _requests_configuration(**kw):
         'request_max_retries': 'max_retries',
     }
     return {keys[k]: kw.get(k, None) for k in keys}
+
+
+def _init_tracing_propagation():
+    headers = SETTINGS['tracing']['propagation']['enabled_headers']
+    urls = SETTINGS['tracing']['propagation']['enabled_urls']
+
+    if len(urls) == 0 or not any(header.lower() == 'baggage' for header in headers):
+        return
+    _init_httpx_propagation()
+    _init_requests_propagation()
+
+
+def _init_httpx_propagation():
+    try:
+        import httpx
+    except ImportError:
+        return
+
+    from rollbar.contrib.httpx import HTTPXContextPropagationManager
+    HTTPXContextPropagationManager.instrument(enabled_urls=SETTINGS['tracing']['propagation']['enabled_urls'],
+                                              enabled_headers=SETTINGS['tracing']['propagation']['enabled_headers'])
+
+
+def _init_requests_propagation():
+    try:
+        import requests
+        from rollbar.contrib.requests import RequestsContextPropagationManager
+    except ImportError:
+        return
+
+    RequestsContextPropagationManager.instrument(
+        enabled_urls=SETTINGS['tracing']['propagation']['enabled_urls'],
+        enabled_headers=SETTINGS['tracing']['propagation']['enabled_headers'],
+    )
 
 
 def lambda_function(f):
