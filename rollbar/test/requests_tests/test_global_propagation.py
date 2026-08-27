@@ -39,6 +39,7 @@ def _call_session(
             session.send(request=request, allow_redirects=False, stream=True)
         else:
             session.send(request, allow_redirects=False, stream=True)
+    adapter.send.assert_called_once()
     return request
 
 
@@ -141,6 +142,25 @@ class TestGlobalPropagation(BaseTest):
         RequestsContextPropagationManager.instrument(ENABLED_URLS, ENABLED_HEADERS)
         request = _call_session(requests.Session(), "http://target.example.com/path")
         self.assertIsNone(request.headers.get("baggage"))
+
+    @patch(
+        "rollbar.contrib.requests.get_propagation_header",
+        side_effect=RuntimeError("propagation failed"),
+    )
+    def test_global_sends_request_when_injection_fails(self, _mock):
+        RequestsContextPropagationManager.instrument(ENABLED_URLS, ENABLED_HEADERS)
+
+        with self.assertLogs("rollbar.contrib.requests", level="ERROR") as logs:
+            request = _call_session(requests.Session(), "http://target.example.com/path")
+
+        self.assertIsNone(request.headers.get("baggage"))
+        self.assertEqual(
+            logs.output,
+            [
+                "ERROR:rollbar.contrib.requests:Error injecting Rollbar "
+                "propagation headers into request: propagation failed"
+            ],
+        )
 
     @patch("rollbar.contrib.requests.get_propagation_header", return_value=BAGGAGE_VALUE)
     def test_global_honors_enabled_headers(self, _mock):

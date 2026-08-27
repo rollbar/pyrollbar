@@ -29,6 +29,7 @@ def _call_transport(transport: httpx.HTTPTransport, url: str) -> httpx.Request:
         with patch.object(transport, "_pool") as mock_pool:
             mock_pool.handle_request.return_value = _MOCK_POOL_RESPONSE
             client._send_single_request(request=request)
+            mock_pool.handle_request.assert_called_once()
     finally:
         client.close()
     return request
@@ -42,6 +43,7 @@ async def _call_async_transport(transport: httpx.AsyncHTTPTransport, url: str) -
         with patch.object(transport._pool, "handle_async_request") as mock_pool:
             mock_pool.return_value = _MOCK_POOL_RESPONSE
             await client._send_single_request(request=request)
+            mock_pool.assert_awaited_once()
     finally:
         await client.aclose()
     return request
@@ -86,6 +88,25 @@ class TestGlobalPropagation(BaseTest):
         HTTPXContextPropagationManager.instrument(ENABLED_URLS, ENABLED_HEADERS)
         request = _call_transport(httpx.HTTPTransport(), "http://target.example.com/path")
         self.assertIsNone(request.headers.get("baggage"))
+
+    @patch(
+        "rollbar.contrib.httpx.get_propagation_header",
+        side_effect=RuntimeError("propagation failed"),
+    )
+    def test_global_sends_request_when_injection_fails(self, _mock):
+        HTTPXContextPropagationManager.instrument(ENABLED_URLS, ENABLED_HEADERS)
+
+        with self.assertLogs("rollbar.contrib.httpx", level="ERROR") as logs:
+            request = _call_transport(httpx.HTTPTransport(), "http://target.example.com/path")
+
+        self.assertIsNone(request.headers.get("baggage"))
+        self.assertEqual(
+            logs.output,
+            [
+                "ERROR:rollbar.contrib.httpx:Error injecting Rollbar "
+                "propagation headers into request: propagation failed"
+            ],
+        )
 
     @patch("rollbar.contrib.httpx.get_propagation_header", return_value=BAGGAGE_VALUE)
     def test_global_honors_enabled_headers(self, _mock):
@@ -140,3 +161,25 @@ class TestGlobalPropagationAsync(unittest.IsolatedAsyncioTestCase):
         HTTPXContextPropagationManager.instrument(ENABLED_URLS, ENABLED_HEADERS)
         request = await _call_async_transport(httpx.AsyncHTTPTransport(), "http://target.example.com/path")
         self.assertIsNone(request.headers.get("baggage"))
+
+    @patch(
+        "rollbar.contrib.httpx.get_propagation_header",
+        side_effect=RuntimeError("propagation failed"),
+    )
+    async def test_global_sends_request_when_injection_fails_async_transport(self, _mock):
+        HTTPXContextPropagationManager.instrument(ENABLED_URLS, ENABLED_HEADERS)
+
+        with self.assertLogs("rollbar.contrib.httpx", level="ERROR") as logs:
+            request = await _call_async_transport(
+                httpx.AsyncHTTPTransport(),
+                "http://target.example.com/path",
+            )
+
+        self.assertIsNone(request.headers.get("baggage"))
+        self.assertEqual(
+            logs.output,
+            [
+                "ERROR:rollbar.contrib.httpx:Error injecting Rollbar "
+                "propagation headers into request: propagation failed"
+            ],
+        )

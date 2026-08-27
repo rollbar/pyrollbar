@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import re
 import typing
 import weakref
@@ -18,6 +19,8 @@ from rollbar.lib.propagation import (
     replace_rollbar_baggage,
 )
 from rollbar.lib.wrap import wrap_callable, unwrap_callable
+
+log = logging.getLogger(__name__)
 
 
 class _InstrumentationState:
@@ -151,11 +154,14 @@ class RequestsContextPropagationManager:
                 should_inject = should_inject and session not in cls._sessions
 
             if should_inject:
-                cls._inject_propagation_headers(
-                    state,
-                    args,
-                    kwargs,
-                )
+                try:
+                    cls._inject_propagation_headers(
+                        state,
+                        args,
+                        kwargs,
+                    )
+                except Exception as e:
+                    log.error("Error injecting Rollbar propagation headers into request: %s", e)
             return wrapped(*args, **kwargs)
 
         return wrapper_func
