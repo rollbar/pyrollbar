@@ -45,6 +45,25 @@ def reset_current_session() -> None:
     _thread_session.data = None
 
 
+def get_propagation_header() -> str | None:
+    """
+    Returns the baggage header value for propagation of session data on outgoing requests.
+    :return: The baggage header value or None if no session data is available.
+    """
+    session_data = get_current_session()
+    if len(session_data) == 0:
+        return None
+    header_parts = []
+    for attr in session_data:
+        if attr['key'] == 'session_id':
+            header_parts.append(f'rollbar.session.id={attr["value"]}')
+        if attr['key'] == 'execution_scope_id':
+            header_parts.append(f'rollbar.execution.scope.id={attr["value"]}')
+    if not header_parts:
+        return None
+    return ', '.join(header_parts)
+
+
 def parse_session_request_baggage_headers(headers: dict, generate_missing: bool = False) -> list[Attribute]:
     """
     Parse the 'baggage' header from the request headers to extract session information. If the 'baggage' header is not

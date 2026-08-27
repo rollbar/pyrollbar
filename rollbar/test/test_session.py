@@ -7,6 +7,9 @@ from rollbar.lib import session
 
 
 class SessionTest(BaseTest):
+    def setUp(self):
+        session.reset_current_session()
+
     def test_session_threading(self):
         results = []
 
@@ -103,6 +106,13 @@ class SessionTest(BaseTest):
         self.assertEqual(len(attributes), 1)
         self.assertEqual(attributes[0]['key'], 'execution_scope_id')
         self.assertEqual(len(attributes[0]['value']), 32)
+
+    def test_get_propagation_header_emits_baggage_header(self):
+        session.set_current_session({'Baggage': 'rollbar.session.id=abc123, rollbar.execution.scope.id=def456'})
+        self.assertEqual(
+            session.get_propagation_header(),
+            'rollbar.session.id=abc123, rollbar.execution.scope.id=def456',
+        )
 
     def test_build_new_session_attributes(self):
         attributes = session._build_new_scope_attributes()
