@@ -9,6 +9,7 @@ import os
 from unittest import mock
 
 import rollbar
+from rollbar.contrib.flask import report_exception as flask_report_exception
 from rollbar.lib.session import reset_current_session
 
 from tests import BaseTest
@@ -55,7 +56,7 @@ def init_rollbar(app):
                  allow_logging_basic_config=True,
                  capture_email=True,
                  capture_username=True)
-    got_request_exception.connect(rollbar.contrib.flask.report_exception, app)
+    got_request_exception.connect(flask_report_exception, app)
 
 if ALLOWED_PYTHON_VERSION and FLASK_INSTALLED:
     class FlaskTest(BaseTest):
