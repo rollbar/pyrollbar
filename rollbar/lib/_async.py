@@ -206,7 +206,7 @@ def call_later(coro):
 
 
 # test helpers
-# TODO: move to rollbar.test.async_helper after migrating from unittest
+# TODO: move to test.async_helper after migrating from unittest
 
 
 def run(coro):
