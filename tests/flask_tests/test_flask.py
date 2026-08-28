@@ -9,7 +9,6 @@ import os
 from unittest import mock
 
 import rollbar
-from rollbar.contrib.flask import report_exception as flask_report_exception
 from rollbar.lib.session import reset_current_session
 
 from tests import BaseTest
@@ -50,6 +49,7 @@ def create_app():
 
 def init_rollbar(app):
     from flask import got_request_exception
+    from rollbar.contrib.flask import report_exception as flask_report_exception
     rollbar._initialized = False
     rollbar.init(TOKEN, 'flasktest',
                  root=os.path.dirname(os.path.realpath(__file__)),
