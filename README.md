@@ -81,7 +81,17 @@ For bug reports, please [open an issue on GitHub](https://github.com/rollbar/pyr
 4. Push to the branch (```git push origin my-new-feature```)
 5. Create new Pull Request
 
-Tests are in `rollbar/test`. To run them:
+Tests are in `tests`. To run them:
 
-    pip install -e . --group test
-    pytest
+```
+pip install --group test .
+pytest
+```
+
+To check types:
+
+```
+pip install --group test .
+pip install --group type .
+mypy
+```

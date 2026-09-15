@@ -86,7 +86,7 @@ packages = ["rollbar"]
 
 [tool.pytest]
 testpaths = [
-    "rollbar/test",
+    "tests",
 ]
 
 [tool.setuptools.dynamic]
