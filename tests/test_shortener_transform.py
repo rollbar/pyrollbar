@@ -64,8 +64,12 @@ class ShortenerTransformTest(BaseTest):
                 'eight': 'eight',
                 'nine': 'nine',
                 'ten': 'ten',
+                '...': '...'
             }
-        self.assertEqual(shortened, self.shortener.default(original, ('shorten',)))
+        result = self.shortener.default(original, ('shorten',))
+        for key in shortened:
+            self.assertIn(key, result)
+            self.assertEqual(shortened[key], result[key])
         self.assertEqual(original, self.shortener.default(original, ('nope',)))
 
     def test_shorten_bytes(self):
@@ -128,7 +132,7 @@ class ShortenerTransformTest(BaseTest):
         shortener = ShortenerTransform(keys=keys, **DEFAULT_LOCALS_SIZES)
         result = transforms.transform(data, shortener)
         self.assertEqual(type(result), dict)
-        self.assertEqual(len(result['request']['POST']), 10)
+        self.assertEqual(len(result['request']['POST']), 11)  # Shortened to 10 + '...'
 
     def test_shorten_custom_rollbar_repr(self):
         class CustomObj:

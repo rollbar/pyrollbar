@@ -81,7 +81,10 @@ def shorten_mapping(obj: dict | Mapping, max_keys: int) -> dict | Mapping:
     if len(obj) <= max_keys:
         return obj
 
-    return {k: obj[k] for k in itertools.islice(obj.keys(), max_keys)}
+    return {
+        **{k: obj[k] for k in itertools.islice(obj.keys(), max_keys)},
+        "...": "..."
+    }
 
 
 def shorten_set(obj: set, max_len: int) -> set:
