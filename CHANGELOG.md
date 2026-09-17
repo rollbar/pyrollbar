@@ -2,6 +2,12 @@
 
 The change log is also available on the [GitHub Releases Page](https://github.com/rollbar/pyrollbar/releases).
 
+**1.5.0**
+
+- Added session instrumentation to httpx and requests by @danielmorell in [#498](https://github.com/rollbar/pyrollbar/pull/498)
+- Removed `tests` and `examples` from the distributed package by @danielmorell in [#499](https://github.com/rollbar/pyrollbar/pull/499)
+- Fixed #490 Added ellipsis to shortened dicts by @danielmorell in [#500](https://github.com/rollbar/pyrollbar/pull/500)
+
 **1.4.0**
 
 - Added support for Python 3.14 by @danielmorell in [#484](https://github.com/rollbar/pyrollbar/pull/484)
