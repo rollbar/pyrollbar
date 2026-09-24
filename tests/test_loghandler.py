@@ -8,7 +8,7 @@ import sys
 from unittest import mock
 
 import rollbar
-from rollbar.logger import RollbarHandler
+from rollbar.logger import _INCLUDED_RECORD_KEYS, RollbarHandler
 
 from tests import BaseTest
 
@@ -35,6 +35,23 @@ class LogHandlerTest(BaseTest):
 
     def tearDown(self):
         self.logger.removeHandler(self.rollbar_handler)
+
+    def test_included_record_keys_constant_includes_expected_keys(self):
+        self.assertEqual(
+            _INCLUDED_RECORD_KEYS,
+            vars(logging.makeLogRecord({})).keys() - {
+                # The following are logged elsewhere or are expected not to be logged
+                'args',
+                'exc_info',
+                'exc_text',
+                'filename',
+                'levelname',
+                'levelno',
+                'msecs',
+                'msg',
+                'stack_info',
+            }
+        )
 
     @mock.patch('rollbar.send_payload')
     def test_message_gets_formatted(self, send_payload):
