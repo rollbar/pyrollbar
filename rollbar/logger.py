@@ -21,6 +21,7 @@ Usage:
 from __future__ import annotations
 
 import logging
+import sys
 import threading
 
 from logging.config import ConvertingDict, ConvertingList, ConvertingTuple
@@ -44,7 +45,22 @@ def check_level(level: str | int ) -> int:
     raise TypeError(f"Level not an integer or a valid string: {level!r}")
 
 
-EXCLUDE_RECORD_KEYS = {
+_INCLUDED_RECORD_KEYS = {
+    'created',
+    'funcName',
+    'lineno',
+    'module',
+    'name',
+    'pathname',
+    'process',
+    'processName',
+    'relativeCreated',
+    *(('taskName',) if sys.version_info >= (3, 12) else ()),
+    'thread',
+    'threadName',
+}
+
+_EXCLUDE_RECORD_KEYS = {
     # Attributes that are disallowed in `logging.Logger.makeRecord`
     'asctime',
     'message',
@@ -128,21 +144,12 @@ class RollbarHandler(logging.Handler):
         extra_data = {
             'args': record.args,
             'record': {
-                'created': record.created,
-                'funcName': record.funcName,
-                'lineno': record.lineno,
-                'module': record.module,
-                'name': record.name,
-                'pathname': record.pathname,
-                'process': record.process,
-                'processName': record.processName,
-                'relativeCreated': record.relativeCreated,
-                'thread': record.thread,
-                'threadName': record.threadName
+                k: v for k, v in vars(record).items()
+                if k in _INCLUDED_RECORD_KEYS
             }
         } | {  # include any extras
             k: v for k, v in vars(record).items()
-            if k not in EXCLUDE_RECORD_KEYS
+            if k not in _EXCLUDE_RECORD_KEYS
         } | getattr(record, 'extra_data', {})  # include historical extra_data
 
         payload_data = getattr(record, 'payload_data', {})
