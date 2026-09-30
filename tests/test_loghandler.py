@@ -127,6 +127,8 @@ class LogHandlerTest(BaseTest):
         self.assertTrue(has_only_trace or has_only_trace_chain)
         if trace_chain is not None:
             self.assertEqual('Bad time', payload['data']['custom']['exception']['description'])
+            self.assertEqual(body['trace_chain'][0]['exception']['class'], 'Log')
+            self.assertEqual(body['trace_chain'][0]['exception']['message'], 'Bad time')
         if trace is not None:
             self.assertEqual('Bad time', trace['exception']['description'])
 
@@ -156,6 +158,46 @@ class LogHandlerTest(BaseTest):
             self.assertEqual('Bad time', payload['data']['custom']['exception']['description'])
         if trace is not None:
             self.assertEqual('Bad time', trace['exception']['description'])
+
+    @mock.patch('rollbar.send_payload')
+    def test_logging_exc_info(self, send_payload):
+        try:
+            raise ValueError('Invalid value')
+        except Exception:
+            self.logger.warning('Test error', exc_info=True)
+
+        payload = send_payload.call_args[0][0]
+        self.assertEqual(payload['data']['body']['trace_chain'][0]['exception']['class'], 'Log')
+        self.assertEqual(payload['data']['body']['trace_chain'][0]['exception']['message'], 'Test error')
+        self.assertEqual(payload['data']['body']['trace_chain'][1]['exception']['class'], 'ValueError')
+        self.assertEqual(payload['data']['body']['trace_chain'][1]['exception']['message'], 'Invalid value')
+        self.assertEqual(payload['data']['custom']['exception']['description'], 'Test error')
+
+    @mock.patch('rollbar.send_payload')
+    def test_logging_stack_info(self, send_payload):
+        def caller():
+            self.logger.warning('Test inner message', stack_info=True)
+
+        self.logger.warning('Test top level message', stack_info=True)
+        caller()
+
+        payload1 = send_payload.call_args_list[0][0][0]
+        payload2 = send_payload.call_args_list[1][0][0]
+        self.assertEqual(
+            {(i['type'], i['source'], i['level']) for i in payload1['data']['body']['telemetry']},
+            {('manual', 'server', 'info')}
+        )
+        self.assertEqual(payload1['data']['body']['telemetry'][-1]['body']['name'], 'test_logging_stack_info')
+        self.assertEqual(payload1['data']['body']['telemetry'][-1]['body']['filename'], __file__)
+
+        self.assertEqual(
+            {(i['type'], i['source'], i['level']) for i in payload2['data']['body']['telemetry']},
+            {('manual', 'server', 'info')}
+        )
+        self.assertEqual(payload2['data']['body']['telemetry'][-1]['body']['name'], 'caller')
+        self.assertEqual(payload2['data']['body']['telemetry'][-1]['body']['filename'], __file__)
+        self.assertEqual(payload2['data']['body']['telemetry'][-2]['body']['name'], 'test_logging_stack_info')
+        self.assertEqual(payload2['data']['body']['telemetry'][-2]['body']['filename'], __file__)
 
     @mock.patch('rollbar.send_payload')
     def test_logging_extra(self, send_payload):

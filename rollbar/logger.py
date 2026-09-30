@@ -21,9 +21,13 @@ Usage:
 from __future__ import annotations
 
 import logging
+import os
 import threading
+import traceback
 
 from logging.config import ConvertingDict, ConvertingList, ConvertingTuple
+from types import FrameType, TracebackType
+from typing import Any, cast, TYPE_CHECKING
 
 import rollbar
 
@@ -65,6 +69,34 @@ def resolve_logging_types(obj):
         return tuple(resolve_logging_types(i) for i in obj)
 
     return obj
+
+
+def _find_caller() -> FrameType | None:
+    "Walks the stack until the logging handler is exited and returns that frame"
+    internal_prefix = os.path.dirname(__file__)
+    logging_prefix = os.path.dirname(logging.__file__)
+    for frame, line_number in  traceback.walk_stack(None):
+        locals_ = frame.f_locals
+        code = frame.f_code
+        filename = code.co_filename
+        if (
+            ('importlib' in filename and '_bootstrap' in filename)
+            or filename.startswith(internal_prefix)
+            or filename.startswith(logging_prefix)
+            or (
+                code.co_argcount > 1
+                and isinstance(locals_.get(code.co_varnames[0]), logging.Handler)
+            )
+        ):
+            continue
+
+        return frame
+
+    return None
+
+
+# call this `Log`, but make it private
+_log_message_exception = type('Log', (Exception,), {})
 
 
 class RollbarHandler(logging.Handler):
@@ -123,8 +155,6 @@ class RollbarHandler(logging.Handler):
         if level not in self.SUPPORTED_LEVELS:
             return
 
-        exc_info = record.exc_info
-
         extra_data = {
             'args': record.args,
             'record': {
@@ -148,6 +178,28 @@ class RollbarHandler(logging.Handler):
         payload_data = getattr(record, 'payload_data', {})
 
         self._add_history(record, payload_data)
+
+        exc_info = record.exc_info
+        wants_stack_info = isinstance(record.stack_info, str)
+        caller = _find_caller() if (exc_info and exc_info[0]) or wants_stack_info else None
+
+        if wants_stack_info and caller:
+            telemetry = payload_data.setdefault('body', {}).setdefault('telemetry', [])
+            timestamp_ms = int(record.created * 1000)
+            telemetry.extend(
+                {
+                    'type': 'manual',
+                    'level': 'info',
+                    'source': 'server',
+                    'timestamp_ms': timestamp_ms,
+                    'body': {
+                        'filename': frame.filename,
+                        'line': frame.lineno,
+                        'name': frame.name,
+                    }
+                }
+                for frame in traceback.extract_stack(caller)
+            )
 
         # after we've added the history data, check to see if the
         # notify level is satisfied
@@ -181,6 +233,12 @@ class RollbarHandler(logging.Handler):
                     }
                     payload_data = rollbar.dict_merge(
                         payload_data, message_template, silence_errors=True)
+
+                    if caller:
+                        trace = TracebackType(None, caller, caller.f_lasti, caller.f_lineno)
+                        wrapper = _log_message_exception(message).with_traceback(trace)
+                        wrapper.__cause__ = exc_info[1]
+                        exc_info = _log_message_exception, wrapper, trace
 
                 uuid = rollbar.report_exc_info(exc_info,
                                                level=level,
