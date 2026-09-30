@@ -1,6 +1,12 @@
+from __future__ import annotations
 import sys
 import bottle  # type: ignore[import-untyped]
 import rollbar
+
+from typing import cast, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from _typeshed import ExcInfo
 
 class RollbarBottleReporter(object):
     '''
@@ -32,7 +38,7 @@ class RollbarBottleReporter(object):
             try:
                 return callback(*args, **kwargs)
             except Exception as e:
-                rollbar.report_exc_info(sys.exc_info(), request=bottle.request)
+                rollbar.report_exc_info(cast('ExcInfo', sys.exc_info()), request=bottle.request)
                 raise
 
         return wrapper

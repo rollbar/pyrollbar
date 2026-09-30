@@ -17,24 +17,26 @@ import uuid
 import wsgiref.util
 import warnings
 import queue
-from typing import Any, Callable, TypedDict, Literal, cast, Optional, TYPE_CHECKING
+from collections.abc import Callable, Sequence
+from typing import Any, cast, Literal, Optional, TypedDict, TYPE_CHECKING
 from urllib.parse import parse_qs, urljoin
 
 try:
     # Python 3.11+
     # This is ignored for mypy to be happy with Python versions before 3.11.
-    from typing import Unpack  # type: ignore
+    from typing import Unpack  # type: ignore[attr-defined,unused-ignore]
 except ImportError:
     # Python 3.10
     from typing_extensions import Unpack
 
-import requests  # type: ignore[import-untyped]
+import requests
 
 from rollbar.lib import events, filters, dict_merge, transport, defaultJSONEncode
 from rollbar.lib.session import get_current_session, set_current_session, parse_session_request_baggage_headers
 
 if TYPE_CHECKING:
     import re
+    from _typeshed import ExcInfo
     from rollbar.lib.payload import Attribute
     from rollbar.lib.type_info import KeyType
 
@@ -55,19 +57,19 @@ except ImportError:
 try:
     from django.core.exceptions import ImproperlyConfigured
 except ImportError:
-    DjangoHttpRequest = None
-    RestFrameworkRequest = None
+    DjangoHttpRequest: Any = None
+    RestFrameworkRequest: Any = None
 
 else:
     try:
-        from django.http import HttpRequest as DjangoHttpRequest # type: ignore[assignment]
+        from django.http import HttpRequest as DjangoHttpRequest
     except (ImportError, ImproperlyConfigured):
-        DjangoHttpRequest = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
+        DjangoHttpRequest = None
 
     try:
-        from rest_framework.request import Request as RestFrameworkRequest  # type: ignore[assignment, no-redef]
+        from rest_framework.request import Request as RestFrameworkRequest
     except (ImportError, ImproperlyConfigured):
-        RestFrameworkRequest = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
+        RestFrameworkRequest = None
 
     del ImproperlyConfigured
 
@@ -82,14 +84,14 @@ except (ImportError, SyntaxError):
     WerkzeugLocalProxy = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 try:
-    from tornado.httpserver import HTTPRequest as TornadoRequest  # type: ignore[import-untyped]
+    from tornado.httpserver import HTTPRequest as TornadoRequest
 except ImportError:
     TornadoRequest = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 try:
     from bottle import BaseRequest as BottleRequest  # type: ignore[import-untyped]
 except ImportError:
-    BottleRequest = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
+    BottleRequest = None
 
 try:
     from sanic.request import Request as SanicRequest
@@ -97,15 +99,14 @@ except ImportError:
     SanicRequest = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 try:
-    from google.appengine.api.urlfetch import fetch as AppEngineFetch  # type: ignore[import-untyped, import-not-found]
+    from google.appengine.api.urlfetch import fetch as AppEngineFetch  # type: ignore[import-not-found]
 except (ImportError, KeyError):
-    AppEngineFetch = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
+    AppEngineFetch = None
 
 try:
-    from starlette.requests import Request as StarletteRequest, State as StarletteState
+    from starlette.requests import Request as StarletteRequest
 except ImportError:
     StarletteRequest = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
-    StarletteState = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
 
 try:
     from fastapi.requests import Request as FastAPIRequest
@@ -115,9 +116,7 @@ except ImportError:
 try:
     import httpx
 except ImportError:
-    httpx = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
-
-AsyncHTTPClient = httpx
+    httpx = None  # type: ignore[assignment] # MyPy does not like types assigned to None.
 
 def passthrough_decorator(func):
     def wrap(*args, **kwargs):
@@ -445,7 +444,7 @@ _LAST_RESPONSE_STATUS = None
 _transforms: list[Transform] = []
 _serialize_transform: Transform | None = None
 _scrub_redact_transform: Transform | None = None
-_threads: queue.Queue
+_threads: queue.Queue[threading.Thread]
 
 _initialized = False
 
@@ -680,16 +679,14 @@ def lambda_function(f):
             return wait(lambda: result)
         except:
             cls, exc, trace = sys.exc_info()
-            report_exc_info((cls, exc, trace.tb_next))
+            report_exc_info((cls, exc, trace.tb_next))  # type: ignore[arg-type, union-attr]
             wait()
             raise
     return wrapper
 
 
 def report_exc_info(
-        exc_info: tuple[type[BaseException], BaseException, types.TracebackType | None] | tuple[
-            None, None, None] | None = None,
-        request=None, extra_data=None, payload_data=None, level=None, **kw):
+        exc_info: ExcInfo | None = None, request=None, extra_data=None, payload_data=None, level=None, **kw):
     """
     Reports an exception to Rollbar, using exc_info (from calling sys.exc_info())
 
@@ -709,7 +706,7 @@ def report_exc_info(
         rollbar.report_exc_info(sys.exc_info(), request, {'foo': 'bar'}, {'level': 'warning'})
     """
     if exc_info is None:
-        exc_info = sys.exc_info()
+        exc_info = sys.exc_info()  # type: ignore[assignment]
 
     try:
         return _report_exc_info(exc_info, request, extra_data, payload_data, level=level)
@@ -786,12 +783,12 @@ def send_payload(payload, access_token: str):
             return
         _send_payload_twisted(payload_str, access_token)
     elif handler == 'httpx':
-        if httpx is None:
+        if cast(Any, httpx) is None:
             log.error('Unable to find HTTPX')
             return
         _send_payload_httpx(payload_str, access_token)
     elif handler == 'async':
-        if AsyncHTTPClient is None:
+        if cast(Any, httpx) is None:
             log.error('Unable to find async handler')
             return
         _send_payload_async(payload_str, access_token)
@@ -1017,7 +1014,7 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
         data = dict_merge(data, payload_data, silence_errors=True)
 
     payload = _build_payload(data)
-    send_payload(payload, payload.get('access_token'))
+    send_payload(payload, payload['access_token'])
 
     return data['uuid']
 
@@ -1099,12 +1096,12 @@ def _report_message(message, level, request, extra_data, payload_data):
         data = dict_merge(data, payload_data, silence_errors=True)
 
     payload = _build_payload(data)
-    send_payload(payload, payload.get('access_token'))
+    send_payload(payload, payload['access_token'])
 
     return data['uuid']
 
 
-def _add_session_data(data: dict) -> None:
+def _add_session_data(data: dict[str, Any]) -> None:
     """
     Adds session data to the payload data if it can be found in the current session or request.
     """
@@ -1122,7 +1119,7 @@ def _add_session_data(data: dict) -> None:
         _add_session_attributes(data, session_data)
 
 
-def _add_session_attributes(data: dict, session_data: list[Attribute]) -> None:
+def _add_session_attributes(data: dict[str, Any], session_data: list[Attribute]) -> None:
     """
     Adds session attributes to the payload data. This function is careful to not overwrite any existing data in the
     payload.
@@ -1138,7 +1135,7 @@ def _add_session_attributes(data: dict, session_data: list[Attribute]) -> None:
             data['attributes'].append(attribute)
 
 
-def _session_data_from_request(data: dict) -> dict | None:
+def _session_data_from_request(data: dict[str, Any]) -> dict[str, Any] | None:
     """
     Tries to find session data in the request object. Use the request object if provided, otherwise check the data as
     it may already contain the request object. This is true for some frameworks (e.g. Django).
@@ -1198,14 +1195,14 @@ def _add_person_data(data, request):
             data['person'] = person_data
 
 
-def _build_person_data(request):
+def _build_person_data(request) -> dict[str, Any] | None:
     """
     Returns a dictionary describing the logged-in user using data from `request`.
 
     Try request.rollbar_person first, then 'user', then 'user_id'
     """
     if hasattr(request, 'rollbar_person'):
-        rollbar_person_prop = request.rollbar_person
+        rollbar_person_prop: Callable[..., dict[str, Any] | None] = request.rollbar_person
         person = rollbar_person_prop() if callable(rollbar_person_prop) else rollbar_person_prop
         if person and isinstance(person, dict):
             return person
@@ -1215,7 +1212,7 @@ def _build_person_data(request):
     if StarletteRequest is not None:
         from rollbar.contrib.starlette.requests import hasuser
     else:
-        def hasuser(request: StarletteRequest[StarletteState]) -> bool:
+        def hasuser(request: StarletteRequest) -> bool:
             return True
 
     if hasuser(request) and hasattr(request, 'user'):
@@ -1226,7 +1223,7 @@ def _build_person_data(request):
         elif isinstance(user, dict):
             return user
         else:
-            retval = {}
+            retval: dict[str, Any] = {}
             if getattr(user, 'id', None):
                 retval['id'] = str(user.id)
             elif getattr(user, 'user_id', None):
@@ -1248,6 +1245,8 @@ def _build_person_data(request):
         if not user_id:
             return None
         return {'id': str(user_id)}
+
+    return None
 
 
 def _get_func_from_frame(frame):
@@ -1409,7 +1408,7 @@ def _get_actual_request(request: Any | None) -> Any | None:
     return request
 
 
-def _build_request_data(request: Any) -> dict | None:
+def _build_request_data(request: Any) -> dict[str, Any] | None:
     """
     Returns a dictionary containing data from the request.
     """
@@ -1461,7 +1460,7 @@ def _build_request_data(request: Any) -> dict | None:
     return None
 
 
-def _build_webob_request_data(request) -> dict:
+def _build_webob_request_data(request) -> dict[str, Any]:
     request_data = {
         'url': request.url,
         'GET': dict(request.GET),
@@ -1490,7 +1489,7 @@ def _build_webob_request_data(request) -> dict:
     return request_data
 
 
-def _extract_wsgi_headers(items):
+def _extract_wsgi_headers(items: Sequence[tuple[str, Any]]) -> dict[str, Any]:
     headers = {}
     for k, v in items:
         if k.startswith('HTTP_'):
@@ -1499,7 +1498,7 @@ def _extract_wsgi_headers(items):
     return headers
 
 
-def _build_django_request_data(request) -> dict:
+def _build_django_request_data(request) -> dict[str, Any]:
     url = request.build_absolute_uri()
 
     request_data = {
@@ -1521,7 +1520,7 @@ def _build_django_request_data(request) -> dict:
     return request_data
 
 
-def _build_werkzeug_request_data(request) -> dict:
+def _build_werkzeug_request_data(request) -> dict[str, Any]:
     request_data = {
         'url': request.url,
         'GET': dict(request.args),
@@ -1542,7 +1541,7 @@ def _build_werkzeug_request_data(request) -> dict:
     return request_data
 
 
-def _build_tornado_request_data(request) -> dict:
+def _build_tornado_request_data(request) -> dict[str, Any]:
     request_data = {
         'url': request.full_url(),
         'user_ip': request.remote_ip,
@@ -1556,7 +1555,7 @@ def _build_tornado_request_data(request) -> dict:
     return request_data
 
 
-def _build_bottle_request_data(request) -> dict:
+def _build_bottle_request_data(request) -> dict[str, Any]:
     request_data = {
         'url': request.url,
         'user_ip': request.remote_addr,
@@ -1578,7 +1577,7 @@ def _build_bottle_request_data(request) -> dict:
     return request_data
 
 
-def _build_sanic_request_data(request) -> dict:
+def _build_sanic_request_data(request) -> dict[str, Any]:
     request_data = {
         'url': request.url,
         'user_ip': request.remote_addr,
@@ -1599,7 +1598,7 @@ def _build_sanic_request_data(request) -> dict:
     return request_data
 
 
-def _build_falcon_request_data(request) -> dict:
+def _build_falcon_request_data(request) -> dict[str, Any]:
     request_data = {
         'url': request.url,
         'user_ip': _wsgi_extract_user_ip(request.env),
@@ -1612,7 +1611,7 @@ def _build_falcon_request_data(request) -> dict:
     return request_data
 
 
-def _build_wsgi_request_data(request) -> dict:
+def _build_wsgi_request_data(request) -> dict[str, Any]:
     request_data = {
         'url': wsgiref.util.request_uri(request),
         'user_ip': _wsgi_extract_user_ip(request),
@@ -1639,7 +1638,7 @@ def _build_wsgi_request_data(request) -> dict:
 
     return request_data
 
-def _build_starlette_request_data(request) -> dict:
+def _build_starlette_request_data(request) -> dict[str, Any]:
     from starlette.datastructures import UploadFile
 
     request_data = {
@@ -1683,7 +1682,7 @@ def _build_starlette_request_data(request) -> dict:
 
     return request_data
 
-def _build_fastapi_request_data(request) -> dict:
+def _build_fastapi_request_data(request) -> dict[str, Any]:
     return _build_starlette_request_data(request)
 
 
@@ -1732,8 +1731,8 @@ def _build_server_data():
          server_data['argv'] = argv
 
     for key in ['branch', 'root']:
-        if SETTINGS.get(key):
-            server_data[key] = SETTINGS[key]
+        if value := SETTINGS.get(key):
+            server_data[key] = value
 
     return server_data
 
@@ -1747,7 +1746,7 @@ def _transform(obj: Any, key: tuple[KeyType, ...] | None = None):
     )
 
 
-def _build_payload(data: dict) -> dict:
+def _build_payload(data: dict[str, Any]) -> dict[str, Any]:
     """
     Returns the full payload as a dict.
     """
@@ -1963,7 +1962,7 @@ def _send_failsafe(message, uuid, host):
     payload = _build_payload(data)
 
     try:
-        send_payload(payload, SETTINGS['access_token'])
+        send_payload(payload, cast(str, SETTINGS['access_token']))
     except Exception:
         log.exception('Rollbar: Error sending failsafe.')
 
@@ -1971,7 +1970,7 @@ def _send_failsafe(message, uuid, host):
 def _parse_response(path, access_token, params, resp, endpoint=None):
     if isinstance(resp, requests.Response):
         try:
-            data = resp.text
+            data: bytes | str = resp.text
         except Exception:
             data = resp.content
             log.error('resp.text is undefined, resp.content is %r', resp.content)

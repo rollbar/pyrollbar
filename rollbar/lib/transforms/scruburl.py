@@ -1,7 +1,7 @@
 import re
 from urllib.parse import urlsplit, urlencode, urlunsplit, parse_qs
 
-from rollbar.lib import string_types, binary_type
+from rollbar.lib import binary_type
 from rollbar.lib.transforms.scrub import ScrubTransform
 
 
@@ -84,7 +84,7 @@ class ScrubUrlTransform(ScrubTransform):
     def default(self, o, key=None):
         # Change the default behavior because we are only interested
         # in scrubbing strings.
-        if isinstance(o, string_types) or isinstance(o, binary_type):
+        if isinstance(o, str) or isinstance(o, binary_type):
             return super(ScrubUrlTransform, self).default(o, key=key)
 
         return o

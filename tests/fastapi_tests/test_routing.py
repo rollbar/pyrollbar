@@ -773,6 +773,6 @@ class LoggingRouteTest(BaseTest):
             rollbar.contrib.fastapi.routing.add_to.__annotations__,
             {
                 'app_or_router': 'FastAPI | APIRouter',
-                'return': 'Type[APIRoute] | None',
+                'return': 'type[APIRoute] | None',
             },
         )

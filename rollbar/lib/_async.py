@@ -1,15 +1,18 @@
+from __future__ import annotations
+
 import asyncio
 import inspect
 import logging
 import sys
 from contextvars import ContextVar
+from typing import Any, cast
 from unittest import mock
 from urllib.parse import urljoin
 
 try:
     import httpx
 except ImportError:
-    httpx = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
+    httpx = None  # type: ignore[assignment] # MyPy does not like types assigned to None.
 
 import rollbar
 from rollbar import DEFAULT_TIMEOUT
@@ -34,7 +37,7 @@ if sys.version_info[:2] == (3, 6):
             ' Please upgrade Python or install `aiocontextvars`.'
         )
 
-_ctx_handler = ContextVar('rollbar-handler', default=None)
+_ctx_handler: ContextVar[Any] = ContextVar('rollbar-handler', default=None)
 
 
 class RollbarAsyncError(Exception):
@@ -116,7 +119,7 @@ async def _post_api_httpx(path, payload_str, access_token=None):
     if access_token is not None:
         headers['X-Rollbar-Access-Token'] = access_token
     else:
-        headers['X-Rollbar-Access-Token'] = rollbar.SETTINGS.get('access_token')
+        headers['X-Rollbar-Access-Token'] = cast(str, rollbar.SETTINGS['access_token'])
 
     proxy_cfg = {
         'proxy': rollbar.SETTINGS.get('http_proxy'),
@@ -127,8 +130,8 @@ async def _post_api_httpx(path, payload_str, access_token=None):
     mounts = None
     if proxies:
         mounts = {
-            'http://': httpx.HTTPTransport(proxy=proxies['http']),
-            'https://': httpx.HTTPTransport(proxy=proxies['https']),
+            'http://': httpx.AsyncHTTPTransport(proxy=proxies['http']),
+            'https://': httpx.AsyncHTTPTransport(proxy=proxies['https']),
         }
 
     url = urljoin(rollbar.SETTINGS['endpoint'], path)
@@ -213,7 +216,7 @@ def run(coro):
     if sys.version_info >= (3, 7):
         return asyncio.run(coro)
 
-    assert inspect.iscoroutine(coro)
+    assert inspect.iscoroutine(coro)  # type: ignore[unreachable]
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)

@@ -1,20 +1,19 @@
 from __future__ import annotations
 
-from array import array
 import collections
 import itertools
 import reprlib
+from array import array
+from typing import Any
 
 from collections.abc import Mapping
 
-from rollbar.lib import (
-    integer_types, key_in, key_depth, sequence_types,
-    string_types)
+from rollbar.lib import integer_types, key_in, key_depth, sequence_types
 from rollbar.lib.transform import Transform
 
 
 _type_name_mapping = {
-    'string': string_types,
+    'string': str,
     'long': integer_types,
     'mapping': Mapping,
     'list': list,
@@ -33,7 +32,7 @@ def _max_left_right(max_len: int, seperator_len: int) -> tuple[int, int]:
     return left, right
 
 
-def shorten_array(obj: array, max_len: int) -> array:
+def shorten_array(obj: array[Any], max_len: int) -> array[Any]:
     if len(obj) <= max_len:
         return obj
 
@@ -47,14 +46,14 @@ def shorten_bytes(obj: bytes, max_len: int) -> bytes:
     return obj[:max_len]
 
 
-def shorten_deque(obj: collections.deque, max_len: int) -> collections.deque:
+def shorten_deque(obj: collections.deque[Any], max_len: int) -> collections.deque[Any]:
     if len(obj) <= max_len:
         return obj
 
     return collections.deque(itertools.islice(obj, max_len))
 
 
-def shorten_frozenset(obj: frozenset, max_len: int) -> frozenset:
+def shorten_frozenset(obj: frozenset[Any], max_len: int) -> frozenset[Any]:
     if len(obj) <= max_len:
         return obj
 
@@ -70,14 +69,14 @@ def shorten_int(obj: int, max_len: int) -> int | str:
     return s[:left] + '...' + s[len(s)-right:]
 
 
-def shorten_list(obj: list, max_len: int) -> list:
+def shorten_list(obj: list[Any], max_len: int) -> list[Any]:
     if len(obj) <= max_len:
         return obj
 
     return obj[:max_len] + ['...']
 
 
-def shorten_mapping(obj: dict | Mapping, max_keys: int) -> dict | Mapping:
+def shorten_mapping(obj: dict[Any, Any] | Mapping[Any, Any], max_keys: int) -> dict[Any, Any] | Mapping[Any, Any]:
     if len(obj) <= max_keys:
         return obj
 
@@ -87,7 +86,7 @@ def shorten_mapping(obj: dict | Mapping, max_keys: int) -> dict | Mapping:
     }
 
 
-def shorten_set(obj: set, max_len: int) -> set:
+def shorten_set(obj: set[Any], max_len: int) -> set[Any]:
     if len(obj) <= max_len:
         return obj
 
@@ -102,7 +101,7 @@ def shorten_string(obj: str, max_len: int) -> str:
     return obj[:left] + '...' + obj[len(obj)-right:]
 
 
-def shorten_tuple(obj: tuple, max_len: int) -> tuple:
+def shorten_tuple(obj: tuple[Any, ...], max_len: int) -> tuple[Any, ...]:
     if len(obj) <= max_len:
         return obj
 

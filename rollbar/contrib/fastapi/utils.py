@@ -3,6 +3,8 @@ from __future__ import annotations
 import functools
 import logging
 
+from typing import Any, cast
+
 import fastapi
 from fastapi import APIRouter, FastAPI
 from starlette.routing import Route
@@ -100,7 +102,7 @@ def get_installed_middlewares(app):
 
 
 def has_bare_routing(app_or_router: FastAPI | APIRouter):
-    if not isinstance(app_or_router, (FastAPI, APIRouter)):
+    if not isinstance(cast(Any, app_or_router), (FastAPI, APIRouter)):
         return False
 
     urls = [

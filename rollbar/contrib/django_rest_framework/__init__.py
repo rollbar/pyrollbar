@@ -4,9 +4,9 @@ except ImportError:
     ImproperlyConfigured = RuntimeError  # type: ignore[assignment, misc] # MyPy does not like types assignment.
 
 try:
-    from rest_framework.views import exception_handler as _exception_handler  # type: ignore[import-untyped]
+    from rest_framework.views import exception_handler as _exception_handler
 except (ImportError, ImproperlyConfigured):
-    _exception_handler = None  # type: ignore[assignment, misc] # MyPy does not like types assigned to None.
+    _exception_handler = None  # type: ignore[assignment] # MyPy does not like types assigned to None.
 
 
 def post_exception_handler(exc, context):

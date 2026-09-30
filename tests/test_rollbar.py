@@ -18,7 +18,6 @@ from unittest import mock
 import unittest
 
 import rollbar
-from rollbar.lib import string_types
 
 from tests import BaseTest
 from tests.utils import get_public_attrs
@@ -1109,7 +1108,7 @@ class RollbarTest(BaseTest):
         rollbar._send_failsafe('test message', test_uuid, test_host)
         self.assertEqual(mock_log.call_count, 1)
 
-    @unittest.skipUnless(rollbar.AsyncHTTPClient, 'Requires async handler to be installed')
+    @unittest.skipUnless(rollbar.httpx, 'Requires async handler to be installed')
     @mock.patch('rollbar._send_payload_async')
     def test_async_handler(self, send_payload_async):
         def _raise():
@@ -1652,7 +1651,7 @@ class RollbarTest(BaseTest):
 
              or
 
-            (isinstance(payload['data']['body']['trace']['frames'][-1]['locals']['obj'], string_types) and
+            (isinstance(payload['data']['body']['trace']['frames'][-1]['locals']['obj'], str) and
              payload['data']['body']['trace']['frames'][-1]['locals']['obj'].startswith('<CircularReference'))
         )
 
@@ -1663,7 +1662,7 @@ class RollbarTest(BaseTest):
 
              or
 
-            (isinstance(payload['data']['body']['trace']['frames'][-1]['locals']['obj'], string_types) and
+            (isinstance(payload['data']['body']['trace']['frames'][-1]['locals']['obj'], str) and
              payload['data']['body']['trace']['frames'][-1]['locals']['obj'].startswith('<CircularReference'))
         )
 

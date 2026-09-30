@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Collection
 
-from rollbar.lib import binary_type, string_types
+from rollbar.lib import binary_type
 from rollbar.lib import (
     circular_reference_label, float_infinity_label, float_nan_label,
     undecodable_object_label, unencodable_object_label)
@@ -12,10 +13,10 @@ from rollbar.lib.transform import Transform
 
 class SerializableTransform(Transform):
     priority = 30
-    def __init__(self, safe_repr=True, safelist_types=None):
+    def __init__(self, safe_repr=True, safelist_types: Collection[type] | None = None):
         super(SerializableTransform, self).__init__()
         self.safe_repr = safe_repr
-        self.safelist = set(safelist_types or [])
+        self.safelist = tuple(safelist_types or ())
 
     def transform_circular_reference(self, o, key=None, ref_key=None):
         return circular_reference_label(o, ref_key)
@@ -56,7 +57,7 @@ class SerializableTransform(Transform):
     def transform_dict(self, o, key=None):
         ret = {}
         for k, v in o.items():
-            if isinstance(k, string_types) or isinstance(k, binary_type):
+            if isinstance(k, str) or isinstance(k, binary_type):
                 if isinstance(k, bytes):
                     new_k = self.transform_bytes(k)
                 else:
@@ -80,7 +81,7 @@ class SerializableTransform(Transform):
             if custom is not None:
                 return custom
 
-            if any(filter(lambda x: isinstance(o, x), self.safelist)):
+            if isinstance(o, self.safelist):
                 try:
                     return repr(o)
                 except TypeError:

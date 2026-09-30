@@ -83,6 +83,20 @@ pyramid = "rollbar.contrib.pyramid:create_rollbar_middleware"
 
 [tool.mypy]
 packages = ["rollbar"]
+pretty = true
+show_error_codes = true
+show_error_context = true
+strict = true
+warn_unreachable = true
+warn_unused_configs = true
+
+# first party mypy strictness overrides
+[[tool.mypy.overrides]]
+module = ["rollbar.*"]
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+disallow_untyped_decorators = false
+disallow_untyped_defs = false
 
 [tool.pytest]
 testpaths = [
@@ -96,9 +110,21 @@ version = {attr = "rollbar.__version__"}
 rollbar = ["py.typed"]
 
 [tool.tox]
-requires = ["tox>=4.22"]
+minversion = "4.22"
+envlist = [
+  "mypy",
+  "py310",
+  "py311",
+  "py312",
+  "py313",
+  "py314",
+]
 
 [tool.tox.env_run_base]
 dependency_groups = ["test"]
 description = "run unit tests"
-commands = [["pytest", "{posargs}"]]
+commands = [["pytest", { replace = "posargs", default = [], extend = true }]]
+
+[tool.tox.env.mypy]
+commands = [["mypy", { replace = "posargs", default = [], extend = true }]]
+dependency_groups = ["test", "type"]

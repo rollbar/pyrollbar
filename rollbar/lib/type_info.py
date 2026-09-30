@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Hashable, Any
+from collections.abc import Hashable
+from typing import Any
 
-from rollbar.lib import binary_type, string_types
+from rollbar.lib import binary_type
 
 
 from collections.abc import Mapping, Sequence
@@ -21,7 +22,7 @@ PATH = 7
 
 
 def get_type(obj: Any) -> int:
-    if isinstance(obj, (string_types, binary_type)):
+    if isinstance(obj, (str, binary_type)):
         return STRING
 
     if isinstance(obj, Mapping):

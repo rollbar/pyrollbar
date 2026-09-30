@@ -3,7 +3,8 @@ from __future__ import annotations
 import logging
 from os import PathLike
 from pathlib import Path
-from typing import Any, NamedTuple, Callable
+from collections.abc import Callable
+from typing import Any, NamedTuple
 
 from rollbar.lib import circular_reference_label
 
@@ -36,7 +37,7 @@ def _noop(a: Any, **_) -> Any:
     return a
 
 
-def _noop_tuple(a: tuple, **_) -> tuple:
+def _noop_tuple(a: tuple[Any, ...], **_) -> tuple[Any, ...]:
     return tuple(a)
 
 
@@ -44,19 +45,19 @@ def _noop_namedtuple(a: NamedTuple, **_) -> NamedTuple:
     return a._make(a)
 
 
-def _noop_list(a: list, **_) -> list:
+def _noop_list(a: list[Any], **_) -> list[Any]:
     return list(a)
 
 
-def _noop_set(a: set, **_) -> set:
+def _noop_set(a: set[Any], **_) -> set[Any]:
     return set(a)
 
 
-def _noop_mapping(a, **_) -> dict:
+def _noop_mapping(a, **_) -> dict[Any, Any]:
     return dict(a)
 
 
-def _noop_path(a: PathLike, **_) -> PathLike:
+def _noop_path(a: PathLike[Any], **_) -> PathLike[Any]:
     return Path(a)
 
 # A generic handler: accepts arbitrary args/kwargs and returns Any.

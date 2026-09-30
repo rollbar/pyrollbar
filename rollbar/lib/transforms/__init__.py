@@ -1,10 +1,9 @@
 from __future__ import annotations
-from typing import Callable, TypedDict, Any, TYPE_CHECKING
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable, Sequence
+from typing import Any, TypedDict, TYPE_CHECKING
 
 from rollbar.lib import (
     binary_type,
-    string_types,
     number_types,
     traverse,
 )
@@ -16,19 +15,10 @@ from rollbar.lib.transforms.batched import BatchedTransform
 if TYPE_CHECKING:
     from rollbar.lib.type_info import KeyType
 
-_ALLOWED_CIRCULAR_REFERENCE_TYPES: tuple = (binary_type, bool, type(None))
+_ALLOWED_CIRCULAR_REFERENCE_TYPES: tuple[type, ...] = (
+    binary_type, bool, type(None), str, *number_types
+)
 
-if isinstance(string_types, tuple):
-    _ALLOWED_CIRCULAR_REFERENCE_TYPES = (*_ALLOWED_CIRCULAR_REFERENCE_TYPES, *string_types)
-else:
-    _ALLOWED_CIRCULAR_REFERENCE_TYPES = (*_ALLOWED_CIRCULAR_REFERENCE_TYPES, string_types)
-
-if isinstance(number_types, tuple):
-    _ALLOWED_CIRCULAR_REFERENCE_TYPES = (*_ALLOWED_CIRCULAR_REFERENCE_TYPES, *number_types)
-else:
-    _ALLOWED_CIRCULAR_REFERENCE_TYPES = (*_ALLOWED_CIRCULAR_REFERENCE_TYPES, number_types)
-
-_ALLOWED_CIRCULAR_REFERENCE_TYPES = tuple(_ALLOWED_CIRCULAR_REFERENCE_TYPES)
 
 
 class Handlers(TypedDict, total=False):
@@ -41,10 +31,10 @@ class Handlers(TypedDict, total=False):
     path_handler: Callable[[Any, Any | None], Any]
     circular_reference_handler: Callable[[Any, Any | None], Any]
     default_handler: Callable[[Any, Any | None], Any]
-    allowed_circular_reference_types: tuple | None
+    allowed_circular_reference_types: tuple[type, ...] | None
 
 
-def transform(obj, transforms: Transform | list[Transform], key: tuple[KeyType, ...] | None = None, batch_transforms: bool = False):
+def transform(obj, transforms: Transform | Sequence[Transform | None], key: tuple[KeyType, ...] | None = None, batch_transforms: bool = False):
     if isinstance(transforms, Transform):
         transforms = [transforms]
 

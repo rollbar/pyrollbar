@@ -1,6 +1,6 @@
 from __future__ import annotations
 from os import PathLike
-from typing import TypeVar, TYPE_CHECKING
+from typing import Any, TypeVar, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from rollbar.lib.type_info import KeyType
@@ -20,7 +20,7 @@ class Transform(object):
         # for the circular reference they need.
         return self.default(o, key=key)
 
-    def transform_tuple(self, o: tuple, key: tuple[KeyType, ...]|None = None) -> tuple:
+    def transform_tuple(self, o: tuple[Any, ...], key: tuple[KeyType, ...]|None = None) -> tuple[Any, ...]:
         return self.default(o, key=key)
 
     def transform_namedtuple(self, o, key: tuple[KeyType, ...]|None = None):
@@ -29,7 +29,7 @@ class Transform(object):
     def transform_list(self, o, key: tuple[KeyType, ...]|None = None):
         return self.default(o, key=key)
 
-    def transform_dict(self, o: dict, key: tuple[KeyType, ...]|None = None) -> dict:
+    def transform_dict(self, o: dict[Any, Any], key: tuple[KeyType, ...]|None = None) -> dict[Any, Any]:
         return self.default(o, key=key)
 
     def transform_number(self, o: float | int, key: tuple[KeyType, ...]|None = None) -> float | int | str:
@@ -44,7 +44,7 @@ class Transform(object):
     def transform_boolean(self, o: bool, key: tuple[KeyType, ...]|None = None) -> bool:
         return self.default(o, key=key)
 
-    def transform_path(self, o: PathLike, key: tuple[KeyType, ...]|None = None) -> str:
+    def transform_path(self, o: PathLike[Any], key: tuple[KeyType, ...]|None = None) -> str:
         return self.default(str(o), key=key)
 
     def transform_custom(self, o: T, key: tuple[KeyType, ...]|None = None) -> T:

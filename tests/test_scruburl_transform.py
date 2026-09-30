@@ -1,6 +1,6 @@
 from urllib.parse import urlparse, parse_qs
 
-from rollbar.lib import transforms, string_types
+from rollbar.lib import transforms
 from rollbar.lib.transforms.scruburl import ScrubUrlTransform, _starts_with_auth_re
 
 from tests import BaseTest, SNOWMAN_UNICODE
@@ -30,7 +30,7 @@ class ScrubUrlTransformTest(BaseTest):
             self.assertNotEqual(id(result), id(expected))
 
         self.assertEqual(type(expected), type(result))
-        self.assertIsInstance(result, string_types)
+        self.assertIsInstance(result, str)
         self._compare_urls(expected, result)
 
     def _compare_urls(self, url1, url2):

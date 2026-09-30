@@ -4,7 +4,8 @@ __all__ = ['add_to']
 
 import logging
 import sys
-from typing import Callable, Type
+from collections.abc import Callable
+from typing import Any, cast, TYPE_CHECKING
 
 from fastapi import APIRouter, FastAPI, __version__
 from fastapi.routing import APIRoute
@@ -24,12 +25,15 @@ from rollbar.contrib.asgi.integration import integrate
 from rollbar.contrib.starlette.requests import store_current_request
 from rollbar.lib._async import RollbarAsyncError, try_report
 
+if TYPE_CHECKING:
+    from _typeshed import ExcInfo
+
 log = logging.getLogger(__name__)
 
 
 @fastapi_min_version('0.41.0')
 @integrate(framework_name=f'fastapi {__version__}')
-def add_to(app_or_router: FastAPI | APIRouter) -> Type[APIRoute] | None:
+def add_to(app_or_router: FastAPI | APIRouter) -> type[APIRoute] | None:
     """
     Adds RollbarLoggingRoute handler to the router app.
 
@@ -53,7 +57,7 @@ def add_to(app_or_router: FastAPI | APIRouter) -> Type[APIRoute] | None:
 
     """
 
-    if not isinstance(app_or_router, (FastAPI, APIRouter)):
+    if not isinstance(cast(Any, app_or_router), (FastAPI, APIRouter)):
         log.error('Error adding RollbarLoggingRoute to application.')
         return None
 
@@ -81,7 +85,7 @@ def add_to(app_or_router: FastAPI | APIRouter) -> Type[APIRoute] | None:
 
 
 class RollbarLoggingRoute(APIRoute):
-    def get_route_handler(self) -> Callable:
+    def get_route_handler(self) -> Callable[..., Any]:
         router_handler = super().get_route_handler()
 
         async def rollbar_route_handler(request: Request) -> Response:
@@ -95,7 +99,7 @@ class RollbarLoggingRoute(APIRoute):
                     await request.body()
                 await request.form()
 
-                exc_info = sys.exc_info()
+                exc_info = cast('ExcInfo', sys.exc_info())
 
                 try:
                     await try_report(exc_info, request)

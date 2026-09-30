@@ -333,9 +333,7 @@ class ReporterMiddlewareTest(BaseTest):
             mock_report.assert_not_called()
 
     def test_should_support_type_hints(self):
-        from starlette.types import Receive, Scope, Send
-
         self.assertDictEqual(
             rollbar.contrib.starlette.ReporterMiddleware.__call__.__annotations__,
-            {'scope': Scope, 'receive': Receive, 'send': Send, 'return': None},
+            {'scope': 'Scope', 'receive': 'Receive', 'send': 'Send', 'return': 'None'},
         )

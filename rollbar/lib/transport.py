@@ -1,5 +1,7 @@
-import requests  # type: ignore[import-untyped]
+from __future__ import annotations
+import requests
 import threading
+from typing import Any
 
 
 _local = threading.local()
@@ -12,7 +14,7 @@ def _session():
     return _local.session
 
 
-def _get_proxy_cfg(kw: dict) -> dict | None:
+def _get_proxy_cfg(kw: dict[str, Any]) -> dict[str, str] | None:
     proxy = kw.pop('proxy', None)
     proxy_user = kw.pop('proxy_user', None)
     proxy_password = kw.pop('proxy_password', None)

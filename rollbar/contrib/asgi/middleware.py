@@ -1,12 +1,17 @@
+from __future__ import annotations
 import logging
 import sys
-from typing import Iterable
+from collections.abc import Iterable
+from typing import cast, TYPE_CHECKING
 
 import rollbar
 from .integration import IntegrationBase, integrate
 from .types import ASGIApp, Receive, Scope, Send
 from rollbar.lib._async import RollbarAsyncError, try_report
 from rollbar.lib.session import set_current_session, reset_current_session
+
+if TYPE_CHECKING:
+    from _typeshed import ExcInfo
 
 log = logging.getLogger(__name__)
 
@@ -25,7 +30,7 @@ class ReporterMiddleware(IntegrationBase):
             await self.app(scope, receive, send)
         except Exception:
             if scope['type'] == 'http':
-                exc_info = sys.exc_info()
+                exc_info = cast('ExcInfo', sys.exc_info())
 
                 try:
                     await try_report(exc_info)

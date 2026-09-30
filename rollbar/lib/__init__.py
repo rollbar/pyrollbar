@@ -5,13 +5,12 @@ import collections
 import copy
 from array import array
 
-from collections.abc import Mapping
-from typing import Any, TypeVar, MutableMapping
+from collections.abc import Callable, Iterator, Mapping, MutableMapping
+from typing import Any, TypeVar
 
 binary_type = bytes
 integer_types = int
 number_types = (float, int)
-string_types = str
 sequence_types = (Mapping, list, tuple, set, frozenset, array, collections.deque)
 
 
@@ -81,7 +80,7 @@ def build_key_matcher(prefixes_or_suffixes, type='prefix', case_sensitive=False)
     _prefixes = []
 
     if type == 'prefix':
-        _iter = iter
+        _iter: Callable[..., Iterator[Any]] = iter
     elif type == 'suffix':
         _iter = reversed
     else:
@@ -112,8 +111,8 @@ def build_key_matcher(prefixes_or_suffixes, type='prefix', case_sensitive=False)
 def is_builtin_type(obj) -> bool:
     return obj.__class__.__module__ in ('__builtin__', 'builtins')
 
-T = TypeVar('T', bound=dict | MutableMapping[str, Any])
-U = TypeVar('U', bound=dict | Mapping[str, Any] | Any)
+T = TypeVar('T', bound=dict[str, Any] | MutableMapping[str, Any])
+U = TypeVar('U', bound=dict[str, Any] | Mapping[str, Any] | Any)
 
 
 # http://www.xormedia.com/recursively-merge-dictionaries-in-python.html

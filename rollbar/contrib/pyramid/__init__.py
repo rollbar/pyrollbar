@@ -1,6 +1,7 @@
 """
 Plugin for Pyramid apps to submit errors to Rollbar
 """
+from __future__ import annotations
 
 import logging
 import sys
@@ -11,8 +12,7 @@ from pyramid.util import DottedNameResolver  # type: ignore[import-untyped]
 from pyramid.settings import asbool  # type: ignore[import-untyped]
 
 import rollbar
-from rollbar import set_current_session
-from rollbar.lib.session import reset_current_session
+from rollbar.lib.session import reset_current_session, set_current_session
 
 DEFAULT_WEB_BASE = 'https://rollbar.com'
 BOOLEAN_SETTINGS = [
@@ -24,7 +24,7 @@ log = logging.getLogger(__name__)
 
 
 EXCEPTION_BLOCKLIST = (WSGIHTTPException,)
-EXCEPTION_SAFELIST: tuple = tuple()
+EXCEPTION_SAFELIST: tuple[type[Exception], ...] = ()
 
 
 def handle_error(request, exception, exc_info):

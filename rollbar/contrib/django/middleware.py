@@ -77,9 +77,12 @@ ROLLBAR = {
 
 See README.rst for full installation and configuration instructions.
 """
+from __future__ import annotations
 
 import logging
 import sys
+
+from typing import cast, TYPE_CHECKING
 
 import rollbar
 
@@ -88,13 +91,15 @@ from django.conf import settings
 from django.http import Http404
 from django.urls import resolve
 
-from rollbar import set_current_session
-from rollbar.lib.session import reset_current_session
+from rollbar.lib.session import reset_current_session, set_current_session
 
 try:
     from django.utils.deprecation import MiddlewareMixin
 except ImportError:
     from rollbar.contrib.django.utils import MiddlewareMixin  # type: ignore[assignment]
+
+if TYPE_CHECKING:
+    from _typeshed import ExcInfo
 
 log = logging.getLogger(__name__)
 
@@ -143,13 +148,13 @@ def _patch_debugview(rollbar_web_base):
         from django.template import Context
         def new_get_traceback_html(exception_reporter):
             """Return HTML version of debug 500 HTTP error page."""
-            with Path(debug.CURRENT_DIR, 'templates', 'technical_500.html').open() as fh:
+            with Path(debug.CURRENT_DIR, 'templates', 'technical_500.html').open() as fh:  # type: ignore[attr-defined]
                 template_string = fh.read()
                 template_string = template_string.replace(insert_before, replacement, 1)
                 t = debug.DEBUG_ENGINE.from_string(template_string)
             c = Context(exception_reporter.get_traceback_data(), use_l10n=False)
             return t.render(c)
-        debug.ExceptionReporter.get_traceback_html = new_get_traceback_html
+        debug.ExceptionReporter.get_traceback_html = new_get_traceback_html  # type: ignore[method-assign]
     else:
         # patch ExceptionReporter.get_traceback_html for Django versions 4.0+
         def new_get_traceback_html(self):
@@ -174,8 +179,8 @@ def _patch_debugview(rollbar_web_base):
         except:
             log.exception("Exception while adding view-in-rollbar link to technical_500_template.")
         return data
-    debug.ExceptionReporter.get_traceback_data = new_get_traceback_data
-    debug.ExceptionReporter.__rollbar__patched = True
+    debug.ExceptionReporter.get_traceback_data = new_get_traceback_data  # type: ignore[method-assign]
+    debug.ExceptionReporter.__rollbar__patched = True  # type: ignore[attr-defined]
 
 
 
@@ -309,7 +314,7 @@ class RollbarNotifierMiddleware(MiddlewareMixin):
         _apply_sensitive_post_params(request)
 
         rollbar.report_exc_info(
-            sys.exc_info(),
+            cast('ExcInfo', sys.exc_info()),
             request,
             extra_data=self.get_extra_data(request, exc),
             payload_data=self.get_payload_data(request, exc),
@@ -341,7 +346,7 @@ class RollbarNotifierMiddlewareOnly404(MiddlewareMixin):
         except Exception as exc:
             _apply_sensitive_post_params(request)
             rollbar.report_exc_info(
-                sys.exc_info(),
+                cast('ExcInfo', sys.exc_info()),
                 request,
                 extra_data=self.get_extra_data(request, exc),
                 payload_data=self.get_payload_data(request, exc),

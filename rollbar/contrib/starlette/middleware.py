@@ -1,5 +1,7 @@
+from __future__ import annotations
 import logging
 import sys
+from typing import Any, cast, TYPE_CHECKING
 
 from starlette import __version__
 from starlette.requests import Request
@@ -11,6 +13,9 @@ from rollbar.contrib.asgi import ReporterMiddleware as ASGIReporterMiddleware
 from rollbar.contrib.asgi.integration import integrate
 from rollbar.lib._async import RollbarAsyncError, try_report
 from rollbar.lib.session import set_current_session, reset_current_session
+
+if TYPE_CHECKING:
+    from _typeshed import ExcInfo
 
 log = logging.getLogger(__name__)
 
@@ -36,7 +41,7 @@ class ReporterMiddleware(ASGIReporterMiddleware):
                 # await request.body()
                 # await request.form()
 
-                exc_info = sys.exc_info()
+                exc_info = cast('ExcInfo', sys.exc_info())
 
                 try:
                     await try_report(exc_info, request)

@@ -24,11 +24,17 @@ import logging
 import threading
 
 from logging.config import ConvertingDict, ConvertingList, ConvertingTuple
+from typing import Any, cast, TYPE_CHECKING
+
+from rollbar.lib import dict_merge
 
 import rollbar
 
+if TYPE_CHECKING:
+    from _typeshed import ExcInfo
 
-def check_level(level: str | int ) -> int:
+
+def check_level(level: str | int) -> int:
     """
     Convert level to numeric logging level.
     """
@@ -56,7 +62,7 @@ EXCLUDE_RECORD_KEYS = {
 }
 
 
-def resolve_logging_types(obj):
+def resolve_logging_types(obj: Any) -> Any:
     if isinstance(obj, (dict, ConvertingDict)):
         return {k: resolve_logging_types(v) for k, v in obj.items()}
     elif isinstance(obj, (list, ConvertingList)):
@@ -68,17 +74,17 @@ def resolve_logging_types(obj):
 
 
 class RollbarHandler(logging.Handler):
-    SUPPORTED_LEVELS = set(('debug', 'info', 'warning', 'error', 'critical'))
+    SUPPORTED_LEVELS = {'debug', 'info', 'warning', 'error', 'critical'}
 
     _history = threading.local()
 
     def __init__(self,
-                 access_token=None,
-                 environment=None,
-                 level=logging.INFO,
-                 history_size=10,
-                 history_level=logging.DEBUG,
-                 **kw):
+                 access_token: str | None = None,
+                 environment: str = 'production',
+                 level: int | str = logging.INFO,
+                 history_size: int = 10,
+                 history_level: int = logging.DEBUG,
+                 **kw: Any) -> None:
 
         logging.Handler.__init__(self)
 
@@ -96,7 +102,7 @@ class RollbarHandler(logging.Handler):
 
         self.setHistoryLevel(history_level)
 
-    def setLevel(self, level):
+    def setLevel(self, level: int | str) -> None:
         """
         Override so we set the effective level for which
         log records we notify Rollbar about instead of which
@@ -104,7 +110,7 @@ class RollbarHandler(logging.Handler):
         """
         self.notify_level = check_level(level)
 
-    def setHistoryLevel(self, level):
+    def setHistoryLevel(self, level: int | str) -> None:
         """
         Use this method to determine which records we record history
         for. Use setLevel() to determine which level we report records
@@ -112,19 +118,16 @@ class RollbarHandler(logging.Handler):
         """
         logging.Handler.setLevel(self, level)
 
-    def emit(self, record):
+    def emit(self, record: logging.LogRecord) -> None:
         # If the record came from Rollbar's own logger don't report it
         # to Rollbar
-        if record.name == rollbar.__log_name__:
+        if (
+            record.name == rollbar.__log_name__
+            or (level := record.levelname.lower()) not in self.SUPPORTED_LEVELS
+        ):
             return
 
-        level = record.levelname.lower()
-
-        if level not in self.SUPPORTED_LEVELS:
-            return
-
-        exc_info = record.exc_info
-
+        level = cast(rollbar.Level, level)
         extra_data = {
             'args': record.args,
             'record': {
@@ -162,7 +165,7 @@ class RollbarHandler(logging.Handler):
         # formatting, this does the same steps to prepare the log record
         # as `logging.Formatter.format` does before calling
         # `logging.Formatter.formatMessage`.
-        formatter = self.formatter or logging._defaultFormatter
+        formatter = self.formatter or logging._defaultFormatter  # type: ignore[attr-defined]
         record.message = record.getMessage()
         if formatter.usesTime():
             record.asctime = formatter.formatTime(record, formatter.datefmt)
@@ -172,17 +175,17 @@ class RollbarHandler(logging.Handler):
         uuid = None
         try:
             # when not in an exception handler, exc_info == (None, None, None)
-            if exc_info and exc_info[0]:
+            if (exc_info := record.exc_info) and exc_info[0]:
                 if record.msg:
                     message_template = {
                         'body': {
                             'trace': {'exception': {'description': message}}
                         }
                     }
-                    payload_data = rollbar.dict_merge(
+                    payload_data = dict_merge(
                         payload_data, message_template, silence_errors=True)
 
-                uuid = rollbar.report_exc_info(exc_info,
+                uuid = rollbar.report_exc_info(cast('ExcInfo', exc_info),
                                                level=level,
                                                request=request,
                                                extra_data=extra_data,
@@ -199,7 +202,7 @@ class RollbarHandler(logging.Handler):
             if uuid:
                 record.rollbar_uuid = uuid
 
-    def _add_history(self, record, payload_data):
+    def _add_history(self, record: logging.LogRecord, payload_data: dict[str, Any]) -> None:
         if hasattr(self._history, 'records'):
             records = self._history.records
             history = list(records[-self.history_size:])
@@ -213,7 +216,7 @@ class RollbarHandler(logging.Handler):
             # prune the messages if we have too many
             self._history.records = list(records[-self.history_size:])
 
-    def _build_history_data(self, record):
+    def _build_history_data(self, record: logging.LogRecord) -> dict[str, Any]:
         data = {'timestamp': record.created,
                 'format': record.msg,
                 'args': record.args}

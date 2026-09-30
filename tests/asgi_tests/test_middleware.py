@@ -139,9 +139,7 @@ class ReporterMiddlewareTest(BaseTest):
             self.assertFalse(mock_report.called)
 
     def test_should_support_type_hints(self):
-        from rollbar.contrib.asgi.types import Receive, Scope, Send
-
         self.assertDictEqual(
             rollbar.contrib.asgi.ReporterMiddleware.__call__.__annotations__,
-            {'scope': Scope, 'receive': Receive, 'send': Send, 'return': None},
+            {'scope': 'Scope', 'receive': 'Receive', 'send': 'Send', 'return': 'None'},
         )

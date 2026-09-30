@@ -64,7 +64,7 @@ def get_propagation_header() -> str | None:
     return ', '.join(header_parts)
 
 
-def parse_session_request_baggage_headers(headers: dict, generate_missing: bool = False) -> list[Attribute]:
+def parse_session_request_baggage_headers(headers: dict[str, str], generate_missing: bool = False) -> list[Attribute]:
     """
     Parse the 'baggage' header from the request headers to extract session information. If the 'baggage' header is not
     present or does not contain the expected keys, a new execution scope ID will be generated and returned as part of
