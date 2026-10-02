@@ -41,6 +41,21 @@ class RollbarTraverseTest(BaseTest):
     def setUp(self):
         self.tuple = NamedTuple((1, 2, 3), labels=["one", "two", "three"])
 
+    def test_repeated_empty_tuples_use_tuple_handler(self):
+        for depth_first in (False, True):
+            with self.subTest(depth_first=depth_first):
+                keys = []
+
+                def tuple_handler(value, key):
+                    keys.append(key)
+                    return value
+
+                self.assertEqual(
+                    traverse([(), ()], tuple_handler=tuple_handler, depth_first=depth_first),
+                    [(), ()],
+                )
+                self.assertEqual(keys, [(0,), (1,)])
+
     def test_base_case(self):
         self.assertEqual(traverse(self.tuple), (1, 2, 3))
 

@@ -104,7 +104,10 @@ def traverse(
         ):
             return circular_reference_handler(obj, key=key, ref_key=ref_key)
 
-    memo[obj_id] = key
+    # Empty built-in tuples share an identity but cannot contain a cycle.
+    # Still run their tuple handler at every occurrence.
+    if type(obj) is not tuple or obj:
+        memo[obj_id] = key
 
     kw: dict[str, Any] = {
         "string_handler": string_handler,

@@ -2,6 +2,7 @@ import collections
 import base64
 import copy
 import enum
+import json
 import sys
 
 from collections.abc import Mapping
@@ -23,6 +24,27 @@ undecodable_repr = f'<Undecodable type:({"bytes"}) base64:({invalid_b64.decode("
 
 
 class SerializableTransformTest(BaseTest):
+    def test_tuple_containing_recursive_list(self):
+        values = []
+        args = (values,)
+        values.append(args)
+        result = transforms.transform({'args': args}, SerializableTransform())
+        self.assertEqual(
+            result, {'args': (['<CircularReference type:(tuple) ref:(args)>'],)}
+        )
+
+    def test_repeated_empty_tuple_arguments(self):
+        payload = {'history': [{'args': ()}, {'args': ()}, {'args': ()}]}
+        for batched in (False, True):
+            with self.subTest(batched=batched):
+                result = transforms.transform(
+                    payload, SerializableTransform(), batch_transforms=batched
+                )
+                self.assertEqual(
+                    json.loads(json.dumps(result)),
+                    {'history': [{'args': []}, {'args': []}, {'args': []}]},
+                )
+
     def _assertSerialized(self, start, expected, safe_repr=True, safelist=None, skip_id_check=False):
         serializable = SerializableTransform(safe_repr=safe_repr, safelist_types=safelist)
         result = transforms.transform(start, serializable)
