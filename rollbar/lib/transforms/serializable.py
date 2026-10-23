@@ -30,6 +30,9 @@ class SerializableTransform(Transform):
         return '<%s>' % str(o._make(new_vals))
 
     def transform_number(self, o: float | int, key=None) -> float | int | str:
+        if isinstance(o, int):
+            return o
+
         if math.isnan(o):
             return float_nan_label(o)
         elif math.isinf(o):
