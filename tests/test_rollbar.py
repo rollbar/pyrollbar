@@ -790,6 +790,39 @@ class RollbarTest(BaseTest):
         rollbar._CURRENT_LAMBDA_CONTEXT = None
         rollbar.SETTINGS['handler'] = 'blocking'
 
+    @unittest.skipIf(sys.version_info < (3, 11), 'ExceptionGroup is builtin from Python 3.11')
+    @mock.patch('rollbar.send_payload')
+    def test_report_exception_group_with_one_exception(self, send_payload):
+        def _raise_inner():
+            raise CauseException('bad gateway')
+
+        try:
+            try:
+                _raise_inner()
+            except CauseException as inner:
+                raise ExceptionGroup('unhandled errors in a TaskGroup', [inner])
+        except ExceptionGroup:
+            rollbar.report_exc_info()
+
+        self.assertEqual(send_payload.called, True)
+        payload = send_payload.call_args[0][0]
+        trace = payload['data']['body']['trace']
+        self.assertEqual(trace['exception']['class'], 'CauseException')
+        self.assertEqual(trace['exception']['message'], 'bad gateway')
+        self.assertEqual(trace['frames'][-1]['method'], '_raise_inner')
+
+    @unittest.skipIf(sys.version_info < (3, 11), 'ExceptionGroup is builtin from Python 3.11')
+    @mock.patch('rollbar.send_payload')
+    def test_report_exception_group_with_two_exceptions(self, send_payload):
+        try:
+            raise ExceptionGroup('two errors', [CauseException('a'), CauseException('b')])
+        except ExceptionGroup:
+            rollbar.report_exc_info()
+
+        payload = send_payload.call_args[0][0]
+        trace = payload['data']['body']['trace']
+        self.assertEqual(trace['exception']['class'], 'ExceptionGroup')
+
     @mock.patch('rollbar.send_payload')
     def test_report_exception_with_cause(self, send_payload):
         def _raise_cause():
