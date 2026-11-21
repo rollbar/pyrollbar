@@ -961,6 +961,8 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     if not _check_config():
         return
 
+    exc_info = _unwrap_exception_group(exc_info)
+
     filtered_level = _filtered_level(exc_info[1])
     if level is None:
         level = filtered_level
@@ -1020,6 +1022,25 @@ def _report_exc_info(exc_info, request, extra_data, payload_data, level=None):
     send_payload(payload, payload.get('access_token'))
 
     return data['uuid']
+
+
+def _is_exception_group(exc):
+    # Matches the builtin BaseExceptionGroup and the one from the exceptiongroup backport
+    return any(c.__name__ == 'BaseExceptionGroup' for c in type(exc).__mro__)
+
+
+def _unwrap_exception_group(exc_info):
+    """
+    Report an exception group that holds a single exception as that exception.
+
+    Task groups (asyncio, anyio and so Starlette and FastAPI) wrap one failed task
+    in an ExceptionGroup, which would hide the real exception class and message.
+    """
+    cls, exc, trace = exc_info
+    while _is_exception_group(exc) and len(getattr(exc, 'exceptions', ())) == 1:
+        exc = exc.exceptions[0]
+        cls, trace = type(exc), exc.__traceback__
+    return cls, exc, trace
 
 
 def _walk_trace_chain(cls, exc, trace):
